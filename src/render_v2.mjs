@@ -42,7 +42,7 @@ export function createRenderApi(context) {
 
   function getDoorColorLabel(color) {
     if (color === "green") {
-      return "gruene";
+      return "grüne";
     }
 
     if (color === "blue") {
@@ -161,7 +161,7 @@ export function createRenderApi(context) {
         title: "Lebenspunkte",
         lines: [
           `Aktuell ${state.player.hp}/${state.player.maxHp}`,
-          "Wenn das auf 0 faellt, endet der Lauf.",
+          "Wenn das auf 0 fällt, endet der Lauf.",
         ],
       },
       level: {
@@ -174,21 +174,21 @@ export function createRenderApi(context) {
       damage: {
         title: "Basisschaden",
         lines: [
-          `Staerke ${state.player.strength} + Waffenschaden ${weapon.damage}`,
+          `Stärke ${state.player.strength} + Waffenschaden ${weapon.damage}`,
           `Ergibt aktuell ${baseDamage} Schaden pro Treffer vor Krits.`,
         ],
       },
       hit: {
         title: "Trefferwert",
         lines: [
-          `Praezision ${state.player.precision} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
+          `Präzision ${state.player.precision} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
           `Ergibt aktuell Trefferwert ${hitValue}.`,
         ],
       },
       crit: {
         title: "Krit-Chance",
         lines: [
-          `Praezision ${state.player.precision} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
+          `Präzision ${state.player.precision} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
           `Ergibt aktuell ${critChance}% Krit-Chance.`,
         ],
       },
@@ -201,7 +201,7 @@ export function createRenderApi(context) {
             ]
           : [
               "Kein Schild in der Nebenhand.",
-              "Mit Schild wuerdest du hier deine Blockchance sehen.",
+              "Mit Schild würdest du hier deine Blockchance sehen.",
             ],
       },
     };
@@ -277,8 +277,8 @@ export function createRenderApi(context) {
     const fullRows = [
       ...summaryRows,
       createSheetRow("Erfahrung", `${state.player.xp} / ${state.player.xpToNext}`),
-      createSheetRow("Staerke", state.player.strength),
-      createSheetRow("Praezision", state.player.precision),
+      createSheetRow("Stärke", state.player.strength),
+      createSheetRow("Präzision", state.player.precision),
       createSheetRow("Reaktion", state.player.reaction),
       createSheetRow("Nerven", state.player.nerves),
       createSheetRow("Intelligenz", state.player.intelligence),
@@ -309,12 +309,12 @@ export function createRenderApi(context) {
             createSheetRow("Variante", target.enemy.variantLabel ?? "Normal"),
             createSheetRow("Merkmale", variantSummary),
             createSheetRow("Verhalten", target.enemy.behaviorLabel),
-            createSheetRow("Mobilitaet", target.enemy.mobilityLabel ?? "Mobil"),
-            createSheetRow("Rueckzug", target.enemy.retreatLabel ?? "Standhaft"),
+            createSheetRow("Mobilität", target.enemy.mobilityLabel ?? "Mobil"),
+            createSheetRow("Rückzug", target.enemy.retreatLabel ?? "Standhaft"),
             createSheetRow("Regeneration", target.enemy.healingLabel ?? "Langsam"),
             createSheetRow("Entfernung", `${target.distance} Felder`),
             createSheetRow("Leben", `${target.enemy.hp}/${target.enemy.maxHp}`),
-            createSheetRow("Tueren", target.enemy.canOpenDoors ? "Kann oeffnen" : "Bleibt haengen"),
+            createSheetRow("Türen", target.enemy.canOpenDoors ? "Kann öffnen" : "Bleibt hängen"),
             createSheetRow("Besonderheit", target.enemy.special),
           ]
         : [
@@ -477,9 +477,9 @@ export function createRenderApi(context) {
     const labels = {
       weapon: "Waffen",
       offhand: "Schilde",
-      potion: "Traenke",
+      potion: "Tränke",
       food: "Essen",
-      key: "Schluessel",
+      key: "Schlüssel",
     };
     return labels[type] ?? "Sonstiges";
   }
@@ -549,7 +549,7 @@ export function createRenderApi(context) {
       );
 
     if (visibleGroups.length === 0) {
-      inventoryListElement.innerHTML = `<div class="inventory-empty">Keine Gegenstaende in diesem Filter.</div>`;
+      inventoryListElement.innerHTML = `<div class="inventory-empty">Keine Gegenstände in diesem Filter.</div>`;
       return;
     }
 
@@ -605,7 +605,7 @@ export function createRenderApi(context) {
     highscoreListElement.innerHTML = "";
 
     if (scores.length === 0) {
-      highscoreListElement.innerHTML = `<div class="inventory-empty">Noch keine Eintraege. Das erste Abenteuer wartet.</div>`;
+      highscoreListElement.innerHTML = `<div class="inventory-empty">Noch keine Einträge. Das erste Abenteuer wartet.</div>`;
       return;
     }
 
@@ -635,9 +635,9 @@ export function createRenderApi(context) {
       createSheetRow("Erhaltene XP", state.xpGained ?? 0),
       createSheetRow("Schaden ausgeteilt", state.damageDealt ?? 0),
       createSheetRow("Schaden erhalten", state.damageTaken ?? 0),
-      createSheetRow("Requisitenkisten geoeffnet", state.openedChests ?? 0),
+      createSheetRow("Requisitenkisten geöffnet", state.openedChests ?? 0),
       createSheetRow("Essen gegessen", state.consumedFoods ?? 0),
-      createSheetRow("Heiltraenke getrunken", state.consumedPotions ?? 0),
+      createSheetRow("Heiltränke getrunken", state.consumedPotions ?? 0),
       createSheetRow("Schritte", state.turn),
     ].join("");
 
@@ -686,8 +686,8 @@ export function createRenderApi(context) {
           lines: [
             `Level ${state.player.level}`,
             `Leben ${state.player.hp}/${state.player.maxHp}`,
-            `Staerke ${state.player.strength}`,
-            `Praezision ${state.player.precision}`,
+            `Stärke ${state.player.strength}`,
+            `Präzision ${state.player.precision}`,
             `Reaktion ${state.player.reaction}`,
             `Nerven ${state.player.nerves}`,
             `Intelligenz ${state.player.intelligence}`,
@@ -720,8 +720,8 @@ export function createRenderApi(context) {
                   enemy.variantModifiers?.length
                     ? `Merkmale: ${enemy.variantModifiers.map((modifier) => modifier.label).join(", ")}`
                     : "Merkmale: Keine",
-                  `Mobilitaet: ${enemy.mobilityLabel ?? "Mobil"}`,
-                  `Rueckzug: ${enemy.retreatLabel ?? "Standhaft"}`,
+                  `Mobilität: ${enemy.mobilityLabel ?? "Mobil"}`,
+                  `Rückzug: ${enemy.retreatLabel ?? "Standhaft"}`,
                   `Regeneration: ${enemy.healingLabel ?? "Langsam"}`,
                   `Leben ${enemy.hp}/${enemy.maxHp}`,
                   enemy.special,
@@ -796,17 +796,17 @@ export function createRenderApi(context) {
         type: `${door.isOpen ? "door-open" : "door-closed"}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`,
         glyph: door.isOpen ? TILE.DOOR_OPEN : TILE.DOOR_CLOSED,
         tooltip: isVisible ? {
-          title: locked ? `${getDoorColorLabel(door.lockColor)} Tuer` : "Tuer",
+          title: locked ? `${getDoorColorLabel(door.lockColor)} Tür` : "Tür",
           imageUrl: getDoorIconAssetUrl(door),
           imageClass: `tooltip-art-door${locked ? ` tooltip-art-door-${door.lockColor}` : ""}`,
           lines: [
             stateLabel,
             door.isOpen
               ? "Blockiert keine Sicht mehr."
-              : "Blockiert Sicht und Durchgang, bis sie geoeffnet wird.",
+              : "Blockiert Sicht und Durchgang, bis sie geöffnet wird.",
             locked
-              ? "Benoetigt beim ersten Oeffnen einen passenden Schluessel."
-              : "Oeffnet sich automatisch beim Betreten.",
+              ? "Benötigt beim ersten Öffnen einen passenden Schlüssel."
+              : "Öffnet sich automatisch beim Betreten.",
           ],
         } : null,
       };
@@ -895,7 +895,7 @@ export function createRenderApi(context) {
           ? "Deaktiviert"
           : "Aktiv";
       const trapEffectLine = trap.effect?.alarm
-        ? "Loest Alarm im Umfeld aus."
+        ? "Löst Alarm im Umfeld aus."
         : trap.effect?.damage
           ? `Verursacht bis zu ${trap.effect.damage} Schaden.`
           : trap.effect?.slow
@@ -941,11 +941,11 @@ export function createRenderApi(context) {
         type: isVisible ? "stairs-down" : "stairs-down memory",
         glyph: TILE.STAIRS_DOWN,
         tooltip: isVisible ? {
-          title: "Abwaertstreppe",
+          title: "Abwärtstreppe",
           imageUrl: "./assets/stairs-down.svg",
           imageClass: "tooltip-art-stairs tooltip-art-stairs-down",
           lines: [
-            "Fuehrt tiefer in den Dungeon.",
+            "Führt tiefer in den Dungeon.",
           ],
         } : null,
       };
@@ -956,11 +956,11 @@ export function createRenderApi(context) {
         type: isVisible ? "stairs-up" : "stairs-up memory",
         glyph: TILE.STAIRS_UP,
         tooltip: isVisible ? {
-          title: "Aufwaertstreppe",
+          title: "Aufwärtstreppe",
           imageUrl: "./assets/stairs-up.svg",
           imageClass: "tooltip-art-stairs tooltip-art-stairs-up",
           lines: [
-            "Bringt dich zur vorherigen Ebene zurueck.",
+            "Bringt dich zur vorherigen Ebene zurück.",
           ],
         } : null,
       };

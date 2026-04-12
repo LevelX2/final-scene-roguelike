@@ -257,7 +257,7 @@ export function createTestApi(context) {
             ambienceId: item.ambienceId ?? item.id ?? `test-showcase-${position.x}-${position.y}`,
             name: item.name ?? "Test-Vitrine",
             source: item.source ?? "Tests",
-            description: item.description ?? "Nur fuer Tests.",
+            description: item.description ?? "Nur für Tests.",
             iconAsset: item.iconAsset ?? null,
           },
         });
@@ -270,7 +270,7 @@ export function createTestApi(context) {
         floorState.traps.push({
           id: trap.id ?? `test-trap-${position.x}-${position.y}`,
           name: trap.name ?? "Testfalle",
-          description: trap.description ?? "Nur fuer Tests.",
+          description: trap.description ?? "Nur für Tests.",
           type: trap.type ?? "floor",
           visibility: trap.visibility ?? "hidden",
           state: trap.state ?? "active",
@@ -361,7 +361,7 @@ export function createTestApi(context) {
           healingLabel: config.enemy?.healingLabel ?? "Langsam",
           isRetreating: false,
           description: config.enemy?.description ?? "Kontrollierter Testgegner.",
-          special: config.enemy?.special ?? "Nur fuer Tests.",
+          special: config.enemy?.special ?? "Nur für Tests.",
           originX: enemyPosition.x,
           originY: enemyPosition.y,
           aggro: config.enemy?.aggro ?? false,

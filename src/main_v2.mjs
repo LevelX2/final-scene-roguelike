@@ -1,5 +1,5 @@
 ﻿import { WIDTH, HEIGHT, TILE_SIZE, TILE_GAP, BOARD_PADDING, ROOM_ATTEMPTS, MIN_ROOM_SIZE, MAX_ROOM_SIZE, LOG_LIMIT, HIGHSCORE_KEY, HIGHSCORE_STORAGE_VERSION, HIGHSCORE_VERSION_KEY, VISION_RADIUS, BASE_HIT_CHANCE, MIN_HIT_CHANCE, MAX_HIT_CHANCE, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE, TILE, MONSTER_CATALOG, WEAPON_CATALOG, OFFHAND_CATALOG } from './data.mjs';
-import { boardElement, startModalElement, startFormElement, classOptionsElement, heroNameInputElement, saveHeroNameButtonElement, heroIdentityStatusElement, messageLogElement, inventoryListElement, playerSheetElement, playerPanelTitleElement, enemySheetElement, highscoreListElement, runStatsSummaryElement, runStatsKillsElement, depthTitleElement, topbarHpCardElement, topbarHpElement, topbarLevelCardElement, topbarLevelElement, topbarDamageCardElement, topbarDamageElement, topbarHitCardElement, topbarHitElement, topbarCritCardElement, topbarCritElement, topbarBlockCardElement, topbarBlockElement, topbarFoodCardElement, topbarFoodElement, xpLabelElement, xpFillElement, nutritionLabelElement, nutritionFillElement, nutritionStateElement, choiceModalElement, choiceTitleElement, choiceTextElement, choiceDrinkButton, choiceStoreButton, choiceLeaveButton, stairsModalElement, stairsTitleElement, stairsTextElement, stairsConfirmButton, stairsStayButton, inventoryModalElement, runStatsModalElement, openRunStatsButton, closeRunStatsButton, openInventoryButton, closeInventoryButton, inventoryFilterButtons, optionsModalElement, openOptionsButton, closeOptionsButton, helpModalElement, openHelpButton, closeHelpButton, highscoresModalElement, openHighscoresButton, closeHighscoresButton, toggleStepSoundElement, toggleDeathSoundElement, deathModalElement, deathSummaryElement, deathKillsElement, deathKillsModalElement, openDeathKillsButton, closeDeathKillsButton, closeDeathButton, hoverTooltipElement, collapsibleCards } from './dom_v2.mjs';
+import { boardElement, startModalElement, startFormElement, classOptionsElement, heroNameInputElement, saveHeroNameButtonElement, loadGameFromStartButtonElement, heroIdentityStatusElement, startSavegameStatusElement, messageLogElement, inventoryListElement, playerSheetElement, playerPanelTitleElement, enemySheetElement, highscoreListElement, runStatsSummaryElement, runStatsKillsElement, depthTitleElement, topbarHpCardElement, topbarHpElement, topbarLevelCardElement, topbarLevelElement, topbarDamageCardElement, topbarDamageElement, topbarHitCardElement, topbarHitElement, topbarCritCardElement, topbarCritElement, topbarBlockCardElement, topbarBlockElement, topbarFoodCardElement, topbarFoodElement, xpLabelElement, xpFillElement, nutritionLabelElement, nutritionFillElement, nutritionStateElement, choiceModalElement, choiceTitleElement, choiceTextElement, choiceDrinkButton, choiceStoreButton, choiceLeaveButton, stairsModalElement, stairsTitleElement, stairsTextElement, stairsConfirmButton, stairsStayButton, inventoryModalElement, runStatsModalElement, openRunStatsButton, closeRunStatsButton, openInventoryButton, closeInventoryButton, startFreshRunButton, inventoryFilterButtons, optionsModalElement, openOptionsButton, closeOptionsButton, saveGameButtonElement, loadGameButtonElement, savegameStatusElement, helpModalElement, openHelpButton, closeHelpButton, highscoresModalElement, openHighscoresButton, closeHighscoresButton, toggleStepSoundElement, toggleDeathSoundElement, deathModalElement, deathSummaryElement, deathKillsElement, deathKillsModalElement, restartFromDeathButton, openDeathKillsButton, closeDeathKillsButton, closeDeathButton, hoverTooltipElement, collapsibleCards } from './dom_v2.mjs';
 import { DOOR_TYPE, LOCK_COLORS } from './data.mjs';
 import { PROP_CATALOG } from './data.mjs';
 import { DISPLAY_CASE_AMBIENCE } from './data.mjs';
@@ -51,7 +51,7 @@ function createBareHandsWeapon() {
   return {
     type: "weapon",
     id: "bare-hands",
-    name: "Bloesse Faeuste",
+    name: "Bloße Fäuste",
     source: "Start",
     handedness: "one-handed",
     damage: 1,
@@ -82,8 +82,8 @@ function cloneOffHandItem(item) {
 
 function getStatLabel(stat) {
   return {
-    strength: "Staerke",
-    precision: "Praezision",
+    strength: "Stärke",
+    precision: "Präzision",
     reaction: "Reaktion",
     nerves: "Nerven",
     intelligence: "Intelligenz",
@@ -147,7 +147,7 @@ function formatOffHandStats(item) {
 
 function getOffHandTooltipLines(item) {
   if (!item) {
-    return ["Kein Gegenstand ausgeruestet."];
+    return ["Kein Gegenstand ausgerüstet."];
   }
 
   if (item.subtype === "shield") {
@@ -296,6 +296,11 @@ const {
   loadHeroClassId,
   saveHeroClassId,
   saveOptions,
+  hasSavedGame,
+  getSavedGameMetadata,
+  saveGame,
+  loadSavedGame,
+  clearSavedGame,
   loadLastHighscoreMarker,
   saveHighscoreIfNeeded,
   createDeathCause,
@@ -849,15 +854,17 @@ function playShowcaseAmbienceSound() {
 }
 
 function showDeathModal(rank) {
+  clearSavedGame();
+  const fallenHero = `${state.player.classLabel ?? "Held"} ${state.player.name}`;
+  const deathLead = `Der ${fallenHero} ${state.deathCause ?? "erlebte eine unbekannte Schluss-Szene."}`;
   deathSummaryElement.innerHTML = [
-    createSheetRow("Name", state.player.name),
-    createSheetRow("Gestorben auf Ebene", state.floor),
-    createSheetRow("Erreichte tiefste Ebene", state.deepestFloor),
+    `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
+    createSheetRow("Held", fallenHero),
     createSheetRow("Level", state.player.level),
+    createSheetRow("Tiefste Ebene", state.deepestFloor),
     createSheetRow("Gegner besiegt", state.kills),
     createSheetRow("Schritte", state.turn),
-    createSheetRow("Abgang", state.deathCause ?? "Unbekannte Schluss-Szene"),
-    createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Ausser Wertung"),
+    createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Außer Wertung"),
   ].join("");
   const killEntries = Object.entries(state.killStats)
     .sort((a, b) => b[1] - a[1]);
@@ -867,12 +874,99 @@ function showDeathModal(rank) {
   state.modals.deathKillsOpen = false;
   deathModalElement.classList.remove("hidden");
   deathModalElement.setAttribute("aria-hidden", "false");
+  updateSavegameControls("Kein gespeicherter Lauf gefunden.");
 }
 
 function hideDeathModal() {
   state.modals.deathKillsOpen = false;
   deathModalElement.classList.add("hidden");
   deathModalElement.setAttribute("aria-hidden", "true");
+}
+
+function restartRun() {
+  hideChoiceModal();
+  hideStairChoice();
+  toggleInventory(false);
+  toggleRunStats(false);
+  toggleOptions(false);
+  toggleHelp(false);
+  toggleHighscores(false);
+  toggleDeathKills(false);
+  hideDeathModal();
+  initializeGame({}, { clearSavedGame: true });
+  syncStartModalControls();
+}
+
+function confirmRestartRun() {
+  restartRun();
+}
+
+function openRunStatsFromDeath() {
+  hideDeathModal();
+  toggleDeathKills(true);
+}
+
+function formatSavegameSummary() {
+  const metadata = getSavedGameMetadata();
+  if (!metadata) {
+    return "Kein gespeicherter Lauf gefunden.";
+  }
+
+  const heroName = metadata.heroName ?? "Unbekannt";
+  const floor = metadata.floor ? `Ebene ${metadata.floor}` : "unbekannter Ebene";
+  return `Gespeichert: ${heroName} auf ${floor}.`;
+}
+
+function setSavegameStatus(text) {
+  savegameStatusElement.textContent = text;
+  startSavegameStatusElement.textContent = text;
+}
+
+function updateSavegameControls(statusText = formatSavegameSummary()) {
+  const savedGameExists = hasSavedGame();
+  loadGameButtonElement.disabled = !savedGameExists;
+  loadGameFromStartButtonElement.disabled = !savedGameExists;
+  saveGameButtonElement.disabled = !state || state.gameOver || state.modals.startOpen;
+  setSavegameStatus(statusText);
+}
+
+function saveCurrentGame() {
+  if (state.gameOver || state.modals.startOpen) {
+    updateSavegameControls("Speichern ist erst in einem laufenden Spiel moeglich.");
+    return;
+  }
+
+  if (!saveGame()) {
+    updateSavegameControls("Speichern fehlgeschlagen.");
+    return;
+  }
+
+  addMessage("Spielstand gespeichert.", "important");
+  updateSavegameControls(formatSavegameSummary());
+  render();
+}
+
+function loadCurrentGame() {
+  const result = loadSavedGame();
+  if (!result.ok) {
+    if (result.reason === "incompatible") {
+      updateSavegameControls(`Spielstand-Version ${result.foundVersion ?? "?"} ist nicht kompatibel mit Version ${result.expectedVersion}.`);
+      return;
+    }
+
+    if (result.reason === "invalid") {
+      updateSavegameControls("Der gespeicherte Lauf ist beschaedigt und konnte nicht geladen werden.");
+      return;
+    }
+
+    updateSavegameControls("Kein gespeicherter Lauf gefunden.");
+    return;
+  }
+
+  detectNearbyTraps();
+  addMessage("Gespeicherter Lauf geladen.", "important");
+  updateSavegameControls(formatSavegameSummary());
+  render();
 }
 
 function countPotionsInInventory() {
@@ -933,7 +1027,7 @@ function applyPlayerNutritionTurnCost() {
     state.deathCause = "verhungerte in den Kulissen des Dungeons.";
     playDeathSound();
     const rank = saveHighscoreIfNeeded();
-    addMessage("Du bist verhungert. Druecke R fuer einen neuen Versuch.", "danger");
+    addMessage("Du bist verhungert. Drücke R für einen neuen Versuch.", "danger");
     showDeathModal(rank);
   }
 }
@@ -1032,7 +1126,7 @@ function consumeKeyForDoor(door, entity = state.player) {
 
 function getDoorColorLabels(color) {
   if (color === "green") {
-    return { adjective: "gruene", adjectiveDative: "gruene", key: "gruener" };
+    return { adjective: "grüne", adjectiveDative: "grüne", key: "grüner" };
   }
 
   if (color === "blue") {
@@ -1081,12 +1175,12 @@ function openDoor(door, actor = "player") {
     const colorLabels = getDoorColorLabels(door.lockColor);
     addMessage(
       door.doorType === DOOR_TYPE.LOCKED
-        ? `Der ${colorLabels.key} Schluessel von Ebene ${usedKey.keyFloor} entriegelt die Tuer und wird verbraucht.`
-        : "Die Tuer schwingt auf.",
+        ? `Der ${colorLabels.key} Schlüssel von Ebene ${usedKey.keyFloor} entriegelt die Tür und wird verbraucht.`
+        : "Die Tür schwingt auf.",
       "important",
     );
   } else {
-    addMessage(`${actor.name} drueckt eine Tuer auf.`, "danger");
+    addMessage(`${actor.name} drückt eine Tür auf.`, "danger");
   }
   if (door.doorType === DOOR_TYPE.LOCKED) {
     door.doorType = DOOR_TYPE.NORMAL;
@@ -1252,6 +1346,7 @@ function render() {
   renderHighscores();
   renderRunStats();
   renderLog();
+  startFreshRunButton.classList.toggle("ui-hidden", !state.gameOver);
   inventoryModalElement.classList.toggle("hidden", !state.modals.inventoryOpen);
   inventoryModalElement.setAttribute("aria-hidden", String(!state.modals.inventoryOpen));
   runStatsModalElement.classList.toggle("hidden", !state.modals.runStatsOpen);
@@ -1273,6 +1368,7 @@ function render() {
     : deathModalElement.setAttribute("aria-hidden", "false");
   toggleStepSoundElement.checked = state.options.stepSound;
   toggleDeathSoundElement.checked = state.options.deathSound;
+  updateSavegameControls();
   collapsibleCards.forEach((card) => {
     const key = card.dataset.collapsible;
     if (key === "player") {
@@ -1453,7 +1549,7 @@ function resolveStairChoice(action) {
       return;
     }
 
-    addMessage("Die Treppe fuehrt hier gerade nirgendwohin.");
+    addMessage("Die Treppe führt hier gerade nirgendwohin.");
     render();
     return;
   }
@@ -1496,6 +1592,10 @@ function toggleHighscores(forceOpen) {
 
 function toggleDeathKills(forceOpen) {
   state.modals.deathKillsOpen = forceOpen ?? !state.modals.deathKillsOpen;
+  if (!state.modals.deathKillsOpen && state.gameOver) {
+    deathModalElement.classList.remove("hidden");
+    deathModalElement.setAttribute("aria-hidden", "false");
+  }
   render();
 }
 
@@ -1584,7 +1684,7 @@ function moveToFloor(direction) {
     const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
     addMessage(`Du steigst tiefer hinab. Dungeon-Ebene ${state.floor} beginnt.`, "important");
     if (follower) {
-      addMessage(`${follower.name} folgt dir ueber die Treppe.`, "danger");
+      addMessage(`${follower.name} folgt dir über die Treppe.`, "danger");
     }
     return true;
   }
@@ -1613,8 +1713,8 @@ function tryUseStairs() {
   if (floorState.stairsDown && floorState.stairsDown.x === state.player.x && floorState.stairsDown.y === state.player.y) {
     showStairChoice({
       direction: 1,
-      title: "Abwaertstreppe",
-      text: `Du stehst auf einer Treppe nach unten. Moechtest du auf Ebene ${state.floor + 1} hinabsteigen oder hier bleiben?`,
+      title: "Abwärtstreppe",
+      text: `Du stehst auf einer Treppe nach unten. Möchtest du auf Ebene ${state.floor + 1} hinabsteigen oder hier bleiben?`,
       confirmLabel: "Hinabsteigen",
       stayLabel: "Hier bleiben",
     });
@@ -1625,8 +1725,8 @@ function tryUseStairs() {
   if (floorState.stairsUp && floorState.stairsUp.x === state.player.x && floorState.stairsUp.y === state.player.y) {
     showStairChoice({
       direction: -1,
-      title: "Aufwaertstreppe",
-      text: `Du stehst auf einer Treppe nach oben. Moechtest du auf Ebene ${state.floor - 1} hinaufsteigen oder hier bleiben?`,
+      title: "Aufwärtstreppe",
+      text: `Du stehst auf einer Treppe nach oben. Möchtest du auf Ebene ${state.floor - 1} hinaufsteigen oder hier bleiben?`,
       confirmLabel: "Hinaufsteigen",
       stayLabel: "Hier bleiben",
     });
@@ -1666,19 +1766,19 @@ function tryCloseAdjacentDoor() {
   );
 
   if (adjacentDoors.length === 0) {
-    addMessage("Keine offene Tuer direkt neben dir.");
+    addMessage("Keine offene Tür direkt neben dir.");
     render();
     return;
   }
 
   const targetDoor = adjacentDoors[0];
   if (!closeDoor(targetDoor)) {
-    addMessage("Die Tuer laesst sich gerade nicht schliessen.");
+    addMessage("Die Tür lässt sich gerade nicht schließen.");
     render();
     return;
   }
 
-  addMessage("Du ziehst die Tuer wieder zu.", "important");
+  addMessage("Du ziehst die Tür wieder zu.", "important");
   endTurn({ actionType: "other" });
 }
 
@@ -1712,8 +1812,8 @@ function movePlayer(dx, dy) {
       );
       addMessage(
         hasWrongFloorKey
-          ? `Die ${getDoorColorLabels(door.lockColor).adjective} Tuer reagiert nicht auf deinen Schluessel von einer anderen Ebene.`
-          : `Die ${getDoorColorLabels(door.lockColor).adjective} Tuer bleibt verschlossen.`,
+          ? `Die ${getDoorColorLabels(door.lockColor).adjective} Tür reagiert nicht auf deinen Schlüssel von einer anderen Ebene.`
+          : `Die ${getDoorColorLabels(door.lockColor).adjective} Tür bleibt verschlossen.`,
       );
       render();
       return;
@@ -1765,7 +1865,7 @@ function handleWait() {
   }
 
   if (hasNearbyEnemy()) {
-    addMessage("Du wartest, aber in der Naehe ist noch Gefahr.");
+    addMessage("Du wartest, aber in der Nähe ist noch Gefahr.");
   } else {
     addMessage("Du horchst in die Dunkelheit und sammelst langsam wieder Kraft.");
   }
@@ -1778,17 +1878,7 @@ function handleInput(event) {
   const key = event.key.toLowerCase();
 
   if (key === "r") {
-    hideChoiceModal();
-    hideStairChoice();
-    toggleInventory(false);
-    toggleRunStats(false);
-    toggleOptions(false);
-    toggleHelp(false);
-    toggleHighscores(false);
-    toggleDeathKills(false);
-    hideDeathModal();
-    initializeGame();
-    syncStartModalControls();
+    confirmRestartRun();
     return;
   }
 
@@ -1963,7 +2053,7 @@ function syncStartModalControls() {
   const fallbackClassId = state?.player?.classId ?? loadHeroClassId();
   heroNameInputElement.value = fallbackName;
   saveHeroNameButtonElement.textContent = "Start";
-  heroIdentityStatusElement.textContent = "Wird fuer den aktuellen und den naechsten Lauf gemerkt.";
+  heroIdentityStatusElement.textContent = "Wird für den aktuellen und den nächsten Lauf gemerkt.";
   heroIdentityStatusElement.classList.remove("success");
   renderClassOptions(fallbackClassId);
 }
@@ -1979,11 +2069,11 @@ function applyStartProfile() {
   window.clearTimeout(heroIdentityStatusTimeout);
   heroIdentityStatusTimeout = window.setTimeout(() => {
     saveHeroNameButtonElement.textContent = "Start";
-    heroIdentityStatusElement.textContent = "Wird fuer den aktuellen und den naechsten Lauf gemerkt.";
+    heroIdentityStatusElement.textContent = "Wird für den aktuellen und den nächsten Lauf gemerkt.";
     heroIdentityStatusElement.classList.remove("success");
   }, 1400);
 
-  initializeGame({ heroName: nextName, heroClassId: nextClassId }, { openStartModal: false });
+  initializeGame({ heroName: nextName, heroClassId: nextClassId }, { openStartModal: false, clearSavedGame: true });
 }
 
 choiceDrinkButton.addEventListener("click", () => resolveChoiceBySlot(0));
@@ -1995,16 +2085,20 @@ openInventoryButton.addEventListener("click", () => toggleInventory(true));
 openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
 closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
 closeInventoryButton.addEventListener("click", () => toggleInventory(false));
+startFreshRunButton.addEventListener("click", () => restartRun());
 inventoryFilterButtons.forEach((button) => {
   button.addEventListener("click", () => setInventoryFilter(button.dataset.filter ?? "all"));
 });
 openOptionsButton.addEventListener("click", () => toggleOptions(true));
 closeOptionsButton.addEventListener("click", () => toggleOptions(false));
+saveGameButtonElement.addEventListener("click", () => saveCurrentGame());
+loadGameButtonElement.addEventListener("click", () => loadCurrentGame());
 openHighscoresButton.addEventListener("click", () => toggleHighscores(true));
 closeHighscoresButton.addEventListener("click", () => toggleHighscores(false));
 openHelpButton.addEventListener("click", () => toggleHelp(true));
 closeHelpButton.addEventListener("click", () => toggleHelp(false));
-openDeathKillsButton.addEventListener("click", () => toggleDeathKills(true));
+restartFromDeathButton.addEventListener("click", () => restartRun());
+openDeathKillsButton.addEventListener("click", () => openRunStatsFromDeath());
 closeDeathKillsButton.addEventListener("click", () => toggleDeathKills(false));
 closeDeathButton.addEventListener("click", () => hideDeathModal());
 document.querySelectorAll(".collapse-btn").forEach((button) => {
@@ -2028,6 +2122,7 @@ startFormElement.addEventListener("submit", (event) => {
   event.preventDefault();
   applyStartProfile();
 });
+loadGameFromStartButtonElement.addEventListener("click", () => loadCurrentGame());
 document.addEventListener("keydown", handleInput);
 initializeGame();
 detectNearbyTraps();

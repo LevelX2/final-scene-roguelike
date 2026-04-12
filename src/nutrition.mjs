@@ -65,7 +65,7 @@ export function getHungerStateMessage(state) {
     [HUNGER_STATE.HUNGRY]: "Du wirst hungrig.",
     [HUNGER_STATE.STARVING]: "Du bist ausgehungert.",
     [HUNGER_STATE.DYING]: "Du verhungerst.",
-    [HUNGER_STATE.NORMAL]: "Dein Hunger laesst nach.",
+    [HUNGER_STATE.NORMAL]: "Dein Hunger lässt nach.",
     [HUNGER_STATE.SATED]: "Du bist wieder satt.",
   }[state] ?? null;
 }

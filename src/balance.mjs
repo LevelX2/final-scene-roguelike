@@ -68,7 +68,7 @@ export const MONSTER_VARIANT_MODIFIERS = [
   },
   {
     id: "keen",
-    label: "Praezise",
+    label: "Präzise",
     statChanges: { precision: 2 },
   },
   {
@@ -104,7 +104,7 @@ export const HERO_CLASSES = {
   survivor: {
     id: "survivor",
     label: "Survivor",
-    tagline: "Ausgewogen und zaeh.",
+    tagline: "Ausgewogen und zäh.",
     maxHp: 20,
     strength: 4,
     precision: 3,
@@ -128,7 +128,7 @@ export const HERO_CLASSES = {
   medium: {
     id: "medium",
     label: "Medium",
-    tagline: "Wacher, nervenstaerker, kontrollierter.",
+    tagline: "Wacher, nervenstärker, kontrollierter.",
     maxHp: 19,
     strength: 3,
     precision: 3,

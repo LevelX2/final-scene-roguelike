@@ -20,7 +20,7 @@ test("player attacks can hit and reduce enemy hp", async ({ page }) => {
         damage: 3,
         hitBonus: 2,
         critBonus: 0,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
     enemy: {
@@ -61,7 +61,7 @@ test("player attacks can miss and be logged as dodged", async ({ page }) => {
         damage: 3,
         hitBonus: 0,
         critBonus: 0,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
     enemy: {
@@ -100,7 +100,7 @@ test("critical hits deal increased damage and are logged", async ({ page }) => {
         damage: 4,
         hitBonus: 2,
         critBonus: 50,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
     enemy: {
@@ -145,12 +145,12 @@ test("enemy attacks can miss and leave player hp unchanged", async ({ page }) =>
       weapon: {
         type: "weapon",
         id: "enemy-test-weapon",
-        name: "Pruefklinge",
+        name: "Prüfklinge",
         source: "Tests",
         damage: 2,
         hitBonus: 0,
         critBonus: 0,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
   });
@@ -212,7 +212,7 @@ test("enemies path around a simple wall instead of freezing in front of it", asy
     walls: [{ x: 3, y: 2 }],
     enemy: {
       behavior: "hunter",
-      behaviorLabel: "Jaeger",
+      behaviorLabel: "Jäger",
       aggro: true,
       aggroRadius: 10,
       hp: 12,
@@ -243,7 +243,7 @@ test("enemies without door handling stop at closed doors", async ({ page }) => {
     enemyPosition: { x: 5, y: 2 },
     enemy: {
       behavior: "hunter",
-      behaviorLabel: "Jaeger",
+      behaviorLabel: "Jäger",
       aggro: true,
       aggroRadius: 10,
       canOpenDoors: false,
@@ -271,7 +271,7 @@ test("enemies with door handling can open normal doors", async ({ page }) => {
     enemyPosition: { x: 5, y: 2 },
     enemy: {
       behavior: "hunter",
-      behaviorLabel: "Jaeger",
+      behaviorLabel: "Jäger",
       aggro: true,
       aggroRadius: 10,
       canOpenDoors: true,
@@ -299,7 +299,7 @@ test("local enemies do not pursue across the whole level", async ({ page }) => {
     enemyPosition: { x: 12, y: 2 },
     enemy: {
       behavior: "hunter",
-      behaviorLabel: "Jaeger",
+      behaviorLabel: "Jäger",
       mobility: "local",
       mobilityLabel: "Reviertreu",
       aggro: true,
@@ -325,7 +325,7 @@ test("relentless enemies keep pursuing across the whole level", async ({ page })
     enemyPosition: { x: 12, y: 2 },
     enemy: {
       behavior: "hunter",
-      behaviorLabel: "Jaeger",
+      behaviorLabel: "Jäger",
       mobility: "relentless",
       mobilityLabel: "Jagdend",
       aggro: true,
@@ -357,7 +357,7 @@ test("intelligent wounded enemies can retreat instead of attacking", async ({ pa
     },
     enemy: {
       behavior: "hunter",
-      behaviorLabel: "Jaeger",
+      behaviorLabel: "Jäger",
       aggro: true,
       aggroRadius: 8,
       hp: 2,
@@ -377,7 +377,7 @@ test("intelligent wounded enemies can retreat instead of attacking", async ({ pa
   expect(snapshot.player.hp).toBe(24);
   expect(snapshot.enemies[0].x).toBe(5);
   expect(snapshot.enemies[0].isRetreating).toBeTruthy();
-  expect(messages.some((entry) => entry.text.includes("sucht ploetzlich Abstand"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("sucht plötzlich Abstand"))).toBeTruthy();
 });
 
 test("enemies regenerate slowly over time when they stay out of direct melee", async ({ page }) => {
@@ -393,7 +393,7 @@ test("enemies regenerate slowly over time when they stay out of direct melee", a
     ],
     enemy: {
       behavior: "dormant",
-      behaviorLabel: "Schlaefer",
+      behaviorLabel: "Schläfer",
       aggro: false,
       hp: 7,
       maxHp: 10,
@@ -428,7 +428,7 @@ test("shields can block part of incoming damage", async ({ page }) => {
         source: "Tests",
         blockChance: 100,
         blockValue: 3,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
     enemy: {
@@ -441,13 +441,13 @@ test("shields can block part of incoming damage", async ({ page }) => {
       weapon: {
         type: "weapon",
         id: "enemy-test-weapon",
-        name: "Pruefklinge",
+        name: "Prüfklinge",
         source: "Tests",
         handedness: "one-handed",
         damage: 2,
         hitBonus: 0,
         critBonus: 0,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
   });
@@ -489,7 +489,7 @@ test("player death opens the death modal", async ({ page }) => {
         damage: 3,
         hitBonus: 2,
         critBonus: 0,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
   });
@@ -530,7 +530,7 @@ test("a death writes a highscore entry", async ({ page }) => {
         damage: 3,
         hitBonus: 2,
         critBonus: 0,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
   });
@@ -590,7 +590,7 @@ test("death modal shows out of ranking when a new score misses the stored top 10
         damage: 3,
         hitBonus: 2,
         critBonus: 0,
-        description: "Nur fuer Tests.",
+        description: "Nur für Tests.",
       },
     },
   });
@@ -599,7 +599,7 @@ test("death modal shows out of ranking when a new score misses the stored top 10
   await page.keyboard.press(" ");
 
   await expect(page.locator("#deathModal")).toBeVisible();
-  await expect(page.locator("#deathSummary")).toContainText("Ausser Wertung");
+  await expect(page.locator("#deathSummary")).toContainText("Außer Wertung");
 
   const scores = await page.evaluate(() => window.__TEST_API__.getHighscores());
   expect(scores).toHaveLength(100);

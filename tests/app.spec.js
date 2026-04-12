@@ -65,7 +65,7 @@ test("help modal opens from the help button and lists door closing", async ({ pa
 
   await page.getByRole("button", { name: "Hilfe" }).click();
   await expect(page.locator("#helpModal")).toBeVisible();
-  await expect(page.locator("#helpModal")).toContainText("Benachbarte offene Tuer schliessen");
+  await expect(page.locator("#helpModal")).toContainText("Benachbarte offene Tür schließen");
 
   await page.keyboard.press("Escape");
   await expect(page.locator("#helpModal")).toBeHidden();
@@ -92,7 +92,7 @@ test("run stats open from a button and show current run progress", async ({ page
       id: "test-snack",
       name: "Testsnack",
       nutritionRestore: 10,
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
     });
     window.__TEST_API__.grantExperience(40, "Lauftest");
   });
@@ -101,7 +101,7 @@ test("run stats open from a button and show current run progress", async ({ page
   await expect(page.locator("#runStatsModal")).toBeVisible();
   await expect(page.locator("#runStatsSummary")).toContainText("Aktuelle Ebene");
   await expect(page.locator("#runStatsSummary")).toContainText("Tiefste Ebene");
-  await expect(page.locator("#runStatsSummary")).toContainText("Heiltraenke getrunken");
+  await expect(page.locator("#runStatsSummary")).toContainText("Heiltränke getrunken");
 
   await page.keyboard.press("Escape");
   await expect(page.locator("#runStatsModal")).toBeHidden();
@@ -128,7 +128,7 @@ test("death statistics open in a separate modal", async ({ page }) => {
           damage: 99,
           hitBonus: 99,
           critBonus: 0,
-          description: "Nur fuer Tests.",
+          description: "Nur für Tests.",
         },
       },
       enemyPosition: { x: 3, y: 2 },
@@ -169,6 +169,76 @@ test("options persist after a page reload", async ({ page }) => {
   await expect(page.locator("#toggleDeathSound")).not.toBeChecked();
 });
 
+test("a manual save can be loaded after a page reload", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { name: "Ripley" });
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.teleportPlayer(snapshot.stairsDown ?? { x: snapshot.player.x + 1, y: snapshot.player.y });
+    window.__TEST_API__.addInventoryItem({
+      type: "food",
+      id: "saved-snack",
+      name: "Saved Snack",
+      nutritionRestore: 25,
+      description: "Bleibt fuer den Save-Test im Inventar.",
+    });
+  });
+  await page.keyboard.press(" ");
+
+  const beforeReload = await page.evaluate(() => ({
+    snapshot: window.__TEST_API__.getSnapshot(),
+    inventory: window.__TEST_API__.getInventorySnapshot(),
+  }));
+
+  await page.getByRole("button", { name: "Optionen" }).click();
+  await page.getByRole("button", { name: "Spiel speichern" }).click();
+  await expect(page.locator("#savegameStatus")).toContainText("Ripley");
+
+  await page.reload();
+
+  await expect(page.locator("#startModal")).toBeVisible();
+  await expect(page.locator("#loadGameFromStart")).toBeEnabled();
+  await page.getByRole("button", { name: "Gespeicherten Lauf laden" }).click();
+  await expect(page.locator("#startModal")).toBeHidden();
+
+  const afterReload = await page.evaluate(() => ({
+    snapshot: window.__TEST_API__.getSnapshot(),
+    inventory: window.__TEST_API__.getInventorySnapshot(),
+  }));
+
+  expect(afterReload.snapshot.floor).toBe(beforeReload.snapshot.floor);
+  expect(afterReload.snapshot.player.x).toBe(beforeReload.snapshot.player.x);
+  expect(afterReload.snapshot.player.y).toBe(beforeReload.snapshot.player.y);
+  expect(afterReload.inventory.inventoryCount).toBe(beforeReload.inventory.inventoryCount);
+  expect(afterReload.inventory.foodCount).toBe(beforeReload.inventory.foodCount);
+});
+
+test("an incompatible save is rejected with a clear message", async ({ page }) => {
+  await page.goto("/");
+
+  await page.evaluate(() => {
+    window.localStorage.setItem("dungeon-rogue-savegame", JSON.stringify({
+      version: 999,
+      savedAt: Date.now(),
+      state: {
+        floor: 4,
+        player: {
+          name: "Legacy Hero",
+        },
+      },
+    }));
+  });
+
+  await page.reload();
+
+  await expect(page.locator("#startModal")).toBeVisible();
+  await expect(page.locator("#loadGameFromStart")).toBeEnabled();
+  await page.getByRole("button", { name: "Gespeicherten Lauf laden" }).click();
+  await expect(page.locator("#startModal")).toBeVisible();
+  await expect(page.locator("#startSavegameStatus")).toContainText("nicht kompatibel");
+});
+
 test("topbar shows summed combat values while tooltips keep the breakdown", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -186,7 +256,7 @@ test("topbar shows summed combat values while tooltips keep the breakdown", asyn
           source: "Tests",
           blockChance: 18,
           blockValue: 3,
-          description: "Nur fuer Tests.",
+          description: "Nur für Tests.",
         },
         nerves: 2,
       },
@@ -322,5 +392,5 @@ test("standing next to a showcase accelerates safe healing for the hero", async 
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
 
   expect(snapshot.player.hp).toBe(11);
-  expect(messages.some((entry) => entry.text.includes("Naehe der Vitrine"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Nähe der Vitrine"))).toBeTruthy();
 });

@@ -50,7 +50,7 @@ test("stairs require confirmation before changing floors", async ({ page }) => {
   await openDownstairsPrompt(page);
 
   await expect(page.locator("#stairsModal")).toBeVisible();
-  await expect(page.locator("#stairsTitle")).toContainText("Abwaertstreppe");
+  await expect(page.locator("#stairsTitle")).toContainText("Abwärtstreppe");
 
   await page.getByRole("button", { name: "Hier bleiben" }).click();
 
@@ -98,7 +98,7 @@ test("closed doors open automatically when the player walks into them", async ({
 
   expect(snapshot.player.x).toBe(snapshot.doors[0].x);
   expect(snapshot.doors[0].isOpen).toBeTruthy();
-  expect(messages.some((entry) => entry.text.includes("Tuer schwingt auf"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Tür schwingt auf"))).toBeTruthy();
 });
 
 test("locked doors stay closed without the matching key", async ({ page }) => {
@@ -196,7 +196,7 @@ test("hidden floor traps trigger on entry and become consumed", async ({ page })
   await setupTrapAtPlayerStep(page, {
     id: "test-floor-trap",
     name: "Test-Bodenfalle",
-    description: "Nur fuer den Test.",
+    description: "Nur für den Test.",
     type: "floor",
     visibility: "hidden",
     state: "active",
@@ -235,7 +235,7 @@ test("alarm traps alarm nearby enemies", async ({ page }) => {
     window.__TEST_API__.placeTrap({ x: 3, y: 2 }, {
       id: "test-alarm-trap",
       name: "Test-Alarmfalle",
-      description: "Nur fuer den Test.",
+      description: "Nur für den Test.",
       type: "alarm",
       visibility: "hidden",
       state: "active",
@@ -269,7 +269,7 @@ test("visible hazards damage actors that remain on them", async ({ page }) => {
     window.__TEST_API__.placeTrap({ x: snapshot.player.x, y: snapshot.player.y }, {
       id: "test-hazard",
       name: "Test-Gefahrenfeld",
-      description: "Nur fuer den Test.",
+      description: "Nur für den Test.",
       type: "hazard",
       visibility: "visible",
       state: "active",
@@ -688,7 +688,7 @@ test("showcases block movement like room obstacles", async ({ page }) => {
       id: "test-showcase",
       name: "Test-Vitrine",
       source: "Tests",
-      description: "Nur fuer den Test.",
+      description: "Nur für den Test.",
     });
     return snapshot.player;
   });
@@ -736,7 +736,7 @@ test("entering a room with showcases logs one random ambience line", async ({ pa
       ambienceId: "jason-mask",
       name: "Test-Vitrine",
       source: "Tests",
-      description: "Nur fuer den Test.",
+      description: "Nur für den Test.",
     });
 
     window.__TEST_API__.teleportPlayer({ x: snapshot.player.x, y: snapshot.player.y });
@@ -748,7 +748,7 @@ test("entering a room with showcases logs one random ambience line", async ({ pa
 
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages().map((entry) => entry.text));
   const ambienceLines = [
-    "Hinter dem Glas starrt dich eine abgenutzte Hockeymaske an. Der Raum wirkt ploetzlich stiller.",
+    "Hinter dem Glas starrt dich eine abgenutzte Hockeymaske an. Der Raum wirkt plötzlich stiller.",
     "Die Maske in der Vitrine sieht harmlos aus, bis man merkt, wie leer der Blick dahinter ist.",
     "Ein kaltes Schaudern zieht durch den Raum. Selbst hinter Glas wirkt diese Maske wie eine Warnung.",
   ];

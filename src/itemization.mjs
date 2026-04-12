@@ -1,6 +1,6 @@
 const RARITY_LABELS = {
-  common: "Gewoehnlich",
-  uncommon: "Ungewoehnlich",
+  common: "Gewöhnlich",
+  uncommon: "Ungewöhnlich",
   rare: "Selten",
   veryRare: "Sehr selten",
 };
@@ -27,7 +27,7 @@ const WEAPON_MODIFIER_DEFS = [
     id: "precise",
     allowedItemTypes: ["weapon"],
     weight: 12,
-    affix: "Praezise",
+    affix: "Präzise",
     summary: "+2 Treffer",
     statChanges: { hitBonusAdd: 2 },
     exclusiveGroup: "weapon-accuracy",
@@ -91,7 +91,7 @@ const SHIELD_MODIFIER_DEFS = [
     allowedItemTypes: ["shield"],
     weight: 9,
     affix: "Reflex",
-    summary: "+4 Block, wirft bei Block 1 Schaden zurueck",
+    summary: "+4 Block, wirft bei Block 1 Schaden zurück",
     tags: ["reflective"],
     statChanges: { blockChanceAdd: 4 },
   },

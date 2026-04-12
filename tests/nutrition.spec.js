@@ -37,7 +37,7 @@ test("food can be eaten from the ground and is clamped to the nutrition maximum"
     id: "hunting_ration",
     type: "food",
     name: "Jagdration",
-    description: "Eine schwere, aber saettigende Portion fuer lange Naechte.",
+    description: "Eine schwere, aber sättigende Portion für lange Nächte.",
     nutritionRestore: 250,
   });
 

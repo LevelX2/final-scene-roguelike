@@ -38,7 +38,7 @@ function createBareHandsWeapon() {
   return {
     type: "weapon",
     id: "bare-hands",
-    name: "Bloesse Faeuste",
+    name: "Bloße Fäuste",
     source: "Start",
     handedness: "one-handed",
     damage: 1,
@@ -554,7 +554,7 @@ function showDeathModal(rank) {
     createSheetRow("Gegner besiegt", state.kills),
     createSheetRow("Schritte", state.turn),
     createSheetRow("Abgang", state.deathCause ?? "Unbekannte Schluss-Szene"),
-    createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Ausser Wertung"),
+    createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Außer Wertung"),
   ].join("");
   const killEntries = Object.entries(state.killStats)
     .sort((a, b) => b[1] - a[1]);
@@ -796,7 +796,7 @@ function resolveStairChoice(action) {
       return;
     }
 
-    addMessage("Die Treppe fuehrt hier gerade nirgendwohin.");
+    addMessage("Die Treppe führt hier gerade nirgendwohin.");
     render();
     return;
   }
@@ -900,7 +900,7 @@ function moveToFloor(direction) {
     const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
     addMessage(`Du steigst tiefer hinab. Dungeon-Ebene ${state.floor} beginnt.`, "important");
     if (follower) {
-      addMessage(`${follower.name} folgt dir ueber die Treppe.`, "danger");
+      addMessage(`${follower.name} folgt dir über die Treppe.`, "danger");
     }
     return true;
   }
@@ -927,8 +927,8 @@ function tryUseStairs() {
   if (floorState.stairsDown && floorState.stairsDown.x === state.player.x && floorState.stairsDown.y === state.player.y) {
     showStairChoice({
       direction: 1,
-      title: "Abwaertstreppe",
-      text: `Du stehst auf einer Treppe nach unten. Moechtest du auf Ebene ${state.floor + 1} hinabsteigen oder hier bleiben?`,
+      title: "Abwärtstreppe",
+      text: `Du stehst auf einer Treppe nach unten. Möchtest du auf Ebene ${state.floor + 1} hinabsteigen oder hier bleiben?`,
       confirmLabel: "Hinabsteigen",
       stayLabel: "Hier bleiben",
     });
@@ -939,8 +939,8 @@ function tryUseStairs() {
   if (floorState.stairsUp && floorState.stairsUp.x === state.player.x && floorState.stairsUp.y === state.player.y) {
     showStairChoice({
       direction: -1,
-      title: "Aufwaertstreppe",
-      text: `Du stehst auf einer Treppe nach oben. Moechtest du auf Ebene ${state.floor - 1} hinaufsteigen oder hier bleiben?`,
+      title: "Aufwärtstreppe",
+      text: `Du stehst auf einer Treppe nach oben. Möchtest du auf Ebene ${state.floor - 1} hinaufsteigen oder hier bleiben?`,
       confirmLabel: "Hinaufsteigen",
       stayLabel: "Hier bleiben",
     });
@@ -1011,7 +1011,7 @@ function handleWait() {
   }
 
   if (hasNearbyEnemy()) {
-    addMessage("Du wartest, aber in der Naehe ist noch Gefahr.");
+    addMessage("Du wartest, aber in der Nähe ist noch Gefahr.");
   } else {
     addMessage("Du horchst in die Dunkelheit und sammelst langsam wieder Kraft.");
   }
@@ -1141,8 +1141,8 @@ function handleInput(event) {
 function syncHeroIdentityControls() {
   const fallbackName = state?.player?.name ?? loadHeroName();
   heroNameInputElement.value = fallbackName;
-  saveHeroNameButtonElement.textContent = "Uebernehmen";
-  heroIdentityStatusElement.textContent = "Wird fuer den aktuellen und den naechsten Lauf gemerkt.";
+  saveHeroNameButtonElement.textContent = "Übernehmen";
+  heroIdentityStatusElement.textContent = "Wird für den aktuellen und den nächsten Lauf gemerkt.";
   heroIdentityStatusElement.classList.remove("success");
 }
 
@@ -1161,8 +1161,8 @@ function applyHeroNameFromInput() {
   saveHeroNameButtonElement.textContent = "Gespeichert";
   window.clearTimeout(heroIdentityStatusTimeout);
   heroIdentityStatusTimeout = window.setTimeout(() => {
-    saveHeroNameButtonElement.textContent = "Uebernehmen";
-    heroIdentityStatusElement.textContent = "Wird fuer den aktuellen und den naechsten Lauf gemerkt.";
+    saveHeroNameButtonElement.textContent = "Übernehmen";
+    heroIdentityStatusElement.textContent = "Wird für den aktuellen und den nächsten Lauf gemerkt.";
     heroIdentityStatusElement.classList.remove("success");
   }, 1800);
 

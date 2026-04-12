@@ -210,20 +210,20 @@ export function createDungeonApi(context) {
 
   function createKeyPickup(color, x, y, floorNumber = null) {
     const label = color === "green"
-      ? "Gruener"
+      ? "Grüner"
       : color === "blue"
         ? "Blauer"
         : `${color}er`;
-    const colorLabel = color === "green" ? "gruenen" : color === "blue" ? "blauen" : color;
+    const colorLabel = color === "green" ? "grünen" : color === "blue" ? "blauen" : color;
     return {
       x,
       y,
       item: {
         type: "key",
-        name: `${label} Schluessel`,
+        name: `${label} Schlüssel`,
         description: floorNumber
-          ? `Passt zu ${colorLabel} Tueren auf Ebene ${floorNumber}. Wird beim Oeffnen verbraucht.`
-          : `Passt zu ${colorLabel} Tueren. Wird beim Oeffnen verbraucht.`,
+          ? `Passt zu ${colorLabel} Türen auf Ebene ${floorNumber}. Wird beim Öffnen verbraucht.`
+          : `Passt zu ${colorLabel} Türen. Wird beim Öffnen verbraucht.`,
         keyColor: color,
         keyFloor: floorNumber,
       },

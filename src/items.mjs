@@ -104,10 +104,10 @@ export function createItemsApi(context) {
           <p class="choice-compare-name">${equippedItem ? equippedItem.name : "Leer"}</p>
           <p class="choice-rarity ${equippedItem ? getRarityClass(equippedItem) : "rarity-common"}">${equippedRarity ?? "Nichts ausgeruestet"}</p>
           <p class="choice-compare-stats">${equippedItem ? statsFormatter(equippedItem) : "Kein Gegenstand."}</p>
-          <p class="choice-compare-detail">${equippedItem ? equippedMods : "Hier landet die neue Ausruestung direkt."}</p>
+          <p class="choice-compare-detail">${equippedItem ? equippedMods : "Hier landet die neue Ausrüstung direkt."}</p>
         </div>
       </div>
-      <p class="choice-compare-note">Moechtest du direkt ausruesten, ins Inventar legen oder den Fund liegen lassen?</p>
+      <p class="choice-compare-note">Möchtest du direkt ausruesten, ins Inventar legen oder den Fund liegen lassen?</p>
     `;
   }
 
@@ -136,7 +136,7 @@ export function createItemsApi(context) {
       refreshNutritionState(state.player.hungerState);
       addMessage(`${nextWeapon.name} braucht beide Haende. ${previousOffHand.name} wandert ins Inventar.`);
     }
-    addMessage(`Du fuehrst jetzt ${nextWeapon.name}.`, "important");
+    addMessage(`Du führst jetzt ${nextWeapon.name}.`, "important");
     if (previousMainHand && previousMainHand.id !== "bare-hands") {
       state.inventory.push(previousMainHand);
     }
@@ -207,7 +207,7 @@ export function createItemsApi(context) {
     state.safeRestTurns = 0;
     state.consumedPotions = (state.consumedPotions ?? 0) + 1;
     healPlayer(8);
-    addMessage("Du trinkst den Heiltrank sofort und fuehlst dich besser.", "important");
+    addMessage("Du trinkst den Heiltrank sofort und fühlst dich besser.", "important");
   }
 
   function eatFoodFromGround(index) {
@@ -221,7 +221,7 @@ export function createItemsApi(context) {
     state.safeRestTurns = 0;
     state.consumedFoods = (state.consumedFoods ?? 0) + 1;
     const restored = restoreNutrition(pickup.item.nutritionRestore);
-    addMessage(`${pickup.item.name} fuellt ${restored} Nahrung auf.`, "important");
+    addMessage(`${pickup.item.name} füllt ${restored} Nahrung auf.`, "important");
   }
 
   function storeFood(index) {
@@ -291,7 +291,7 @@ export function createItemsApi(context) {
         potionIndex,
         selectedAction: state.preferences.potionAction,
         title: "Heiltrank gefunden",
-        text: "Moechtest du den Trank direkt trinken, ins Inventar legen oder vorerst liegen lassen?",
+        text: "Möchtest du den Trank direkt trinken, ins Inventar legen oder vorerst liegen lassen?",
         labels: ["Direkt trinken", "Ins Inventar", "Liegen lassen"],
       });
       renderSelf();
@@ -306,7 +306,7 @@ export function createItemsApi(context) {
         foodIndex,
         selectedAction: state.preferences.foodAction,
         title: `${food.name} gefunden`,
-        text: `${food.nutritionRestore} Nahrung. Moechtest du sofort essen, einpacken oder es liegen lassen?`,
+        text: `${food.nutritionRestore} Nahrung. Möchtest du sofort essen, einpacken oder es liegen lassen?`,
         labels: ["Jetzt essen", "Ins Inventar", "Liegen lassen"],
       });
       renderSelf();
@@ -333,7 +333,7 @@ export function createItemsApi(context) {
         selectedAction: "equip",
         title: `${weapon.name} gefunden`,
         htmlText: buildEquipmentCompareHtml(weapon, currentWeapon?.id === "bare-hands" ? null : currentWeapon, "Waffe", formatWeaponStats),
-        labels: ["Ausruesten", "Ins Inventar", "Liegen lassen"],
+        labels: ["Ausrüsten", "Ins Inventar", "Liegen lassen"],
       });
       renderSelf();
       return true;
@@ -349,7 +349,7 @@ export function createItemsApi(context) {
         selectedAction: "equip",
         title: `${item.name} gefunden`,
         htmlText: buildEquipmentCompareHtml(item, currentOffHand, "Schild", formatOffHandStats),
-        labels: ["Ausruesten", "Ins Inventar", "Liegen lassen"],
+        labels: ["Ausrüsten", "Ins Inventar", "Liegen lassen"],
       });
       renderSelf();
       return true;
@@ -433,12 +433,12 @@ export function createItemsApi(context) {
 
     addMessage(
       pending.kind === "weapon"
-        ? "Du laesst die Waffe vorerst liegen."
+        ? "Du lässt die Waffe vorerst liegen."
         : pending.kind === "offhand"
-          ? "Du laesst das Nebenhand-Item vorerst liegen."
+          ? "Du lässt das Nebenhand-Item vorerst liegen."
           : pending.kind === "food"
-            ? "Du laesst das Essen vorerst liegen."
-            : "Du laesst den Heiltrank vorerst liegen.",
+            ? "Du lässt das Essen vorerst liegen."
+            : "Du lässt den Heiltrank vorerst liegen.",
     );
     renderSelf();
   }
@@ -489,7 +489,7 @@ export function createItemsApi(context) {
     }
 
     if (item.type === "key") {
-      addMessage(`${item.name} passt nur zu passenden Farbtueren auf Ebene ${item.keyFloor ?? "?"} und wird beim Oeffnen verbraucht.`, "important");
+      addMessage(`${item.name} passt nur zu passenden Farbtüren auf Ebene ${item.keyFloor ?? "?"} und wird beim Öffnen verbraucht.`, "important");
       renderSelf();
       return;
     }
@@ -498,7 +498,7 @@ export function createItemsApi(context) {
       state.inventory.splice(index, 1);
       state.consumedFoods = (state.consumedFoods ?? 0) + 1;
       const restored = restoreNutrition(item.nutritionRestore);
-      addMessage(`${item.name} fuellt ${restored} Nahrung auf.`, "important");
+      addMessage(`${item.name} füllt ${restored} Nahrung auf.`, "important");
       endTurn();
     }
   }

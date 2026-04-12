@@ -2,10 +2,10 @@ export const ITEM_DEFS = {
   candy: {
     id: "candy",
     type: "food",
-    name: "Suessigkeit",
+    name: "Süßigkeit",
     icon: "candy",
     nutritionRestore: 15,
-    description: "Kurz Zucker, wenig Saettigung.",
+    description: "Kurz Zucker, wenig Sättigung.",
   },
   chips: {
     id: "chips",
@@ -29,7 +29,7 @@ export const ITEM_DEFS = {
     name: "Softdrink",
     icon: "softdrink",
     nutritionRestore: 60,
-    description: "Zucker und Koffein in fragwuerdiger Balance.",
+    description: "Zucker und Koffein in fragwürdiger Balance.",
   },
   sandwich: {
     id: "sandwich",
@@ -37,7 +37,7 @@ export const ITEM_DEFS = {
     name: "Sandwich",
     icon: "sandwich",
     nutritionRestore: 75,
-    description: "Simpel, kompakt, verlaesslich.",
+    description: "Simpel, kompakt, verlässlich.",
   },
   burger_leftovers: {
     id: "burger_leftovers",
@@ -61,15 +61,15 @@ export const ITEM_DEFS = {
     name: "Energieriegel",
     icon: "energy-bar",
     nutritionRestore: 125,
-    description: "Kompakter Treibstoff fuer schlechte Naechte.",
+    description: "Kompakter Treibstoff für schlechte Nächte.",
   },
   smoked_meat: {
     id: "smoked_meat",
     type: "food",
-    name: "Raeucherfleisch",
+    name: "Räucherfleisch",
     icon: "smoked-meat",
     nutritionRestore: 150,
-    description: "Schwer, salzig, sehr saettigend.",
+    description: "Schwer, salzig, sehr sättigend.",
   },
   hunting_ration: {
     id: "hunting_ration",
@@ -77,7 +77,7 @@ export const ITEM_DEFS = {
     name: "Jagdration",
     icon: "hunting-ration",
     nutritionRestore: 190,
-    description: "Solider Proviant fuer lange, schlechte Wege.",
+    description: "Solider Proviant für lange, schlechte Wege.",
   },
 };
 

@@ -170,18 +170,18 @@ export function createCombatApi(context) {
         state.player.hp = Math.max(0, state.player.hp - blockResult.reflectiveDamage);
         state.damageTaken = (state.damageTaken ?? 0) + blockResult.reflectiveDamage;
         showFloatingText(state.player.x, state.player.y, `-${blockResult.reflectiveDamage}`, "taken");
-        addMessage(`${blockResult.item.name} wirft dir den Treffer brutal zurueck.`, "danger");
+        addMessage(`${blockResult.item.name} wirft dir den Treffer brutal zurück.`, "danger");
       }
     }
 
     if (itemHasModifier(weapon, "final") && getWeaponConditionalDamageBonus(state.player, weapon) > 0) {
-      addMessage(`${weapon.name} trifft im letzten Akt haerter zu.`, "important");
+      addMessage(`${weapon.name} trifft im letzten Akt härter zu.`, "important");
     }
 
     addMessage(
       result.critical
-        ? `Kritischer Treffer gegen ${enemy.name} fuer ${blockResult.damage} Schaden!`
-        : `Du triffst ${enemy.name} fuer ${blockResult.damage} Schaden.`,
+        ? `Kritischer Treffer gegen ${enemy.name} für ${blockResult.damage} Schaden!`
+        : `Du triffst ${enemy.name} für ${blockResult.damage} Schaden.`,
       "important",
     );
 
@@ -192,7 +192,7 @@ export function createCombatApi(context) {
       state.killStats[enemy.name] = (state.killStats[enemy.name] ?? 0) + 1;
       if (enemy.lootWeapon && Math.random() < (enemy.weaponDropChance ?? 0.55)) {
         floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
-        addMessage(`${enemy.name} laesst ${enemy.lootWeapon.name} fallen.`, "important");
+        addMessage(`${enemy.name} lässt ${enemy.lootWeapon.name} fallen.`, "important");
       }
       if (enemy.lootOffHand && Math.random() < (enemy.offHandDropChance ?? 0.45)) {
         floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));
@@ -200,7 +200,7 @@ export function createCombatApi(context) {
       }
       if (enemy.lootDrop?.item?.type === "food") {
         floorState.foods.push(createFoodPickup(enemy.lootDrop.item, enemy.x, enemy.y));
-        addMessage(`${enemy.name} laesst ${enemy.lootDrop.item.name} fallen.`, "important");
+        addMessage(`${enemy.name} lässt ${enemy.lootDrop.item.name} fallen.`, "important");
       }
       playVictorySound();
       grantExperience(enemy.xpReward, enemy.name);

@@ -2,15 +2,15 @@ const TRAP_VARIANTS = {
   floor: [
     {
       id: "loose-stage-panel",
-      name: "Lockere Buehnenplatte",
-      description: "Eine nachgebende Platte im Setboden schnappt ploetzlich weg.",
+      name: "Lockere Bühnenplatte",
+      description: "Eine nachgebende Platte im Setboden schnappt plötzlich weg.",
       detectDifficulty: 3,
       reactDifficulty: 4,
       effect: { damage: 4 },
     },
     {
       id: "trapdoor-snag",
-      name: "Verdeckte Falltuer",
+      name: "Verdeckte Falltür",
       description: "Ein verdeckter Mechanismus reisst am Boden auf.",
       detectDifficulty: 4,
       reactDifficulty: 4,
@@ -21,14 +21,14 @@ const TRAP_VARIANTS = {
     {
       id: "tripwire-alarm",
       name: "Stolperdraht",
-      description: "Ein Draht loest Licht, Laerm und hektische Bewegung aus.",
+      description: "Ein Draht löst Licht, Lärm und hektische Bewegung aus.",
       detectDifficulty: 4,
       reactDifficulty: 3,
       effect: { alarm: true },
     },
     {
       id: "spotlight-trigger",
-      name: "Scheinwerfer-Ausloeser",
+      name: "Scheinwerfer-Auslöser",
       description: "Ein Mechanismus wirft dich abrupt ins grelle Rampenlicht.",
       detectDifficulty: 3,
       reactDifficulty: 3,
@@ -39,13 +39,13 @@ const TRAP_VARIANTS = {
     {
       id: "sparking-cable",
       name: "Funkenkabel",
-      description: "Blanke Kabel schlagen knisternd ueber den Boden.",
+      description: "Blanke Kabel schlagen knisternd über den Boden.",
       effect: { damage: 2 },
     },
     {
       id: "slick-smoke-zone",
       name: "Rutschige Rauchzone",
-      description: "Eine oelige Rauchflaeche macht jeden Schritt unsicher.",
+      description: "Eine ölige Rauchfläche macht jeden Schritt unsicher.",
       effect: { slow: 1 },
     },
   ],
@@ -242,7 +242,7 @@ export function createTrapsApi(context) {
       state.deathCause = `${trap.name} forderte den Helden im falschen Moment.`;
       playDeathSound();
       const rank = saveHighscoreIfNeeded();
-      addMessage("Eine Falle hat dich niedergestreckt. Druecke R fuer einen neuen Versuch.", "danger");
+      addMessage("Eine Falle hat dich niedergestreckt. Drücke R für einen neuen Versuch.", "danger");
       showDeathModal(rank);
       return;
     }
@@ -276,7 +276,7 @@ export function createTrapsApi(context) {
       showFloatingText(actor.x, actor.y, `-${damage}`, "taken");
       addMessage(
         isPlayer
-          ? `${trap.name} trifft dich fuer ${damage} Schaden.`
+          ? `${trap.name} trifft dich für ${damage} Schaden.`
           : `${actor.name} erleidet ${damage} Schaden durch ${trap.name}.`,
         "danger",
       );
@@ -306,7 +306,7 @@ export function createTrapsApi(context) {
       });
       addMessage(
         alerted > 0
-          ? `${trap.name} laesst ${alerted} Gegner aufhorchen.`
+          ? `${trap.name} lässt ${alerted} Gegner aufhorchen.`
           : `${trap.name} kreischt durch die Kulissen.`,
         "danger",
       );

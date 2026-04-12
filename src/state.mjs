@@ -92,7 +92,7 @@ export function createStateApi(context) {
       maxHp: state.player.maxHp,
       turns: state.turn,
       kills: state.kills,
-      deathCause: state.deathCause ?? "Verschwand auf mysterioese Weise im Schneideraum.",
+      deathCause: state.deathCause ?? "Verschwand auf mysteriöse Weise im Schneideraum.",
     };
     scores.push(entry);
     scores.sort((a, b) =>
@@ -119,7 +119,7 @@ export function createStateApi(context) {
       `wurde ${critPrefix}von ${enemy.name} unsanft aus dem Abspann gekickt.`,
       `verlor den finalen Schnitt ${critPrefix ? `${critPrefix}` : ""}gegen ${enemy.name}.`,
       `bekam ${critPrefix}von ${enemy.name} eine sehr persoenliche Schluss-Szene verpasst.`,
-      `blieb im letzten Akt ${critPrefix ? `${critPrefix}` : ""}an ${enemy.name} haengen.`,
+      `blieb im letzten Akt ${critPrefix ? `${critPrefix}` : ""}an ${enemy.name} hängen.`,
       `wurde ${critPrefix}von ${enemy.name} direkt aus dem Bild getragen.`,
     ];
 
@@ -191,7 +191,7 @@ export function createStateApi(context) {
     nextState.player.y = nextState.floors[1].startPosition.y;
     setState(nextState);
     updateVisibility();
-    addMessage(`${heroName} erwacht in einer feuchten Krypta. Finde Beute und sichere deinen Rueckweg.`, "important");
+    addMessage(`${heroName} erwacht in einer feuchten Krypta. Finde Beute und sichere deinen Rückweg.`, "important");
     renderSelf();
   }
 

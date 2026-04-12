@@ -134,13 +134,13 @@ test("weapon icons use the dedicated asset folder when available", async ({ page
   await setupWeaponAtPlayerStep(page, {
     type: "weapon",
     id: "kitchen-knife",
-    name: "Kuechenmesser",
+    name: "Küchenmesser",
     source: "Tests",
     damage: 2,
     hitBonus: 1,
     critBonus: 0,
     rarity: "rare",
-    description: "Nur fuer Tests.",
+    description: "Nur für Tests.",
   });
 
   await page.keyboard.press("ArrowRight");
@@ -164,30 +164,30 @@ test("inventory sorts items by class and can be filtered", async ({ page }) => {
       icon: "sandwich",
       name: "Sandwich",
       nutritionRestore: 150,
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
     });
     window.__TEST_API__.addInventoryItem({
       type: "key",
-      name: "Gruener Schluessel",
-      description: "Nur fuer Tests.",
+      name: "Grüner Schlüssel",
+      description: "Nur für Tests.",
       keyColor: "green",
       keyFloor: 1,
     });
     window.__TEST_API__.addInventoryItem({
       type: "weapon",
       id: "kitchen-knife",
-      name: "Kuechenmesser",
+      name: "Küchenmesser",
       source: "Tests",
       handedness: "one-handed",
       damage: 2,
       hitBonus: 0,
       critBonus: 0,
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
     });
     window.__TEST_API__.addInventoryItem({
       type: "potion",
       name: "Heiltrank",
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
       heal: 8,
     });
   });
@@ -195,7 +195,7 @@ test("inventory sorts items by class and can be filtered", async ({ page }) => {
   await page.keyboard.press("i");
 
   const headings = await page.locator("#inventoryList .inventory-section-title").allTextContents();
-  expect(headings.slice(0, 4)).toEqual(["Waffen", "Traenke", "Essen", "Schluessel"]);
+  expect(headings.slice(0, 4)).toEqual(["Waffen", "Tränke", "Essen", "Schlüssel"]);
 
   await page.getByRole("button", { name: "Essen", exact: true }).click();
   await expect(page.locator("#inventoryList .inventory-section-title")).toHaveText("Essen");
@@ -211,13 +211,13 @@ test("inventory uses svg icons for potions and keys when available", async ({ pa
     window.__TEST_API__.addInventoryItem({
       type: "potion",
       name: "Heiltrank",
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
       heal: 8,
     });
     window.__TEST_API__.addInventoryItem({
       type: "key",
-      name: "Gruener Schluessel",
-      description: "Nur fuer Tests.",
+      name: "Grüner Schlüssel",
+      description: "Nur für Tests.",
       keyColor: "green",
       keyFloor: 1,
     });
@@ -246,7 +246,7 @@ test("weapons can be equipped directly from the loot modal", async ({ page }) =>
     damage: 5,
     hitBonus: 1,
     critBonus: 2,
-    description: "Nur fuer Tests.",
+    description: "Nur für Tests.",
   });
 
   await page.keyboard.press("ArrowRight");
@@ -257,7 +257,7 @@ test("weapons can be equipped directly from the loot modal", async ({ page }) =>
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
 
   expect(inventory.equippedWeapon.name).toBe("Testsaebel");
-  expect(messages.some((entry) => entry.text.includes("Du fuehrst jetzt Testsaebel"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Du führst jetzt Testsaebel"))).toBeTruthy();
 });
 
 test("weapon loot modal compares against the currently equipped weapon and shows rarity", async ({ page }) => {
@@ -280,7 +280,7 @@ test("weapon loot modal compares against the currently equipped weapon and shows
           hitBonus: 1,
           critBonus: 0,
           rarity: "uncommon",
-          description: "Nur fuer Tests.",
+          description: "Nur für Tests.",
         },
       },
     });
@@ -288,24 +288,24 @@ test("weapon loot modal compares against the currently equipped weapon and shows
     window.__TEST_API__.placeWeapon({ x: 3, y: 2 }, {
       type: "weapon",
       id: "kitchen-knife",
-      name: "Kuechenmesser",
+      name: "Küchenmesser",
       source: "Tests",
       handedness: "one-handed",
       damage: 4,
       hitBonus: 2,
       critBonus: 1,
       rarity: "rare",
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
     });
   });
 
   await page.keyboard.press("ArrowRight");
   await expect(page.locator("#choiceModal")).toBeVisible();
   await expect(page.locator("#choiceText")).toContainText("Derzeit getragen");
-  await expect(page.locator("#choiceText")).toContainText("Kuechenmesser");
+  await expect(page.locator("#choiceText")).toContainText("Küchenmesser");
   await expect(page.locator("#choiceText")).toContainText("Buck Knife");
   await expect(page.locator("#choiceText .choice-rarity.rarity-rare")).toContainText("Selten");
-  await expect(page.locator("#choiceText .choice-rarity.rarity-uncommon")).toContainText("Ungewoehnlich");
+  await expect(page.locator("#choiceText .choice-rarity.rarity-uncommon")).toContainText("Ungewöhnlich");
 });
 
 test("shields can be equipped directly into the offhand", async ({ page }) => {
@@ -320,7 +320,7 @@ test("shields can be equipped directly into the offhand", async ({ page }) => {
     source: "Tests",
     blockChance: 20,
     blockValue: 3,
-    description: "Nur fuer Tests.",
+    description: "Nur für Tests.",
   });
 
   await page.keyboard.press("ArrowRight");
@@ -345,7 +345,7 @@ test("loot chests can open into a usable reward", async ({ page }) => {
       source: "Tests",
       blockChance: 16,
       blockValue: 2,
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
     },
   });
 
@@ -370,7 +370,7 @@ test("equipment rarity modifiers are applied to generated drops", async ({ page 
       damage: 3,
       hitBonus: 0,
       critBonus: 0,
-      description: "Nur fuer Tests.",
+      description: "Nur für Tests.",
     },
     {
       forceRarity: "rare",

@@ -201,7 +201,7 @@ export function createAiApi(context) {
       if (door && !door.isOpen && enemy.canOpenDoors) {
         door.isOpen = true;
         playDoorOpenSound();
-        addMessage(`${enemy.name} oeffnet eine Tuer.`, "danger");
+        addMessage(`${enemy.name} öffnet eine Tür.`, "danger");
       }
       enemy.x = nextX;
       enemy.y = nextY;
@@ -364,7 +364,7 @@ export function createAiApi(context) {
       const retreating = shouldEnemyRetreat(enemy, state.player, distance);
 
       if (retreating && !enemy.isRetreating) {
-        addMessage(`${enemy.name} sucht ploetzlich Abstand.`, "important");
+        addMessage(`${enemy.name} sucht plötzlich Abstand.`, "important");
       }
       enemy.isRetreating = retreating;
 
@@ -394,12 +394,12 @@ export function createAiApi(context) {
           showFloatingText(state.player.x, state.player.y, "Block", "heal");
         }
         if (blockResult.blocked) {
-          addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden fuer dich ab.`, "important");
+          addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden für dich ab.`, "important");
         }
         addMessage(
           result.critical
-            ? `${enemy.name} landet einen kritischen Treffer fuer ${blockResult.damage} Schaden!`
-            : `${enemy.name} trifft dich fuer ${blockResult.damage} Schaden.`,
+            ? `${enemy.name} landet einen kritischen Treffer für ${blockResult.damage} Schaden!`
+            : `${enemy.name} trifft dich für ${blockResult.damage} Schaden.`,
           "danger",
         );
         if (state.player.hp <= 0) {

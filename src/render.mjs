@@ -83,21 +83,21 @@ export function createRenderApi(context) {
       damage: {
         title: "Basisschaden",
         lines: [
-          `Staerke ${state.player.strength} + Waffenschaden ${weapon.damage}`,
+          `Stärke ${state.player.strength} + Waffenschaden ${weapon.damage}`,
           `Ergibt aktuell ${baseDamage} Schaden pro Treffer vor Krits.`,
         ],
       },
       hit: {
         title: "Trefferwert",
         lines: [
-          `Praezision ${state.player.precision} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
+          `Präzision ${state.player.precision} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
           `Ergibt aktuell Trefferwert ${hitValue}.`,
         ],
       },
       crit: {
         title: "Krit-Chance",
         lines: [
-          `Praezision ${state.player.precision} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
+          `Präzision ${state.player.precision} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
           `Ergibt aktuell ${critChance}% Krit-Chance.`,
         ],
       },
@@ -110,7 +110,7 @@ export function createRenderApi(context) {
             ]
           : [
               "Kein Schild in der Nebenhand.",
-              "Mit Schild wuerdest du hier deine Blockchance sehen.",
+              "Mit Schild würdest du hier deine Blockchance sehen.",
             ],
       },
     };
@@ -175,8 +175,8 @@ export function createRenderApi(context) {
       createSheetRow("Erfahrung", `${state.player.xp} / ${state.player.xpToNext}`),
       createSheetRow("Haupthand", `${getMainHand(state.player).name} (${formatWeaponStats(getMainHand(state.player))})`),
       createSheetRow("Nebenhand", getOffHand(state.player) ? `${getOffHand(state.player).name} (${formatOffHandStats(getOffHand(state.player))})` : "Leer"),
-      createSheetRow("Staerke", state.player.strength),
-      createSheetRow("Praezision", state.player.precision),
+      createSheetRow("Stärke", state.player.strength),
+      createSheetRow("Präzision", state.player.precision),
       createSheetRow("Reaktion", state.player.reaction),
       createSheetRow("Nerven", state.player.nerves),
       createSheetRow("Intelligenz", state.player.intelligence),
@@ -200,8 +200,8 @@ export function createRenderApi(context) {
       createSheetRow("Verhalten", target.enemy.behaviorLabel),
       createSheetRow("Entfernung", `${target.distance} Felder`),
       createSheetRow("Leben", `${target.enemy.hp}/${target.enemy.maxHp}`),
-      createSheetRow("Staerke", target.enemy.strength),
-      createSheetRow("Praezision", target.enemy.precision),
+      createSheetRow("Stärke", target.enemy.strength),
+      createSheetRow("Präzision", target.enemy.precision),
       createSheetRow("Reaktion", target.enemy.reaction),
       createSheetRow("Nerven", target.enemy.nerves),
       createSheetRow("Intelligenz", target.enemy.intelligence),
@@ -300,7 +300,7 @@ export function createRenderApi(context) {
     highscoreListElement.innerHTML = "";
 
     if (scores.length === 0) {
-      highscoreListElement.innerHTML = `<div class="inventory-empty">Noch keine Eintraege. Das erste Abenteuer wartet.</div>`;
+      highscoreListElement.innerHTML = `<div class="inventory-empty">Noch keine Einträge. Das erste Abenteuer wartet.</div>`;
       return;
     }
 
@@ -351,8 +351,8 @@ export function createRenderApi(context) {
           lines: [
             `Level ${state.player.level}`,
             `Leben ${state.player.hp}/${state.player.maxHp}`,
-            `Staerke ${state.player.strength}`,
-            `Praezision ${state.player.precision}`,
+            `Stärke ${state.player.strength}`,
+            `Präzision ${state.player.precision}`,
             `Reaktion ${state.player.reaction}`,
             `Nerven ${state.player.nerves}`,
             `Intelligenz ${state.player.intelligence}`,
@@ -378,8 +378,8 @@ export function createRenderApi(context) {
           lines: [
             enemy.behaviorLabel,
             `Leben ${enemy.hp}/${enemy.maxHp}`,
-            `Staerke ${enemy.strength}`,
-            `Praezision ${enemy.precision}`,
+            `Stärke ${enemy.strength}`,
+            `Präzision ${enemy.precision}`,
             `Reaktion ${enemy.reaction}`,
             `Nerven ${enemy.nerves}`,
             `Intelligenz ${enemy.intelligence}`,
@@ -461,9 +461,9 @@ export function createRenderApi(context) {
         type: isVisible ? "stairs-down" : "stairs-down memory",
         glyph: TILE.STAIRS_DOWN,
         tooltip: isVisible ? {
-          title: "Abwaertstreppe",
+          title: "Abwärtstreppe",
           lines: [
-            "Fuehrt tiefer in den Dungeon.",
+            "Führt tiefer in den Dungeon.",
           ],
         } : null,
       };
@@ -474,9 +474,9 @@ export function createRenderApi(context) {
         type: isVisible ? "stairs-up" : "stairs-up memory",
         glyph: TILE.STAIRS_UP,
         tooltip: isVisible ? {
-          title: "Aufwaertstreppe",
+          title: "Aufwärtstreppe",
           lines: [
-            "Bringt dich zur vorherigen Ebene zurueck.",
+            "Bringt dich zur vorherigen Ebene zurück.",
           ],
         } : null,
       };

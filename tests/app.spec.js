@@ -8,6 +8,7 @@ test("start screen renders the new title", async ({ page }) => {
   await expect(page).toHaveTitle("The Final Scene");
   await expect(page.getByRole("heading", { name: "The Final Scene" })).toBeVisible();
   await expect(page.getByText("Fight Through a Dying Movieverse")).toBeVisible();
+  await expect(page.locator("#gameShell")).toHaveClass(/prestart-hidden/);
 });
 
 test("hero name can be changed and persists for the next session", async ({ page }) => {
@@ -42,13 +43,34 @@ test("hero class cards can be selected from the start screen", async ({ page }) 
     const playerTile = document.querySelector(".board .tile.player");
     const title = document.getElementById("playerPanelTitle");
     return {
-      tileBackground: window.getComputedStyle(playerTile).backgroundImage,
+      tileBackground: window.getComputedStyle(playerTile, "::after").backgroundImage,
       titleIcon: title.style.getPropertyValue("--hero-class-icon"),
     };
   });
 
   expect(heroVisuals.tileBackground).toContain("sprite-stuntman.svg");
   expect(heroVisuals.titleIcon).toContain("class-stuntman.svg");
+});
+
+test("starting from the modal reuses the already prepared first studio", async ({ page }) => {
+  await page.goto("/");
+
+  const beforeStart = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+
+  await page.locator("#classOptions").getByText("Stuntman", { exact: true }).click();
+  await page.locator("#startForm").evaluate((form) => form.requestSubmit());
+  await expect(page.locator("#startModal")).toBeHidden();
+  await expect(page.locator("#gameShell")).not.toHaveClass(/prestart-hidden/);
+
+  const afterStart = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+
+  expect(afterStart.floor).toBe(1);
+  expect(afterStart.grid).toEqual(beforeStart.grid);
+  expect(afterStart.stairsDown).toEqual(beforeStart.stairsDown);
+  expect(afterStart.stairsUp).toEqual(beforeStart.stairsUp);
+  expect(afterStart.doors).toEqual(beforeStart.doors);
+  expect(afterStart.rooms).toEqual(beforeStart.rooms);
+  expect(afterStart.player.classId).toBe("stuntman");
 });
 
 test("highscores render class icons for stored runs", async ({ page }) => {

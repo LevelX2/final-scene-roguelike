@@ -39,6 +39,7 @@ export function createBoardView(context) {
   function tileAt(x, y) {
     const state = getState();
     const floorState = getCurrentFloorState();
+    const studioArchetypeId = floorState?.studioArchetypeId ?? "slasher";
     const isVisible = Boolean(floorState.visible?.[y]?.[x]);
     const isExplored = Boolean(floorState.explored?.[y]?.[x]);
 
@@ -48,8 +49,11 @@ export function createBoardView(context) {
 
     if (state.player.x === x && state.player.y === y) {
       return {
-        type: state.gameOver ? `player dead class-${state.player.classId}` : `player class-${state.player.classId}`,
+        type: state.gameOver
+          ? `floor studio-${studioArchetypeId} player dead`
+          : `floor studio-${studioArchetypeId} player`,
         glyph: TILE.PLAYER,
+        overlayImageUrl: getPlayerIconAssetUrl(state.player, state.gameOver),
         hp: state.player.hp,
         maxHp: state.player.maxHp,
         tooltip: {
@@ -80,8 +84,9 @@ export function createBoardView(context) {
     if (enemy) {
       const revealed = knowsMonster(enemy);
       return {
-        type: `enemy monster-${enemy.id}`,
+        type: `floor studio-${studioArchetypeId} enemy monster-${enemy.id}`,
         glyph: TILE.ENEMY,
+        overlayImageUrl: getMonsterIconAssetUrl(enemy),
         hp: enemy.hp,
         maxHp: enemy.maxHp,
         tooltip: {
@@ -110,8 +115,9 @@ export function createBoardView(context) {
 
     if (isVisible && floorState.potions.some((potion) => potion.x === x && potion.y === y)) {
       return {
-        type: "potion",
+        type: `floor studio-${studioArchetypeId} potion`,
         glyph: TILE.POTION,
+        overlayImageUrl: getPotionIconAssetUrl({ type: "potion" }),
         tooltip: {
           title: "Heiltrank",
           imageUrl: getPotionIconAssetUrl({ type: "potion" }),
@@ -129,8 +135,9 @@ export function createBoardView(context) {
       : null;
     if (keyPickup) {
       return {
-        type: `key key-${keyPickup.item.keyColor}`,
+        type: `floor studio-${studioArchetypeId} key key-${keyPickup.item.keyColor}`,
         glyph: TILE.KEY,
+        overlayImageUrl: getKeyIconAssetUrl(keyPickup.item),
         tooltip: {
           title: keyPickup.item.name,
           imageUrl: getKeyIconAssetUrl(keyPickup.item),
@@ -148,9 +155,9 @@ export function createBoardView(context) {
       : null;
     if (foodPickup) {
       return {
-        type: "food",
+        type: `floor studio-${studioArchetypeId} food`,
         glyph: "",
-        iconUrl: getFoodIconAssetUrl(foodPickup.item),
+        overlayImageUrl: getFoodIconAssetUrl(foodPickup.item),
         tooltip: {
           title: foodPickup.item.name,
           imageUrl: getFoodIconAssetUrl(foodPickup.item),
@@ -168,8 +175,9 @@ export function createBoardView(context) {
       const locked = door.doorType === "locked";
       const stateLabel = door.isOpen ? "Offen" : locked ? "Verschlossen" : "Geschlossen";
       return {
-        type: `${door.isOpen ? "door-open" : "door-closed"}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`,
+        type: `floor studio-${studioArchetypeId} ${door.isOpen ? "door-open" : "door-closed"}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`,
         glyph: door.isOpen ? TILE.DOOR_OPEN : TILE.DOOR_CLOSED,
+        overlayImageUrl: getDoorIconAssetUrl(door),
         tooltip: isVisible ? {
           title: locked ? `${getDoorColorLabel(door.lockColor)} Tür` : "Tür",
           imageUrl: getDoorIconAssetUrl(door),
@@ -192,9 +200,9 @@ export function createBoardView(context) {
       : null;
     if (weaponPickup) {
       return {
-        type: `weapon ${getItemRarityClass(weaponPickup.item)}`,
+        type: `floor studio-${studioArchetypeId} weapon-drop ${getItemRarityClass(weaponPickup.item)}`,
         glyph: "",
-        iconUrl: getWeaponIconAssetUrl(weaponPickup.item),
+        overlayImageUrl: getWeaponIconAssetUrl(weaponPickup.item),
         tooltip: {
           title: weaponPickup.item.name,
           imageUrl: getWeaponIconAssetUrl(weaponPickup.item),
@@ -215,9 +223,9 @@ export function createBoardView(context) {
       : null;
     if (offHandPickup) {
       return {
-        type: `weapon offhand-drop ${getItemRarityClass(offHandPickup.item)}`,
+        type: `floor studio-${studioArchetypeId} weapon-drop offhand-drop ${getItemRarityClass(offHandPickup.item)}`,
         glyph: "",
-        iconUrl: getOffHandIconAssetUrl(offHandPickup.item),
+        overlayImageUrl: getOffHandIconAssetUrl(offHandPickup.item),
         tooltip: {
           title: offHandPickup.item.name,
           imageUrl: getOffHandIconAssetUrl(offHandPickup.item),
@@ -232,8 +240,9 @@ export function createBoardView(context) {
       : null;
     if (chestPickup) {
       return {
-        type: "chest",
+        type: `floor studio-${studioArchetypeId} chest`,
         glyph: TILE.CHEST,
+        overlayImageUrl: "./assets/chest.svg",
         tooltip: {
           title: "Requisitenkiste",
           imageUrl: "./assets/chest.svg",
@@ -277,8 +286,9 @@ export function createBoardView(context) {
             ? "Bremst Bewegungen und Tritt aus."
             : null;
       return {
-        type: `trap trap-${trap.type} ${trapStateClass}${isVisible ? "" : " memory"}`.trim(),
+        type: `${isVisible ? `floor studio-${studioArchetypeId}` : `floor memory studio-${studioArchetypeId}`} trap trap-${trap.type} ${trapStateClass}${isVisible ? "" : " memory"}`.trim(),
         glyph: trapGlyph,
+        overlayImageUrl: getTrapIconAssetUrl(trap),
         tooltip: {
           title: trap.name,
           imageUrl: getTrapIconAssetUrl(trap),
@@ -295,9 +305,9 @@ export function createBoardView(context) {
     const showcase = floorState.showcases?.find((entry) => entry.x === x && entry.y === y) ?? null;
     if (showcase && (isVisible || isExplored)) {
       return {
-        type: `showcase${isVisible ? "" : " memory"}`,
+        type: `floor studio-${studioArchetypeId} showcase${isVisible ? "" : " memory"}`,
         glyph: TILE.SHOWCASE,
-        iconUrl: getShowcaseIconAssetUrl(showcase.item),
+        overlayImageUrl: getShowcaseIconAssetUrl(showcase.item),
         tooltip: isVisible ? {
           title: showcase.item.name,
           imageUrl: getShowcaseIconAssetUrl(showcase.item),
@@ -313,8 +323,11 @@ export function createBoardView(context) {
 
     if (floorState.stairsDown && floorState.stairsDown.x === x && floorState.stairsDown.y === y) {
       return {
-        type: isVisible ? "stairs-down" : "stairs-down memory",
+        type: isVisible
+          ? `floor studio-${studioArchetypeId} stairs-down`
+          : `floor memory studio-${studioArchetypeId} stairs-down memory`,
         glyph: TILE.STAIRS_DOWN,
+        overlayImageUrl: "./assets/stairs-down.svg",
         tooltip: isVisible ? {
           title: "Übergang",
           imageUrl: "./assets/stairs-down.svg",
@@ -328,8 +341,11 @@ export function createBoardView(context) {
 
     if (floorState.stairsUp && floorState.stairsUp.x === x && floorState.stairsUp.y === y) {
       return {
-        type: isVisible ? "stairs-up" : "stairs-up memory",
+        type: isVisible
+          ? `floor studio-${studioArchetypeId} stairs-up`
+          : `floor memory studio-${studioArchetypeId} stairs-up memory`,
         glyph: TILE.STAIRS_UP,
+        overlayImageUrl: "./assets/stairs-up.svg",
         tooltip: isVisible ? {
           title: "Rückweg",
           imageUrl: "./assets/stairs-up.svg",
@@ -345,7 +361,12 @@ export function createBoardView(context) {
       return { type: isVisible ? "wall" : "wall memory", glyph: TILE.WALL };
     }
 
-    return { type: isVisible ? "floor" : "floor memory", glyph: "" };
+    return {
+      type: isVisible
+        ? `floor studio-${studioArchetypeId}`
+        : `floor memory studio-${studioArchetypeId}`,
+      glyph: "",
+    };
   }
 
   function renderBoard() {
@@ -360,14 +381,9 @@ export function createBoardView(context) {
         const cell = document.createElement("div");
         cell.className = `tile ${tile.type}`;
         cell.textContent = tile.glyph ?? "";
-        if (tile.iconUrl) {
-          cell.style.backgroundImage = `
-            radial-gradient(circle at 50% 28%, rgba(255, 232, 170, 0.12), transparent 48%),
-            url("${tile.iconUrl}")
-          `;
-          cell.style.backgroundRepeat = "no-repeat, no-repeat";
-          cell.style.backgroundPosition = "center, center";
-          cell.style.backgroundSize = "cover, 22px 22px";
+        if (tile.overlayImageUrl) {
+          cell.classList.add("has-overlay");
+          cell.style.setProperty("--tile-overlay-image", `url("${tile.overlayImageUrl}")`);
           cell.style.color = "transparent";
         }
 

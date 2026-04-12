@@ -468,17 +468,37 @@ export function createStateApi(context) {
   }
 
   function initializeGame(profile = {}, options = {}) {
+    const currentState = getState();
     const heroName = profile.heroName ? saveHeroName(profile.heroName) : loadHeroName();
     const heroClassId = profile.heroClassId ? saveHeroClassId(profile.heroClassId) : loadHeroClassId();
     const nextState = createFreshState(heroName, heroClassId, options);
+    const reusableInitialStudio = Boolean(
+      options.reuseExistingFloor &&
+      currentState &&
+      currentState.modals?.startOpen &&
+      !currentState.gameOver &&
+      currentState.turn === 0 &&
+      currentState.floor === 1 &&
+      currentState.deepestFloor === 1 &&
+      (currentState.inventory?.length ?? 0) === 0 &&
+      !currentState.pendingChoice &&
+      !currentState.pendingStairChoice &&
+      currentState.floors?.[1]
+    );
 
     nextState.player.nutritionMax = getNutritionMax(nextState.player);
     nextState.player.nutrition = getNutritionStart(nextState.player);
     nextState.player.hungerState = getHungerState(nextState.player);
 
-    nextState.floors[1] = createDungeonLevel(1, { stairsUp: null });
-    nextState.player.x = nextState.floors[1].startPosition.x;
-    nextState.player.y = nextState.floors[1].startPosition.y;
+    if (reusableInitialStudio) {
+      nextState.floors[1] = currentState.floors[1];
+      nextState.player.x = currentState.player.x;
+      nextState.player.y = currentState.player.y;
+    } else {
+      nextState.floors[1] = createDungeonLevel(1, { stairsUp: null });
+      nextState.player.x = nextState.floors[1].startPosition.x;
+      nextState.player.y = nextState.floors[1].startPosition.y;
+    }
     if (options.clearSavedGame) {
       clearSavedGame();
     }

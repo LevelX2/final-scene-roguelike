@@ -1,4 +1,5 @@
 export const boardElement = document.getElementById("board");
+export const gameShellElement = document.getElementById("gameShell");
 export const startModalElement = document.getElementById("startModal");
 export const startFormElement = document.getElementById("startForm");
 export const classOptionsElement = document.getElementById("classOptions");

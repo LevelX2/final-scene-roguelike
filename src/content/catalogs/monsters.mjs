@@ -222,7 +222,7 @@ export const MONSTER_CATALOG = [
     special: "Regeneriert langsam, wenn er längere Zeit nicht getroffen wird.",
   },
   {
-    id: "stummer-maskenträger",
+    id: "stummer-maskentraeger",
     name: "Stummer Maskenträger",
     rank: 4,
     behavior: "juggernaut",

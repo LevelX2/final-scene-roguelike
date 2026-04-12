@@ -202,7 +202,7 @@ export const DUNGEON_WEAPON_TIERS = [
     "maskierter-nachahmer",
     "videotheken-stalker",
     "myers",
-    "stummer-maskenträger",
+    "stummer-maskentraeger",
     "jason",
     "camp-schlaechter",
     "mutierter-hinterwaeldler",

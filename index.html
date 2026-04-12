@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Final Scene</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="layout">
+    <section class="panel hero">
+      <div class="hero-title-block">
+        <p class="eyebrow">Fight Through a Dying Movieverse</p>
+        <h1>The Final Scene</h1>
+      </div>
+      <div class="hero-actions">
+        <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Lauf</button>
+        <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
+        <button id="openOptions" class="mini-btn hero-help-btn" type="button">Optionen</button>
+        <button id="openHighscores" class="mini-btn hero-help-btn" type="button">Highscores</button>
+        <button id="openHelp" class="mini-btn hero-help-btn" type="button">Hilfe</button>
+      </div>
+    </section>
+
+    <section class="game-shell">
+      <section class="panel board-panel">
+        <div class="board-topbar">
+          <div>
+            <p class="board-label">Aktuelle Tiefe</p>
+            <h2 id="depthTitle">Dungeon-Ebene 1</h2>
+          </div>
+          <div class="board-stats" aria-label="Kompakte Heldenwerte">
+            <div id="topbarHpCard" class="board-stat-pill">
+              <span>HP</span>
+              <strong id="topbarHp">20/20</strong>
+            </div>
+            <div id="topbarLevelCard" class="board-stat-pill">
+              <span>Lvl</span>
+              <strong id="topbarLevel">1</strong>
+            </div>
+            <div id="topbarDamageCard" class="board-stat-pill">
+              <span>Dmg</span>
+              <strong id="topbarDamage">5</strong>
+            </div>
+            <div id="topbarHitCard" class="board-stat-pill">
+              <span>Treffer</span>
+              <strong id="topbarHit">6</strong>
+            </div>
+            <div id="topbarCritCard" class="board-stat-pill">
+              <span>Krit</span>
+              <strong id="topbarCrit">3%</strong>
+            </div>
+            <div id="topbarBlockCard" class="board-stat-pill">
+              <span>Block</span>
+              <strong id="topbarBlock">0%</strong>
+            </div>
+            <div id="topbarFoodCard" class="board-stat-pill">
+              <span>Hunger</span>
+              <strong id="topbarFood">Normal</strong>
+            </div>
+          </div>
+        </div>
+        <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
+      </section>
+
+      <aside class="sidebar-column">
+        <section class="panel sidebar-card" data-collapsible="player">
+          <div class="inventory-inline-head card-head">
+            <h2 id="playerPanelTitle">Held</h2>
+            <div class="card-head-actions">
+              <button class="mini-btn collapse-btn" type="button" data-target="player">Alle Werte</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="xp-panel">
+              <div class="xp-head">
+                <span>Erfahrung</span>
+                <strong id="xpLabel">0 / 0 XP</strong>
+              </div>
+              <div class="xp-bar">
+                <div id="xpFill" class="xp-fill"></div>
+              </div>
+            </div>
+            <div class="nutrition-panel">
+              <div class="xp-head">
+                <span>Nahrung</span>
+                <strong id="nutritionLabel">1600 / 2000</strong>
+              </div>
+              <div class="xp-bar nutrition-bar">
+                <div id="nutritionFill" class="xp-fill nutrition-fill"></div>
+              </div>
+              <p id="nutritionState" class="nutrition-state state-normal">Normal</p>
+            </div>
+            <div id="playerSheet" class="sheet"></div>
+          </div>
+        </section>
+
+        <section class="panel sidebar-card" data-collapsible="enemy">
+          <div class="inventory-inline-head card-head">
+            <h2>Gegner im Blick</h2>
+            <button class="mini-btn collapse-btn" type="button" data-target="enemy">Einklappen</button>
+          </div>
+          <div class="card-body">
+            <div id="enemySheet" class="sheet"></div>
+          </div>
+        </section>
+
+        <section class="panel sidebar-card log-card" data-collapsible="log">
+          <div class="inventory-inline-head card-head">
+            <h2>Log</h2>
+            <button class="mini-btn collapse-btn" type="button" data-target="log">Einklappen</button>
+          </div>
+          <div class="card-body">
+            <div id="messageLog" class="log" aria-live="polite"></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div id="choiceModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <p class="modal-eyebrow">Fundstueck</p>
+      <h2 id="choiceTitle">Heiltrank gefunden</h2>
+      <p id="choiceText" class="modal-copy"></p>
+      <div class="modal-actions">
+        <button id="choiceDrink" class="choice-btn accent" type="button">Direkt trinken</button>
+        <button id="choiceStore" class="choice-btn" type="button">Ins Inventar</button>
+        <button id="choiceLeave" class="choice-btn ghost" type="button">Liegen lassen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="stairsModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <p class="modal-eyebrow">Treppenaufgang</p>
+      <h2 id="stairsTitle">Treppenfeld betreten</h2>
+      <p id="stairsText" class="modal-copy"></p>
+      <div class="modal-actions">
+        <button id="stairsConfirm" class="choice-btn accent" type="button">Ebene wechseln</button>
+        <button id="stairsStay" class="choice-btn ghost" type="button">Hier bleiben</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="inventoryModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Ausruestung</p>
+          <h2>Inventar</h2>
+        </div>
+        <button id="closeInventory" class="mini-btn" type="button">Schliessen</button>
+      </div>
+      <p class="modal-copy">Hier verwaltest du alle eingesammelten Gegenstaende.</p>
+      <div id="inventoryFilterBar" class="inventory-filter-bar" aria-label="Inventarfilter">
+        <button class="mini-btn inventory-filter-btn active" type="button" data-filter="all">Alle</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="weapon">Waffen</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="offhand">Schilde</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="potion">Traenke</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="food">Essen</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="key">Schluessel</button>
+      </div>
+      <div id="inventoryList" class="inventory-list modal-list"></div>
+    </div>
+  </div>
+
+  <div id="optionsModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Einstellungen</p>
+          <h2>Optionen</h2>
+        </div>
+        <button id="closeOptions" class="mini-btn" type="button">Schliessen</button>
+      </div>
+      <div class="options-list">
+        <label class="option-row">
+          <span>Schrittgeraesche</span>
+          <input id="toggleStepSound" type="checkbox">
+        </label>
+        <label class="option-row">
+          <span>Todesgeraesch</span>
+          <input id="toggleDeathSound" type="checkbox">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Steuerung</p>
+          <h2>Hilfe</h2>
+        </div>
+        <button id="closeHelp" class="mini-btn" type="button">Schliessen</button>
+      </div>
+      <div class="help-list">
+        <div class="help-row"><span><kbd>WASD</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen</strong></div>
+        <div class="help-row"><span><kbd>Leertaste</kbd></span><strong>Warten</strong></div>
+        <div class="help-row"><span><kbd>H</kbd></span><strong>Schnell Heiltrank trinken</strong></div>
+        <div class="help-row"><span><kbd>C</kbd></span><strong>Benachbarte offene Tuer schliessen</strong></div>
+        <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>
+        <div class="help-row"><span><kbd>O</kbd></span><strong>Optionen anzeigen</strong></div>
+        <div class="help-row"><span><kbd>R</kbd></span><strong>Lauf neu starten</strong></div>
+        <div class="help-row"><span><kbd>Enter</kbd></span><strong>Fund- oder Treppenwahl bestaetigen</strong></div>
+        <div class="help-row"><span><kbd>Esc</kbd></span><strong>Offene Fenster schliessen</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="highscoresModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel scroll-modal-card">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Archiv</p>
+          <h2>Highscores</h2>
+        </div>
+        <button id="closeHighscores" class="mini-btn" type="button">Schliessen</button>
+      </div>
+      <p class="modal-copy">Hier findest du die staerksten und tiefsten Laeufe.</p>
+      <div id="highscoreList" class="sheet modal-list modal-scroll-section"></div>
+    </div>
+  </div>
+
+  <div id="runStatsModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel scroll-modal-card run-stats-modal-card">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Aktueller Lauf</p>
+          <h2>Lauf-Statistik</h2>
+        </div>
+        <button id="closeRunStats" class="mini-btn" type="button">Schliessen</button>
+      </div>
+      <p class="modal-copy">Hier siehst du, wie weit dieser Lauf bereits gekommen ist und was du schon bezwungen oder verbraucht hast.</p>
+      <div class="run-stats-content modal-scroll-section">
+        <div id="runStatsSummary" class="sheet run-stats-summary"></div>
+        <div class="modal-subsection run-stats-subsection">
+          <h3>Besiegte Gegnertypen</h3>
+          <div id="runStatsKills" class="sheet"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="deathModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <p class="modal-eyebrow">Letzter Lauf</p>
+      <h2>Du bist gefallen</h2>
+      <div id="deathSummary" class="sheet"></div>
+      <p class="modal-copy">Die ausfuehrliche Gegnerstatistik ist in einem eigenen Fenster untergebracht, damit dieses Ende-Fenster kompakt bleibt.</p>
+      <div class="modal-actions">
+        <button id="openDeathKills" class="choice-btn" type="button">Besiegte Gegner</button>
+        <button id="closeDeath" class="choice-btn accent" type="button">Zum Dungeon</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deathKillsModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel scroll-modal-card">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Statistik</p>
+          <h2>Besiegte Gegner</h2>
+        </div>
+        <button id="closeDeathKills" class="mini-btn" type="button">Schliessen</button>
+      </div>
+      <div id="deathKills" class="sheet modal-list modal-scroll-section"></div>
+    </div>
+  </div>
+
+  <div id="startModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel start-modal-card">
+      <p class="modal-eyebrow">Casting</p>
+      <h2>Neue Hauptrolle besetzen</h2>
+      <p class="modal-copy">Waehle Namen und Klasse fuer deinen Helden. Diese Auswahl wird fuer den naechsten Lauf gemerkt.</p>
+      <form id="startForm" class="start-form">
+        <label class="hero-identity-label" for="heroNameInput">Heldenname</label>
+        <input id="heroNameInput" class="hero-name-input" type="text" maxlength="24" placeholder="Final Girl">
+        <div>
+          <p class="hero-identity-label">Klasse</p>
+          <div id="classOptions" class="class-options" role="radiogroup" aria-label="Heldenklasse"></div>
+        </div>
+        <p id="heroIdentityStatus" class="hero-identity-note">Wird fuer den aktuellen und den naechsten Lauf gemerkt.</p>
+        <div class="modal-actions">
+          <button id="saveHeroName" class="choice-btn accent" type="submit">Start</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="hoverTooltip" class="hover-tooltip hidden" aria-hidden="true"></div>
+
+  <script defer src="./dist/game.bundle.js"></script>
+</body>
+</html>

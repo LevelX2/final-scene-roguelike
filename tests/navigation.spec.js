@@ -1,0 +1,757 @@
+const { test, expect } = require("playwright/test");
+require("./test-setup");
+const { openDownstairsPrompt, setupDoorAtPlayerStep, setupKeyAtPlayerStep, setupTrapAtPlayerStep, startRun } = require("./helpers");
+
+test("player can move with keyboard input", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const initialIndex = await page.locator(".board .tile.player").evaluate((node) => {
+    return Array.from(node.parentElement.children).indexOf(node);
+  });
+
+  const moved = await page.evaluate(async (startIndex) => {
+    const board = document.getElementById("board");
+    const tryKeys = ["ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft", "w", "d", "s", "a"];
+
+    const getPlayerIndex = () => {
+      const player = board.querySelector(".tile.player");
+      return Array.from(board.children).indexOf(player);
+    };
+
+    for (const key of tryKeys) {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      if (getPlayerIndex() !== startIndex) {
+        return true;
+      }
+    }
+
+    return false;
+  }, initialIndex);
+
+  expect(moved).toBeTruthy();
+});
+
+test("player does not share the start tile with a monster", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const overlap = snapshot.enemies.some((enemy) => enemy.x === snapshot.player.x && enemy.y === snapshot.player.y);
+
+  expect(overlap).toBeFalsy();
+});
+
+test("stairs require confirmation before changing floors", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await openDownstairsPrompt(page);
+
+  await expect(page.locator("#stairsModal")).toBeVisible();
+  await expect(page.locator("#stairsTitle")).toContainText("Abwaertstreppe");
+
+  await page.getByRole("button", { name: "Hier bleiben" }).click();
+
+  await expect(page.locator("#stairsModal")).toBeHidden();
+  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 1");
+});
+
+test("stairs confirmation can move the player to the next floor", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await openDownstairsPrompt(page);
+
+  await expect(page.locator("#stairsModal")).toBeVisible();
+  await page.getByRole("button", { name: "Hinabsteigen" }).click();
+
+  await expect(page.locator("#stairsModal")).toBeHidden();
+  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 2");
+});
+
+test("restart resets the run back to floor one", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await openDownstairsPrompt(page);
+  await page.getByRole("button", { name: "Hinabsteigen" }).click();
+  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 2");
+
+  await page.keyboard.press("r");
+  await startRun(page);
+
+  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 1");
+  await expect(page.locator("#stairsModal")).toBeHidden();
+});
+
+test("closed doors open automatically when the player walks into them", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupDoorAtPlayerStep(page, { doorType: "normal", isOpen: false });
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.player.x).toBe(snapshot.doors[0].x);
+  expect(snapshot.doors[0].isOpen).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Tuer schwingt auf"))).toBeTruthy();
+});
+
+test("locked doors stay closed without the matching key", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const start = await page.evaluate(() => window.__TEST_API__.getSnapshot().player);
+  await setupDoorAtPlayerStep(page, { doorType: "locked", lockColor: "green", isOpen: false });
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+
+  expect(snapshot.player.x).toBe(start.x);
+  expect(snapshot.doors[0].isOpen).toBeFalsy();
+});
+
+test("matching keys unlock color doors on first contact", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupKeyAtPlayerStep(page, "green");
+  await page.keyboard.press("ArrowRight");
+
+  let inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
+  expect(inventory.items.some((item) => item.type === "key" && item.keyColor === "green" && item.keyFloor === 1)).toBeTruthy();
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const target = { x: snapshot.player.x + 1, y: snapshot.player.y };
+    window.__TEST_API__.placeDoor(target, { doorType: "locked", lockColor: "green", isOpen: false });
+  });
+
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
+
+  expect(snapshot.player.x).toBe(snapshot.doors[0].x);
+  expect(snapshot.doors[0].isOpen).toBeTruthy();
+  expect(snapshot.doors[0].doorType).toBe("normal");
+  expect(inventory.items.some((item) => item.type === "key" && item.keyColor === "green")).toBeFalsy();
+});
+
+test("keys from another floor stay in inventory but cannot open locked doors", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupKeyAtPlayerStep(page, "green");
+  await page.keyboard.press("ArrowRight");
+  await openDownstairsPrompt(page);
+  await page.getByRole("button", { name: "Hinabsteigen" }).click();
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const target = { x: snapshot.player.x + 1, y: snapshot.player.y };
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeDoor(target, { doorType: "locked", lockColor: "green", isOpen: false });
+  });
+
+  const start = await page.evaluate(() => window.__TEST_API__.getSnapshot().player);
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.floor).toBe(2);
+  expect(snapshot.player.x).toBe(start.x);
+  expect(snapshot.doors[0].isOpen).toBeFalsy();
+  expect(inventory.items.some((item) => item.type === "key" && item.keyColor === "green" && item.keyFloor === 1)).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("anderen Ebene"))).toBeTruthy();
+});
+
+test("player can close an adjacent open door when the tile is empty", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupDoorAtPlayerStep(page, { doorType: "normal", isOpen: false });
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("c");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+
+  expect(snapshot.doors[0].isOpen).toBeFalsy();
+});
+
+test("hidden floor traps trigger on entry and become consumed", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setRandomSequence([0.99]);
+  });
+  await setupTrapAtPlayerStep(page, {
+    id: "test-floor-trap",
+    name: "Test-Bodenfalle",
+    description: "Nur fuer den Test.",
+    type: "floor",
+    visibility: "hidden",
+    state: "active",
+    trigger: "on_enter",
+    resetMode: "single_use",
+    affectsPlayer: true,
+    affectsEnemies: true,
+    detectDifficulty: 99,
+    reactDifficulty: 99,
+    effect: { damage: 4 },
+  });
+
+  const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.hp);
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.player.hp).toBeLessThan(before);
+  expect(snapshot.traps[0].state).toBe("consumed");
+  expect(messages.some((entry) => entry.text.includes("Test-Bodenfalle"))).toBeTruthy();
+});
+
+test("alarm traps alarm nearby enemies", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 5, y: 2 },
+      enemy: { aggro: false },
+    });
+    window.__TEST_API__.setRandomSequence([0.99]);
+    window.__TEST_API__.placeTrap({ x: 3, y: 2 }, {
+      id: "test-alarm-trap",
+      name: "Test-Alarmfalle",
+      description: "Nur fuer den Test.",
+      type: "alarm",
+      visibility: "hidden",
+      state: "active",
+      trigger: "on_enter",
+      resetMode: "single_use",
+      affectsPlayer: true,
+      affectsEnemies: false,
+      detectDifficulty: 99,
+      reactDifficulty: 99,
+      effect: { alarm: true },
+    });
+  });
+
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.enemies[0].aggro).toBeTruthy();
+  expect(snapshot.traps[0].state).toBe("consumed");
+  expect(messages.some((entry) => entry.text.includes("aufhorchen"))).toBeTruthy();
+});
+
+test("visible hazards damage actors that remain on them", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeTrap({ x: snapshot.player.x, y: snapshot.player.y }, {
+      id: "test-hazard",
+      name: "Test-Gefahrenfeld",
+      description: "Nur fuer den Test.",
+      type: "hazard",
+      visibility: "visible",
+      state: "active",
+      trigger: "continuous",
+      resetMode: "persistent",
+      affectsPlayer: true,
+      affectsEnemies: true,
+      effect: { damage: 2 },
+    });
+  });
+
+  const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.hp);
+  await page.keyboard.press(" ");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.player.hp).toBeLessThan(before);
+  expect(snapshot.traps[0].state).toBe("active");
+  expect(messages.some((entry) => entry.text.includes("Test-Gefahrenfeld"))).toBeTruthy();
+});
+
+test("closed doors block visibility into the space behind them", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 10, y: 10 },
+      walls: Array.from({ length: 22 }, (_, index) => ({ x: 4, y: index + 1 })).filter((wall) => wall.y !== 2),
+    });
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeDoor({ x: 4, y: 2 }, { doorType: "locked", lockColor: "green", isOpen: false });
+  });
+
+  let snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.visible[2][5]).toBeFalsy();
+
+  await page.evaluate(() => {
+    window.__TEST_API__.placeKey({ x: 3, y: 2 }, "green");
+  });
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+
+  snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.visible[2][5]).toBeTruthy();
+});
+
+test("walls do not reveal an unentered side room from the adjacent corridor", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 5, y: 6 },
+      enemyPosition: { x: 10, y: 10 },
+      walls: [
+        ...Array.from({ length: 10 }, (_, index) => ({ x: 7, y: index + 1 })),
+      ],
+    });
+    window.__TEST_API__.clearFloorEntities();
+  });
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.visible[6][8]).toBeFalsy();
+  expect(snapshot.visible[5][8]).toBeFalsy();
+});
+
+test("visible room floors also reveal adjacent wall corners", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 5, y: 5 },
+      enemyPosition: { x: 10, y: 10 },
+      walls: [
+        { x: 3, y: 3 }, { x: 4, y: 3 }, { x: 5, y: 3 }, { x: 6, y: 3 }, { x: 7, y: 3 },
+        { x: 3, y: 4 }, { x: 7, y: 4 },
+        { x: 3, y: 5 }, { x: 7, y: 5 },
+        { x: 3, y: 6 }, { x: 7, y: 6 },
+        { x: 3, y: 7 }, { x: 4, y: 7 }, { x: 5, y: 7 }, { x: 6, y: 7 }, { x: 7, y: 7 },
+      ],
+    });
+    window.__TEST_API__.clearFloorEntities();
+  });
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.visible[3][3]).toBeTruthy();
+  expect(snapshot.visible[3][7]).toBeTruthy();
+  expect(snapshot.visible[7][3]).toBeTruthy();
+  expect(snapshot.visible[7][7]).toBeTruthy();
+});
+
+test("locked doors only appear when a matching key is reachable on the same floor", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  for (let floor = 1; floor <= 6; floor += 1) {
+    const result = await page.evaluate(() => {
+      const snapshot = window.__TEST_API__.getSnapshot();
+      const lockedDoor = snapshot.doors.find((door) => door.doorType === "locked");
+      if (!lockedDoor) {
+        return { ok: true };
+      }
+
+      const matchingKey = snapshot.keys.find((key) =>
+        key.keyColor === lockedDoor.lockColor &&
+        key.keyFloor === snapshot.floor
+      );
+      if (!matchingKey) {
+        return { ok: false, reason: "missing-key", floor: snapshot.floor };
+      }
+
+      const queue = [{ x: snapshot.player.x, y: snapshot.player.y }];
+      const seen = new Set([`${snapshot.player.x},${snapshot.player.y}`]);
+      const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+      ];
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (current.x === matchingKey.x && current.y === matchingKey.y) {
+          return { ok: true };
+        }
+
+        for (const dir of dirs) {
+          const nextX = current.x + dir.x;
+          const nextY = current.y + dir.y;
+          const posKey = `${nextX},${nextY}`;
+
+          if (seen.has(posKey)) {
+            continue;
+          }
+
+          if (
+            nextX < 0 ||
+            nextY < 0 ||
+            nextY >= snapshot.grid.length ||
+            nextX >= snapshot.grid[0].length
+          ) {
+            continue;
+          }
+
+          if (snapshot.grid[nextY][nextX] === "#") {
+            continue;
+          }
+
+          if (lockedDoor.x === nextX && lockedDoor.y === nextY && !lockedDoor.isOpen) {
+            continue;
+          }
+
+          seen.add(posKey);
+          queue.push({ x: nextX, y: nextY });
+        }
+      }
+
+      return { ok: false, reason: "unreachable-key", floor: snapshot.floor };
+    });
+
+    expect(result.ok).toBeTruthy();
+
+    if (floor < 6) {
+      await openDownstairsPrompt(page);
+      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+    }
+  }
+});
+
+test("locked rooms cannot be entered through an alternate corridor", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  for (let floor = 1; floor <= 6; floor += 1) {
+    const result = await page.evaluate(() => {
+      const snapshot = window.__TEST_API__.getSnapshot();
+      const lockedDoor = snapshot.doors.find((door) => door.doorType === "locked");
+      if (!lockedDoor) {
+        return { ok: true };
+      }
+
+      const lockedRoom = snapshot.rooms?.[lockedDoor.roomIdB];
+      if (!lockedRoom) {
+        return { ok: false, reason: "missing-room", floor: snapshot.floor, door: lockedDoor };
+      }
+
+      const queue = [{ x: snapshot.player.x, y: snapshot.player.y }];
+      const seen = new Set([`${snapshot.player.x},${snapshot.player.y}`]);
+      const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+      ];
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        const insideLockedRoom =
+          current.x >= lockedRoom.x &&
+          current.x < lockedRoom.x + lockedRoom.width &&
+          current.y >= lockedRoom.y &&
+          current.y < lockedRoom.y + lockedRoom.height;
+
+        if (insideLockedRoom) {
+          return { ok: false, reason: "alternate-entry", floor: snapshot.floor, door: lockedDoor, room: lockedRoom };
+        }
+
+        for (const dir of dirs) {
+          const nextX = current.x + dir.x;
+          const nextY = current.y + dir.y;
+          const posKey = `${nextX},${nextY}`;
+
+          if (seen.has(posKey)) {
+            continue;
+          }
+
+          if (
+            nextX < 0 ||
+            nextY < 0 ||
+            nextY >= snapshot.grid.length ||
+            nextX >= snapshot.grid[0].length
+          ) {
+            continue;
+          }
+
+          if (snapshot.grid[nextY][nextX] === "#") {
+            continue;
+          }
+
+          if (lockedDoor.x === nextX && lockedDoor.y === nextY && !lockedDoor.isOpen) {
+            continue;
+          }
+
+          seen.add(posKey);
+          queue.push({ x: nextX, y: nextY });
+        }
+      }
+
+      return { ok: true };
+    });
+
+    expect(result.ok).toBeTruthy();
+
+    if (floor < 6) {
+      await openDownstairsPrompt(page);
+      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+    }
+  }
+});
+
+test("a floor spawns at most three locked doors and one key per locked door", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  for (let floor = 1; floor <= 10; floor += 1) {
+    const result = await page.evaluate(() => {
+      const snapshot = window.__TEST_API__.getSnapshot();
+      const lockedDoors = snapshot.doors.filter((door) => door.doorType === "locked");
+      return {
+        floor: snapshot.floor,
+        lockedDoorCount: lockedDoors.length,
+        keyCount: snapshot.keys.length,
+      };
+    });
+
+    expect(result.lockedDoorCount).toBeLessThanOrEqual(3);
+    expect(result.keyCount).toBe(result.lockedDoorCount);
+
+    if (floor < 10) {
+      await openDownstairsPrompt(page);
+      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+    }
+  }
+});
+
+test("placed doors stay on valid choke-point slots in the final generated layout", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  for (let floor = 1; floor <= 6; floor += 1) {
+    const result = await page.evaluate(() => {
+      const snapshot = window.__TEST_API__.getSnapshot();
+      const invalidDoor = snapshot.doors.find((door) => {
+        const leftWall = snapshot.grid[door.y]?.[door.x - 1] === "#";
+        const rightWall = snapshot.grid[door.y]?.[door.x + 1] === "#";
+        const upWall = snapshot.grid[door.y - 1]?.[door.x] === "#";
+        const downWall = snapshot.grid[door.y + 1]?.[door.x] === "#";
+        return !((leftWall && rightWall) || (upWall && downWall));
+      });
+
+      return invalidDoor
+        ? { ok: false, floor: snapshot.floor, door: invalidDoor }
+        : { ok: true };
+    });
+
+    expect(result.ok).toBeTruthy();
+
+    if (floor < 6) {
+      await openDownstairsPrompt(page);
+      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+    }
+  }
+});
+
+test("generated showcases stay off doors and stairs and only occupy floor tiles", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const result = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const invalidShowcase = (snapshot.showcases ?? []).find((showcase) => {
+      const onDoor = snapshot.doors.some((door) => door.x === showcase.x && door.y === showcase.y);
+      const onStairsDown = snapshot.stairsDown?.x === showcase.x && snapshot.stairsDown?.y === showcase.y;
+      const onStairsUp = snapshot.stairsUp?.x === showcase.x && snapshot.stairsUp?.y === showcase.y;
+      return onDoor || onStairsDown || onStairsUp || snapshot.grid[showcase.y]?.[showcase.x] !== ".";
+    });
+
+    return invalidShowcase
+      ? { ok: false, showcase: invalidShowcase }
+      : { ok: true, count: snapshot.showcases.length };
+  });
+
+  expect(result.ok).toBeTruthy();
+});
+
+test("generated showcases do not cut off already reachable floor areas", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const result = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const blocked = new Set((snapshot.showcases ?? []).map((entry) => `${entry.x},${entry.y}`));
+    const queue = [{ x: snapshot.player.x, y: snapshot.player.y }];
+    const seen = new Set([`${snapshot.player.x},${snapshot.player.y}`]);
+    const directions = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+    ];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+
+      for (const direction of directions) {
+        const nextX = current.x + direction.x;
+        const nextY = current.y + direction.y;
+        const key = `${nextX},${nextY}`;
+
+        if (seen.has(key) || blocked.has(key)) {
+          continue;
+        }
+
+        if (
+          nextX < 0 ||
+          nextY < 0 ||
+          nextY >= snapshot.grid.length ||
+          nextX >= snapshot.grid[0].length
+        ) {
+          continue;
+        }
+
+        if (snapshot.grid[nextY][nextX] !== ".") {
+          continue;
+        }
+
+        const closedLockedDoor = snapshot.doors.some((door) =>
+          door.x === nextX &&
+          door.y === nextY &&
+          door.doorType === "locked" &&
+          !door.isOpen
+        );
+        if (closedLockedDoor) {
+          continue;
+        }
+
+        seen.add(key);
+        queue.push({ x: nextX, y: nextY });
+      }
+    }
+
+    const isolatedShowcase = (snapshot.showcases ?? []).find((showcase) => {
+      const neighbors = [
+        { x: showcase.x + 1, y: showcase.y },
+        { x: showcase.x - 1, y: showcase.y },
+        { x: showcase.x, y: showcase.y + 1 },
+        { x: showcase.x, y: showcase.y - 1 },
+      ].filter((tile) => snapshot.grid[tile.y]?.[tile.x] === ".");
+
+      return neighbors.some((neighbor) => !seen.has(`${neighbor.x},${neighbor.y}`));
+    });
+
+    return isolatedShowcase
+      ? { ok: false, showcase: isolatedShowcase }
+      : { ok: true };
+  });
+
+  expect(result.ok).toBeTruthy();
+});
+
+test("showcases block movement like room obstacles", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const start = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeShowcase({ x: snapshot.player.x + 1, y: snapshot.player.y }, {
+      id: "test-showcase",
+      name: "Test-Vitrine",
+      source: "Tests",
+      description: "Nur fuer den Test.",
+    });
+    return snapshot.player;
+  });
+
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.player.x).toBe(start.x);
+  expect(snapshot.player.y).toBe(start.y);
+  expect(messages.some((entry) => entry.text.includes("Glasvitrine"))).toBeTruthy();
+});
+
+test("entering a room with showcases logs one random ambience line", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const moveKey = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const currentRoomIndex = snapshot.rooms.findIndex((room) =>
+      snapshot.player.x >= room.x &&
+      snapshot.player.x < room.x + room.width &&
+      snapshot.player.y >= room.y &&
+      snapshot.player.y < room.y + room.height
+    );
+    const room = snapshot.rooms[currentRoomIndex];
+    const candidates = [
+      { x: snapshot.player.x + 1, y: snapshot.player.y, key: "ArrowRight" },
+      { x: snapshot.player.x - 1, y: snapshot.player.y, key: "ArrowLeft" },
+      { x: snapshot.player.x, y: snapshot.player.y + 1, key: "ArrowDown" },
+      { x: snapshot.player.x, y: snapshot.player.y - 1, key: "ArrowUp" },
+    ].filter((tile) =>
+      snapshot.grid[tile.y]?.[tile.x] === "." &&
+      tile.x >= room.x &&
+      tile.x < room.x + room.width &&
+      tile.y >= room.y &&
+      tile.y < room.y + room.height
+    );
+
+    const showcaseTile = { x: room.x, y: room.y };
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeShowcase(showcaseTile, {
+      id: "test-showcase",
+      ambienceId: "jason-mask",
+      name: "Test-Vitrine",
+      source: "Tests",
+      description: "Nur fuer den Test.",
+    });
+
+    window.__TEST_API__.teleportPlayer({ x: snapshot.player.x, y: snapshot.player.y });
+    return candidates[0]?.key ?? null;
+  });
+
+  expect(moveKey).not.toBeNull();
+  await page.keyboard.press(moveKey);
+
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages().map((entry) => entry.text));
+  const ambienceLines = [
+    "Hinter dem Glas starrt dich eine abgenutzte Hockeymaske an. Der Raum wirkt ploetzlich stiller.",
+    "Die Maske in der Vitrine sieht harmlos aus, bis man merkt, wie leer der Blick dahinter ist.",
+    "Ein kaltes Schaudern zieht durch den Raum. Selbst hinter Glas wirkt diese Maske wie eine Warnung.",
+  ];
+
+  expect(messages.some((message) => ambienceLines.includes(message))).toBeTruthy();
+});

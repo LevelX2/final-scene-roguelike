@@ -1,0 +1,302 @@
+export const ROOM_ATTEMPTS = 84;
+export const MIN_ROOM_SIZE = 4;
+export const MAX_ROOM_SIZE = 9;
+
+export const VISION_RADIUS = 5;
+export const BASE_HIT_CHANCE = 65;
+export const MIN_HIT_CHANCE = 10;
+export const MAX_HIT_CHANCE = 90;
+export const MIN_CRIT_CHANCE = 0;
+export const MAX_CRIT_CHANCE = 50;
+export const FLOOR_WEAPON_SPAWN_CHANCE = 0.25;
+export const CHEST_WEAPON_CHANCE = 0.3;
+export const CHEST_SHIELD_CHANCE = 0.1;
+export const DUNGEON_WEAPON_WEIGHT_BONUS = 1.35;
+export const DUPLICATE_WEAPON_WEIGHT_PENALTY = 0.35;
+export const NON_ICONIC_MONSTER_WEIGHT_BONUS = 1.45;
+export const ICONIC_MONSTER_WEIGHT_PENALTY = 0.72;
+export const ENEMY_HP_PER_SCALE = 5;
+export const ENEMY_XP_PER_SCALE = 5;
+export const ENEMY_STRENGTH_SCALE_STEP = 1;
+export const ENEMY_PRECISION_SCALE_STEP = 2;
+export const ENEMY_REACTION_SCALE_STEP = 2;
+export const ENEMY_NERVES_SCALE_STEP = 2;
+export const ENEMY_INTELLIGENCE_SCALE_STEP = 3;
+export const ENEMY_AGGRO_RADIUS_CAP = 4;
+export const MONSTER_VARIANT_TIERS = {
+  normal: {
+    id: "normal",
+    label: "Normal",
+    weight: 100,
+    modCount: 0,
+    hpMultiplier: 1,
+    xpMultiplier: 1,
+    weaponDropChance: 0.55,
+    offHandDropChance: 0.45,
+  },
+  elite: {
+    id: "elite",
+    label: "Elite",
+    weight: 0,
+    modCount: 1,
+    hpMultiplier: 1.18,
+    xpMultiplier: 1.35,
+    weaponDropChance: 0.72,
+    offHandDropChance: 0.58,
+  },
+  dire: {
+    id: "dire",
+    label: "Dire",
+    weight: 0,
+    modCount: 2,
+    hpMultiplier: 1.32,
+    xpMultiplier: 1.65,
+    weaponDropChance: 0.88,
+    offHandDropChance: 0.72,
+  },
+};
+export const MONSTER_VARIANT_MODIFIERS = [
+  {
+    id: "hulking",
+    label: "Kolossal",
+    statChanges: { hpFlat: 4, strength: 1 },
+  },
+  {
+    id: "brutal",
+    label: "Brutal",
+    statChanges: { strength: 2 },
+  },
+  {
+    id: "keen",
+    label: "Praezise",
+    statChanges: { precision: 2 },
+  },
+  {
+    id: "swift",
+    label: "Jagend",
+    statChanges: { reaction: 2, aggroRadius: 1 },
+  },
+  {
+    id: "unyielding",
+    label: "Unerbittlich",
+    statChanges: { nerves: 2, hpFlat: 2 },
+  },
+  {
+    id: "cunning",
+    label: "Listig",
+    statChanges: { intelligence: 2, precision: 1 },
+  },
+];
+export const ITEM_RARITY_WEIGHTS = {
+  common: 70,
+  uncommon: 22,
+  rare: 7,
+  veryRare: 1,
+};
+export const ITEM_RARITY_MODIFIER_COUNTS = {
+  common: 0,
+  uncommon: 1,
+  rare: 2,
+  veryRare: 3,
+};
+
+export const HERO_CLASSES = {
+  survivor: {
+    id: "survivor",
+    label: "Survivor",
+    tagline: "Ausgewogen und zaeh.",
+    maxHp: 20,
+    strength: 4,
+    precision: 3,
+    reaction: 3,
+    nerves: 2,
+    intelligence: 2,
+    endurance: 2,
+  },
+  slayer: {
+    id: "slayer",
+    label: "Slayer",
+    tagline: "Mehr Druck im Nahkampf.",
+    maxHp: 18,
+    strength: 5,
+    precision: 4,
+    reaction: 2,
+    nerves: 2,
+    intelligence: 1,
+    endurance: 1,
+  },
+  medium: {
+    id: "medium",
+    label: "Medium",
+    tagline: "Wacher, nervenstaerker, kontrollierter.",
+    maxHp: 19,
+    strength: 3,
+    precision: 3,
+    reaction: 4,
+    nerves: 4,
+    intelligence: 3,
+    endurance: 3,
+  },
+};
+
+export function xpForNextLevel(level) {
+  return 40 + (level - 1) * 28 + Math.floor((level - 1) * (level - 1) * 6);
+}
+
+export function getLevelUpRewards(nextLevel) {
+  return {
+    maxHp: 3,
+    strength: nextLevel % 2 === 0 ? 1 : 0,
+    reaction: nextLevel % 3 === 0 ? 1 : 0,
+    intelligence: nextLevel % 4 === 0 ? 1 : 0,
+    nerves: nextLevel % 2 === 1 ? 1 : 0,
+    precision: nextLevel % 2 === 1 ? 1 : 0,
+    fullHeal: true,
+  };
+}
+
+export function getUnlockedMonsterRank(floorNumber, monsterCatalog) {
+  const highestRank = monsterCatalog.reduce((max, monster) => Math.max(max, monster.rank), 1);
+  const unlockedRank = floorNumber === 1 ? 1 : floorNumber + 1;
+  return Math.min(highestRank, unlockedRank);
+}
+
+export function getEnemyCountForFloor(floorNumber) {
+  return Math.min(15, floorNumber === 1 ? 5 : 5 + Math.ceil(floorNumber * 1.05));
+}
+
+export function getEnemyScaleForFloor(floorNumber, monsterRank) {
+  return Math.max(0, floorNumber - monsterRank);
+}
+
+export function getMonsterVariantWeights(floorNumber) {
+  return {
+    normal: 100,
+    elite: floorNumber >= 8 ? 16 : floorNumber >= 5 ? 12 : floorNumber >= 3 ? 8 : 5,
+    dire: floorNumber >= 9 ? 4 : floorNumber >= 6 ? 3 : floorNumber >= 4 ? 2 : 1,
+  };
+}
+
+export function getPotionCountForFloor(floorNumber) {
+  return 2 + Math.floor(floorNumber / 2);
+}
+
+export function shouldSpawnFloorWeapon(floorNumber, roll = Math.random()) {
+  return floorNumber >= 2 && roll < FLOOR_WEAPON_SPAWN_CHANCE;
+}
+
+export function shouldSpawnFloorShield(floorNumber, roll = Math.random()) {
+  if (floorNumber === 2) {
+    return roll < 0.35;
+  }
+
+  return floorNumber >= 5 && roll < 0.08;
+}
+
+export function shouldSpawnChest(floorNumber, roll = Math.random()) {
+  return roll < Math.min(0.55, 0.2 + floorNumber * 0.06);
+}
+
+export function getChestCountForFloor(floorNumber, roll = Math.random()) {
+  return floorNumber >= 4 && roll < 0.35 ? 2 : 1;
+}
+
+export function getLockedDoorCountForFloor(floorNumber, roll = Math.random()) {
+  if (floorNumber < 3) {
+    return 0;
+  }
+
+  if (floorNumber >= 8) {
+    if (roll < 0.18) {
+      return 3;
+    }
+    if (roll < 0.62) {
+      return 2;
+    }
+    return roll < 0.95 ? 1 : 0;
+  }
+
+  if (floorNumber >= 5) {
+    if (roll < 0.1) {
+      return 3;
+    }
+    if (roll < 0.48) {
+      return 2;
+    }
+    return roll < 0.9 ? 1 : 0;
+  }
+
+  if (roll < 0.22) {
+    return 2;
+  }
+
+  return roll < 0.8 ? 1 : 0;
+}
+
+export function shouldPlaceLockedRoomChest(roll = Math.random()) {
+  return roll < 0.8;
+}
+
+export function getEquipmentRarityWeights(dropContext = {}) {
+  const weights = { ...ITEM_RARITY_WEIGHTS };
+  const floorNumber = dropContext.floorNumber ?? 1;
+  const dropSourceTag = dropContext.dropSourceTag ?? "";
+
+  if (floorNumber >= 4) {
+    weights.common -= 6;
+    weights.uncommon += 4;
+    weights.rare += 2;
+  }
+
+  if (floorNumber >= 7) {
+    weights.common -= 6;
+    weights.uncommon += 3;
+    weights.rare += 2;
+    weights.veryRare += 1;
+  }
+
+  if (dropSourceTag === "chest") {
+    weights.common -= 4;
+    weights.uncommon += 2;
+    weights.rare += 1;
+    weights.veryRare += 1;
+  }
+
+  if (dropSourceTag === "locked-room-chest") {
+    weights.common -= 18;
+    weights.uncommon += 10;
+    weights.rare += 6;
+    weights.veryRare += 2;
+  }
+
+  if (dropSourceTag.startsWith("monster:")) {
+    weights.common += 4;
+    weights.uncommon -= 2;
+    weights.rare -= 1;
+    weights.veryRare -= 1;
+  }
+
+  if (dropSourceTag.endsWith(":elite")) {
+    weights.common -= 6;
+    weights.uncommon += 4;
+    weights.rare += 2;
+  }
+
+  if (dropSourceTag.endsWith(":dire")) {
+    weights.common -= 10;
+    weights.uncommon += 5;
+    weights.rare += 3;
+    weights.veryRare += 2;
+  }
+
+  for (const key of Object.keys(weights)) {
+    weights[key] = Math.max(0, weights[key]);
+  }
+
+  const total = Object.values(weights).reduce((sum, value) => sum + value, 0);
+  if (total <= 0) {
+    return { ...ITEM_RARITY_WEIGHTS };
+  }
+
+  return weights;
+}

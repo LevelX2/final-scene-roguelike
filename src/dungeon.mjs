@@ -20,6 +20,7 @@ import {
   getEnemyScaleForFloor,
   shouldSpawnFloorShield,
 } from './balance.mjs';
+import { rollStudioArchetypeId } from './studio-theme.mjs';
 
 export function createDungeonApi(context) {
   const {
@@ -240,7 +241,7 @@ export function createDungeonApi(context) {
         type: "key",
         name: `${label} Schlüssel`,
         description: floorNumber
-          ? `Passt zu ${colorLabel} Türen auf Ebene ${floorNumber}. Wird beim Öffnen verbraucht.`
+          ? `Passt zu ${colorLabel} Türen in Studio ${floorNumber}. Wird beim Öffnen verbraucht.`
           : `Passt zu ${colorLabel} Türen. Wird beim Öffnen verbraucht.`,
         keyColor: color,
         keyFloor: floorNumber,
@@ -1408,6 +1409,7 @@ export function createDungeonApi(context) {
   function createDungeonLevel(floorNumber, options = {}) {
     const grid = createGrid();
     const rooms = [];
+    const studioArchetypeId = options.studioArchetypeId ?? rollStudioArchetypeId(randomInt);
     const layoutProfile = rollLayoutProfile();
     const targetRoomCount = randomInt(
       layoutProfile.targetRooms.min,
@@ -1738,6 +1740,8 @@ export function createDungeonApi(context) {
       });
 
       return {
+        floorNumber,
+        studioArchetypeId,
         grid,
         rooms,
         startPosition,

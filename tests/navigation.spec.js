@@ -50,12 +50,12 @@ test("stairs require confirmation before changing floors", async ({ page }) => {
   await openDownstairsPrompt(page);
 
   await expect(page.locator("#stairsModal")).toBeVisible();
-  await expect(page.locator("#stairsTitle")).toContainText("Abwärtstreppe");
+  await expect(page.locator("#stairsTitle")).toContainText("Übergang");
 
   await page.getByRole("button", { name: "Hier bleiben" }).click();
 
   await expect(page.locator("#stairsModal")).toBeHidden();
-  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 1");
+  await expect(page.locator("#depthTitle")).toContainText("Studio 1");
 });
 
 test("stairs confirmation can move the player to the next floor", async ({ page }) => {
@@ -65,10 +65,10 @@ test("stairs confirmation can move the player to the next floor", async ({ page 
   await openDownstairsPrompt(page);
 
   await expect(page.locator("#stairsModal")).toBeVisible();
-  await page.getByRole("button", { name: "Hinabsteigen" }).click();
+  await page.getByRole("button", { name: "Betreten" }).click();
 
   await expect(page.locator("#stairsModal")).toBeHidden();
-  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 2");
+  await expect(page.locator("#depthTitle")).toContainText("Studio 2");
 });
 
 test("restart resets the run back to floor one", async ({ page }) => {
@@ -76,14 +76,32 @@ test("restart resets the run back to floor one", async ({ page }) => {
   await startRun(page);
 
   await openDownstairsPrompt(page);
-  await page.getByRole("button", { name: "Hinabsteigen" }).click();
-  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 2");
+  await page.getByRole("button", { name: "Betreten" }).click();
+  await expect(page.locator("#depthTitle")).toContainText("Studio 2");
 
   await page.keyboard.press("r");
   await startRun(page);
 
-  await expect(page.locator("#depthTitle")).toContainText("Dungeon-Ebene 1");
+  await expect(page.locator("#depthTitle")).toContainText("Studio 1");
   await expect(page.locator("#stairsModal")).toBeHidden();
+});
+
+test("studio archetypes stay stable when returning to a previous studio", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const firstStudioTitle = await page.locator("#depthTitle").textContent();
+
+  await openDownstairsPrompt(page);
+  await page.getByRole("button", { name: "Betreten" }).click();
+  await expect(page.locator("#depthTitle")).toContainText("Studio 2");
+
+  await page.evaluate(() => {
+    window.__TEST_API__.promptCurrentStairs();
+  });
+  await page.getByRole("button", { name: "Zurückkehren" }).click();
+
+  await expect(page.locator("#depthTitle")).toHaveText(firstStudioTitle);
 });
 
 test("closed doors open automatically when the player walks into them", async ({ page }) => {
@@ -149,7 +167,7 @@ test("keys from another floor stay in inventory but cannot open locked doors", a
   await setupKeyAtPlayerStep(page, "green");
   await page.keyboard.press("ArrowRight");
   await openDownstairsPrompt(page);
-  await page.getByRole("button", { name: "Hinabsteigen" }).click();
+  await page.getByRole("button", { name: "Betreten" }).click();
 
   await page.evaluate(() => {
     const snapshot = window.__TEST_API__.getSnapshot();
@@ -169,7 +187,7 @@ test("keys from another floor stay in inventory but cannot open locked doors", a
   expect(snapshot.player.x).toBe(start.x);
   expect(snapshot.doors[0].isOpen).toBeFalsy();
   expect(inventory.items.some((item) => item.type === "key" && item.keyColor === "green" && item.keyFloor === 1)).toBeTruthy();
-  expect(messages.some((entry) => entry.text.includes("anderen Ebene"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("anderen Studio"))).toBeTruthy();
 });
 
 test("player can close an adjacent open door when the tile is empty", async ({ page }) => {
@@ -508,7 +526,7 @@ test("locked doors only appear when a matching key is reachable on the same floo
 
     if (floor < 6) {
       await openDownstairsPrompt(page);
-      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+      await page.getByRole("button", { name: "Betreten" }).click();
     }
   }
 });
@@ -589,7 +607,7 @@ test("locked rooms cannot be entered through an alternate corridor", async ({ pa
 
     if (floor < 6) {
       await openDownstairsPrompt(page);
-      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+      await page.getByRole("button", { name: "Betreten" }).click();
     }
   }
 });
@@ -614,7 +632,7 @@ test("a floor spawns at most three locked doors and one key per locked door", as
 
     if (floor < 10) {
       await openDownstairsPrompt(page);
-      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+      await page.getByRole("button", { name: "Betreten" }).click();
     }
   }
 });
@@ -643,7 +661,7 @@ test("placed doors stay on valid choke-point slots in the final generated layout
 
     if (floor < 6) {
       await openDownstairsPrompt(page);
-      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+      await page.getByRole("button", { name: "Betreten" }).click();
     }
   }
 });
@@ -770,7 +788,7 @@ test("generated showcases stay unique across floors while unused props remain", 
 
     if (floor < 10) {
       await openDownstairsPrompt(page);
-      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+      await page.getByRole("button", { name: "Betreten" }).click();
     }
   }
 });

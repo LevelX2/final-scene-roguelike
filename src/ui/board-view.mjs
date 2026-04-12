@@ -316,11 +316,11 @@ export function createBoardView(context) {
         type: isVisible ? "stairs-down" : "stairs-down memory",
         glyph: TILE.STAIRS_DOWN,
         tooltip: isVisible ? {
-          title: "Abwärtstreppe",
+          title: "Übergang",
           imageUrl: "./assets/stairs-down.svg",
           imageClass: "tooltip-art-stairs tooltip-art-stairs-down",
           lines: [
-            "Führt tiefer in den Dungeon.",
+            "Führt dich tiefer in den Studiokomplex.",
           ],
         } : null,
       };
@@ -331,11 +331,11 @@ export function createBoardView(context) {
         type: isVisible ? "stairs-up" : "stairs-up memory",
         glyph: TILE.STAIRS_UP,
         tooltip: isVisible ? {
-          title: "Aufwärtstreppe",
+          title: "Rückweg",
           imageUrl: "./assets/stairs-up.svg",
           imageClass: "tooltip-art-stairs tooltip-art-stairs-up",
           lines: [
-            "Bringt dich zur vorherigen Ebene zurück.",
+            "Bringt dich in ein früheres Studio zurück.",
           ],
         } : null,
       };

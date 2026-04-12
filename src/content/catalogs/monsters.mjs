@@ -606,7 +606,7 @@ export const MONSTER_CATALOG = [
     xpReward: 84,
     aggroRadius: 12,
     canOpenDoors: true,
-    special: "Kann dir als einziger Gegner über Treppen auf andere Ebenen folgen.",
+    special: "Kann dir als einziger Gegner über Treppen in andere Studios folgen.",
     canChangeFloors: true,
   },
   {

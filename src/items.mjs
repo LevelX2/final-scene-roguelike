@@ -489,7 +489,7 @@ export function createItemsApi(context) {
     }
 
     if (item.type === "key") {
-      addMessage(`${item.name} passt nur zu passenden Farbtüren auf Ebene ${item.keyFloor ?? "?"} und wird beim Öffnen verbraucht.`, "important");
+      addMessage(`${item.name} passt nur zu passenden Farbtüren in Studio ${item.keyFloor ?? "?"} und wird beim Öffnen verbraucht.`, "important");
       renderSelf();
       return;
     }

@@ -1,3 +1,5 @@
+import { formatStudioLabel, getStudioArchetypeLabel } from '../studio-theme.mjs';
+
 export function createModalController(context) {
   const {
     CHOICE_ACTIONS,
@@ -31,6 +33,7 @@ export function createModalController(context) {
 
   function showDeathModal(rank) {
     const state = getState();
+    const currentFloor = state.floors?.[state.floor];
     clearSavedGame();
     const fallenHero = `${state.player.classLabel ?? "Held"} ${state.player.name}`;
     const deathLead = `Der ${fallenHero} ${state.deathCause ?? "erlebte eine unbekannte Schluss-Szene."}`;
@@ -38,7 +41,9 @@ export function createModalController(context) {
       `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
       createSheetRow("Held", fallenHero),
       createSheetRow("Level", state.player.level),
-      createSheetRow("Tiefste Ebene", state.deepestFloor),
+      createSheetRow("Gestorben in", formatStudioLabel(state.floor)),
+      createSheetRow("Archetyp", getStudioArchetypeLabel(currentFloor?.studioArchetypeId) ?? "Unbekannt"),
+      createSheetRow("Erreichtes Studio", formatStudioLabel(state.deepestFloor)),
       createSheetRow("Gegner besiegt", state.kills),
       createSheetRow("Schritte", state.turn),
       createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Außer Wertung"),
@@ -51,7 +56,7 @@ export function createModalController(context) {
     state.modals.deathKillsOpen = false;
     deathModalElement.classList.remove("hidden");
     deathModalElement.setAttribute("aria-hidden", "false");
-    updateSavegameControls("Kein gespeicherter Lauf gefunden.");
+    updateSavegameControls("Kein Spielstand gefunden.");
   }
 
   function hideDeathModal() {
@@ -140,7 +145,7 @@ export function createModalController(context) {
     };
     stairsTitleElement.textContent = config.title;
     stairsTextElement.textContent = config.text;
-    stairsConfirmButton.textContent = config.confirmLabel ?? "Ebene wechseln";
+    stairsConfirmButton.textContent = config.confirmLabel ?? "Studio wechseln";
     stairsStayButton.textContent = config.stayLabel ?? "Hier bleiben";
     stairsModalElement.classList.remove("hidden");
     stairsModalElement.setAttribute("aria-hidden", "false");

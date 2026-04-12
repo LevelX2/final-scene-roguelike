@@ -4,6 +4,12 @@ Fight Through a Dying Movieverse
 
 Browserbasiertes Rogue-like mit Horrorfilm-Thema, zufällig generierten Dungeon-Ebenen, zustandsbasiertem Kampf, Loot, Hunger-System, Save/Load und einer recht großen Playwright-E2E-Suite.
 
+## Projektregeln
+
+- Sichtbare deutsche UI-Texte verwenden echte Umlaute und ß.
+- ASCII-Schreibweisen wie `ae`, `oe` oder `ue` sind nur für technische Bezeichner, IDs und Dateinamen gedacht.
+- Archetypen werden in der UI als klare Einzelbegriffe angezeigt, nicht als mehrteilige Designbeschreibung.
+
 ## Kurzüberblick
 
 Dieses Repository enthält ein lauffähiges Einzelspieler-Browserspiel ohne Framework. Die App besteht aus statischem HTML/CSS und modularisiertem JavaScript im `src/`-Ordner. Für den Browser wird der aktive Einstieg `src/main.mjs` per `esbuild` nach `dist/game.bundle.js` gebündelt. `index.html` lädt genau dieses Bundle.

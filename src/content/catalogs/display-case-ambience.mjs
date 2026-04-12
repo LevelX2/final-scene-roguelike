@@ -127,17 +127,17 @@
   "rose-under-glass": [
     "Eine einzelne Rose steht geschützt in der Vitrine. Ihre Schönheit beruhigt den Raum kein bisschen.",
     "Die Blume wirkt zu vollkommen für diesen Ort.",
-    "Hinter Glas blüht etwas Sanftes, das im Dungeon fast unheimlicher wirkt als jede Klinge.",
+    "Hinter Glas blüht etwas Sanftes, das im Studiokomplex fast unheimlicher wirkt als jede Klinge.",
   ],
   "film-clapper": [
     "Eine alte Filmklappe lehnt auf dem Sockel. Der Raum fühlt sich an, als hätte gerade eine Szene begonnen.",
     "Hinter Glas wartet das Zeichen für Action, aber niemand hat dir das Drehbuch gegeben.",
-    "Die Klappe erinnert daran, dass dieser Ort sich manchmal mehr wie ein Set als wie ein Dungeon anfühlt.",
+    "Die Klappe erinnert daran, dass dieser Ort sich manchmal mehr wie ein Set als wie ein Studiokomplex anfühlt.",
   ],
   "film-award": [
     "Eine goldene Trophäe glänzt in der Vitrine, als gaebe es hier unten etwas zu feiern.",
     "Der Preis hinter Glas wirkt wie ein schlechter Witz an einem Ort wie diesem.",
-    "Selbst Ruhm sieht im Dungeon aus wie etwas, das zu spaet gekommen ist.",
+    "Selbst Ruhm sieht im Studiokomplex aus wie etwas, das zu spät gekommen ist.",
   ],
   "terminator-jacket-glasses": [
     "Jacke und Brille ruhen wie Überreste jemandes, der selten um Erlaubnis bat.",

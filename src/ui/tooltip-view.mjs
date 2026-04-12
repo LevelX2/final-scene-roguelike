@@ -125,7 +125,7 @@ export function createTooltipView(context) {
         title: "Lebenspunkte",
         lines: [
           `Aktuell ${state.player.hp}/${state.player.maxHp}`,
-          "Wenn das auf 0 fällt, endet der Lauf.",
+          "Wenn das auf 0 fällt, endet das Spiel.",
         ],
       },
       level: {

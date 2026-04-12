@@ -1,5 +1,6 @@
 import { xpForNextLevel, resolveHeroClassId } from './balance.mjs';
 import { getNutritionMax, getNutritionStart, getHungerState } from './nutrition.mjs';
+import { rollStudioArchetypeId } from './studio-theme.mjs';
 
 export function createStateApi(context) {
   const {
@@ -318,6 +319,11 @@ export function createStateApi(context) {
       ...(savedState.preferences ?? {}),
     };
     normalizedState.floors = savedState.floors ?? {};
+    Object.values(normalizedState.floors).forEach((floorState) => {
+      if (floorState && !floorState.studioArchetypeId) {
+        floorState.studioArchetypeId = rollStudioArchetypeId(randomInt);
+      }
+    });
 
     normalizedState.player = {
       ...normalizedState.player,
@@ -414,7 +420,9 @@ export function createStateApi(context) {
       heroClass: state.player.classLabel,
       date: new Date().toLocaleString("de-DE"),
       deathFloor: state.floor,
+      deathStudioArchetypeId: state.floors[state.floor]?.studioArchetypeId ?? null,
       deepestFloor: state.deepestFloor,
+      deepestStudioArchetypeId: state.floors[state.deepestFloor]?.studioArchetypeId ?? null,
       level: state.player.level,
       hp: state.player.hp,
       maxHp: state.player.maxHp,

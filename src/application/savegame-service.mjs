@@ -1,3 +1,5 @@
+import { formatStudioLabel } from '../studio-theme.mjs';
+
 export function createSavegameService(context) {
   const {
     getState,
@@ -16,12 +18,12 @@ export function createSavegameService(context) {
   function formatSavegameSummary() {
     const metadata = getSavedGameMetadata();
     if (!metadata) {
-      return "Kein gespeicherter Lauf gefunden.";
+      return "Kein Spielstand gefunden.";
     }
 
     const heroName = metadata.heroName ?? "Unbekannt";
-    const floor = metadata.floor ? `Ebene ${metadata.floor}` : "unbekannter Ebene";
-    return `Gespeichert: ${heroName} auf ${floor}.`;
+    const floor = metadata.floor ? formatStudioLabel(metadata.floor) : "unbekanntem Studio";
+    return `Gespeichert: ${heroName} in ${floor}.`;
   }
 
   function updateSavegameControls(statusText = formatSavegameSummary()) {
@@ -35,7 +37,7 @@ export function createSavegameService(context) {
   function saveCurrentGame() {
     const state = getState();
     if (state.gameOver || state.modals.startOpen) {
-      updateSavegameControls("Speichern ist erst in einem laufenden Spiel moeglich.");
+      updateSavegameControls("Speichern ist erst während eines Spiels möglich.");
       return;
     }
 
@@ -58,16 +60,16 @@ export function createSavegameService(context) {
       }
 
       if (result.reason === "invalid") {
-        updateSavegameControls("Der gespeicherte Lauf ist beschaedigt und konnte nicht geladen werden.");
+        updateSavegameControls("Der Spielstand ist beschädigt und konnte nicht geladen werden.");
         return;
       }
 
-      updateSavegameControls("Kein gespeicherter Lauf gefunden.");
+      updateSavegameControls("Kein Spielstand gefunden.");
       return;
     }
 
     detectNearbyTraps();
-    addMessage("Gespeicherter Lauf geladen.", "important");
+    addMessage("Spielstand geladen.", "important");
     updateSavegameControls(formatSavegameSummary());
     renderSelf();
   }

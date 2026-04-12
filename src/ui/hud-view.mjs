@@ -1,3 +1,5 @@
+import { formatStudioLabel, formatStudioWithArchetype, getStudioArchetypeLabel } from '../studio-theme.mjs';
+
 export function createHudView(context) {
   const {
     playerSheetElement,
@@ -108,14 +110,16 @@ export function createHudView(context) {
       const item = document.createElement("div");
       const isLatest = Boolean(lastMarker) && score.marker === lastMarker;
       const deathFloor = score.deathFloor ?? score.deepestFloor;
+      const deathStudio = formatStudioWithArchetype(deathFloor, score.deathStudioArchetypeId);
+      const deepestStudio = formatStudioWithArchetype(score.deepestFloor, score.deepestStudioArchetypeId);
       const classIconUrl = getHeroClassIconUrl(score.heroClassId ?? score.heroClass);
       item.className = `score-item${isLatest ? " score-item-latest" : ""}`;
       item.innerHTML = `
         <div class="score-item-head">
           <div class="class-badge score-class-badge" aria-hidden="true"${classIconUrl ? ` style="--class-icon: url('${classIconUrl}')"` : ""}></div>
           <div class="score-item-copy">
-            <strong>#${index + 1} ${score.heroName ?? "Unbenannt"} | Ebene ${score.deepestFloor}${isLatest ? ' <span class="score-badge">Letzter Lauf</span>' : ""}</strong>
-            <span>${score.heroClass ?? "Unbekannt"} | Level ${score.level} | Kills ${score.kills ?? 0} | Leben ${score.hp}/${score.maxHp} | Gestorben auf Ebene ${deathFloor}</span>
+            <strong>#${index + 1} ${score.heroName ?? "Unbenannt"} | ${deepestStudio}${isLatest ? ' <span class="score-badge">Letzter Versuch</span>' : ""}</strong>
+            <span>${score.heroClass ?? "Unbekannt"} | Level ${score.level} | Kills ${score.kills ?? 0} | Leben ${score.hp}/${score.maxHp} | Gestorben in ${deathStudio}</span>
             <span>${score.deathCause ?? "Ohne dokumentierte Schluss-Szene."}</span>
             <span>${score.turns} Schritte | ${score.date}</span>
           </div>
@@ -127,11 +131,13 @@ export function createHudView(context) {
 
   function renderRunStats() {
     const state = getState();
+    const currentFloorState = getCurrentFloorState();
     runStatsSummaryElement.innerHTML = [
       createSheetRow("Held", state.player.name),
       createSheetRow("Klasse", state.player.classLabel ?? "-"),
-      createSheetRow("Aktuelle Ebene", state.floor),
-      createSheetRow("Tiefste Ebene", state.deepestFloor),
+      createSheetRow("Aktuelles Studio", formatStudioLabel(state.floor)),
+      createSheetRow("Aktueller Archetyp", getStudioArchetypeLabel(currentFloorState?.studioArchetypeId) ?? "Unbekannt"),
+      createSheetRow("Erreichtes Studio", formatStudioLabel(state.deepestFloor)),
       createSheetRow("Gegner besiegt", state.kills),
       createSheetRow("Erhaltene XP", state.xpGained ?? 0),
       createSheetRow("Schaden ausgeteilt", state.damageDealt ?? 0),

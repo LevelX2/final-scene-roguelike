@@ -5,6 +5,7 @@ import { createInventoryView } from './ui/inventory-view.mjs';
 import { createLogView } from './ui/log-view.mjs';
 import { createRenderAssetHelpers } from './ui/render-assets.mjs';
 import { createTooltipView } from './ui/tooltip-view.mjs';
+import { formatStudioLabel, formatStudioWithArchetype, getStudioArchetypeLabel } from './studio-theme.mjs';
 
 export function createRenderApi(context) {
   const {
@@ -103,7 +104,7 @@ export function createRenderApi(context) {
         title: "Lebenspunkte",
         lines: [
           `Aktuell ${state.player.hp}/${state.player.maxHp}`,
-          "Wenn das auf 0 fällt, endet der Lauf.",
+          "Wenn das auf 0 fällt, endet das Spiel.",
         ],
       },
       level: {

@@ -179,7 +179,7 @@
     ambienceId: "rose-under-glass",
     name: "Rose in einer Glasglocke",
     source: "Beauty and the Beast",
-    description: "Fast zu märchenhaft für den Dungeon. Das Glas wirkt klarer als die Luft drumherum.",
+    description: "Fast zu märchenhaft für den Studiokomplex. Das Glas wirkt klarer als die Luft drumherum.",
   },
   {
     id: "film-clapper",
@@ -193,7 +193,7 @@
     ambienceId: "film-award",
     name: "Goldene Trophäe",
     source: "Hollywood-Motiv",
-    description: "Eine Oscar-ähnliche Statue, stolz beleuchtet und etwas zu sauber für den Rest des Dungeons.",
+    description: "Eine Oscar-ähnliche Statue, stolz beleuchtet und etwas zu sauber für den Rest des Studiokomplexes.",
   },
   {
     id: "terminator-bust",
@@ -249,7 +249,7 @@
     ambienceId: "music-box",
     name: "Spieluhr mit Ballerina",
     source: "Horror- und Mystery-Filmklischee",
-    description: "Zu filigran für diesen Dungeon, und gerade deshalb ein wenig bedrohlich.",
+    description: "Zu filigran für diesen Studiokomplex, und gerade deshalb ein wenig bedrohlich.",
   },
   {
     id: "old-camcorder",

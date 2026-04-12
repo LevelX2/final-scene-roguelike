@@ -14,8 +14,8 @@
         <h1>The Final Scene</h1>
       </div>
       <div class="hero-actions">
-        <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Neuer Lauf</button>
-        <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Laufstatistik</button>
+        <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Zurück in den Studiokomplex</button>
+        <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Spielverlauf</button>
         <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
         <button id="openOptions" class="mini-btn hero-help-btn" type="button">Optionen</button>
         <button id="openHighscores" class="mini-btn hero-help-btn" type="button">Highscores</button>
@@ -27,8 +27,8 @@
       <section class="panel board-panel">
         <div class="board-topbar">
           <div>
-            <p class="board-label">Aktuelle Tiefe</p>
-            <h2 id="depthTitle">Dungeon-Ebene 1</h2>
+            <p class="board-label">Aktuelles Studio</p>
+            <h2 id="depthTitle">Studio 1 - Slasher</h2>
           </div>
           <div class="board-stats" aria-label="Kompakte Heldenwerte">
             <div id="topbarHpCard" class="board-stat-pill">
@@ -138,7 +138,7 @@
       <h2 id="stairsTitle">Treppenfeld betreten</h2>
       <p id="stairsText" class="modal-copy"></p>
       <div class="modal-actions">
-        <button id="stairsConfirm" class="choice-btn accent" type="button">Ebene wechseln</button>
+        <button id="stairsConfirm" class="choice-btn accent" type="button">Studio wechseln</button>
         <button id="stairsStay" class="choice-btn ghost" type="button">Hier bleiben</button>
       </div>
     </div>
@@ -188,7 +188,7 @@
           <button id="saveGameButton" class="choice-btn accent" type="button">Spiel speichern</button>
           <button id="loadGameButton" class="choice-btn" type="button">Spielstand laden</button>
         </div>
-        <p id="savegameStatus" class="modal-copy">Kein gespeicherter Lauf gefunden.</p>
+        <p id="savegameStatus" class="modal-copy">Kein Spielstand gefunden.</p>
       </div>
     </div>
   </div>
@@ -209,7 +209,7 @@
         <div class="help-row"><span><kbd>C</kbd></span><strong>Benachbarte offene Tür schließen</strong></div>
         <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>
         <div class="help-row"><span><kbd>O</kbd></span><strong>Optionen anzeigen</strong></div>
-        <div class="help-row"><span><kbd>R</kbd></span><strong>Lauf neu starten</strong></div>
+        <div class="help-row"><span><kbd>R</kbd></span><strong>Spiel neu starten</strong></div>
         <div class="help-row"><span><kbd>Enter</kbd></span><strong>Fund- oder Treppenwahl bestätigen</strong></div>
         <div class="help-row"><span><kbd>Esc</kbd></span><strong>Offene Fenster schließen</strong></div>
       </div>
@@ -234,12 +234,12 @@
     <div class="modal-card panel scroll-modal-card run-stats-modal-card">
       <div class="inventory-inline-head">
         <div>
-          <p class="modal-eyebrow">Aktueller Lauf</p>
-          <h2>Lauf-Statistik</h2>
+          <p class="modal-eyebrow">Aktueller Fortschritt</p>
+          <h2>Spielverlauf</h2>
         </div>
         <button id="closeRunStats" class="mini-btn" type="button">Schließen</button>
       </div>
-      <p class="modal-copy">Hier siehst du, wie weit dieser Lauf bereits gekommen ist und was du schon bezwungen oder verbraucht hast.</p>
+      <p class="modal-copy">Hier siehst du, wie weit dein Spiel bereits fortgeschritten ist und was du schon bezwungen oder verbraucht hast.</p>
       <div class="run-stats-content modal-scroll-section">
         <div id="runStatsSummary" class="sheet run-stats-summary"></div>
         <div class="modal-subsection run-stats-subsection">
@@ -252,8 +252,8 @@
 
   <div id="deathModal" class="modal hidden" aria-hidden="true">
     <div class="modal-card panel">
-      <p class="modal-eyebrow">Letzter Lauf</p>
-      <h2>Du bist gefallen</h2>
+      <p class="modal-eyebrow">Letzter Versuch</p>
+      <h2>Deine letzte Szene</h2>
       <div id="deathSummary" class="sheet"></div>
       <p class="modal-copy">Die ausführliche Gegnerstatistik ist in einem eigenen Fenster untergebracht, damit dieses Ende-Fenster kompakt bleibt.</p>
       <div class="modal-actions death-actions">
@@ -261,7 +261,7 @@
           <button id="openDeathKills" class="choice-btn" type="button">Besiegte Gegner</button>
         </div>
         <div class="death-primary-actions">
-          <button id="closeDeath" class="choice-btn" type="button" title="Zeigt dir das Dungeon genau so, wie es beim Tod deines Helden aussah.">Zum Dungeon</button>
+          <button id="closeDeath" class="choice-btn" type="button" title="Zeigt dir den Studiokomplex genau so, wie er beim Tod deines Helden aussah.">Zum Studiokomplex</button>
           <button id="restartFromDeath" class="choice-btn accent" type="button">Neues Spiel</button>
         </div>
       </div>
@@ -285,7 +285,7 @@
     <div class="modal-card panel start-modal-card">
       <p class="modal-eyebrow">Casting</p>
       <h2>Neue Hauptrolle besetzen</h2>
-      <p class="modal-copy">Wähle Namen und Klasse für deinen Helden. Diese Auswahl wird für den nächsten Lauf gemerkt.</p>
+      <p class="modal-copy">Wähle Namen und Klasse für deinen Helden. Diese Auswahl wird für dein nächstes Spiel gemerkt.</p>
       <form id="startForm" class="start-form">
         <label class="hero-identity-label" for="heroNameInput">Heldenname</label>
         <input id="heroNameInput" class="hero-name-input" type="text" maxlength="24" placeholder="Final Girl">
@@ -293,12 +293,12 @@
           <p class="hero-identity-label">Klasse</p>
           <div id="classOptions" class="class-options" role="radiogroup" aria-label="Heldenklasse"></div>
         </div>
-        <p id="heroIdentityStatus" class="hero-identity-note">Wird für den aktuellen und den nächsten Lauf gemerkt.</p>
+        <p id="heroIdentityStatus" class="hero-identity-note">Wird für dieses und das nächste Spiel gemerkt.</p>
         <div class="modal-actions">
-          <button id="saveHeroName" class="choice-btn accent" type="submit">Start</button>
-          <button id="loadGameFromStart" class="choice-btn" type="button">Gespeicherten Lauf laden</button>
+          <button id="saveHeroName" class="choice-btn accent" type="submit">Betrete den Studiokomplex</button>
+          <button id="loadGameFromStart" class="choice-btn" type="button">Spielstand laden</button>
         </div>
-        <p id="startSavegameStatus" class="hero-identity-note">Kein gespeicherter Lauf gefunden.</p>
+        <p id="startSavegameStatus" class="hero-identity-note">Kein Spielstand gefunden.</p>
       </form>
     </div>
   </div>

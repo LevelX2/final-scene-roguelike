@@ -144,10 +144,11 @@ test("run stats open from a button and show current run progress", async ({ page
     window.__TEST_API__.grantExperience(40, "Lauftest");
   });
 
-  await page.getByRole("button", { name: "Lauf" }).click();
+  await page.getByRole("button", { name: "Spielverlauf" }).click();
   await expect(page.locator("#runStatsModal")).toBeVisible();
-  await expect(page.locator("#runStatsSummary")).toContainText("Aktuelle Ebene");
-  await expect(page.locator("#runStatsSummary")).toContainText("Tiefste Ebene");
+  await expect(page.locator("#runStatsSummary")).toContainText("Aktuelles Studio");
+  await expect(page.locator("#runStatsSummary")).toContainText("Erreichtes Studio");
+  await expect(page.locator("#runStatsSummary")).toContainText("Aktueller Archetyp");
   await expect(page.locator("#runStatsSummary")).toContainText("Heiltränke getrunken");
 
   await page.keyboard.press("Escape");

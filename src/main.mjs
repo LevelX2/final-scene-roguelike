@@ -21,6 +21,7 @@ import { createVisibilityService } from './application/visibility-service.mjs';
 import { createModalController } from './application/modal-controller.mjs';
 import { createBareHandsWeapon, cloneOffHandItem, getMainHand, getOffHand, getCombatWeapon, createEquipmentPresentationHelpers } from './equipment-helpers.mjs';
 import { clamp, randomInt, createGrid, carveRoom, carveTunnel, roomsOverlap } from './utils.mjs';
+import { formatArchetypeLabel, formatStudioLabel, formatStudioWithArchetype } from './studio-theme.mjs';
 
 let state;
 let testRandomQueue = [];
@@ -629,7 +630,7 @@ function applyPlayerNutritionTurnCost() {
   addMessage("Der Hunger zerfrisst dich.", "danger");
   if (state.player.hp <= 0) {
     state.gameOver = true;
-    state.deathCause = "verhungerte in den Kulissen des Dungeons.";
+    state.deathCause = "verhungerte hinter den Kulissen des Studiokomplexes.";
     playDeathSound();
     const rank = saveHighscoreIfNeeded();
     addMessage("Du bist verhungert. Drücke R für einen neuen Versuch.", "danger");
@@ -639,6 +640,10 @@ function applyPlayerNutritionTurnCost() {
 
 function getCurrentFloorState() {
   return state.floors[state.floor];
+}
+
+function getCurrentStudioArchetypeId() {
+  return getCurrentFloorState()?.studioArchetypeId ?? null;
 }
 
 function getDoorAt(x, y, floorState = getCurrentFloorState()) {
@@ -780,7 +785,7 @@ function openDoor(door, actor = "player") {
     const colorLabels = getDoorColorLabels(door.lockColor);
     addMessage(
       door.doorType === DOOR_TYPE.LOCKED
-        ? `Der ${colorLabels.key} Schlüssel von Ebene ${usedKey.keyFloor} entriegelt die Tür und wird verbraucht.`
+        ? `Der ${colorLabels.key} Schlüssel aus Studio ${usedKey.keyFloor} entriegelt die Tür und wird verbraucht.`
         : "Die Tür schwingt auf.",
       "important",
     );
@@ -815,9 +820,10 @@ function render() {
   syncTestApi();
   const combatSummary = getPlayerCombatSummary();
   const hungerClass = `state-${String(state.player.hungerState ?? HUNGER_STATE.NORMAL).toLowerCase()}`;
+  const currentStudioArchetypeId = getCurrentStudioArchetypeId();
   updateVisibility();
   renderBoard();
-  depthTitleElement.textContent = `Dungeon-Ebene ${state.floor}`;
+  depthTitleElement.textContent = formatStudioWithArchetype(state.floor, currentStudioArchetypeId);
   playerPanelTitleElement.textContent = state.player.name;
   playerPanelTitleElement.style.setProperty("--hero-class-icon", `url("${getHeroClassAssets(state.player.classId).iconUrl}")`);
   topbarHpElement.textContent = combatSummary.hp;
@@ -990,7 +996,8 @@ function moveToFloor(direction) {
     detectNearbyTraps();
     maybeTriggerShowcaseAmbience();
     const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
-    addMessage(`Du steigst tiefer hinab. Dungeon-Ebene ${state.floor} beginnt.`, "important");
+    addMessage(`Du betrittst ${formatStudioLabel(state.floor)}.`, "important");
+    addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), "important");
     if (follower) {
       addMessage(`${follower.name} folgt dir über die Treppe.`, "danger");
     }
@@ -1005,7 +1012,8 @@ function moveToFloor(direction) {
     detectNearbyTraps();
     maybeTriggerShowcaseAmbience();
     const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetStair);
-    addMessage(`Du steigst vorsichtig wieder auf Ebene ${state.floor}.`, "important");
+    addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück.`, "important");
+    addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), "important");
     if (follower) {
       addMessage(`${follower.name} setzt dir weiter nach.`, "danger");
     }
@@ -1021,9 +1029,9 @@ function tryUseStairs() {
   if (floorState.stairsDown && floorState.stairsDown.x === state.player.x && floorState.stairsDown.y === state.player.y) {
     showStairChoice({
       direction: 1,
-      title: "Abwärtstreppe",
-      text: `Du stehst auf einer Treppe nach unten. Möchtest du auf Ebene ${state.floor + 1} hinabsteigen oder hier bleiben?`,
-      confirmLabel: "Hinabsteigen",
+      title: "Übergang",
+      text: `Du stehst an einem Übergang. Möchtest du ${formatStudioLabel(state.floor + 1)} betreten oder hier bleiben?`,
+      confirmLabel: "Betreten",
       stayLabel: "Hier bleiben",
     });
     render();
@@ -1033,9 +1041,9 @@ function tryUseStairs() {
   if (floorState.stairsUp && floorState.stairsUp.x === state.player.x && floorState.stairsUp.y === state.player.y) {
     showStairChoice({
       direction: -1,
-      title: "Aufwärtstreppe",
-      text: `Du stehst auf einer Treppe nach oben. Möchtest du auf Ebene ${state.floor - 1} hinaufsteigen oder hier bleiben?`,
-      confirmLabel: "Hinaufsteigen",
+      title: "Übergang",
+      text: `Du stehst an einem Übergang. Möchtest du in ${formatStudioLabel(state.floor - 1)} zurückkehren oder hier bleiben?`,
+      confirmLabel: "Zurückkehren",
       stayLabel: "Hier bleiben",
     });
     render();
@@ -1120,7 +1128,7 @@ function movePlayer(dx, dy) {
       );
       addMessage(
         hasWrongFloorKey
-          ? `Die ${getDoorColorLabels(door.lockColor).adjective} Tür reagiert nicht auf deinen Schlüssel von einer anderen Ebene.`
+          ? `Die ${getDoorColorLabels(door.lockColor).adjective} Tür reagiert nicht auf deinen Schlüssel aus einem anderen Studio.`
           : `Die ${getDoorColorLabels(door.lockColor).adjective} Tür bleibt verschlossen.`,
       );
       render();
@@ -1226,8 +1234,8 @@ function syncStartModalControls() {
   const fallbackName = state?.player?.name ?? loadHeroName();
   const fallbackClassId = state?.player?.classId ?? loadHeroClassId();
   heroNameInputElement.value = fallbackName;
-  saveHeroNameButtonElement.textContent = "Start";
-  heroIdentityStatusElement.textContent = "Wird für den aktuellen und den nächsten Lauf gemerkt.";
+  saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
+  heroIdentityStatusElement.textContent = "Wird für dieses und das nächste Spiel gemerkt.";
   heroIdentityStatusElement.classList.remove("success");
   renderClassOptions(fallbackClassId);
 }
@@ -1242,8 +1250,8 @@ function applyStartProfile() {
   heroIdentityStatusElement.classList.add("success");
   window.clearTimeout(heroIdentityStatusTimeout);
   heroIdentityStatusTimeout = window.setTimeout(() => {
-    saveHeroNameButtonElement.textContent = "Start";
-    heroIdentityStatusElement.textContent = "Wird für den aktuellen und den nächsten Lauf gemerkt.";
+    saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
+    heroIdentityStatusElement.textContent = "Wird für dieses und das nächste Spiel gemerkt.";
     heroIdentityStatusElement.classList.remove("success");
   }, 1400);
 

@@ -19,11 +19,11 @@ Priorität: hoch
 Kategorie: Konsistenzproblem
 Datei: README.md; index.html; package.json
 Bereich: Start-/Build-Dokumentation; Einstiegspfade
-Problem: Die Projektbeschreibung ist nicht mehr mit dem aktiven Laufzeitpfad synchron. Das README beschreibt einen Prototypen "ohne Build-Schritt" und fordert dazu auf, nur `index.html` zu öffnen, während die Seite tatsaechlich ein gebündeltes Artefakt aus `./dist/game.bundle.js` lädt und `package.json` den aktiven Einstieg über `src/main_v2.mjs` baut.
+Problem: Die Projektbeschreibung ist nicht mehr mit dem aktiven Laufzeitpfad synchron. Das README beschreibt einen Prototypen "ohne Build-Schritt" und fordert dazu auf, nur `index.html` zu öffnen, während die Seite tatsaechlich ein gebündeltes Artefakt aus `./dist/game.bundle.js` lädt und `package.json` den aktiven Einstieg über `src/main.mjs` baut.
 Warum relevant: Neue Entwickler oder spaetere Wartung arbeiten leicht gegen veraltete Annahmen, starten das falsche Artefakt oder überschaetzen die Aussagekraft von Quelltextänderungen, die ohne Rebuild in der App gar nicht auftauchen.
 Empfohlene Maßnahme: README auf den aktiven Build-/Startpfad aktualisieren und klar dokumentieren, welches Artefakt die Quelle der Wahrheit ist.
 Sicherheit: hoch
-Umsetzung: README auf den aktiven Ablauf mit `npm install`, `npm run build`, `index.html` und `dist/game.bundle.js` aktualisiert; aktiven Einstieg `src/main_v2.mjs` und Legacy-Pfade ohne `_v2` klar benannt.
+Umsetzung: README auf den aktiven Ablauf mit `npm install`, `npm run build`, `index.html` und `dist/game.bundle.js` aktualisiert; aktiven Einstieg `src/main.mjs` und Legacy-Pfade unter `src/legacy/` klar benannt.
 Prüfung: README, `index.html` und `package.json` manuell gegengeprueft; `npm run build` erfolgreich ausgeführt.
 Restrisiken: Keine fachlichen; die Doku muss bei kuenftigen Build-Pfad-Aenderungen weiter mitgepflegt werden.
 
@@ -37,7 +37,7 @@ Problem: Alle npm-Skripte rufen Node über einen fest verdrahteten Windows-Kurzp
 Warum relevant: Die Skripte sind damit an genau eine lokale Installationsform gebunden und brechen auf anderen Windows-Systemen, in CI, auf macOS/Linux oder bei abweichender Node-Installation sehr wahrscheinlich.
 Empfohlene Maßnahme: Lokale Binaries über `node`, `npx` oder direkt über npm-Skript-Aufloesung starten, statt absolute Maschinenpfade zu kodieren.
 Sicherheit: hoch
-Umsetzung: Alle npm-Skripte auf portable `node ./node_modules/...`-Aufrufe umgestellt; `package.json.main` auf den aktiven Einstieg `src/main_v2.mjs` ausgerichtet.
+Umsetzung: Alle npm-Skripte auf portable `node ./node_modules/...`-Aufrufe umgestellt; `package.json.main` auf den aktiven Einstieg `src/main.mjs` ausgerichtet.
 Prüfung: `npm run check:js`, `npm run build` und `npm run test:e2e` erfolgreich ausgeführt.
 Restrisiken: Keine fachlichen; Build bleibt weiterhin von schreibbarem `dist/` abhaengig, siehe `Q-003`.
 
@@ -59,13 +59,13 @@ Restrisiken: Der Browser-Build schreibt weiterhin nach `dist/game.bundle.js`; in
 Status: fixed
 Priorität: mittel
 Kategorie: Design-/Architekturschwaeche
-Datei: package.json; src/legacy/main.mjs; src/main_v2.mjs; src/legacy/dom.mjs; src/dom_v2.mjs; src/legacy/render.mjs; src/render_v2.mjs; src/legacy/state.mjs; src/state_v2.mjs
+Datei: package.json; src/legacy/main.mjs; src/main.mjs; src/legacy/dom.mjs; src/dom.mjs; src/legacy/render.mjs; src/render.mjs; src/legacy/state.mjs; src/state.mjs
 Bereich: Einstiegspunkte; Modulstruktur
-Problem: Es existieren zwei parallele Anwendungslinien im selben Repository. Gleichzeitig zeigt `package.json` mit `main: "src/main.mjs"` noch auf den alten Einstieg, während Build und Browserpfad mit `src/main_v2.mjs` arbeiten.
+Problem: Es existierten zwei parallele Anwendungslinien im selben Repository. Gleichzeitig zeigte `package.json` mit `main: "src/main.mjs"` noch auf den alten Einstieg, während Build und Browserpfad noch auf die damals aktive neue Linie zeigten.
 Warum relevant: Bugfixes, Refactorings und Reviews koennen leicht in der falschen Implementierung landen. Das erhoeht die Wartungskosten und beguenstigt funktionale Drift zwischen "alt" und "aktiv".
 Empfohlene Maßnahme: Den aktiven Pfad eindeutig festlegen, Altpfade entweder entfernen/archivieren oder klar als deprecated markieren und Metadaten wie `main` daran ausrichten.
 Sicherheit: hoch
-Umsetzung: `package.json.main` auf `src/main_v2.mjs` gesetzt; README und Legacy-Module (`main.mjs`, `dom.mjs`, `render.mjs`, `state.mjs`) klar als nicht aktiven Referenzpfad markiert.
+Umsetzung: Zunächst wurde `package.json.main` auf den aktiven Einstieg gesetzt; inzwischen ist die aktive Linie selbst wieder auf `src/main.mjs`, `src/dom.mjs`, `src/render.mjs` und `src/state.mjs` vereinheitlicht. README und Legacy-Module unter `src/legacy/` bleiben klar als Referenzpfad markiert.
 Prüfung: Manuelle Gegenprüfung der Einstiegspfade sowie erfolgreiche Ausführung von `npm run check:js` und `npm run build`.
 Restrisiken: Die Legacy-Dateien liegen weiterhin im Repository und koennen bei größeren Umbauten erneut driften; sie sind jetzt aber klar gekennzeichnet.
 
@@ -73,8 +73,8 @@ Restrisiken: Die Legacy-Dateien liegen weiterhin im Repository und koennen bei g
 Status: fixed
 Priorität: hoch
 Kategorie: Risiko
-Datei: src/test-api.mjs; src/main_v2.mjs
-Bereich: Test-Hooks; Runtime-Initialisierung (`syncTestApi`), src/test-api.mjs Zeilen 26-27; src/main_v2.mjs Zeilen 1225-1226
+Datei: src/test-api.mjs; src/main.mjs
+Bereich: Test-Hooks; Runtime-Initialisierung (`syncTestApi`), src/test-api.mjs Zeilen 26-27; src/main.mjs
 Problem: Der aktive Renderpfad registriert bei jedem Rendern ein globales `window.__TEST_API__` und stellt darüber nicht nur Lesefunktionen, sondern auch mutierende Hilfen wie `teleportPlayer`, `clearFloorEntities`, `setRandomSeq?nce` oder `setupCombatScenario` bereit.
 Warum relevant: Die produktive Laufzeit ist damit absichtlich manipulierbar und leakt tiefe Spielinterna nach aussen. Jede Browser-Konsole, Extension oder eingebettete Fremdlogik kann Spielzustand und Testhilfen direkt missbrauchen.
 Empfohlene Maßnahme: Test-API nur in einem expliziten Test-/Debug-Build oder hinter einem klaren Feature-Flag exponieren, nicht im regulären Runtime-Pfad.
@@ -87,8 +87,8 @@ Restrisiken: Wer das Flag lokal bewusst setzt, bekommt weiterhin die mutierenden
 Status: fixed
 Priorität: mittel
 Kategorie: Bug
-Datei: src/state_v2.mjs; src/main_v2.mjs
-Bereich: Highscore-Speicherung; Death-Modal, src/state_v2.mjs Zeilen 137-153; src/main_v2.mjs Zeilen 849-858
+Datei: src/state.mjs; src/main.mjs
+Bereich: Highscore-Speicherung; Death-Modal, src/state.mjs; src/main.mjs
 Problem: Der Rang eines neuen Highscore-Eintrags wird vor dem anschließenden `slice(0, 100)` berechnet und gespeichert. Faellt ein Eintrag nach dem Trimmen aus den gespeicherten Top 100 heraus, bleibt dennoch ein numerischer Rang erhalten und wird im Death-Modal als `#<rang>` angezeigt.
 Warum relevant: Die UI kann dem Spieler einen Highscore-Platz anzeigen, obwohl dieser Eintrag gar nicht dauerhaft in der Tabelle vorhanden ist. Das ist ein fachlicher Inkonsistenzfehler.
 Empfohlene Maßnahme: Rang erst gegen die final gespeicherte Liste bestimmen oder `null`/`Au?er Wertung` setzen, wenn der neue Eintrag nicht in den persistierten Top 100 landet.
@@ -101,13 +101,13 @@ Restrisiken: Keine bekannten.
 Status: fixed
 Priorität: mittel
 Kategorie: Risiko
-Datei: src/state_v2.mjs
+Datei: src/state.mjs
 Bereich: Persistenz über `localStorage`, u. a. Zeilen 32, 37, 42, 48, 77-81, 109, 149-150
 Problem: Vermutung: Mehrere direkte `localStorage.getItem`-, `setItem`- und `removeItem`-Aufrufe sind nicht durch generische Fehlerbehandlung abgesichert. Abgefangen wird aktuell nur ein Teil der JSON-Deserialisierung.
 Warum relevant: In Browsern mit gesperrtem Storage, Quota-Problemen oder restriktiven Privacy-Modi kann die App beim Starten, Speichern von Optionen oder Schreiben von Highscores unerwartet abbrechen.
 Empfohlene Maßnahme: Alle Storage-Zugriffe in robuste Hilfsfunktionen kapseln, Fehler zentral behandeln und auf sichere Defaults/Fallbacks zurückfallen.
 Sicherheit: mittel
-Umsetzung: `state_v2.mjs` auf zentrale `readStorage`-/`writeStorage`-/`removeStorage`-Hilfen umgestellt; Optionen und Highscore-Marker fallen bei Storage-Fehlern sauber auf Defaults zurück. Der aktive Highscore-Renderer nutzt jetzt ebenfalls die gekapselte Marker-Lesefunktion statt direktem `localStorage`-Zugriff.
+Umsetzung: `state.mjs` nutzt zentrale `readStorage`-/`writeStorage`-/`removeStorage`-Hilfen; Optionen und Highscore-Marker fallen bei Storage-Fehlern sauber auf Defaults zurück. Der aktive Highscore-Renderer nutzt jetzt ebenfalls die gekapselte Marker-Lesefunktion statt direktem `localStorage`-Zugriff.
 Prüfung: `npm run check:js`; neuer Smoke-Test mit absichtlich blockiertem `localStorage` bestaetigt, dass die App trotzdem startet und ein Lauf begonnen werden kann.
 Restrisiken: In Storage-blockierten Umgebungen bleiben Einstellungen und Highscores absichtlich fluechtig.
 
@@ -115,7 +115,7 @@ Restrisiken: In Storage-blockierten Umgebungen bleiben Einstellungen und Highsco
 Status: fixed
 Priorität: mittel
 Kategorie: Testlücke
-Datei: tests/helpers.js; src/test-api.mjs; src/main_v2.mjs
+Datei: tests/helpers.js; src/test-api.mjs; src/main.mjs
 Bereich: E2E-Testdesign; Test-Isolation, tests/helpers.js Zeilen 18-150
 Problem: Die vorhandenen E2E-Tests sind eng an `window.__TEST_API__` gekoppelt und manipulieren Spielzustand gezielt über den globalen Test-Hook. Dadurch fehlt eine schlanke Black-Box-Absicherung für den tatsaechlichen Produktiv-Build ohne diese Sonderoberflaeche.
 Warum relevant: Regessionen in Packaging, Boundary-Hygiene oder im echten Produktionspfad koennen leichter unentdeckt bleiben, weil die Tests denselben globalen Hook voraussetzen, dessen versehentliche Exposition selbst bereits ein Qualitätsproblem ist.

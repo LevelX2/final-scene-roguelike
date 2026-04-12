@@ -1206,4 +1206,4 @@ saveHeroNameButtonElement.addEventListener("click", () => {
 document.addEventListener("keydown", handleInput);
 initializeGame();
 syncHeroIdentityControls();
-// Legacy implementation kept for reference. The active runtime entry point is src/main_v2.mjs.
+// Legacy implementation kept for reference. The active runtime entry point is src/main.mjs.

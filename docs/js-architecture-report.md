@@ -6,7 +6,7 @@ Dieses Dokument bewertet die aktuelle Struktur der JavaScript-Module und beschre
 
 ## Kurzfazit
 
-Die Codebasis ist bereits in mehrere Module getrennt, aber die eigentliche Steuerung liegt noch zu stark in wenigen grossen Dateien. Besonders `src/main_v2.mjs`, `src/data.mjs` und `src/dungeon.mjs` sind aktuell zentrale Engpaesse. Fuer ein wachsendes Projekt ist das groesste Risiko nicht fehlende Funktionalitaet, sondern dass neue Features immer wieder an denselben "God Modules" andocken und dadurch Kopplung, Seiteneffekte und Testaufwand schnell steigen.
+Die Codebasis ist bereits in mehrere Module getrennt, aber die eigentliche Steuerung liegt noch zu stark in wenigen grossen Dateien. Besonders `src/main.mjs`, `src/data.mjs` und `src/dungeon.mjs` sind aktuell zentrale Engpaesse. Fuer ein wachsendes Projekt ist das groesste Risiko nicht fehlende Funktionalitaet, sondern dass neue Features immer wieder an denselben "God Modules" andocken und dadurch Kopplung, Seiteneffekte und Testaufwand schnell steigen.
 
 Das beste naechste Design ist kein kompletter Rewrite, sondern eine modulare Zielstruktur mit:
 
@@ -18,9 +18,9 @@ Das beste naechste Design ist kein kompletter Rewrite, sondern eine modulare Zie
 
 ## Beobachtungen im Ist-Zustand
 
-### 1. `main_v2.mjs` ist zu gross und traegt zu viele Verantwortungen
+### 1. `main.mjs` ist zu gross und traegt zu viele Verantwortungen
 
-`src/main_v2.mjs` ist mit rund 67 KB die dominante Datei und vereint derzeit unter anderem:
+`src/main.mjs` ist mit rund 67 KB die dominante Datei und vereint derzeit unter anderem:
 
 - Bootstrapping und Initialisierung
 - globale Zustandskoordination
@@ -38,14 +38,7 @@ Das ist fuer einen Prototypen tragbar, fuer ein wachsendes Spiel aber der zentra
 
 ### 2. Es gibt weiterhin parallele Modulwelten
 
-Im Repository existieren noch:
-
-- `main.mjs` und `main_v2.mjs`
-- `dom.mjs` und `dom_v2.mjs`
-- `render.mjs` und `render_v2.mjs`
-- `state.mjs` und `state_v2.mjs`
-
-Die aktive Laufzeit nutzt bereits die `*_v2`-Dateien, die Legacy-Dateien liegen aber weiterhin direkt neben den aktiven Modulen. Das ist fuer Orientierung, Suche, Onboarding und Refactoring unguenstig. Je mehr Features dazukommen, desto hoeher ist die Gefahr, dass versehentlich am falschen Pfad gearbeitet wird.
+Im Repository gibt es weiterhin einen aktiven Pfad und einen Legacy-Referenzpfad. Die aktive Laufzeit nutzt `main.mjs`, `dom.mjs`, `render.mjs` und `state.mjs`, waehrend die alten Referenzdateien unter `src/legacy/` liegen. Das ist bereits deutlich besser als zwei parallele Pfade direkt im Hauptordner, sollte aber weiter klar dokumentiert bleiben, damit bei spaeteren Erweiterungen niemand versehentlich gegen Legacy-Code arbeitet.
 
 ### 3. `data.mjs` ist ein stark gekoppeltes Sammelbecken
 
@@ -80,9 +73,9 @@ Das Modul ist damit gleichzeitig Generator, Factory, Balance-Konsument und Floor
 
 Mehrere Module arbeiten direkt mit HTML, DOM oder UI-Texten, obwohl sie teilweise eher Fachlogik enthalten. Beispiele:
 
-- `render_v2.mjs` enthaelt UI- und View-Logik, aber auch Teile der Statusberechnung fuer Topbar/Tooltips
+- `render.mjs` enthaelt UI- und View-Logik, aber auch Teile der Statusberechnung fuer Topbar/Tooltips
 - `items.mjs` baut HTML fuer Vergleichsfenster und enthaelt gleichzeitig Inventar- und Equip-Logik
-- `main_v2.mjs` steuert Modals, Eingaben und Spiellogik in einem Fluss
+- `main.mjs` steuert Modals, Eingaben und Spiellogik in einem Fluss
 
 Das fuehrt dazu, dass ein Fach-Feature oft automatisch auch ein UI-Refactoring braucht, obwohl das fachlich gar nicht noetig waere.
 
@@ -104,7 +97,7 @@ Das Muster sollte behalten, aber strikter organisiert werden.
 
 Wenn das Projekt viele neue Funktionen bekommen soll, sind die groessten Risiken:
 
-- neue Features werden immer wieder in `main_v2.mjs` eingebaut
+- neue Features werden immer wieder in `main.mjs` eingebaut
 - Feature-Code wird zugleich UI-Code, State-Mutation und Regelwerk enthalten
 - Content-Wachstum landet weiter in `data.mjs`
 - Erweiterungen im Dungeon-System erzeugen Querabhaengigkeiten zu Loot, Gegnern und Balance
@@ -311,11 +304,11 @@ So bleibt der Rest der Codebasis sauberer und einfacher ersetzbar.
 
 Diese Schritte bringen viel Nutzen bei relativ wenig Risiko:
 
-1. `main_v2.mjs` in kleinere Application- und UI-Module aufteilen.
+1. `main.mjs` in kleinere Application- und UI-Module aufteilen.
 2. `data.mjs` in mehrere Katalog- und Balance-Dateien aufspalten.
 3. `dungeon.mjs` trennen in Generator, Enemy-Factory, Pickup-Factory und Door-/Floor-Services.
 4. `items.mjs` aufspalten in Fachlogik und UI-Praesentation.
-5. `render_v2.mjs` in mehrere Views/Presenter zerlegen.
+5. `render.mjs` in mehrere Views/Presenter zerlegen.
 6. Legacy-Dateien in einen klar markierten `legacy`-Pfad verschieben.
 
 ## Sinnvolle Migrationsreihenfolge
@@ -323,20 +316,20 @@ Diese Schritte bringen viel Nutzen bei relativ wenig Risiko:
 ### Phase 1: Strukturelle Entlastung ohne Gameplay-Aenderung
 
 - neuen Ordnerzuschnitt anlegen
-- `main_v2.mjs` nur organisatorisch zerlegen
+- `main.mjs` nur organisatorisch zerlegen
 - `audio`, `input`, `modals`, `save/load`, `visibility` auslagern
 - `data.mjs` in kleinere Dateien zerlegen, Exporte kompatibel halten
 
 ### Phase 2: Domain sauber schneiden
 
-- Kampfregeln aus `combat.mjs` und Teilen von `main_v2.mjs` zusammenziehen
+- Kampfregeln aus `combat.mjs` und Teilen von `main.mjs` zusammenziehen
 - Inventar-/Equip-Regeln aus `items.mjs` von UI entkoppeln
 - Dungeon-Erzeugung in Fabriken und Generatoren aufteilen
 - Trap- und Door-Logik als eigenstaendige Services stabilisieren
 
 ### Phase 3: UI entkoppeln
 
-- `render_v2.mjs` in mehrere Views zerlegen
+- `render.mjs` in mehrere Views zerlegen
 - Presenters einfuehren, damit UI nur formatierte Daten anzeigt
 - Modals und Tooltip-System standardisieren
 
@@ -370,7 +363,7 @@ Das ist fuer ein wachsendes Spiel meist der beste Kompromiss aus Klarheit, Testb
 
 Wenn nur eine einzige grobe Richtung umgesetzt werden soll, dann diese:
 
-`main_v2.mjs` zu einem kleinen Bootstrap machen und den Rest in klar geschnittene Services und Views verschieben.
+`main.mjs` zu einem kleinen Bootstrap machen und den Rest in klar geschnittene Services und Views verschieben.
 
 Das haette den groessten langfristigen Hebel, weil dadurch neue Features nicht mehr automatisch in einem zentralen Monster-Modul landen. Direkt danach ist die Zerlegung von `data.mjs` der zweitgroesste Gewinn.
 
@@ -388,7 +381,7 @@ Das haette den groessten langfristigen Hebel, weil dadurch neue Features nicht m
 
 Die aktuelle Basis ist fuer den vorhandenen Umfang bereits ordentlich modularisiert, aber sie steht an einem typischen Kipppunkt: Das Projekt ist zu gross fuer einen starken Zentralfile-Ansatz, aber noch klein genug, um mit einer kontrollierten Umstrukturierung sehr gut in eine skalierbare Architektur ueberfuehrt zu werden.
 
-Die sinnvollste Strategie ist deshalb keine radikale Neuerfindung, sondern eine schrittweise Entkopplung entlang fachlicher Grenzen, bis `main_v2.mjs`, `data.mjs` und `dungeon.mjs` nur noch koordinieren statt dominieren.
+Die sinnvollste Strategie ist deshalb keine radikale Neuerfindung, sondern eine schrittweise Entkopplung entlang fachlicher Grenzen, bis `main.mjs`, `data.mjs` und `dungeon.mjs` nur noch koordinieren statt dominieren.
 
 ## Konkrete erste Schritte als Empfehlung
 
@@ -400,9 +393,9 @@ Als erstes sollte die aktive Codebasis klar abgegrenzt werden. Solange Legacy-Da
 
 Empfohlene erste Aktion:
 
-- die Dateien `main.mjs`, `dom.mjs`, `render.mjs` und `state.mjs` in einen klar markierten `src/legacy/`-Ordner verschieben oder zumindest fuer die naechste Refactoring-Phase logisch aus dem Hauptpfad herausnehmen
-- im aktiven Code nur noch `*_v2` als Arbeitsbasis behandeln
-- danach mittelfristig die `*_v2`-Namen selbst wieder auf normale Modulnamen zurueckfuehren
+- die Legacy-Dateien klar unter `src/legacy/` halten
+- im aktiven Code nur noch `main.mjs`, `dom.mjs`, `render.mjs` und `state.mjs` als Arbeitsbasis behandeln
+- keine zweite aktive Namenslinie mehr aufbauen
 
 Warum zuerst:
 
@@ -410,9 +403,9 @@ Warum zuerst:
 - geringes fachliches Risiko
 - verhindert, dass neue Features versehentlich im falschen Pfad landen
 
-### Empfehlung 2: `main_v2.mjs` zuerst nur organisatorisch entlasten
+### Empfehlung 2: `main.mjs` zuerst nur organisatorisch entlasten
 
-Der wichtigste praktische Start ist nicht sofort ein tiefer Domain-Umbau, sondern das Herausziehen offensichtlicher Verantwortungsbloecke aus `main_v2.mjs`.
+Der wichtigste praktische Start ist nicht sofort ein tiefer Domain-Umbau, sondern das Herausziehen offensichtlicher Verantwortungsbloecke aus `main.mjs`.
 
 Als erste Extraktionen eignen sich besonders:
 
@@ -426,12 +419,12 @@ Warum genau diese Reihenfolge:
 
 - sie sind funktional gut erkennbar
 - sie haben relativ klare Ein- und Ausgaenge
-- sie reduzieren die Groesse von `main_v2.mjs` schnell
+- sie reduzieren die Groesse von `main.mjs` schnell
 - sie veraendern das Balancing und Kern-Gameplay kaum
 
 Ziel fuer diesen Schritt:
 
-- `main_v2.mjs` wird zum Orchestrator
+- `main.mjs` wird zum Orchestrator
 - es bleibt sichtbar, welche Subsysteme es gibt
 - neue Features muessen nicht mehr automatisch in die Hauptdatei
 
@@ -473,7 +466,7 @@ Warum das ein guter frueher Schritt ist:
 
 ### Empfehlung 5: Rendering nicht als einen Block weiterwachsen lassen
 
-`render_v2.mjs` sollte nicht der naechste grosse Sammelpunkt werden. Noch bevor neue groessere UI-Features dazukommen, sollte das Rendering in mehrere Views zerlegt werden.
+`render.mjs` sollte nicht der naechste grosse Sammelpunkt werden. Noch bevor neue groessere UI-Features dazukommen, sollte das Rendering in mehrere Views zerlegt werden.
 
 Sinnvolle erste Zerlegung:
 
@@ -492,7 +485,7 @@ Warum wichtig:
 
 ### Empfehlung 6: Danach erst `dungeon.mjs` fachlich schneiden
 
-`dungeon.mjs` ist zwar einer der groessten Brocken, aber nicht der beste allererste Umbau. Wenn vorher `main_v2.mjs` und die Daten-/UI-Struktur entlastet wurden, wird die Zerlegung von `dungeon.mjs` deutlich sauberer.
+`dungeon.mjs` ist zwar einer der groessten Brocken, aber nicht der beste allererste Umbau. Wenn vorher `main.mjs` und die Daten-/UI-Struktur entlastet wurden, wird die Zerlegung von `dungeon.mjs` deutlich sauberer.
 
 Empfohlene Zieltrennung:
 
@@ -513,9 +506,9 @@ Warum nicht als Schritt 1:
 Wenn man daraus einen realistischen Startplan ableitet, waere diese Reihenfolge am sinnvollsten:
 
 1. Legacy-Pfad sauber abtrennen und aktiven Pfad dokumentieren.
-2. `main_v2.mjs` in organisatorische Submodule zerlegen, ohne Gameplay zu aendern.
+2. `main.mjs` in organisatorische Submodule zerlegen, ohne Gameplay zu aendern.
 3. `data.mjs` in Katalog- und Balance-Dateien aufteilen.
-4. `render_v2.mjs` in mehrere Views/Presenter zerlegen.
+4. `render.mjs` in mehrere Views/Presenter zerlegen.
 5. `items.mjs` in Fachlogik und UI trennen.
 6. `dungeon.mjs` in Generatoren, Factories und Services aufspalten.
 
@@ -524,6 +517,6 @@ Wenn man daraus einen realistischen Startplan ableitet, waere diese Reihenfolge 
 Falls nur ein sehr kleiner erster Umbau gemacht werden soll, dann waere diese Kombination am wirkungsvollsten:
 
 - Legacy-Dateien aus dem aktiven Pfad herausziehen
-- `main_v2.mjs` um `audio`, `input` und `modals` erleichtern
+- `main.mjs` um `audio`, `input` und `modals` erleichtern
 
 Das ist wahrscheinlich der beste Einstieg, weil er sofort Struktur verbessert, ohne dass das Spielsystem selbst bereits tief umgebaut werden muss.

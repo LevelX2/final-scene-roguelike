@@ -25,10 +25,10 @@ Der wichtigste Kontext für neue Mitarbeit:
 
 Aktive Dateien:
 
-- `src/main_v2.mjs`
-- `src/dom_v2.mjs`
-- `src/render_v2.mjs`
-- `src/state_v2.mjs`
+- `src/main.mjs`
+- `src/dom.mjs`
+- `src/render.mjs`
+- `src/state.mjs`
 
 Legacy-Dateien:
 
@@ -43,7 +43,7 @@ Die Legacy-Dateien sind noch im Repository, aber nicht der produktive Einstieg. 
 
 ### 1. Einstieg und Zusammensetzen der App
 
-`src/main_v2.mjs` ist die Orchestrierungsdatei. Dort werden:
+`src/main.mjs` ist die Orchestrierungsdatei. Dort werden:
 
 - Datenkataloge importiert
 - die verschiedenen APIs erzeugt
@@ -53,7 +53,7 @@ Die Legacy-Dateien sind noch im Repository, aber nicht der produktive Einstieg. 
 
 Praktisch bedeutet das:
 
-- Wenn eine Änderung mehrere Systeme berührt, landet ein Teil davon oft in `main_v2.mjs`.
+- Wenn eine Änderung mehrere Systeme berührt, landet ein Teil davon oft in `main.mjs`.
 - Wenn eine Änderung fachlich klar abgegrenzt ist, sollte sie eher im jeweiligen Fachmodul stattfinden.
 
 ### 2. Daten und Balancing
@@ -107,7 +107,7 @@ Wichtige Verantwortlichkeiten:
 
 ### 4. State und Persistenz
 
-`src/state_v2.mjs` kapselt:
+`src/state.mjs` kapselt:
 
 - Frischstart eines Laufs
 - Spielerprofil
@@ -124,9 +124,9 @@ Persistiert wird lokal im Browser. Wichtig:
 
 ### 5. Rendering und DOM
 
-`src/dom_v2.mjs` ist eine reine DOM-Binding-Datei. Dort werden HTML-Elemente anhand ihrer IDs selektiert und exportiert.
+`src/dom.mjs` ist eine reine DOM-Binding-Datei. Dort werden HTML-Elemente anhand ihrer IDs selektiert und exportiert.
 
-`src/render_v2.mjs` rendert:
+`src/render.mjs` rendert:
 
 - das Board
 - HUD/Topbar
@@ -137,7 +137,7 @@ Persistiert wird lokal im Browser. Wichtig:
 - Inventarlisten
 - Tooltips
 
-Wenn sich eine Änderung nur auf Darstellung oder DOM-Ausgabe bezieht, ist `render_v2.mjs` meist die richtige Stelle.
+Wenn sich eine Änderung nur auf Darstellung oder DOM-Ausgabe bezieht, ist `render.mjs` meist die richtige Stelle.
 
 ## Build- und Laufmodell
 
@@ -223,7 +223,7 @@ Hunger/Nahrung:
 
 Speichern, Optionen, Highscores:
 
-- `src/state_v2.mjs`
+- `src/state.mjs`
 
 DOM-Struktur:
 
@@ -232,7 +232,7 @@ DOM-Struktur:
 Darstellung:
 
 - `styles.css`
-- `src/render_v2.mjs`
+- `src/render.mjs`
 
 ## Aktuelle Stärken
 
@@ -255,4 +255,4 @@ Darstellung:
 - Formatting standardisieren
 - einfachen `dev`-Workflow ergänzen
 - CI für Build/Test einrichten
-- große Module schrittweise weiter zerlegen, vor allem `main_v2.mjs`
+- große Module schrittweise weiter zerlegen, vor allem `main.mjs`

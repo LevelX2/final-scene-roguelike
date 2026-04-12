@@ -1,4 +1,4 @@
-// Legacy renderer kept for reference. The active runtime uses src/render_v2.mjs.
+// Legacy renderer kept for reference. The active runtime uses src/render.mjs.
 export function createRenderApi(context) {
   const {
     MIN_CRIT_CHANCE,

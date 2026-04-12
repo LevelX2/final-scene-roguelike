@@ -1,5 +1,5 @@
-// Legacy state module kept for reference. The active runtime uses src/state_v2.mjs.
-// Legacy state module kept for reference. The active runtime uses src/state_v2.mjs.
+// Legacy state module kept for reference. The active runtime uses src/state.mjs.
+// Legacy state module kept for reference. The active runtime uses src/state.mjs.
 export function createStateApi(context) {
   const {
     HIGHSCORE_KEY,

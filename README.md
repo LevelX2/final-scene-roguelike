@@ -6,11 +6,11 @@ Browserbasiertes Rogue-like mit Horrorfilm-Thema, zufällig generierten Dungeon-
 
 ## Kurzüberblick
 
-Dieses Repository enthält ein lauffähiges Einzelspieler-Browserspiel ohne Framework. Die App besteht aus statischem HTML/CSS und modularisiertem JavaScript im `src/`-Ordner. Für den Browser wird der aktive Einstieg `src/main_v2.mjs` per `esbuild` nach `dist/game.bundle.js` gebündelt. `index.html` lädt genau dieses Bundle.
+Dieses Repository enthält ein lauffähiges Einzelspieler-Browserspiel ohne Framework. Die App besteht aus statischem HTML/CSS und modularisiertem JavaScript im `src/`-Ordner. Für den Browser wird der aktive Einstieg `src/main.mjs` per `esbuild` nach `dist/game.bundle.js` gebündelt. `index.html` lädt genau dieses Bundle.
 
 Wenn du neu in das Projekt kommst, ist die wichtigste Orientierung:
 
-- Aktiver Runtime-Pfad: `src/main_v2.mjs`
+- Aktiver Runtime-Pfad: `src/main.mjs`
 - Aktive Hilfsmodule: `src/*_v2.mjs` plus fachliche Module wie `dungeon.mjs`, `combat.mjs`, `ai.mjs`, `items.mjs`
 - Browser-Einstieg: `index.html`
 - Build-Artefakt: `dist/game.bundle.js`
@@ -44,7 +44,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 ## Wichtige Skripte
 
 - `npm run build`
-  Bündelt `src/main_v2.mjs` nach `dist/game.bundle.js`.
+  Bündelt `src/main.mjs` nach `dist/game.bundle.js`.
 - `npm run check:js`
   Führt Syntax-Prüfungen für den aktuell konfigurierten Satz an Kernmodulen aus.
 - `npm run start:test`
@@ -60,7 +60,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
   Definiert die komplette UI-Struktur, Modals und Mount-Punkte.
 - `styles.css`
   Gesamtes visuelles Styling der App.
-- `src/main_v2.mjs`
+- `src/main.mjs`
   Orchestriert die Anwendung. Hier laufen Initialisierung, Event-Handling, Zusammensetzen der APIs und große Teile der Spiellogik zusammen.
 
 ### Fachmodule
@@ -85,11 +85,11 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
   Fallenaufbau und Trap-Effekte.
 - `src/nutrition.mjs`
   Hunger-/Nahrungsmodell.
-- `src/state_v2.mjs`
+- `src/state.mjs`
   Persistenz, Save/Load, Optionen, Highscores und State-Erzeugung.
-- `src/render_v2.mjs`
+- `src/render.mjs`
   DOM-Rendering für Board, Log, HUD, Inventar, Gegneransicht und Listen.
-- `src/dom_v2.mjs`
+- `src/dom.mjs`
   DOM-Bindings für `index.html`.
 - `src/test-api.mjs`
   Test-Hooks für Playwright. Die globale API wird nur aktiviert, wenn `localStorage["dungeon-rogue-enable-test-api"] === "1"` gesetzt ist.
@@ -139,7 +139,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 ## Hinweise für neue Threads oder Workspaces
 
 - Lies zuerst diese README und danach [docs/project-overview.md](docs/project-overview.md).
-- Arbeite standardmäßig gegen `src/main_v2.mjs` und die `_v2`-Module, nicht gegen die Legacy-Dateien.
+- Arbeite standardmäßig gegen `src/main.mjs`, `src/dom.mjs`, `src/render.mjs` und `src/state.mjs`, nicht gegen die Legacy-Dateien.
 - Nach Änderungen am Runtime-Code immer mindestens `npm run build` ausführen.
 - Bei Spiellogik oder UI-Verhalten möglichst `npm run test:e2e` mitlaufen lassen.
 - Wenn etwas im Browser nicht sichtbar wird, ist oft schlicht das Bundle in `dist/` nicht neu gebaut worden.
@@ -147,7 +147,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 
 ## Bekannte strukturelle Realitäten
 
-- Die Codebasis ist modular, aber einige Kernmodule sind groß geworden, vor allem `main_v2.mjs`, `dungeon.mjs`, `data.mjs` und `render_v2.mjs`.
+- Die Codebasis ist modular, aber einige Kernmodule sind groß geworden, vor allem `main.mjs`, `dungeon.mjs`, `data.mjs` und `render.mjs`.
 - Es existiert bewusst noch eine Legacy-Linie parallel zur aktiven `_v2`-Linie.
 - Es gibt bereits gute E2E-Abdeckung, aber nur leichtes Build-/Syntax-Tooling. Linting, Formatting und CI sind naheliegende nächste Ausbaustufen.
 

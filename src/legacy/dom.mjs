@@ -1,4 +1,4 @@
-// Legacy DOM bindings kept for reference. The active runtime uses src/dom_v2.mjs.
+// Legacy DOM bindings kept for reference. The active runtime uses src/dom.mjs.
 export const boardElement = document.getElementById("board");
 export const heroIdentityFormElement = document.getElementById("heroIdentityForm");
 export const heroNameInputElement = document.getElementById("heroNameInput");

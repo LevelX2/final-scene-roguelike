@@ -3,7 +3,7 @@ import { boardElement, startModalElement, startFormElement, classOptionsElement,
 import { DOOR_TYPE, LOCK_COLORS } from './data.mjs';
 import { PROP_CATALOG } from './data.mjs';
 import { DISPLAY_CASE_AMBIENCE } from './data.mjs';
-import { HERO_CLASSES, getUnlockedMonsterRank, getEnemyCountForFloor, getPotionCountForFloor, shouldSpawnFloorWeapon, shouldSpawnChest, getChestCountForFloor, getLockedDoorCountForFloor, shouldPlaceLockedRoomChest, getLevelUpRewards, NON_ICONIC_MONSTER_WEIGHT_BONUS, ICONIC_MONSTER_WEIGHT_PENALTY } from './balance.mjs';
+import { HERO_CLASSES, getHeroClassAssets, getUnlockedMonsterRank, getEnemyCountForFloor, getPotionCountForFloor, shouldSpawnFloorWeapon, shouldSpawnChest, getChestCountForFloor, getLockedDoorCountForFloor, shouldPlaceLockedRoomChest, getLevelUpRewards, NON_ICONIC_MONSTER_WEIGHT_BONUS, ICONIC_MONSTER_WEIGHT_PENALTY } from './balance.mjs';
 import { ITEM_RARITY_MODIFIER_COUNTS, getEquipmentRarityWeights } from './balance.mjs';
 import { getNutritionMax, getNutritionStart, clampNutritionValue, getHungerState, getHungerStateLabel, getHungerStateMessage, HUNGER_STATE, NUTRITION_COST_PER_ACTION, DAMAGE_PER_ACTION_WHILE_DYING } from './nutrition.mjs';
 import { buildFoodItemsForBudget, rollFoodBudget, splitFoodBudget, rollMonsterPlannedDrop } from './loot.mjs';
@@ -27,7 +27,7 @@ const OPTIONS_KEY = "dungeon-rogue-options";
 const HERO_NAME_KEY = "movieverse-hero-name";
 const HERO_CLASS_KEY = "movieverse-hero-class";
 const DEFAULT_HERO_NAME = "Final Girl";
-const DEFAULT_HERO_CLASS = "survivor";
+const DEFAULT_HERO_CLASS = "lead";
 const CHOICE_ACTIONS = {
   potion: ["drink", "store", "leave"],
   food: ["eat", "store", "leave"],
@@ -1326,6 +1326,7 @@ function render() {
   renderBoard();
   depthTitleElement.textContent = `Dungeon-Ebene ${state.floor}`;
   playerPanelTitleElement.textContent = state.player.name;
+  playerPanelTitleElement.style.setProperty("--hero-class-icon", `url("${getHeroClassAssets(state.player.classId).iconUrl}")`);
   topbarHpElement.textContent = combatSummary.hp;
   topbarLevelElement.textContent = combatSummary.level;
   topbarDamageElement.textContent = combatSummary.damage;
@@ -2020,10 +2021,15 @@ function renderClassOptions(selectedClassId) {
     const label = document.createElement("label");
     label.className = `class-option${heroClass.id === selectedClassId ? " selected" : ""}`;
     label.tabIndex = 0;
+    const classIconUrl = getHeroClassAssets(heroClass.id).iconUrl;
     label.innerHTML = `
       <input type="radio" name="heroClass" value="${heroClass.id}" ${heroClass.id === selectedClassId ? "checked" : ""}>
-      <strong>${heroClass.label}</strong>
-      <span>${heroClass.tagline}</span>
+      <div class="class-option-art" aria-hidden="true"${classIconUrl ? ` style="--class-icon: url('${classIconUrl}')"` : ""}></div>
+      <div class="class-option-copy">
+        <strong>${heroClass.label}</strong>
+        <span>${heroClass.tagline}</span>
+        <span>${heroClass.passiveName}: ${heroClass.passiveSummary}</span>
+      </div>
     `;
     const input = label.querySelector('input[name="heroClass"]');
     const applySelection = () => {

@@ -178,6 +178,24 @@ export function createDungeonApi(context) {
     };
   }
 
+  function collectUsedShowcasePropIds() {
+    const state = getState();
+    if (!state?.floors) {
+      return new Set();
+    }
+
+    const usedPropIds = new Set();
+    Object.values(state.floors).forEach((floorState) => {
+      (floorState?.showcases ?? []).forEach((showcase) => {
+        const propId = showcase?.item?.id;
+        if (propId) {
+          usedPropIds.add(propId);
+        }
+      });
+    });
+    return usedPropIds;
+  }
+
   function cloneWeapon(weapon) {
     if (!weapon) {
       return null;
@@ -550,7 +568,7 @@ export function createDungeonApi(context) {
     );
     const shuffledRooms = [...eligibleRooms].sort(() => Math.random() - 0.5);
     const availableProps = [...propCatalog].sort(() => Math.random() - 0.5);
-    const usedPropIds = new Set();
+    const usedPropIds = collectUsedShowcasePropIds();
 
     for (const { room, index } of shuffledRooms) {
       if (showcases.length >= desiredCount) {
@@ -599,6 +617,10 @@ export function createDungeonApi(context) {
 
       if (!roomStillReachable || !candidateOnlyRemovesItself) {
         continue;
+      }
+
+      if (usedPropIds.size >= propCatalog.length) {
+        usedPropIds.clear();
       }
 
       const prop = availableProps.find((entry) => !usedPropIds.has(entry.id))

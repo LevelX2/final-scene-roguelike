@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Stuntman dungeon sprite</title>
+  <g stroke="#121418" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="32" cy="10.5" rx="7" ry="6.5" fill="#F3C5A0"/>
+    <path d="M25.5 10.5C26.4 6.2 29.6 4 33.3 4C37.5 4 39.6 6.3 40.1 10.5C37 8.5 31.8 8.3 25.5 10.5Z" fill="#2B2F39"/>
+    <path d="M19 25L24 17H40L45 25V40H19V25Z" fill="#D85B3E"/>
+    <path d="M24 17L27 14H37L40 17Z" fill="#B7422B"/>
+    <path d="M19 27L13.5 33L18 36L22 31" fill="#D85B3E"/>
+    <path d="M45 27L50.5 33L46 36L42 31" fill="#D85B3E"/>
+    <path d="M13.5 33L11.5 39L17 39L18 36Z" fill="#6E7A88"/>
+    <path d="M50.5 33L52.5 39L47 39L46 36Z" fill="#6E7A88"/>
+    <rect x="26.5" y="22" width="11" height="8" rx="2" fill="#2C3641"/>
+    <path d="M26.5 24H37.5" opacity=".35"/>
+    <path d="M22 40H42L45 58H36L33.5 47H30.5L28 58H19L22 40Z" fill="#3E4855"/>
+    <path d="M23 58H31V61H21.5C21.7 59.4 22.2 58.4 23 58Z" fill="#6E7A88"/>
+    <path d="M33 58H41V61H31.5C31.7 59.4 32.2 58.4 33 58Z" fill="#6E7A88"/>
+    <path d="M21 25H43" opacity=".28"/>
+    <path d="M23.5 45H40.5" opacity=".28"/>
+  </g>
+</svg>

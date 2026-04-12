@@ -4,7 +4,7 @@ const { setupFoodAtPlayerStep, startRun } = require("./helpers");
 
 test("nutrition starts with the class endurance bonus applied", async ({ page }) => {
   await page.goto("/");
-  await startRun(page, { classLabel: "Medium" });
+  await startRun(page, { classLabel: "Regisseur" });
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
 

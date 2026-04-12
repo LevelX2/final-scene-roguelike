@@ -24,12 +24,12 @@ Zu Beginn wählt der Spieler:
 
 Aktuell gibt es drei Klassen:
 
-- `Survivor`
-  Ausgewogen und zäh.
-- `Slayer`
-  Mehr Druck im Nahkampf.
-- `Medium`
-  Bessere Nerven-/Kontrollwerte und stärkeres Hungerprofil.
+- `Hauptrolle`
+  Kämpft über Timing, Präsenz und einen starken ersten Schlag gegen neue Gegner.
+- `Stuntman`
+  Frontkämpfer mit viel Leben, gutem Durchhaltevermögen und weniger Schaden durch Set-Gefahren.
+- `Regisseur`
+  Kontrolliert die Szene über hohe Nerven-/Intelligenzwerte und entdeckt Fallen zuverlässiger.
 
 Die Klasse beeinflusst Startwerte wie:
 
@@ -42,6 +42,12 @@ Die Klasse beeinflusst Startwerte wie:
 - `endurance`
 
 Der Heldenname und die Klassenwahl werden lokal gespeichert und beim nächsten Start wieder angeboten.
+
+Jede Klasse besitzt im aktuellen Stand genau eine kleine Passive, die auf bestehende Systeme aufsetzt:
+
+- `Hauptrolle`: erster Angriff gegen einen frischen Gegner erhält Bonus auf Treffer und Krit
+- `Stuntman`: erleidet weniger Schaden durch Fallen/Gefahrenfelder und blockt etwas sicherer mit Schilden
+- `Regisseur`: entdeckt Fallen früher und reagiert besser auf sie
 
 ## Core Loop
 

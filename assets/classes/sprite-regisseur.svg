@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Regisseur dungeon sprite</title>
+  <g stroke="#121418" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="29" cy="10.5" rx="6.8" ry="6.6" fill="#F3C5A0"/>
+    <path d="M22.9 9.7C23.9 5.5 26.3 4 29.3 4C33.2 4 35.5 6.2 35.6 10.2C31.8 8.3 27.4 8.1 22.9 9.7Z" fill="#2B313A"/>
+    <path d="M22 23L26.5 17H34L38 23V39H22V23Z" fill="#3B5E6A"/>
+    <path d="M26.5 17H34L35.5 20.5H25.2L26.5 17Z" fill="#4CB0C7"/>
+    <path d="M22 25L16.5 31.5L20.8 34.8L25 29" fill="#3B5E6A"/>
+    <path d="M16.5 31.5L15.2 37.3L20.5 36L20.8 34.8Z" fill="#F3C5A0"/>
+    <path d="M38 26L42.5 25" fill="#3B5E6A"/>
+    <path d="M22 39H38L41 58H33L31.7 47H29L27 58H19L22 39Z" fill="#2A3641"/>
+    <path d="M21.5 58H29V61H20C20.3 59.5 20.8 58.5 21.5 58Z" fill="#4CB0C7"/>
+    <path d="M30.5 58H38V61H29C29.3 59.5 29.8 58.5 30.5 58Z" fill="#4CB0C7"/>
+    <rect x="41" y="20" width="14" height="12" rx="2" fill="#2C3641"/>
+    <path d="M42 24H54" opacity=".34"/>
+    <path d="M45 20L42 24M50 20L47 24M55 20L52 24" />
+    <circle cx="26.5" cy="10.7" r="1.2" fill="#D9F7FF" stroke="none"/>
+    <circle cx="31.5" cy="10.7" r="1.2" fill="#D9F7FF" stroke="none"/>
+    <path d="M24 14.3C25.7 16 27.6 16.7 29.5 16.7C31.4 16.7 33.3 16 35 14.3" opacity=".45"/>
+  </g>
+</svg>

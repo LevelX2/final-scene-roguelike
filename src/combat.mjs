@@ -41,7 +41,7 @@ export function createCombatApi(context) {
       };
     }
 
-    const blockChance = clamp(offHand.blockChance + defender.nerves, 5, 75);
+    const blockChance = clamp(offHand.blockChance + defender.nerves + (defender.shieldBlockBonus ?? 0), 5, 75);
     if (!rollPercent(blockChance)) {
       return {
         blocked: false,
@@ -63,20 +63,31 @@ export function createCombatApi(context) {
   }
 
   function resolveCombatAttack(attacker, defender) {
+    const state = getState();
     const weapon = getCombatWeapon(attacker);
-    const hitValue = attacker.precision * 2 + weapon.hitBonus;
+    const isPlayerAttack = attacker === state.player && defender?.type === "monster";
+    const usesOpeningStrike = isPlayerAttack && !defender.openingStrikeSpent;
+    const hitValue = attacker.precision * 2 + weapon.hitBonus + (usesOpeningStrike ? (attacker.openingStrikeHitBonus ?? 0) : 0);
     const dodgeValue = defender.reaction * 2 + defender.nerves;
     const hitChance = clamp(BASE_HIT_CHANCE + (hitValue - dodgeValue), MIN_HIT_CHANCE, MAX_HIT_CHANCE);
+    if (usesOpeningStrike) {
+      defender.openingStrikeSpent = true;
+    }
 
     if (!rollPercent(hitChance)) {
       return {
         hit: false,
         critical: false,
         damage: 0,
+        usedOpeningStrike: usesOpeningStrike,
       };
     }
 
-    const critChance = clamp(attacker.precision + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
+    const critChance = clamp(
+      attacker.precision + weapon.critBonus + (usesOpeningStrike ? (attacker.openingStrikeCritBonus ?? 0) : 0),
+      MIN_CRIT_CHANCE,
+      MAX_CRIT_CHANCE,
+    );
     const critical = rollPercent(critChance);
     const conditionalDamage = getWeaponConditionalDamageBonus(attacker, weapon);
     const baseDamage = Math.max(1, attacker.strength + weapon.damage + conditionalDamage);
@@ -86,6 +97,7 @@ export function createCombatApi(context) {
       hit: true,
       critical,
       damage,
+      usedOpeningStrike: usesOpeningStrike,
     };
   }
 
@@ -147,6 +159,9 @@ export function createCombatApi(context) {
     if (!result.hit) {
       showFloatingText(enemy.x, enemy.y, "Dodge", "dodge");
       playDodgeSound();
+      if (result.usedOpeningStrike) {
+        addMessage(`${state.player.classPassiveName} setzt den ersten Beat, aber ${enemy.name} entkommt knapp.`, "important");
+      }
       addMessage(`${enemy.name} weicht deinem Angriff aus.`, "danger");
       renderSelf();
       return;
@@ -176,6 +191,9 @@ export function createCombatApi(context) {
 
     if (itemHasModifier(weapon, "final") && getWeaponConditionalDamageBonus(state.player, weapon) > 0) {
       addMessage(`${weapon.name} trifft im letzten Akt härter zu.`, "important");
+    }
+    if (result.usedOpeningStrike) {
+      addMessage(`${state.player.classPassiveName} gibt dir den perfekten Auftakt gegen ${enemy.name}.`, "important");
     }
 
     addMessage(

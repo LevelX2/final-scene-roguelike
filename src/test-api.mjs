@@ -45,6 +45,9 @@ export function createTestApi(context) {
           floor: state.floor,
           player: {
             name: state.player.name,
+            classId: state.player.classId,
+            classLabel: state.player.classLabel,
+            classPassiveName: state.player.classPassiveName,
             x: state.player.x,
             y: state.player.y,
             hp: state.player.hp,

@@ -220,6 +220,73 @@ test("hidden floor traps trigger on entry and become consumed", async ({ page })
   expect(messages.some((entry) => entry.text.includes("Test-Bodenfalle"))).toBeTruthy();
 });
 
+test("Stuntman reduces incoming trap damage", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { classLabel: "Stuntman" });
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setRandomSequence([0.99]);
+  });
+  await setupTrapAtPlayerStep(page, {
+    id: "test-stunt-trap",
+    name: "Test-Stuntfalle",
+    description: "Nur für den Test.",
+    type: "floor",
+    visibility: "hidden",
+    state: "active",
+    trigger: "on_enter",
+    resetMode: "single_use",
+    affectsPlayer: true,
+    affectsEnemies: true,
+    detectDifficulty: 99,
+    reactDifficulty: 99,
+    effect: { damage: 4 },
+  });
+
+  const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.hp);
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(before - snapshot.player.hp).toBe(2);
+  expect(messages.some((entry) => entry.text.includes("Steckt den Fall weg"))).toBeTruthy();
+});
+
+test("Regisseur discovers nearby traps more reliably", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { classLabel: "Regisseur" });
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeTrap({ x: snapshot.player.x + 1, y: snapshot.player.y }, {
+      id: "test-director-trap",
+      name: "Test-Regiefalle",
+      description: "Nur für den Test.",
+      type: "floor",
+      visibility: "hidden",
+      state: "active",
+      trigger: "on_enter",
+      resetMode: "single_use",
+      affectsPlayer: true,
+      affectsEnemies: true,
+      detectDifficulty: 3,
+      reactDifficulty: 3,
+      effect: { damage: 4 },
+    });
+    window.__TEST_API__.setRandomSequence([0.5]);
+  });
+
+  await page.keyboard.press(" ");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.traps[0].visibility).toBe("discovered");
+  expect(messages.some((entry) => entry.text.includes("Du entdeckst Test-Regiefalle"))).toBeTruthy();
+});
+
 test("alarm traps alarm nearby enemies", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -675,6 +742,37 @@ test("generated showcases do not cut off already reachable floor areas", async (
   });
 
   expect(result.ok).toBeTruthy();
+});
+
+test("generated showcases stay unique across floors while unused props remain", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const seenShowcaseIds = new Set();
+
+  for (let floor = 1; floor <= 10; floor += 1) {
+    const result = await page.evaluate((knownIds) => {
+      const snapshot = window.__TEST_API__.getSnapshot();
+      const duplicate = (snapshot.showcases ?? []).find((showcase) => knownIds.includes(showcase.id));
+
+      return duplicate
+        ? { ok: false, floor: snapshot.floor, duplicateId: duplicate.id }
+        : {
+            ok: true,
+            floor: snapshot.floor,
+            showcaseIds: (snapshot.showcases ?? []).map((showcase) => showcase.id),
+          };
+    }, Array.from(seenShowcaseIds));
+
+    expect(result.ok).toBeTruthy();
+
+    result.showcaseIds.forEach((id) => seenShowcaseIds.add(id));
+
+    if (floor < 10) {
+      await openDownstairsPrompt(page);
+      await page.getByRole("button", { name: "Hinabsteigen" }).click();
+    }
+  }
 });
 
 test("showcases block movement like room obstacles", async ({ page }) => {

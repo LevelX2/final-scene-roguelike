@@ -205,12 +205,20 @@ export function createTrapsApi(context) {
   }
 
   function getDetectionChance(actor, trap) {
-    return clamp(25 + ((actor.precision ?? 0) - (trap.detectDifficulty ?? 0)) * 15, 5, 95);
+    return clamp(
+      25 + ((actor.precision ?? 0) - (trap.detectDifficulty ?? 0)) * 15 + (actor.trapDetectionBonus ?? 0),
+      5,
+      95,
+    );
   }
 
   function getAvoidChance(actor, trap, trapVisible = false) {
     const visibleBonus = trapVisible ? 15 : 0;
-    return clamp(20 + ((actor.reaction ?? 0) - (trap.reactDifficulty ?? 0)) * 15 + visibleBonus, 5, 95);
+    return clamp(
+      20 + ((actor.reaction ?? 0) - (trap.reactDifficulty ?? 0)) * 15 + visibleBonus + (actor.trapAvoidBonus ?? 0),
+      5,
+      95,
+    );
   }
 
   function detectNearbyTraps(player = getState().player, floorState = getCurrentFloorState()) {
@@ -266,7 +274,8 @@ export function createTrapsApi(context) {
       const enduranceMitigation = isPlayer
         ? Math.floor((actor.endurance ?? 0) / (isContinuous ? 2 : 3))
         : Math.floor((actor.endurance ?? 0) / 4);
-      const damage = Math.max(1, trap.effect.damage - enduranceMitigation - (reduced ? 1 : 0));
+      const classMitigation = isPlayer ? (actor.trapDamageReduction ?? 0) : 0;
+      const damage = Math.max(1, trap.effect.damage - enduranceMitigation - classMitigation - (reduced ? 1 : 0));
       actor.hp = Math.max(0, actor.hp - damage);
       if (isPlayer) {
         state.damageTaken = (state.damageTaken ?? 0) + damage;
@@ -280,6 +289,9 @@ export function createTrapsApi(context) {
           : `${actor.name} erleidet ${damage} Schaden durch ${trap.name}.`,
         "danger",
       );
+      if (isPlayer && classMitigation > 0) {
+        addMessage(`${actor.classPassiveName} federt einen Teil der Set-Gefahr ab.`, "important");
+      }
       if (actor.hp <= 0) {
         handleTrapDeath(actor, trap);
         return;

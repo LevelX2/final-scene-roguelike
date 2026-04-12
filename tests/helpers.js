@@ -7,10 +7,10 @@ async function startRun(page, options = {}) {
     }
 
     if (options.classLabel) {
-      await page.getByText(options.classLabel, { exact: true }).click();
+      await page.locator("#classOptions").getByText(options.classLabel, { exact: true }).click();
     }
 
-    await page.getByRole("button", { name: "Start" }).click();
+    await page.locator("#startForm").evaluate((form) => form.requestSubmit());
     await expect(page.locator("#startModal")).toBeHidden();
   }
 }

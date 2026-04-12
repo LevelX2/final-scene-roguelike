@@ -1,4 +1,4 @@
-import { xpForNextLevel } from './balance.mjs';
+import { xpForNextLevel, resolveHeroClassId } from './balance.mjs';
 import { getNutritionMax, getNutritionStart, getHungerState } from './nutrition.mjs';
 
 export function createStateApi(context) {
@@ -72,21 +72,26 @@ export function createStateApi(context) {
 
   function loadHeroClassId() {
     const saved = readStorage(HERO_CLASS_KEY);
-    return HERO_CLASSES[saved] ? saved : DEFAULT_HERO_CLASS;
+    return resolveHeroClassId(saved, DEFAULT_HERO_CLASS);
   }
 
   function saveHeroClassId(classId) {
-    const nextClassId = HERO_CLASSES[classId] ? classId : DEFAULT_HERO_CLASS;
+    const nextClassId = resolveHeroClassId(classId, DEFAULT_HERO_CLASS);
     writeStorage(HERO_CLASS_KEY, nextClassId);
     return nextClassId;
   }
 
   function createPlayerFromProfile(heroName, heroClassId) {
-    const heroClass = HERO_CLASSES[heroClassId] ?? HERO_CLASSES[DEFAULT_HERO_CLASS];
+    const resolvedClassId = resolveHeroClassId(heroClassId, DEFAULT_HERO_CLASS);
+    const heroClass = HERO_CLASSES[resolvedClassId] ?? HERO_CLASSES[DEFAULT_HERO_CLASS];
     return {
       name: heroName,
-      classId: heroClassId,
+      classId: resolvedClassId,
       classLabel: heroClass.label,
+      classTagline: heroClass.tagline,
+      classPassiveName: heroClass.passiveName,
+      classPassiveSummary: heroClass.passiveSummary,
+      classPassiveDescription: heroClass.passiveDescription,
       x: 0,
       y: 0,
       maxHp: heroClass.maxHp,
@@ -100,6 +105,12 @@ export function createStateApi(context) {
       nerves: heroClass.nerves,
       intelligence: heroClass.intelligence,
       endurance: heroClass.endurance ?? 0,
+      openingStrikeHitBonus: heroClass.openingStrikeHitBonus ?? 0,
+      openingStrikeCritBonus: heroClass.openingStrikeCritBonus ?? 0,
+      trapDamageReduction: heroClass.trapDamageReduction ?? 0,
+      trapDetectionBonus: heroClass.trapDetectionBonus ?? 0,
+      trapAvoidBonus: heroClass.trapAvoidBonus ?? 0,
+      shieldBlockBonus: heroClass.shieldBlockBonus ?? 0,
       mainHand: createBareHandsWeapon(),
       offHand: null,
     };
@@ -258,7 +269,7 @@ export function createStateApi(context) {
     }
 
     const heroName = normalizeHeroName(savedState.player?.name);
-    const heroClassId = HERO_CLASSES[savedState.player?.classId] ? savedState.player.classId : loadHeroClassId();
+    const heroClassId = resolveHeroClassId(savedState.player?.classId, loadHeroClassId());
     const normalizedState = createFreshState(heroName, heroClassId, { openStartModal: false });
 
     normalizedState.floor = Math.max(1, Number(savedState.floor) || 1);
@@ -314,6 +325,16 @@ export function createStateApi(context) {
       name: heroName,
       classId: heroClassId,
       classLabel: HERO_CLASSES[heroClassId]?.label ?? normalizedState.player.classLabel,
+      classTagline: HERO_CLASSES[heroClassId]?.tagline ?? normalizedState.player.classTagline,
+      classPassiveName: HERO_CLASSES[heroClassId]?.passiveName ?? normalizedState.player.classPassiveName,
+      classPassiveSummary: HERO_CLASSES[heroClassId]?.passiveSummary ?? normalizedState.player.classPassiveSummary,
+      classPassiveDescription: HERO_CLASSES[heroClassId]?.passiveDescription ?? normalizedState.player.classPassiveDescription,
+      openingStrikeHitBonus: HERO_CLASSES[heroClassId]?.openingStrikeHitBonus ?? 0,
+      openingStrikeCritBonus: HERO_CLASSES[heroClassId]?.openingStrikeCritBonus ?? 0,
+      trapDamageReduction: HERO_CLASSES[heroClassId]?.trapDamageReduction ?? 0,
+      trapDetectionBonus: HERO_CLASSES[heroClassId]?.trapDetectionBonus ?? 0,
+      trapAvoidBonus: HERO_CLASSES[heroClassId]?.trapAvoidBonus ?? 0,
+      shieldBlockBonus: HERO_CLASSES[heroClassId]?.shieldBlockBonus ?? 0,
     };
     normalizedState.player.mainHand = savedState.player?.mainHand ?? normalizedState.player.mainHand;
     normalizedState.player.offHand = savedState.player?.offHand ?? normalizedState.player.offHand;
@@ -389,6 +410,7 @@ export function createStateApi(context) {
     const entry = {
       marker: `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       heroName: state.player.name,
+      heroClassId: state.player.classId,
       heroClass: state.player.classLabel,
       date: new Date().toLocaleString("de-DE"),
       deathFloor: state.floor,

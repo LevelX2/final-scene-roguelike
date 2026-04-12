@@ -1,3 +1,5 @@
+import { getHeroClassAssets } from './balance.mjs';
+
 export function createRenderApi(context) {
   const {
     MIN_CRIT_CHANCE,
@@ -130,7 +132,9 @@ export function createRenderApi(context) {
     const hitValue = state.player.precision * 2 + weapon.hitBonus;
     const critChance = clamp(state.player.precision + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
     const blockBase = offHand?.subtype === "shield" ? offHand.blockChance : 0;
-    const blockChance = offHand?.subtype === "shield" ? clamp(blockBase + state.player.nerves, 5, 75) : 0;
+    const blockChance = offHand?.subtype === "shield"
+      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0), 5, 75)
+      : 0;
 
     return {
       hp: `${state.player.hp}/${state.player.maxHp}`,
@@ -154,7 +158,9 @@ export function createRenderApi(context) {
     const hitValue = state.player.precision * 2 + weapon.hitBonus;
     const critChance = clamp(state.player.precision + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
     const blockBase = offHand?.subtype === "shield" ? offHand.blockChance : 0;
-    const blockChance = offHand?.subtype === "shield" ? clamp(blockBase + state.player.nerves, 5, 75) : 0;
+    const blockChance = offHand?.subtype === "shield"
+      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0), 5, 75)
+      : 0;
 
     return {
       hp: {
@@ -196,7 +202,7 @@ export function createRenderApi(context) {
         title: "Blockchance",
         lines: offHand?.subtype === "shield"
           ? [
-              `Schild ${offHand.blockChance}% + Nerven ${state.player.nerves}`,
+              `Schild ${offHand.blockChance}% + Nerven ${state.player.nerves}${(state.player.shieldBlockBonus ?? 0) ? ` + Klassenbonus ${state.player.shieldBlockBonus}` : ""}`,
               `Ergibt aktuell ${blockChance}% Blockchance mit ${offHand.blockValue} Blockwert.`,
             ]
           : [
@@ -244,6 +250,14 @@ export function createRenderApi(context) {
     return `<div class="sheet-row"><span>${label}</span><strong>${value}</strong></div>`;
   }
 
+  function getHeroClassIconUrl(reference) {
+    return getHeroClassAssets(reference).iconUrl;
+  }
+
+  function getHeroClassSpriteUrl(reference) {
+    return getHeroClassAssets(reference).spriteUrl;
+  }
+
   function nearestEnemy() {
     const state = getState();
     const floorState = getCurrentFloorState();
@@ -270,6 +284,7 @@ export function createRenderApi(context) {
     const playerCardMode = state.collapsedCards?.player ?? "summary";
     const summaryRows = [
       createSheetRow("Klasse", state.player.classLabel ?? "-"),
+      createSheetRow("Passive", state.player.classPassiveName ?? "-"),
       createSheetRow("Haupthand", `${getMainHand(state.player).name} (${formatWeaponStats(getMainHand(state.player))})`),
       createSheetRow("Nebenhand", getOffHand(state.player) ? `${getOffHand(state.player).name} (${formatOffHandStats(getOffHand(state.player))})` : "Leer"),
       createSheetRow("Schritte", state.turn),
@@ -283,6 +298,7 @@ export function createRenderApi(context) {
       createSheetRow("Nerven", state.player.nerves),
       createSheetRow("Intelligenz", state.player.intelligence),
       createSheetRow("Ausdauer", state.player.endurance ?? 0),
+      createSheetRow("Passiveffekt", state.player.classPassiveDescription ?? "-"),
       createSheetRow("Nahrung", `${state.player.nutrition}/${state.player.nutritionMax}`),
     ];
 
@@ -405,10 +421,10 @@ export function createRenderApi(context) {
     return item.iconAsset ?? `./assets/displays/${item.ambienceId ?? item.id}.svg`;
   }
 
-  function getPlayerIconAssetUrl(isDead = false) {
+  function getPlayerIconAssetUrl(player, isDead = false) {
     return isDead
       ? "./assets/player-dead.svg"
-      : "./assets/player.svg";
+      : getHeroClassSpriteUrl(player?.classId);
   }
 
   function getMonsterIconAssetUrl(enemy) {
@@ -613,12 +629,18 @@ export function createRenderApi(context) {
       const item = document.createElement("div");
       const isLatest = Boolean(lastMarker) && score.marker === lastMarker;
       const deathFloor = score.deathFloor ?? score.deepestFloor;
+      const classIconUrl = getHeroClassIconUrl(score.heroClassId ?? score.heroClass);
       item.className = `score-item${isLatest ? " score-item-latest" : ""}`;
       item.innerHTML = `
-        <strong>#${index + 1} ${score.heroName ?? "Unbenannt"} | Ebene ${score.deepestFloor}${isLatest ? ' <span class="score-badge">Letzter Lauf</span>' : ""}</strong>
-        <span>${score.heroClass ?? "Unbekannt"} | Level ${score.level} | Kills ${score.kills ?? 0} | Leben ${score.hp}/${score.maxHp} | Gestorben auf Ebene ${deathFloor}</span>
-        <span>${score.deathCause ?? "Ohne dokumentierte Schluss-Szene."}</span>
-        <span>${score.turns} Schritte | ${score.date}</span>
+        <div class="score-item-head">
+          <div class="class-badge score-class-badge" aria-hidden="true"${classIconUrl ? ` style="--class-icon: url('${classIconUrl}')"` : ""}></div>
+          <div class="score-item-copy">
+            <strong>#${index + 1} ${score.heroName ?? "Unbenannt"} | Ebene ${score.deepestFloor}${isLatest ? ' <span class="score-badge">Letzter Lauf</span>' : ""}</strong>
+            <span>${score.heroClass ?? "Unbekannt"} | Level ${score.level} | Kills ${score.kills ?? 0} | Leben ${score.hp}/${score.maxHp} | Gestorben auf Ebene ${deathFloor}</span>
+            <span>${score.deathCause ?? "Ohne dokumentierte Schluss-Szene."}</span>
+            <span>${score.turns} Schritte | ${score.date}</span>
+          </div>
+        </div>
       `;
       highscoreListElement.appendChild(item);
     });
@@ -675,15 +697,16 @@ export function createRenderApi(context) {
 
     if (state.player.x === x && state.player.y === y) {
       return {
-        type: state.gameOver ? "player dead" : "player",
+        type: state.gameOver ? `player dead class-${state.player.classId}` : `player class-${state.player.classId}`,
         glyph: TILE.PLAYER,
         hp: state.player.hp,
         maxHp: state.player.maxHp,
         tooltip: {
           title: state.gameOver ? "Gefallener Held" : "Held",
-          imageUrl: getPlayerIconAssetUrl(state.gameOver),
+          imageUrl: getPlayerIconAssetUrl(state.player, state.gameOver),
           imageClass: state.gameOver ? "tooltip-art-player tooltip-art-player-dead" : "tooltip-art-player",
           lines: [
+            `${state.player.classLabel ?? "Held"} | ${state.player.classPassiveName ?? "Keine Passive"}`,
             `Level ${state.player.level}`,
             `Leben ${state.player.hp}/${state.player.maxHp}`,
             `Stärke ${state.player.strength}`,
@@ -693,8 +716,9 @@ export function createRenderApi(context) {
             `Intelligenz ${state.player.intelligence}`,
             `Haupthand ${getMainHand(state.player).name} (${formatWeaponStats(getMainHand(state.player))})`,
             `Nebenhand ${getOffHand(state.player)?.name ?? "Leer"}${getOffHand(state.player) ? ` (${formatOffHandStats(getOffHand(state.player))})` : ""}`,
+            state.player.classPassiveDescription,
             `XP ${state.player.xp}/${state.player.xpToNext}`,
-          ],
+          ].filter(Boolean),
         },
       };
     }

@@ -45,7 +45,7 @@ test("player attacks can hit and reduce enemy hp", async ({ page }) => {
 
 test("player attacks can miss and be logged as dodged", async ({ page }) => {
   await page.goto("/");
-  await startRun(page);
+  await startRun(page, { classLabel: "Stuntman" });
 
   await setupCombat(page, {
     player: {
@@ -80,6 +80,44 @@ test("player attacks can miss and be logged as dodged", async ({ page }) => {
 
   expect(snapshot.enemies[0].hp).toBe(20);
   expect(messages.some((entry) => entry.text.includes("weicht deinem Angriff aus"))).toBeTruthy();
+});
+
+test("Hauptrolle gets a boosted opening strike against a fresh enemy", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { classLabel: "Hauptrolle" });
+
+  await setupCombat(page, {
+    player: {
+      precision: 1,
+      reaction: 4,
+      nerves: 3,
+      weapon: {
+        type: "weapon",
+        id: "test-mark-blade",
+        name: "Markenklinge",
+        source: "Tests",
+        damage: 2,
+        hitBonus: 0,
+        critBonus: 0,
+        description: "Nur für Tests.",
+      },
+    },
+    enemy: {
+      hp: 20,
+      maxHp: 20,
+      reaction: 5,
+      nerves: 0,
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0.6, 0.99, 0.99]));
+  await page.keyboard.press("ArrowRight");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.enemies[0].hp).toBe(14);
+  expect(messages.some((entry) => entry.text.includes("Triff deine Marke"))).toBeTruthy();
 });
 
 test("critical hits deal increased damage and are logged", async ({ page }) => {
@@ -548,7 +586,7 @@ test("death modal shows out of ranking when a new score misses the stored top 10
     const strongScores = Array.from({ length: 100 }, (_, index) => ({
       marker: `seed-${index}`,
       heroName: `Seed ${index}`,
-      heroClass: "Slayer",
+      heroClass: "Stuntman",
       date: "12.04.2026, 10:00:00",
       deathFloor: 99,
       deepestFloor: 99,

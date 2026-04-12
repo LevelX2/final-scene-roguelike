@@ -100,44 +100,120 @@ export const ITEM_RARITY_MODIFIER_COUNTS = {
   veryRare: 3,
 };
 
+export const HERO_CLASS_ALIASES = {
+  survivor: "lead",
+  slayer: "stuntman",
+  medium: "director",
+};
+
+export const HERO_CLASS_LABEL_ALIASES = {
+  Survivor: "lead",
+  Slayer: "stuntman",
+  Medium: "director",
+};
+
 export const HERO_CLASSES = {
-  survivor: {
-    id: "survivor",
-    label: "Survivor",
-    tagline: "Ausgewogen und zäh.",
+  lead: {
+    id: "lead",
+    label: "Hauptrolle",
+    assetSlug: "hauptrolle",
+    tagline: "Kämpft über Timing, Präsenz und den ersten sauberen Moment.",
+    passiveName: "Triff deine Marke",
+    passiveSummary: "Der erste Angriff gegen einen Gegner erhält Bonus auf Treffer und Krit.",
+    passiveDescription: "Der erste Angriff gegen einen Gegner erhält +6 Trefferchance und +8% Krit-Chance.",
     maxHp: 20,
     strength: 4,
+    precision: 5,
+    reaction: 4,
+    nerves: 3,
+    intelligence: 2,
+    endurance: 2,
+    openingStrikeHitBonus: 6,
+    openingStrikeCritBonus: 8,
+  },
+  stuntman: {
+    id: "stuntman",
+    label: "Stuntman",
+    assetSlug: "stuntman",
+    tagline: "Geht voran, steckt Set-Gefahren weg und arbeitet stark mit Schilden.",
+    passiveName: "Steckt den Fall weg",
+    passiveSummary: "Erleidet weniger Schaden durch Fallen und blockt etwas sicherer mit Schilden.",
+    passiveDescription: "Erhält 1 weniger Schaden durch Fallen und Gefahrenfelder sowie +5% Schild-Blockchance.",
+    maxHp: 22,
+    strength: 5,
     precision: 3,
     reaction: 3,
     nerves: 2,
-    intelligence: 2,
-    endurance: 2,
-  },
-  slayer: {
-    id: "slayer",
-    label: "Slayer",
-    tagline: "Mehr Druck im Nahkampf.",
-    maxHp: 18,
-    strength: 5,
-    precision: 4,
-    reaction: 2,
-    nerves: 2,
     intelligence: 1,
-    endurance: 1,
-  },
-  medium: {
-    id: "medium",
-    label: "Medium",
-    tagline: "Wacher, nervenstärker, kontrollierter.",
-    maxHp: 19,
-    strength: 3,
-    precision: 3,
-    reaction: 4,
-    nerves: 4,
-    intelligence: 3,
     endurance: 3,
+    trapDamageReduction: 1,
+    shieldBlockBonus: 5,
+  },
+  director: {
+    id: "director",
+    label: "Regisseur",
+    assetSlug: "regisseur",
+    tagline: "Kontrolliert die Szene, liest Räume früh und reagiert sicherer auf Fallen.",
+    passiveName: "Szenenblick",
+    passiveSummary: "Entdeckt Fallen früher und reagiert besser auf vorbereitete Gefahren.",
+    passiveDescription: "Erhält +20% auf Fallenentdeckung und +15% auf Fallenvermeidung.",
+    maxHp: 17,
+    strength: 2,
+    precision: 4,
+    reaction: 3,
+    nerves: 4,
+    intelligence: 5,
+    endurance: 3,
+    trapDetectionBonus: 20,
+    trapAvoidBonus: 15,
   },
 };
+
+export function resolveHeroClassId(classId, fallback = "lead") {
+  if (HERO_CLASSES[classId]) {
+    return classId;
+  }
+
+  if (HERO_CLASS_ALIASES[classId] && HERO_CLASSES[HERO_CLASS_ALIASES[classId]]) {
+    return HERO_CLASS_ALIASES[classId];
+  }
+
+  return fallback;
+}
+
+export function resolveHeroClassReference(reference, fallback = "lead") {
+  if (typeof reference !== "string" || !reference.trim()) {
+    return fallback;
+  }
+
+  const resolvedId = resolveHeroClassId(reference, "");
+  if (resolvedId) {
+    return resolvedId;
+  }
+
+  const byCurrentLabel = Object.values(HERO_CLASSES).find((heroClass) => heroClass.label === reference);
+  if (byCurrentLabel) {
+    return byCurrentLabel.id;
+  }
+
+  if (HERO_CLASS_LABEL_ALIASES[reference]) {
+    return HERO_CLASS_LABEL_ALIASES[reference];
+  }
+
+  return fallback;
+}
+
+export function getHeroClassAssets(reference, fallback = "lead") {
+  const resolvedClassId = resolveHeroClassReference(reference, fallback);
+  const heroClass = HERO_CLASSES[resolvedClassId] ?? HERO_CLASSES[fallback];
+  const assetSlug = heroClass?.assetSlug;
+
+  return {
+    classId: resolvedClassId,
+    iconUrl: assetSlug ? `./assets/classes/class-${assetSlug}.svg` : null,
+    spriteUrl: assetSlug ? `./assets/classes/sprite-${assetSlug}.svg` : null,
+  };
+}
 
 export function xpForNextLevel(level) {
   return 40 + (level - 1) * 28 + Math.floor((level - 1) * (level - 1) * 6);

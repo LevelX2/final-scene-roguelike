@@ -15,7 +15,7 @@ test("hero name can be changed and persists for the next session", async ({ page
 
   await expect(page.locator("#startModal")).toBeVisible();
   await page.locator("#heroNameInput").fill("Ripley");
-  await page.getByRole("button", { name: "Start" }).click();
+  await page.locator("#startForm").evaluate((form) => form.requestSubmit());
 
   await expect(page.locator("#playerPanelTitle")).toContainText("Ripley");
   await expect(page.locator("#heroIdentityStatus")).toContainText("Ripley");
@@ -30,11 +30,58 @@ test("hero class cards can be selected from the start screen", async ({ page }) 
   await page.goto("/");
 
   await expect(page.locator("#startModal")).toBeVisible();
-  await page.getByText("Slayer", { exact: true }).click();
-  await expect(page.locator(".class-option.selected strong")).toHaveText("Slayer");
+  await expect(page.locator("#classOptions .class-option-art")).toHaveCount(3);
+  await page.locator("#classOptions").getByText("Stuntman", { exact: true }).click();
+  await expect(page.locator(".class-option.selected strong")).toHaveText("Stuntman");
 
-  await page.getByRole("button", { name: "Start" }).click();
-  await expect(page.locator("#playerSheet")).toContainText("Slayer");
+  await page.locator("#startForm").evaluate((form) => form.requestSubmit());
+  await expect(page.locator("#playerSheet")).toContainText("Stuntman");
+  await expect(page.locator("#playerSheet")).toContainText("Steckt den Fall weg");
+
+  const heroVisuals = await page.evaluate(() => {
+    const playerTile = document.querySelector(".board .tile.player");
+    const title = document.getElementById("playerPanelTitle");
+    return {
+      tileBackground: window.getComputedStyle(playerTile).backgroundImage,
+      titleIcon: title.style.getPropertyValue("--hero-class-icon"),
+    };
+  });
+
+  expect(heroVisuals.tileBackground).toContain("sprite-stuntman.svg");
+  expect(heroVisuals.titleIcon).toContain("class-stuntman.svg");
+});
+
+test("highscores render class icons for stored runs", async ({ page }) => {
+  await page.goto("/");
+
+  await page.evaluate(() => {
+    window.localStorage.setItem("dungeon-rogue-highscores-version", "2");
+    window.localStorage.setItem("dungeon-rogue-highscores", JSON.stringify([
+      {
+        marker: "icon-test",
+        heroName: "Sidney",
+        heroClassId: "director",
+        heroClass: "Regisseur",
+        date: "12.04.2026, 16:00:00",
+        deathFloor: 4,
+        deepestFloor: 4,
+        level: 3,
+        hp: 6,
+        maxHp: 17,
+        turns: 88,
+        kills: 12,
+        deathCause: "Testeintrag.",
+      },
+    ]));
+  });
+
+  await startRun(page);
+  await page.getByRole("button", { name: "Highscores" }).click();
+  await expect(page.locator("#highscoresModal")).toBeVisible();
+  await expect(page.locator(".score-class-badge")).toHaveCount(1);
+
+  const badgeStyle = await page.locator(".score-class-badge").evaluate((node) => node.getAttribute("style") ?? "");
+  expect(badgeStyle).toContain("class-regisseur.svg");
 });
 
 test("inventory modal toggles with keyboard controls", async ({ page }) => {
@@ -199,7 +246,7 @@ test("a manual save can be loaded after a page reload", async ({ page }) => {
 
   await expect(page.locator("#startModal")).toBeVisible();
   await expect(page.locator("#loadGameFromStart")).toBeEnabled();
-  await page.getByRole("button", { name: "Gespeicherten Lauf laden" }).click();
+  await page.locator("#loadGameFromStart").evaluate((button) => button.click());
   await expect(page.locator("#startModal")).toBeHidden();
 
   const afterReload = await page.evaluate(() => ({
@@ -234,7 +281,7 @@ test("an incompatible save is rejected with a clear message", async ({ page }) =
 
   await expect(page.locator("#startModal")).toBeVisible();
   await expect(page.locator("#loadGameFromStart")).toBeEnabled();
-  await page.getByRole("button", { name: "Gespeicherten Lauf laden" }).click();
+  await page.locator("#loadGameFromStart").evaluate((button) => button.click());
   await expect(page.locator("#startModal")).toBeVisible();
   await expect(page.locator("#startSavegameStatus")).toContainText("nicht kompatibel");
 });

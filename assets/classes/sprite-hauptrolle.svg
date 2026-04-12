@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Hauptrolle dungeon sprite</title>
+  <g stroke="#121418" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="32" cy="10.5" rx="6.8" ry="6.6" fill="#F3C5A0"/>
+    <path d="M25.8 9.5C27 5.4 29.4 4 32.2 4C35.8 4 38.3 5.9 38.7 10.2C35.4 8.2 31.1 8 25.8 9.5Z" fill="#2A2730"/>
+    <path d="M23 23L28 17H36L41 23V39H23V23Z" fill="#4667A7"/>
+    <path d="M28 17L32 13L36 17L34.2 22H29.8L28 17Z" fill="#E0B84A"/>
+    <path d="M23 25L17.5 32L21.5 35.2L26 29" fill="#4667A7"/>
+    <path d="M41 25L46.5 32L42.5 35.2L38 29" fill="#4667A7"/>
+    <path d="M17.5 32L16 38L21.2 37.2L21.5 35.2Z" fill="#F3C5A0"/>
+    <path d="M46.5 32L48 38L42.8 37.2L42.5 35.2Z" fill="#F3C5A0"/>
+    <path d="M25 39H39L43 58H34.5L32 49L29.5 58H21L25 39Z" fill="#303B53"/>
+    <path d="M24.8 39C27 42 29.3 43.5 32 43.5C34.7 43.5 37 42 39.2 39" fill="#E0B84A"/>
+    <path d="M26 58H33V61H24.5C24.8 59.5 25.3 58.4 26 58Z" fill="#E0B84A"/>
+    <path d="M31 58H38V61H29.5C29.8 59.5 30.3 58.4 31 58Z" fill="#E0B84A"/>
+    <path d="M29.2 24H34.8" opacity=".3"/>
+    <path d="M29 28.5H35" opacity=".3"/>
+    <path d="M28.8 33H35.2" opacity=".3"/>
+  </g>
+</svg>

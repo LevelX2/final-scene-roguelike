@@ -59,7 +59,7 @@ Restrisiken: Der Browser-Build schreibt weiterhin nach `dist/game.bundle.js`; in
 Status: fixed
 Priorität: mittel
 Kategorie: Design-/Architekturschwaeche
-Datei: package.json; src/main.mjs; src/main_v2.mjs; src/dom.mjs; src/dom_v2.mjs; src/render.mjs; src/render_v2.mjs; src/state.mjs; src/state_v2.mjs
+Datei: package.json; src/legacy/main.mjs; src/main_v2.mjs; src/legacy/dom.mjs; src/dom_v2.mjs; src/legacy/render.mjs; src/render_v2.mjs; src/legacy/state.mjs; src/state_v2.mjs
 Bereich: Einstiegspunkte; Modulstruktur
 Problem: Es existieren zwei parallele Anwendungslinien im selben Repository. Gleichzeitig zeigt `package.json` mit `main: "src/main.mjs"` noch auf den alten Einstieg, während Build und Browserpfad mit `src/main_v2.mjs` arbeiten.
 Warum relevant: Bugfixes, Refactorings und Reviews koennen leicht in der falschen Implementierung landen. Das erhoeht die Wartungskosten und beguenstigt funktionale Drift zwischen "alt" und "aktiv".

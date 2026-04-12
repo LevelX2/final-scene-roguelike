@@ -15,7 +15,7 @@ Wenn du neu in das Projekt kommst, ist die wichtigste Orientierung:
 - Browser-Einstieg: `index.html`
 - Build-Artefakt: `dist/game.bundle.js`
 - E2E-Tests: `tests/*.spec.js`
-- Legacy-Referenzen: `src/main.mjs`, `src/dom.mjs`, `src/render.mjs`, `src/state.mjs`
+- Legacy-Referenzen: `src/legacy/main.mjs`, `src/legacy/dom.mjs`, `src/legacy/render.mjs`, `src/legacy/state.mjs`
 
 Die Dateien ohne `_v2` sind nicht der aktive Pfad. Sie liegen noch als Referenz im Repository und sollten nicht versehentlich als Quelle der Wahrheit behandelt werden.
 

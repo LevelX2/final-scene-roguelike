@@ -5,7 +5,7 @@
   "main": "src/main_v2.mjs",
   "scripts": {
     "build": "node ./node_modules/esbuild/bin/esbuild src/main_v2.mjs --bundle --format=iife --platform=browser --outfile=dist/game.bundle.js",
-    "check:js": "node --check ./src/main_v2.mjs && node --check ./src/data.mjs && node --check ./src/dom_v2.mjs && node --check ./src/dungeon.mjs && node --check ./src/state_v2.mjs && node --check ./src/render_v2.mjs && node --check ./src/combat.mjs && node --check ./src/ai.mjs && node --check ./src/items.mjs && node --check ./src/test-api.mjs && node --check ./src/utils.mjs",
+    "check:js": "node --check ./src/main_v2.mjs && node --check ./src/application/audio-service.mjs && node --check ./src/application/input-controller.mjs && node --check ./src/application/savegame-service.mjs && node --check ./src/application/visibility-service.mjs && node --check ./src/application/modal-controller.mjs && node --check ./src/data.mjs && node --check ./src/content/core-data.mjs && node --check ./src/content/catalogs/monsters.mjs && node --check ./src/content/catalogs/weapons.mjs && node --check ./src/content/catalogs/shields.mjs && node --check ./src/content/catalogs/props.mjs && node --check ./src/content/catalogs/display-case-ambience.mjs && node --check ./src/dom_v2.mjs && node --check ./src/dungeon.mjs && node --check ./src/equipment-helpers.mjs && node --check ./src/state_v2.mjs && node --check ./src/render_v2.mjs && node --check ./src/combat.mjs && node --check ./src/ai.mjs && node --check ./src/items.mjs && node --check ./src/test-api.mjs && node --check ./src/utils.mjs",
     "start:test": "node ./node_modules/http-server/bin/http-server . -p 4173 -c-1",
     "test:e2e": "npm run build && node ./node_modules/playwright/cli.js test"
   },

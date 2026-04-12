@@ -34,6 +34,7 @@ test("app still renders with blocked localStorage access", async ({ page }) => {
 
   await expect(page).toHaveTitle("The Final Scene");
   await expect(page.locator("#startModal")).toBeVisible();
-  await page.getByRole("button", { name: "Start" }).click();
+  await page.locator("#startForm").evaluate((form) => form.requestSubmit());
+  await expect(page.locator("#startModal")).toBeHidden();
   await expect(page.locator("#playerPanelTitle")).toContainText("Final Girl");
 });

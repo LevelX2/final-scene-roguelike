@@ -1,10 +1,7 @@
 ﻿import { WIDTH, HEIGHT, TILE_SIZE, TILE_GAP, BOARD_PADDING, ROOM_ATTEMPTS, MIN_ROOM_SIZE, MAX_ROOM_SIZE, LOG_LIMIT, HIGHSCORE_KEY, HIGHSCORE_STORAGE_VERSION, HIGHSCORE_VERSION_KEY, VISION_RADIUS, BASE_HIT_CHANCE, MIN_HIT_CHANCE, MAX_HIT_CHANCE, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE, TILE, MONSTER_CATALOG, WEAPON_CATALOG, OFFHAND_CATALOG } from './data.mjs';
 import { boardElement, startModalElement, startFormElement, classOptionsElement, heroNameInputElement, saveHeroNameButtonElement, loadGameFromStartButtonElement, heroIdentityStatusElement, startSavegameStatusElement, messageLogElement, inventoryListElement, playerSheetElement, playerPanelTitleElement, enemySheetElement, highscoreListElement, runStatsSummaryElement, runStatsKillsElement, depthTitleElement, topbarHpCardElement, topbarHpElement, topbarLevelCardElement, topbarLevelElement, topbarDamageCardElement, topbarDamageElement, topbarHitCardElement, topbarHitElement, topbarCritCardElement, topbarCritElement, topbarBlockCardElement, topbarBlockElement, topbarFoodCardElement, topbarFoodElement, xpLabelElement, xpFillElement, nutritionLabelElement, nutritionFillElement, nutritionStateElement, choiceModalElement, choiceTitleElement, choiceTextElement, choiceDrinkButton, choiceStoreButton, choiceLeaveButton, stairsModalElement, stairsTitleElement, stairsTextElement, stairsConfirmButton, stairsStayButton, inventoryModalElement, runStatsModalElement, openRunStatsButton, closeRunStatsButton, openInventoryButton, closeInventoryButton, startFreshRunButton, inventoryFilterButtons, optionsModalElement, openOptionsButton, closeOptionsButton, saveGameButtonElement, loadGameButtonElement, savegameStatusElement, helpModalElement, openHelpButton, closeHelpButton, highscoresModalElement, openHighscoresButton, closeHighscoresButton, toggleStepSoundElement, toggleDeathSoundElement, deathModalElement, deathSummaryElement, deathKillsElement, deathKillsModalElement, restartFromDeathButton, openDeathKillsButton, closeDeathKillsButton, closeDeathButton, hoverTooltipElement, collapsibleCards } from './dom_v2.mjs';
-import { DOOR_TYPE, LOCK_COLORS } from './data.mjs';
-import { PROP_CATALOG } from './data.mjs';
-import { DISPLAY_CASE_AMBIENCE } from './data.mjs';
-import { HERO_CLASSES, getHeroClassAssets, getUnlockedMonsterRank, getEnemyCountForFloor, getPotionCountForFloor, shouldSpawnFloorWeapon, shouldSpawnChest, getChestCountForFloor, getLockedDoorCountForFloor, shouldPlaceLockedRoomChest, getLevelUpRewards, NON_ICONIC_MONSTER_WEIGHT_BONUS, ICONIC_MONSTER_WEIGHT_PENALTY } from './balance.mjs';
-import { ITEM_RARITY_MODIFIER_COUNTS, getEquipmentRarityWeights } from './balance.mjs';
+import { DOOR_TYPE, LOCK_COLORS, PROP_CATALOG, DISPLAY_CASE_AMBIENCE } from './data.mjs';
+import { HERO_CLASSES, getHeroClassAssets, getUnlockedMonsterRank, getEnemyCountForFloor, getPotionCountForFloor, shouldSpawnFloorWeapon, shouldSpawnChest, getChestCountForFloor, getLockedDoorCountForFloor, shouldPlaceLockedRoomChest, getLevelUpRewards, NON_ICONIC_MONSTER_WEIGHT_BONUS, ICONIC_MONSTER_WEIGHT_PENALTY, ITEM_RARITY_MODIFIER_COUNTS, getEquipmentRarityWeights } from './balance.mjs';
 import { getNutritionMax, getNutritionStart, clampNutritionValue, getHungerState, getHungerStateLabel, getHungerStateMessage, HUNGER_STATE, NUTRITION_COST_PER_ACTION, DAMAGE_PER_ACTION_WHILE_DYING } from './nutrition.mjs';
 import { buildFoodItemsForBudget, rollFoodBudget, splitFoodBudget, rollMonsterPlannedDrop } from './loot.mjs';
 import { ITEM_DEFS } from './item-defs.mjs';
@@ -17,10 +14,15 @@ import { createCombatApi } from './combat.mjs';
 import { createAiApi } from './ai.mjs';
 import { createItemsApi } from './items.mjs';
 import { createTestApi } from './test-api.mjs';
+import { createAudioService } from './application/audio-service.mjs';
+import { createInputController } from './application/input-controller.mjs';
+import { createSavegameService } from './application/savegame-service.mjs';
+import { createVisibilityService } from './application/visibility-service.mjs';
+import { createModalController } from './application/modal-controller.mjs';
+import { createBareHandsWeapon, cloneOffHandItem, getMainHand, getOffHand, getCombatWeapon, createEquipmentPresentationHelpers } from './equipment-helpers.mjs';
 import { clamp, randomInt, createGrid, carveRoom, carveTunnel, roomsOverlap } from './utils.mjs';
 
 let state;
-let audioContext;
 let testRandomQueue = [];
 let heroIdentityStatusTimeout;
 const OPTIONS_KEY = "dungeon-rogue-options";
@@ -36,6 +38,30 @@ const CHOICE_ACTIONS = {
 };
 const STAIR_ACTIONS = ["change-floor", "stay"];
 
+function createDeferredAction(name) {
+  let implementation = null;
+
+  return {
+    call(...args) {
+      if (typeof implementation !== "function") {
+        throw new Error(`${name} wurde vor der Initialisierung aufgerufen.`);
+      }
+      return implementation(...args);
+    },
+    set(nextImplementation) {
+      implementation = nextImplementation;
+    },
+  };
+}
+
+const showFloatingTextAction = createDeferredAction("showFloatingText");
+const showDeathModalAction = createDeferredAction("showDeathModal");
+const showChoiceModalAction = createDeferredAction("showChoiceModal");
+const hideChoiceModalAction = createDeferredAction("hideChoiceModal");
+const resolvePotionChoiceAction = createDeferredAction("resolvePotionChoice");
+const useInventoryItemAction = createDeferredAction("useInventoryItem");
+const quickUsePotionAction = createDeferredAction("quickUsePotion");
+
 function rollPercent(chance) {
   return randomChance() * 100 < chance;
 }
@@ -45,62 +71,6 @@ function randomChance() {
     return testRandomQueue.shift();
   }
   return Math.random();
-}
-
-function createBareHandsWeapon() {
-  return {
-    type: "weapon",
-    id: "bare-hands",
-    name: "Bloße Fäuste",
-    source: "Start",
-    handedness: "one-handed",
-    damage: 1,
-    hitBonus: 0,
-    critBonus: 0,
-    description: "Nicht ideal, aber immerhin ehrlich.",
-  };
-}
-
-function cloneOffHandItem(item) {
-  if (!item) {
-    return null;
-  }
-
-  return {
-    ...item,
-    type: item.type ?? "offhand",
-    modifiers: item.modifiers ? item.modifiers.map((modifier) => ({
-      ...modifier,
-      allowedItemTypes: [...(modifier.allowedItemTypes ?? [])],
-      statChanges: { ...(modifier.statChanges ?? {}) },
-      tags: [...(modifier.tags ?? [])],
-    })) : [],
-    modifierIds: [...(item.modifierIds ?? [])],
-    statMods: { ...(item.statMods ?? {}) },
-  };
-}
-
-function getStatLabel(stat) {
-  return {
-    strength: "Stärke",
-    precision: "Präzision",
-    reaction: "Reaktion",
-    nerves: "Nerven",
-    intelligence: "Intelligenz",
-    endurance: "Ausdauer",
-    charm: "Charme",
-  }[stat] ?? stat;
-}
-
-function formatStatMod(value) {
-  return `${value >= 0 ? "+" : ""}${value}`;
-}
-
-function formatStatMods(statMods = {}) {
-  return Object.entries(statMods)
-    .filter(([, value]) => value)
-    .map(([stat, value]) => `${getStatLabel(stat)} ${formatStatMod(value)}`)
-    .join(" | ");
 }
 
 function applyItemStatMods(entity, item, direction = 1) {
@@ -117,94 +87,136 @@ function applyItemStatMods(entity, item, direction = 1) {
   });
 }
 
-function getMainHand(entity) {
-  return entity.mainHand ?? entity.weapon ?? createBareHandsWeapon();
-}
+function assembleCoreModules() {
+  const itemizationApi = createItemizationApi({
+    ITEM_RARITY_MODIFIER_COUNTS,
+    getEquipmentRarityWeights,
+    randomChance,
+  });
 
-function getOffHand(entity) {
-  return entity.offHand ?? null;
-}
+  const audioService = createAudioService({
+    getState: () => state,
+  });
 
-function formatOffHandStats(item) {
-  if (!item) {
-    return "Leer";
-  }
+  const trapsApi = createTrapsApi({
+    randomInt,
+    randomChance,
+    getState: () => state,
+    getCurrentFloorState,
+    addMessage,
+    showFloatingText: (...args) => showFloatingTextAction.call(...args),
+    healPlayer: (...args) => healPlayer(...args),
+    refreshNutritionState: (...args) => refreshNutritionState(...args),
+    grantExperience: (...args) => grantExperience(...args),
+    createDeathCause: (...args) => createDeathCause(...args),
+    saveHighscoreIfNeeded: () => saveHighscoreIfNeeded(),
+    showDeathModal: (...args) => showDeathModalAction.call(...args),
+    playDeathSound: () => audioService.playDeathSound(),
+  });
 
-  if (item.subtype === "shield") {
-    const stats = [`${item.blockChance}% Block`, `${item.blockValue} Blockwert`];
-    const statMods = formatStatMods(item.statMods);
-    if (statMods) {
-      stats.push(statMods);
-    }
-    if (item.rarity && item.rarity !== "common") {
-      stats.unshift(formatRarityLabel(item.rarity));
-    }
-    return stats.join(" | ");
-  }
+  const dungeonApi = createDungeonApi({
+    WIDTH,
+    HEIGHT,
+    ROOM_ATTEMPTS,
+    MIN_ROOM_SIZE,
+    MAX_ROOM_SIZE,
+    TILE,
+    MONSTER_CATALOG,
+    WEAPON_CATALOG,
+    OFFHAND_CATALOG,
+    PROP_CATALOG,
+    DOOR_TYPE,
+    LOCK_COLORS,
+    buildFoodItemsForBudget,
+    rollFoodBudget,
+    splitFoodBudget,
+    rollMonsterPlannedDrop,
+    getUnlockedMonsterRank,
+    getEnemyCountForFloor,
+    getPotionCountForFloor,
+    shouldSpawnFloorWeapon,
+    shouldSpawnChest,
+    getChestCountForFloor,
+    getLockedDoorCountForFloor,
+    shouldPlaceLockedRoomChest,
+    NON_ICONIC_MONSTER_WEIGHT_BONUS,
+    ICONIC_MONSTER_WEIGHT_PENALTY,
+    buildTrapsForFloor: trapsApi.buildTrapsForFloor,
+    generateEquipmentItem: itemizationApi.generateEquipmentItem,
+    randomInt,
+    createGrid: () => createGrid(WIDTH, HEIGHT, TILE.WALL),
+    carveRoom: (grid, room) => carveRoom(grid, room, TILE.FLOOR),
+    carveTunnel: (grid, start, end) => carveTunnel(grid, start, end, TILE.FLOOR),
+    roomsOverlap,
+    cloneOffHandItem,
+    getState: () => state,
+  });
 
-  return item.description ?? "Nebenhand-Item";
-}
+  const visibilityService = createVisibilityService({
+    WIDTH,
+    HEIGHT,
+    VISION_RADIUS,
+    TILE,
+    getState: () => state,
+    getCurrentFloorState,
+    getDoorAt,
+    isDoorClosed,
+    createGrid,
+  });
 
-function getOffHandTooltipLines(item) {
-  if (!item) {
-    return ["Kein Gegenstand ausgerüstet."];
-  }
+  const stateApi = createStateApi({
+    HIGHSCORE_KEY,
+    HIGHSCORE_STORAGE_VERSION,
+    HIGHSCORE_VERSION_KEY,
+    OPTIONS_KEY,
+    HERO_NAME_KEY,
+    HERO_CLASS_KEY,
+    DEFAULT_HERO_NAME,
+    DEFAULT_HERO_CLASS,
+    HERO_CLASSES,
+    getState: () => state,
+    setState: (nextState) => {
+      state = nextState;
+    },
+    createBareHandsWeapon,
+    createDungeonLevel: dungeonApi.createDungeonLevel,
+    updateVisibility: visibilityService.updateVisibility,
+    addMessage,
+    renderSelf: () => render(),
+    randomInt,
+  });
 
-  if (item.subtype === "shield") {
-    const lines = [
-      item.source,
-      item.rarity ? formatRarityLabel(item.rarity) : null,
-      `${item.blockChance}% Blockchance`,
-      `${item.blockValue} Schadensblock`,
-      formatStatMods(item.statMods),
-      item.modifiers?.length ? `Mods: ${getItemModifierSummary(item)}` : null,
-      item.description,
-    ];
-    return lines.filter(Boolean);
-  }
+  const savegameService = createSavegameService({
+    getState: () => state,
+    hasSavedGame: stateApi.hasSavedGame,
+    getSavedGameMetadata: stateApi.getSavedGameMetadata,
+    saveGame: stateApi.saveGame,
+    loadSavedGame: stateApi.loadSavedGame,
+    setSavegameStatus: (text) => {
+      savegameStatusElement.textContent = text;
+      startSavegameStatusElement.textContent = text;
+    },
+    setLoadButtonsDisabled: (disabled) => {
+      loadGameButtonElement.disabled = disabled;
+      loadGameFromStartButtonElement.disabled = disabled;
+    },
+    setSaveButtonDisabled: (disabled) => {
+      saveGameButtonElement.disabled = disabled;
+    },
+    detectNearbyTraps: trapsApi.detectNearbyTraps,
+    addMessage,
+    renderSelf: () => render(),
+  });
 
-  return [
-    item.source ?? "Nebenhand",
-    item.description ?? "Kein weiterer Effekt bekannt.",
-  ];
-}
-
-function getCombatWeapon(entity) {
-  return getMainHand(entity);
-}
-
-function formatModifier(value) {
-  return `${value >= 0 ? "+" : ""}${value}`;
-}
-
-function formatBreakdown(base, modifier) {
-  return `${base}${modifier >= 0 ? "+" : ""}${modifier}`;
-}
-
-function getHandednessLabel(handedness) {
-  return handedness === "two-handed" ? "2H" : "1H";
-}
-
-function formatWeaponStats(weapon) {
-  const stats = [
-    getHandednessLabel(weapon.handedness),
-    `${weapon.damage} Schaden`,
-    `${formatModifier(weapon.hitBonus)} Treffer`,
-  ];
-
-  if (weapon.rarity && weapon.rarity !== "common") {
-    stats.unshift(formatRarityLabel(weapon.rarity));
-  }
-
-  if (weapon.critBonus !== 0) {
-    stats.push(`${formatModifier(weapon.critBonus)} Krit`);
-  }
-
-  return stats.join(" | ");
-}
-
-function createMaskGrid(fill = false) {
-  return createGrid(WIDTH, HEIGHT, fill);
+  return {
+    ...itemizationApi,
+    ...audioService,
+    ...trapsApi,
+    ...dungeonApi,
+    ...visibilityService,
+    ...stateApi,
+    ...savegameService,
+  };
 }
 
 const {
@@ -213,34 +225,21 @@ const {
   getItemModifierSummary,
   getWeaponConditionalDamageBonus,
   itemHasModifier,
-} = createItemizationApi({
-  ITEM_RARITY_MODIFIER_COUNTS,
-  getEquipmentRarityWeights,
-  randomChance,
-});
-
-const {
+  playDeathSound,
+  playVictorySound,
+  playLevelUpSound,
+  playEnemyHitSound,
+  playPlayerHitSound,
+  playDodgeSound,
+  playDoorOpenSound,
+  playDoorCloseSound,
+  playLockedDoorSound,
+  playShowcaseAmbienceSound,
+  playStepSound,
   buildTrapsForFloor,
   detectNearbyTraps,
   handleActorEnterTile,
   processContinuousTraps,
-} = createTrapsApi({
-  randomInt,
-  randomChance,
-  getState: () => state,
-  getCurrentFloorState,
-  addMessage,
-  showFloatingText: (...args) => showFloatingText(...args),
-  healPlayer: (...args) => healPlayer(...args),
-  refreshNutritionState: (...args) => refreshNutritionState(...args),
-  grantExperience: (...args) => grantExperience(...args),
-  createDeathCause: (...args) => createDeathCause(...args),
-  saveHighscoreIfNeeded: () => saveHighscoreIfNeeded(),
-  showDeathModal: (...args) => showDeathModal(...args),
-  playDeathSound: () => playDeathSound(),
-});
-
-const {
   createEnemy,
   createWeaponPickup,
   createOffHandPickup,
@@ -251,45 +250,7 @@ const {
   rollChestContent,
   cloneWeapon,
   createDungeonLevel,
-} = createDungeonApi({
-  WIDTH,
-  HEIGHT,
-  ROOM_ATTEMPTS,
-  MIN_ROOM_SIZE,
-  MAX_ROOM_SIZE,
-  TILE,
-  MONSTER_CATALOG,
-  WEAPON_CATALOG,
-  OFFHAND_CATALOG,
-  PROP_CATALOG,
-  DOOR_TYPE,
-  LOCK_COLORS,
-  buildFoodItemsForBudget,
-  rollFoodBudget,
-  splitFoodBudget,
-  rollMonsterPlannedDrop,
-  getUnlockedMonsterRank,
-  getEnemyCountForFloor,
-  getPotionCountForFloor,
-  shouldSpawnFloorWeapon,
-  shouldSpawnChest,
-  getChestCountForFloor,
-  getLockedDoorCountForFloor,
-  shouldPlaceLockedRoomChest,
-  NON_ICONIC_MONSTER_WEIGHT_BONUS,
-  ICONIC_MONSTER_WEIGHT_PENALTY,
-  buildTrapsForFloor,
-  generateEquipmentItem,
-  randomInt,
-  createGrid: () => createGrid(WIDTH, HEIGHT, TILE.WALL),
-  carveRoom: (grid, room) => carveRoom(grid, room, TILE.FLOOR),
-  carveTunnel: (grid, start, end) => carveTunnel(grid, start, end, TILE.FLOOR),
-  roomsOverlap,
-  cloneOffHandItem,
-  getState: () => state,
-});
-
-const {
+  updateVisibility,
   loadHighscores,
   loadHeroName,
   saveHeroName,
@@ -306,27 +267,127 @@ const {
   createDeathCause,
   xpForNextLevel,
   initializeGame,
-} = createStateApi({
-  HIGHSCORE_KEY,
-  HIGHSCORE_STORAGE_VERSION,
-  HIGHSCORE_VERSION_KEY,
-  OPTIONS_KEY,
-  HERO_NAME_KEY,
-  HERO_CLASS_KEY,
-  DEFAULT_HERO_NAME,
-  DEFAULT_HERO_CLASS,
-  HERO_CLASSES,
-  getState: () => state,
-  setState: (nextState) => {
-    state = nextState;
-  },
-  createBareHandsWeapon,
-  createDungeonLevel,
-  updateVisibility,
-  addMessage,
-  renderSelf: () => render(),
-  randomInt,
+  formatSavegameSummary,
+  updateSavegameControls,
+  saveCurrentGame,
+  loadCurrentGame,
+} = assembleCoreModules();
+
+const {
+  formatWeaponStats,
+  formatOffHandStats,
+  getOffHandTooltipLines,
+} = createEquipmentPresentationHelpers({
+  formatRarityLabel,
+  getItemModifierSummary,
 });
+
+function assembleInterfaceModules() {
+  const renderApi = createRenderApi({
+    MIN_CRIT_CHANCE,
+    MAX_CRIT_CHANCE,
+    WIDTH,
+    HEIGHT,
+    TILE_SIZE,
+    TILE_GAP,
+    BOARD_PADDING,
+    TILE,
+    boardElement,
+    messageLogElement,
+    inventoryListElement,
+    inventoryFilterButtons,
+    playerSheetElement,
+    enemySheetElement,
+    highscoreListElement,
+    runStatsSummaryElement,
+    runStatsKillsElement,
+    hoverTooltipElement,
+    monsterNames: MONSTER_CATALOG.map((monster) => monster.name),
+    itemNames: [
+      "Heiltrank",
+      ...Object.values(WEAPON_CATALOG).map((item) => item.name),
+      ...Object.values(OFFHAND_CATALOG).map((item) => item.name),
+      ...Object.values(ITEM_DEFS).map((item) => item.name),
+    ],
+    getState: () => state,
+    getCurrentFloorState,
+    getMainHand,
+    getOffHand,
+    getCombatWeapon,
+    formatWeaponStats,
+    formatOffHandStats,
+    getOffHandTooltipLines,
+    formatRarityLabel,
+    getItemModifierSummary,
+    getHungerStateLabel,
+    clamp,
+    loadHighscores,
+    loadLastHighscoreMarker,
+    countPotionsInInventory,
+    countFoodInInventory,
+    useInventoryItem: (...args) => useInventoryItemAction.call(...args),
+    renderSelf: () => render(),
+  });
+  showFloatingTextAction.set(renderApi.showFloatingText);
+
+  const modalController = createModalController({
+    CHOICE_ACTIONS,
+    STAIR_ACTIONS,
+    getState: () => state,
+    clearSavedGame,
+    createSheetRow: renderApi.createSheetRow,
+    updateSavegameControls,
+    initializeGame,
+    syncStartModalControls,
+    renderSelf: () => render(),
+    addMessage,
+    moveToFloor: (...args) => moveToFloor(...args),
+    endTurn: (...args) => endTurn(...args),
+    resolvePotionChoice: (...args) => resolvePotionChoiceAction.call(...args),
+    choiceModalElement,
+    choiceTitleElement,
+    choiceTextElement,
+    choiceDrinkButton,
+    choiceStoreButton,
+    choiceLeaveButton,
+    stairsModalElement,
+    stairsTitleElement,
+    stairsTextElement,
+    stairsConfirmButton,
+    stairsStayButton,
+    deathModalElement,
+    deathSummaryElement,
+    deathKillsElement,
+  });
+  showDeathModalAction.set(modalController.showDeathModal);
+  showChoiceModalAction.set(modalController.showChoiceModal);
+  hideChoiceModalAction.set(modalController.hideChoiceModal);
+
+  const inputController = createInputController({
+    getState: () => state,
+    confirmRestartRun: modalController.confirmRestartRun,
+    resolveStairChoice: modalController.resolveStairChoice,
+    cycleStairChoice: modalController.cycleStairChoice,
+    resolvePotionChoice: (...args) => resolvePotionChoiceAction.call(...args),
+    cyclePotionChoice: modalController.cyclePotionChoice,
+    toggleInventory: modalController.toggleInventory,
+    toggleRunStats: modalController.toggleRunStats,
+    toggleOptions: modalController.toggleOptions,
+    toggleHelp: modalController.toggleHelp,
+    toggleHighscores: modalController.toggleHighscores,
+    toggleDeathKills: modalController.toggleDeathKills,
+    movePlayer: (...args) => movePlayer(...args),
+    handleWait: () => handleWait(),
+    tryCloseAdjacentDoor: () => tryCloseAdjacentDoor(),
+    quickUsePotion: (...args) => quickUsePotionAction.call(...args),
+  });
+
+  return {
+    ...renderApi,
+    ...modalController,
+    ...inputController,
+  };
+}
 
 const {
   getPlayerCombatSummary,
@@ -345,51 +406,146 @@ const {
   moveTooltip,
   hideTooltip,
   tileAt,
-  } = createRenderApi({
-  MIN_CRIT_CHANCE,
-  MAX_CRIT_CHANCE,
-  WIDTH,
-  HEIGHT,
-  TILE_SIZE,
-  TILE_GAP,
-  BOARD_PADDING,
-  TILE,
-  boardElement,
-  messageLogElement,
-  inventoryListElement,
-  inventoryFilterButtons,
-    playerSheetElement,
-    enemySheetElement,
-    highscoreListElement,
-    runStatsSummaryElement,
-    runStatsKillsElement,
-    hoverTooltipElement,
-    monsterNames: MONSTER_CATALOG.map((monster) => monster.name),
-    itemNames: [
-      "Heiltrank",
-      ...Object.values(WEAPON_CATALOG).map((item) => item.name),
-      ...Object.values(OFFHAND_CATALOG).map((item) => item.name),
-      ...Object.values(ITEM_DEFS).map((item) => item.name),
-    ],
+  showDeathModal,
+  hideDeathModal,
+  restartRun,
+  confirmRestartRun,
+  openRunStatsFromDeath,
+  showChoiceModal,
+  hideChoiceModal,
+  showStairChoice,
+  hideStairChoice,
+  updatePotionChoiceSelection,
+  cyclePotionChoice,
+  cycleStairChoice,
+  resolveChoiceBySlot,
+  resolveStairChoice,
+  toggleInventory,
+  toggleRunStats,
+  toggleOptions,
+  toggleHelp,
+  toggleHighscores,
+  toggleDeathKills,
+  bindKeyboardInput,
+} = assembleInterfaceModules();
+
+function assembleGameplayModules() {
+  const combatApi = createCombatApi({
+    BASE_HIT_CHANCE,
+    MIN_HIT_CHANCE,
+    MAX_HIT_CHANCE,
+    MIN_CRIT_CHANCE,
+    MAX_CRIT_CHANCE,
+    clamp,
+    rollPercent,
+    getState: () => state,
+    getCombatWeapon,
+    getOffHand,
+    getCurrentFloorState,
+    createWeaponPickup,
+    createOffHandPickup,
+    createFoodPickup,
+    showFloatingText,
+    playVictorySound,
+    playLevelUpSound,
+    playEnemyHitSound,
+    playDodgeSound,
+    xpForNextLevel,
+    getLevelUpRewards,
+    getWeaponConditionalDamageBonus,
+    itemHasModifier,
+    noteMonsterEncounter,
+    addMessage,
+    renderSelf: () => render(),
+  });
+
+  const aiApi = createAiApi({
+    WIDTH,
+    HEIGHT,
+    TILE,
+    DOOR_TYPE,
     getState: () => state,
     getCurrentFloorState,
-  getMainHand,
-  getOffHand,
-  getCombatWeapon,
-  formatWeaponStats,
-  formatOffHandStats,
-  getOffHandTooltipLines,
-  formatRarityLabel,
-  getItemModifierSummary,
-  getHungerStateLabel,
-  clamp,
-  loadHighscores,
-  loadLastHighscoreMarker,
-  countPotionsInInventory,
-  countFoodInInventory,
-  useInventoryItem: (...args) => useInventoryItem(...args),
-  renderSelf: () => render(),
-});
+    getDoorAt,
+    getOffHand,
+    resolveCombatAttack: combatApi.resolveCombatAttack,
+    resolveBlock: combatApi.resolveBlock,
+    healPlayer: combatApi.healPlayer,
+    addMessage,
+    showFloatingText: (...args) => showFloatingTextAction.call(...args),
+    createDeathCause,
+    playPlayerHitSound,
+    playDodgeSound,
+    playDeathSound,
+    playDoorOpenSound,
+    saveHighscoreIfNeeded,
+    showDeathModal: (...args) => showDeathModalAction.call(...args),
+    noteMonsterEncounter,
+    handleActorEnterTile,
+  });
+
+  const itemsApi = createItemsApi({
+    getState: () => state,
+    getCurrentFloorState,
+    getMainHand,
+    getOffHand,
+    applyItemStatMods,
+    cloneWeapon,
+    cloneOffHandItem,
+    createWeaponPickup,
+    createOffHandPickup,
+    createFoodPickup,
+    formatWeaponStats,
+    formatOffHandStats,
+    formatRarityLabel,
+    addMessage,
+    showChoiceModal: (...args) => showChoiceModalAction.call(...args),
+    hideChoiceModal: (...args) => hideChoiceModalAction.call(...args),
+    endTurn,
+    healPlayer: combatApi.healPlayer,
+    restoreNutrition,
+    refreshNutritionState,
+    renderSelf: () => render(),
+  });
+  resolvePotionChoiceAction.set(itemsApi.resolvePotionChoice);
+  useInventoryItemAction.set(itemsApi.useInventoryItem);
+  quickUsePotionAction.set(itemsApi.quickUsePotion);
+
+  const testApi = createTestApi({
+    WIDTH,
+    HEIGHT,
+    TILE,
+    getState: () => state,
+    getCurrentFloorState,
+    getMainHand,
+    getOffHand,
+    countPotionsInInventory,
+    loadHighscores,
+    grantExperience: combatApi.grantExperience,
+    cloneWeapon,
+    cloneOffHandItem,
+    createChestPickup,
+    createFoodPickup,
+    createDoor,
+    createKeyPickup,
+    generateEquipmentItem,
+    setRandomSequence: (values) => {
+      testRandomQueue = [...values];
+    },
+    clearRandomSequence: () => {
+      testRandomQueue = [];
+    },
+    tryUseStairs,
+    renderSelf: () => render(),
+  });
+
+  return {
+    ...combatApi,
+    ...aiApi,
+    ...itemsApi,
+    ...testApi,
+  };
+}
 
 const {
   resolveBlock,
@@ -398,66 +554,10 @@ const {
   gainLevel,
   grantExperience,
   attackEnemy,
-} = createCombatApi({
-  BASE_HIT_CHANCE,
-  MIN_HIT_CHANCE,
-  MAX_HIT_CHANCE,
-  MIN_CRIT_CHANCE,
-  MAX_CRIT_CHANCE,
-  clamp,
-  rollPercent,
-  getState: () => state,
-  getCombatWeapon,
-  getOffHand,
-  getCurrentFloorState,
-  createWeaponPickup,
-  createOffHandPickup,
-  createFoodPickup,
-  showFloatingText,
-  playVictorySound,
-  playLevelUpSound,
-  playEnemyHitSound,
-  playDodgeSound,
-  xpForNextLevel,
-  getLevelUpRewards,
-  getWeaponConditionalDamageBonus,
-  itemHasModifier,
-  noteMonsterEncounter,
-  addMessage,
-  renderSelf: () => render(),
-});
-
-const {
   manhattanDistance,
   hasNearbyEnemy,
   processSafeRegeneration,
   moveEnemies,
-} = createAiApi({
-  WIDTH,
-  HEIGHT,
-  TILE,
-  DOOR_TYPE,
-  getState: () => state,
-  getCurrentFloorState,
-  getDoorAt,
-  getOffHand,
-  resolveCombatAttack,
-  resolveBlock,
-  healPlayer,
-  addMessage,
-  showFloatingText,
-  createDeathCause,
-  playPlayerHitSound,
-  playDodgeSound,
-  playDeathSound,
-  playDoorOpenSound,
-  saveHighscoreIfNeeded,
-  showDeathModal,
-  noteMonsterEncounter,
-  handleActorEnterTile,
-});
-
-const {
   tryPickupLoot,
   equipWeapon,
   canEquipOffHand,
@@ -466,507 +566,12 @@ const {
   resolvePotionChoice,
   useInventoryItem,
   quickUsePotion,
-} = createItemsApi({
-  getState: () => state,
-  getCurrentFloorState,
-  getMainHand,
-  getOffHand,
-  applyItemStatMods,
-  cloneWeapon,
-  cloneOffHandItem,
-  createWeaponPickup,
-  createOffHandPickup,
-  createFoodPickup,
-  formatWeaponStats,
-  formatOffHandStats,
-  formatRarityLabel,
-  addMessage,
-  showChoiceModal,
-    hideChoiceModal,
-    endTurn,
-    healPlayer,
-    restoreNutrition,
-    refreshNutritionState,
-    renderSelf: () => render(),
-  });
-
-const { syncTestApi } = createTestApi({
-  WIDTH,
-  HEIGHT,
-  TILE,
-  getState: () => state,
-  getCurrentFloorState,
-  getMainHand,
-  getOffHand,
-  countPotionsInInventory,
-  loadHighscores,
-  grantExperience,
-  cloneWeapon,
-  cloneOffHandItem,
-  createChestPickup,
-  createFoodPickup,
-  createDoor,
-  createKeyPickup,
-  generateEquipmentItem,
-  setRandomSequence: (values) => {
-    testRandomQueue = [...values];
-  },
-  clearRandomSequence: () => {
-    testRandomQueue = [];
-  },
-  tryUseStairs,
-  renderSelf: () => render(),
-});
+  syncTestApi,
+} = assembleGameplayModules();
 
 function addMessage(text, tone = "") {
   state.messages.unshift({ text, tone });
   state.messages = state.messages.slice(0, LOG_LIMIT);
-}
-
-function getAudioContext() {
-  if (!audioContext) {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) {
-      return null;
-    }
-    audioContext = new AudioContextClass();
-  }
-  return audioContext;
-}
-
-function playDeathSound() {
-  if (!state.options.deathSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const master = context.createGain();
-  master.gain.setValueAtTime(0.001, now);
-  master.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
-  master.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
-  master.connect(context.destination);
-
-  [220, 174, 146, 110].forEach((frequency, index) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "triangle";
-    oscillator.frequency.setValueAtTime(frequency, now + index * 0.16);
-    oscillator.frequency.exponentialRampToValueAtTime(Math.max(60, frequency / 2.4), now + 1.9);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.08 / (index + 1), now + 0.03 + index * 0.06);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.1);
-    oscillator.connect(gain);
-    gain.connect(master);
-    oscillator.start(now + index * 0.04);
-    oscillator.stop(now + 2.2);
-  });
-}
-
-function playVictorySound() {
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const notes = [392, 494, 587];
-
-  notes.forEach((frequency, index) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "triangle";
-    oscillator.frequency.setValueAtTime(frequency, now + index * 0.05);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.03, now + 0.02 + index * 0.04);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28 + index * 0.05);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(now + index * 0.05);
-    oscillator.stop(now + 0.35 + index * 0.05);
-  });
-}
-
-function playLevelUpSound() {
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const notes = [392, 523, 659, 784];
-
-  notes.forEach((frequency, index) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = "sawtooth";
-    oscillator.frequency.setValueAtTime(frequency, now + index * 0.07);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.045, now + 0.025 + index * 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5 + index * 0.06);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(now + index * 0.07);
-    oscillator.stop(now + 0.55 + index * 0.06);
-  });
-}
-
-function playEnemyHitSound(critical = false) {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const master = context.createGain();
-  master.gain.setValueAtTime(0.001, now);
-  master.gain.exponentialRampToValueAtTime(critical ? 0.14 : 0.09, now + 0.015);
-  master.gain.exponentialRampToValueAtTime(0.001, now + (critical ? 0.28 : 0.18));
-  master.connect(context.destination);
-
-  const oscillator = context.createOscillator();
-  oscillator.type = critical ? "sawtooth" : "triangle";
-  oscillator.frequency.setValueAtTime(critical ? 220 : 180, now);
-  oscillator.frequency.exponentialRampToValueAtTime(critical ? 96 : 120, now + (critical ? 0.26 : 0.16));
-  oscillator.connect(master);
-  oscillator.start(now);
-  oscillator.stop(now + (critical ? 0.28 : 0.18));
-
-  if (critical) {
-    const accent = context.createOscillator();
-    const accentGain = context.createGain();
-    accent.type = "square";
-    accent.frequency.setValueAtTime(640, now);
-    accent.frequency.exponentialRampToValueAtTime(280, now + 0.12);
-    accentGain.gain.setValueAtTime(0.0001, now);
-    accentGain.gain.exponentialRampToValueAtTime(0.035, now + 0.015);
-    accentGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-    accent.connect(accentGain);
-    accentGain.connect(context.destination);
-    accent.start(now);
-    accent.stop(now + 0.14);
-  }
-}
-
-function playPlayerHitSound(critical = false) {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const master = context.createGain();
-  master.gain.setValueAtTime(0.001, now);
-  master.gain.exponentialRampToValueAtTime(critical ? 0.16 : 0.11, now + 0.02);
-  master.gain.exponentialRampToValueAtTime(0.001, now + (critical ? 0.36 : 0.24));
-  master.connect(context.destination);
-
-  const body = context.createOscillator();
-  body.type = "square";
-  body.frequency.setValueAtTime(critical ? 150 : 130, now);
-  body.frequency.exponentialRampToValueAtTime(critical ? 58 : 72, now + (critical ? 0.34 : 0.22));
-  body.connect(master);
-  body.start(now);
-  body.stop(now + (critical ? 0.36 : 0.24));
-
-  const sting = context.createOscillator();
-  const stingGain = context.createGain();
-  sting.type = "triangle";
-  sting.frequency.setValueAtTime(critical ? 420 : 300, now);
-  sting.frequency.exponentialRampToValueAtTime(critical ? 170 : 150, now + 0.12);
-  stingGain.gain.setValueAtTime(0.0001, now);
-  stingGain.gain.exponentialRampToValueAtTime(0.03, now + 0.012);
-  stingGain.gain.exponentialRampToValueAtTime(0.0001, now + (critical ? 0.18 : 0.12));
-  sting.connect(stingGain);
-  stingGain.connect(context.destination);
-  sting.start(now);
-  sting.stop(now + (critical ? 0.18 : 0.12));
-}
-
-function playDodgeSound() {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  oscillator.type = "triangle";
-  oscillator.frequency.setValueAtTime(820, now);
-  oscillator.frequency.exponentialRampToValueAtTime(1180, now + 0.04);
-  oscillator.frequency.exponentialRampToValueAtTime(920, now + 0.09);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.035, now + 0.008);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start(now);
-  oscillator.stop(now + 0.11);
-}
-
-function playDoorOpenSound() {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const thunk = context.createOscillator();
-  const creak = context.createOscillator();
-  const thunkGain = context.createGain();
-  const creakGain = context.createGain();
-
-  thunk.type = "square";
-  thunk.frequency.setValueAtTime(170, now);
-  thunk.frequency.exponentialRampToValueAtTime(96, now + 0.08);
-  thunkGain.gain.setValueAtTime(0.0001, now);
-  thunkGain.gain.exponentialRampToValueAtTime(0.05, now + 0.01);
-  thunkGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
-
-  creak.type = "triangle";
-  creak.frequency.setValueAtTime(410, now + 0.02);
-  creak.frequency.exponentialRampToValueAtTime(250, now + 0.14);
-  creakGain.gain.setValueAtTime(0.0001, now);
-  creakGain.gain.exponentialRampToValueAtTime(0.03, now + 0.03);
-  creakGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-
-  thunk.connect(thunkGain);
-  creak.connect(creakGain);
-  thunkGain.connect(context.destination);
-  creakGain.connect(context.destination);
-  thunk.start(now);
-  creak.start(now + 0.015);
-  thunk.stop(now + 0.11);
-  creak.stop(now + 0.18);
-}
-
-function playDoorCloseSound() {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const body = context.createOscillator();
-  const bodyGain = context.createGain();
-  body.type = "square";
-  body.frequency.setValueAtTime(140, now);
-  body.frequency.exponentialRampToValueAtTime(85, now + 0.07);
-  bodyGain.gain.setValueAtTime(0.0001, now);
-  bodyGain.gain.exponentialRampToValueAtTime(0.055, now + 0.01);
-  bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
-  body.connect(bodyGain);
-  bodyGain.connect(context.destination);
-  body.start(now);
-  body.stop(now + 0.1);
-}
-
-function playLockedDoorSound() {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const rattle = context.createOscillator();
-  const rattleGain = context.createGain();
-  rattle.type = "square";
-  rattle.frequency.setValueAtTime(520, now);
-  rattle.frequency.exponentialRampToValueAtTime(440, now + 0.035);
-  rattle.frequency.exponentialRampToValueAtTime(610, now + 0.075);
-  rattle.frequency.exponentialRampToValueAtTime(470, now + 0.11);
-  rattleGain.gain.setValueAtTime(0.0001, now);
-  rattleGain.gain.exponentialRampToValueAtTime(0.032, now + 0.01);
-  rattleGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
-  rattle.connect(rattleGain);
-  rattleGain.connect(context.destination);
-  rattle.start(now);
-  rattle.stop(now + 0.13);
-}
-
-function playShowcaseAmbienceSound() {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const master = context.createGain();
-  master.gain.setValueAtTime(0.0001, now);
-  master.gain.exponentialRampToValueAtTime(0.065, now + 0.018);
-  master.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
-  master.connect(context.destination);
-
-  const shimmer = context.createOscillator();
-  shimmer.type = "triangle";
-  shimmer.frequency.setValueAtTime(720, now);
-  shimmer.frequency.exponentialRampToValueAtTime(540, now + 0.16);
-  shimmer.frequency.exponentialRampToValueAtTime(660, now + 0.36);
-  shimmer.connect(master);
-  shimmer.start(now);
-  shimmer.stop(now + 0.4);
-
-  const accent = context.createOscillator();
-  const accentGain = context.createGain();
-  accent.type = "sine";
-  accent.frequency.setValueAtTime(980, now + 0.01);
-  accent.frequency.exponentialRampToValueAtTime(780, now + 0.13);
-  accentGain.gain.setValueAtTime(0.0001, now);
-  accentGain.gain.exponentialRampToValueAtTime(0.026, now + 0.018);
-  accentGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
-  accent.connect(accentGain);
-  accentGain.connect(context.destination);
-  accent.start(now + 0.01);
-  accent.stop(now + 0.22);
-}
-
-function showDeathModal(rank) {
-  clearSavedGame();
-  const fallenHero = `${state.player.classLabel ?? "Held"} ${state.player.name}`;
-  const deathLead = `Der ${fallenHero} ${state.deathCause ?? "erlebte eine unbekannte Schluss-Szene."}`;
-  deathSummaryElement.innerHTML = [
-    `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
-    createSheetRow("Held", fallenHero),
-    createSheetRow("Level", state.player.level),
-    createSheetRow("Tiefste Ebene", state.deepestFloor),
-    createSheetRow("Gegner besiegt", state.kills),
-    createSheetRow("Schritte", state.turn),
-    createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Außer Wertung"),
-  ].join("");
-  const killEntries = Object.entries(state.killStats)
-    .sort((a, b) => b[1] - a[1]);
-  deathKillsElement.innerHTML = killEntries.length > 0
-    ? killEntries.map(([name, count]) => createSheetRow(name, count)).join("")
-    : `<div class="inventory-empty">Keine Gegner besiegt.</div>`;
-  state.modals.deathKillsOpen = false;
-  deathModalElement.classList.remove("hidden");
-  deathModalElement.setAttribute("aria-hidden", "false");
-  updateSavegameControls("Kein gespeicherter Lauf gefunden.");
-}
-
-function hideDeathModal() {
-  state.modals.deathKillsOpen = false;
-  deathModalElement.classList.add("hidden");
-  deathModalElement.setAttribute("aria-hidden", "true");
-}
-
-function restartRun() {
-  hideChoiceModal();
-  hideStairChoice();
-  toggleInventory(false);
-  toggleRunStats(false);
-  toggleOptions(false);
-  toggleHelp(false);
-  toggleHighscores(false);
-  toggleDeathKills(false);
-  hideDeathModal();
-  initializeGame({}, { clearSavedGame: true });
-  syncStartModalControls();
-}
-
-function confirmRestartRun() {
-  restartRun();
-}
-
-function openRunStatsFromDeath() {
-  hideDeathModal();
-  toggleDeathKills(true);
-}
-
-function formatSavegameSummary() {
-  const metadata = getSavedGameMetadata();
-  if (!metadata) {
-    return "Kein gespeicherter Lauf gefunden.";
-  }
-
-  const heroName = metadata.heroName ?? "Unbekannt";
-  const floor = metadata.floor ? `Ebene ${metadata.floor}` : "unbekannter Ebene";
-  return `Gespeichert: ${heroName} auf ${floor}.`;
-}
-
-function setSavegameStatus(text) {
-  savegameStatusElement.textContent = text;
-  startSavegameStatusElement.textContent = text;
-}
-
-function updateSavegameControls(statusText = formatSavegameSummary()) {
-  const savedGameExists = hasSavedGame();
-  loadGameButtonElement.disabled = !savedGameExists;
-  loadGameFromStartButtonElement.disabled = !savedGameExists;
-  saveGameButtonElement.disabled = !state || state.gameOver || state.modals.startOpen;
-  setSavegameStatus(statusText);
-}
-
-function saveCurrentGame() {
-  if (state.gameOver || state.modals.startOpen) {
-    updateSavegameControls("Speichern ist erst in einem laufenden Spiel moeglich.");
-    return;
-  }
-
-  if (!saveGame()) {
-    updateSavegameControls("Speichern fehlgeschlagen.");
-    return;
-  }
-
-  addMessage("Spielstand gespeichert.", "important");
-  updateSavegameControls(formatSavegameSummary());
-  render();
-}
-
-function loadCurrentGame() {
-  const result = loadSavedGame();
-  if (!result.ok) {
-    if (result.reason === "incompatible") {
-      updateSavegameControls(`Spielstand-Version ${result.foundVersion ?? "?"} ist nicht kompatibel mit Version ${result.expectedVersion}.`);
-      return;
-    }
-
-    if (result.reason === "invalid") {
-      updateSavegameControls("Der gespeicherte Lauf ist beschaedigt und konnte nicht geladen werden.");
-      return;
-    }
-
-    updateSavegameControls("Kein gespeicherter Lauf gefunden.");
-    return;
-  }
-
-  detectNearbyTraps();
-  addMessage("Gespeicherter Lauf geladen.", "important");
-  updateSavegameControls(formatSavegameSummary());
-  render();
 }
 
 function countPotionsInInventory() {
@@ -1206,118 +811,6 @@ function closeDoor(door) {
   return true;
 }
 
-function isInsideBoard(x, y) {
-  return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
-}
-
-function isOpaqueTile(floorState, x, y) {
-  if (!isInsideBoard(x, y) || floorState.grid[y][x] === TILE.WALL) {
-    return true;
-  }
-
-  return isDoorClosed(getDoorAt(x, y, floorState));
-}
-
-function hasLineOfSight(floorState, fromX, fromY, toX, toY) {
-  const startX = fromX + 0.5;
-  const startY = fromY + 0.5;
-  const endX = toX + 0.5;
-  const endY = toY + 0.5;
-  const deltaX = endX - startX;
-  const deltaY = endY - startY;
-  const steps = Math.max(Math.abs(deltaX), Math.abs(deltaY)) * 2;
-
-  let previousCellX = fromX;
-  let previousCellY = fromY;
-
-  for (let step = 1; step <= steps; step += 1) {
-    const progress = step / steps;
-    const sampleX = Math.floor(startX + deltaX * progress);
-    const sampleY = Math.floor(startY + deltaY * progress);
-
-    if (sampleX === previousCellX && sampleY === previousCellY) {
-      continue;
-    }
-
-    if (sampleX !== previousCellX && sampleY !== previousCellY) {
-      if (
-        isOpaqueTile(floorState, previousCellX, sampleY) &&
-        isOpaqueTile(floorState, sampleX, previousCellY)
-      ) {
-        return false;
-      }
-    }
-
-    if (sampleX === toX && sampleY === toY) {
-      return true;
-    }
-
-    if (isOpaqueTile(floorState, sampleX, sampleY)) {
-      return false;
-    }
-
-    previousCellX = sampleX;
-    previousCellY = sampleY;
-  }
-
-  return true;
-}
-
-function updateVisibility() {
-  const floorState = getCurrentFloorState();
-  if (!floorState) {
-    return;
-  }
-
-  floorState.visible = createMaskGrid(false);
-  floorState.visible[state.player.y][state.player.x] = true;
-  floorState.explored[state.player.y][state.player.x] = true;
-
-  for (let y = 0; y < HEIGHT; y += 1) {
-    for (let x = 0; x < WIDTH; x += 1) {
-      const distance = Math.max(Math.abs(x - state.player.x), Math.abs(y - state.player.y));
-      if (distance > VISION_RADIUS) {
-        continue;
-      }
-
-      if (!hasLineOfSight(floorState, state.player.x, state.player.y, x, y)) {
-        continue;
-      }
-
-      floorState.visible[y][x] = true;
-      floorState.explored[y][x] = true;
-    }
-  }
-
-  for (let y = 0; y < HEIGHT; y += 1) {
-    for (let x = 0; x < WIDTH; x += 1) {
-      if (!floorState.visible[y][x] || floorState.grid[y][x] === TILE.WALL) {
-        continue;
-      }
-
-      for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
-        for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
-          const nextX = x + offsetX;
-          const nextY = y + offsetY;
-
-          if (
-            nextX < 0 ||
-            nextY < 0 ||
-            nextX >= WIDTH ||
-            nextY >= HEIGHT ||
-            floorState.grid[nextY][nextX] !== TILE.WALL
-          ) {
-            continue;
-          }
-
-          floorState.visible[nextY][nextX] = true;
-          floorState.explored[nextY][nextX] = true;
-        }
-      }
-    }
-  }
-}
-
 function render() {
   syncTestApi();
   const combatSummary = getPlayerCombatSummary();
@@ -1415,10 +908,10 @@ function render() {
   updatePotionChoiceSelection();
 }
 
-  function toggleCardCollapse(key) {
-    if (key === "player") {
-      const currentMode = state.collapsedCards.player ?? "summary";
-      state.collapsedCards.player = currentMode === "summary"
+function toggleCardCollapse(key) {
+  if (key === "player") {
+    const currentMode = state.collapsedCards.player ?? "summary";
+    state.collapsedCards.player = currentMode === "summary"
         ? "full"
         : currentMode === "full"
           ? "hidden"
@@ -1432,199 +925,13 @@ function render() {
           : "compact";
     } else {
       state.collapsedCards[key] = !state.collapsedCards[key];
-    }
-  render();
-}
-
-function showChoiceModal(config) {
-  const allowedActions = CHOICE_ACTIONS[config.kind] ?? [];
-  const selectedAction = allowedActions.includes(config.selectedAction)
-    ? config.selectedAction
-    : allowedActions[0];
-  state.pendingChoice = {
-    ...config,
-    selectedAction,
-  };
-  choiceTitleElement.textContent = config.title;
-  if (config.htmlText) {
-    choiceTextElement.innerHTML = config.htmlText;
-  } else {
-    choiceTextElement.textContent = config.text;
   }
-  choiceDrinkButton.textContent = config.labels[0];
-  choiceStoreButton.textContent = config.labels[1];
-  choiceLeaveButton.textContent = config.labels[2];
-  choiceModalElement.classList.remove("hidden");
-  choiceModalElement.setAttribute("aria-hidden", "false");
-  updatePotionChoiceSelection();
-}
-
-function hideChoiceModal() {
-  state.pendingChoice = null;
-  choiceModalElement.classList.add("hidden");
-  choiceModalElement.setAttribute("aria-hidden", "true");
-}
-
-function showStairChoice(config) {
-  state.pendingStairChoice = {
-    ...config,
-    selectedAction: config.selectedAction ?? "stay",
-  };
-  stairsTitleElement.textContent = config.title;
-  stairsTextElement.textContent = config.text;
-  stairsConfirmButton.textContent = config.confirmLabel ?? "Ebene wechseln";
-  stairsStayButton.textContent = config.stayLabel ?? "Hier bleiben";
-  stairsModalElement.classList.remove("hidden");
-  stairsModalElement.setAttribute("aria-hidden", "false");
-  updateStairChoiceSelection();
-}
-
-function hideStairChoice() {
-  state.pendingStairChoice = null;
-  stairsModalElement.classList.add("hidden");
-  stairsModalElement.setAttribute("aria-hidden", "true");
-}
-
-function updatePotionChoiceSelection() {
-  const selected = state?.pendingChoice?.selectedAction;
-  choiceDrinkButton.classList.toggle("selected", selected === "drink" || selected === "equip" || selected === "eat");
-  choiceStoreButton.classList.toggle("selected", selected === "store");
-  choiceLeaveButton.classList.toggle("selected", selected === "leave");
-}
-
-function updateStairChoiceSelection() {
-  const selected = state?.pendingStairChoice?.selectedAction;
-  stairsConfirmButton.classList.toggle("selected", selected === "change-floor");
-  stairsStayButton.classList.toggle("selected", selected === "stay");
-}
-
-function cyclePotionChoice(direction) {
-  if (!state.pendingChoice) {
-    return;
-  }
-
-  const actions = CHOICE_ACTIONS[state.pendingChoice.kind];
-  const currentIndex = actions.indexOf(state.pendingChoice.selectedAction);
-  const nextIndex = (currentIndex + direction + actions.length) % actions.length;
-  state.pendingChoice.selectedAction = actions[nextIndex];
-  updatePotionChoiceSelection();
-}
-
-function cycleStairChoice(direction) {
-  if (!state.pendingStairChoice) {
-    return;
-  }
-
-  const currentIndex = STAIR_ACTIONS.indexOf(state.pendingStairChoice.selectedAction);
-  const nextIndex = (currentIndex + direction + STAIR_ACTIONS.length) % STAIR_ACTIONS.length;
-  state.pendingStairChoice.selectedAction = STAIR_ACTIONS[nextIndex];
-  updateStairChoiceSelection();
-}
-
-function resolveChoiceBySlot(slotIndex) {
-  if (!state.pendingChoice) {
-    return;
-  }
-
-  const actions = CHOICE_ACTIONS[state.pendingChoice.kind];
-  const action = actions?.[slotIndex];
-  if (!action) {
-    return;
-  }
-
-  resolvePotionChoice(action);
-}
-
-function resolveStairChoice(action) {
-  if (!state.pendingStairChoice) {
-    return;
-  }
-
-  const pending = state.pendingStairChoice;
-  hideStairChoice();
-
-  if (action === "change-floor") {
-    const changedFloor = moveToFloor(pending.direction);
-    if (changedFloor) {
-      endTurn({ skipEnemyMove: true });
-      return;
-    }
-
-    addMessage("Die Treppe führt hier gerade nirgendwohin.");
-    render();
-    return;
-  }
-
-  addMessage(pending.direction > 0
-    ? "Du bleibst auf der Treppe stehen, ohne hinabzusteigen."
-    : "Du bleibst auf der Treppe stehen, ohne hinaufzusteigen.");
-  render();
-}
-
-function toggleInventory(forceOpen) {
-  state.modals.inventoryOpen = forceOpen ?? !state.modals.inventoryOpen;
-  render();
-}
-
-function toggleRunStats(forceOpen) {
-  state.modals.runStatsOpen = forceOpen ?? !state.modals.runStatsOpen;
   render();
 }
 
 function setInventoryFilter(filter) {
   state.preferences.inventoryFilter = filter;
   render();
-}
-
-function toggleOptions(forceOpen) {
-  state.modals.optionsOpen = forceOpen ?? !state.modals.optionsOpen;
-  render();
-}
-
-function toggleHelp(forceOpen) {
-  state.modals.helpOpen = forceOpen ?? !state.modals.helpOpen;
-  render();
-}
-
-function toggleHighscores(forceOpen) {
-  state.modals.highscoresOpen = forceOpen ?? !state.modals.highscoresOpen;
-  render();
-}
-
-function toggleDeathKills(forceOpen) {
-  state.modals.deathKillsOpen = forceOpen ?? !state.modals.deathKillsOpen;
-  if (!state.modals.deathKillsOpen && state.gameOver) {
-    deathModalElement.classList.remove("hidden");
-    deathModalElement.setAttribute("aria-hidden", "false");
-  }
-  render();
-}
-
-function playStepSound() {
-  if (!state.options.stepSound) {
-    return;
-  }
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  const now = context.currentTime;
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-
-  oscillator.type = "square";
-  oscillator.frequency.setValueAtTime(220, now);
-  oscillator.frequency.exponentialRampToValueAtTime(145, now + 0.07);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.05, now + 0.012);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start(now);
-  oscillator.stop(now + 0.12);
 }
 
 function ensureFloorExists(floorNumber) {
@@ -1875,145 +1182,6 @@ function handleWait() {
   endTurn({ actionType: "wait" });
 }
 
-function handleInput(event) {
-  const key = event.key.toLowerCase();
-
-  if (key === "r") {
-    confirmRestartRun();
-    return;
-  }
-
-  if (state.modals.startOpen) {
-    return;
-  }
-
-  if (state.pendingStairChoice) {
-    if (key === "enter") {
-      event.preventDefault();
-      resolveStairChoice(state.pendingStairChoice.selectedAction);
-      return;
-    }
-
-    if (key === "escape") {
-      event.preventDefault();
-      resolveStairChoice("stay");
-      return;
-    }
-
-    if (key === "arrowleft" || key === "a") {
-      event.preventDefault();
-      cycleStairChoice(-1);
-      return;
-    }
-
-    if (key === "arrowright" || key === "d") {
-      event.preventDefault();
-      cycleStairChoice(1);
-      return;
-    }
-
-    if (key === "w" || key === "arrowup" || key === "s" || key === "arrowdown") {
-      event.preventDefault();
-      cycleStairChoice(1);
-      return;
-    }
-
-    return;
-  }
-
-  if (state.pendingChoice) {
-    if (key === "enter") {
-      event.preventDefault();
-      resolvePotionChoice(state.pendingChoice.selectedAction);
-      return;
-    }
-
-    if (key === "arrowleft" || key === "a") {
-      event.preventDefault();
-      cyclePotionChoice(-1);
-      return;
-    }
-
-    if (key === "arrowright" || key === "d") {
-      event.preventDefault();
-      cyclePotionChoice(1);
-      return;
-    }
-
-    return;
-  }
-
-  if (key === "i") {
-    event.preventDefault();
-    toggleInventory();
-    return;
-  }
-
-  if (key === "l") {
-    event.preventDefault();
-    toggleRunStats();
-    return;
-  }
-
-  if (key === "o") {
-    event.preventDefault();
-    toggleOptions();
-    return;
-  }
-
-  if (key === "?") {
-    event.preventDefault();
-    toggleHelp();
-    return;
-  }
-
-  if (state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.helpOpen || state.modals.highscoresOpen || state.modals.deathKillsOpen) {
-    if (key === "escape") {
-      toggleInventory(false);
-      toggleRunStats(false);
-      toggleOptions(false);
-      toggleHelp(false);
-      toggleHighscores(false);
-      toggleDeathKills(false);
-    }
-    return;
-  }
-
-  const movement = {
-    arrowup: [0, -1],
-    w: [0, -1],
-    arrowdown: [0, 1],
-    s: [0, 1],
-    arrowleft: [-1, 0],
-    a: [-1, 0],
-    arrowright: [1, 0],
-    d: [1, 0],
-  }[key];
-
-  if (movement) {
-    event.preventDefault();
-    movePlayer(...movement);
-    return;
-  }
-
-  if (key === " ") {
-    event.preventDefault();
-    handleWait();
-    return;
-  }
-
-  if (key === "c") {
-    event.preventDefault();
-    tryCloseAdjacentDoor();
-    return;
-  }
-
-  if (key === "h") {
-    event.preventDefault();
-    quickUsePotion();
-  }
-}
-
 function renderClassOptions(selectedClassId) {
   classOptionsElement.innerHTML = "";
 
@@ -2082,55 +1250,92 @@ function applyStartProfile() {
   initializeGame({ heroName: nextName, heroClassId: nextClassId }, { openStartModal: false, clearSavedGame: true });
 }
 
-choiceDrinkButton.addEventListener("click", () => resolveChoiceBySlot(0));
-choiceStoreButton.addEventListener("click", () => resolveChoiceBySlot(1));
-choiceLeaveButton.addEventListener("click", () => resolveChoiceBySlot(2));
-stairsConfirmButton.addEventListener("click", () => resolveStairChoice("change-floor"));
-stairsStayButton.addEventListener("click", () => resolveStairChoice("stay"));
-openInventoryButton.addEventListener("click", () => toggleInventory(true));
-openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
-closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
-closeInventoryButton.addEventListener("click", () => toggleInventory(false));
-startFreshRunButton.addEventListener("click", () => restartRun());
-inventoryFilterButtons.forEach((button) => {
-  button.addEventListener("click", () => setInventoryFilter(button.dataset.filter ?? "all"));
-});
-openOptionsButton.addEventListener("click", () => toggleOptions(true));
-closeOptionsButton.addEventListener("click", () => toggleOptions(false));
-saveGameButtonElement.addEventListener("click", () => saveCurrentGame());
-loadGameButtonElement.addEventListener("click", () => loadCurrentGame());
-openHighscoresButton.addEventListener("click", () => toggleHighscores(true));
-closeHighscoresButton.addEventListener("click", () => toggleHighscores(false));
-openHelpButton.addEventListener("click", () => toggleHelp(true));
-closeHelpButton.addEventListener("click", () => toggleHelp(false));
-restartFromDeathButton.addEventListener("click", () => restartRun());
-openDeathKillsButton.addEventListener("click", () => openRunStatsFromDeath());
-closeDeathKillsButton.addEventListener("click", () => toggleDeathKills(false));
-closeDeathButton.addEventListener("click", () => hideDeathModal());
-document.querySelectorAll(".collapse-btn").forEach((button) => {
-  button.addEventListener("click", () => toggleCardCollapse(button.dataset.target));
-});
-bindTooltip(topbarHpCardElement, () => getTopbarTooltipContent().hp);
-bindTooltip(topbarLevelCardElement, () => getTopbarTooltipContent().level);
-bindTooltip(topbarDamageCardElement, () => getTopbarTooltipContent().damage);
-bindTooltip(topbarHitCardElement, () => getTopbarTooltipContent().hit);
-bindTooltip(topbarCritCardElement, () => getTopbarTooltipContent().crit);
-bindTooltip(topbarBlockCardElement, () => getTopbarTooltipContent().block);
-toggleStepSoundElement.addEventListener("change", () => {
-  state.options.stepSound = toggleStepSoundElement.checked;
-  saveOptions();
-});
-toggleDeathSoundElement.addEventListener("change", () => {
-  state.options.deathSound = toggleDeathSoundElement.checked;
-  saveOptions();
-});
-startFormElement.addEventListener("submit", (event) => {
-  event.preventDefault();
-  applyStartProfile();
-});
-loadGameFromStartButtonElement.addEventListener("click", () => loadCurrentGame());
-document.addEventListener("keydown", handleInput);
-initializeGame();
-detectNearbyTraps();
-render();
-syncStartModalControls();
+function bindChoiceControls() {
+  choiceDrinkButton.addEventListener("click", () => resolveChoiceBySlot(0));
+  choiceStoreButton.addEventListener("click", () => resolveChoiceBySlot(1));
+  choiceLeaveButton.addEventListener("click", () => resolveChoiceBySlot(2));
+  stairsConfirmButton.addEventListener("click", () => resolveStairChoice("change-floor"));
+  stairsStayButton.addEventListener("click", () => resolveStairChoice("stay"));
+}
+
+function bindModalControls() {
+  openInventoryButton.addEventListener("click", () => toggleInventory(true));
+  closeInventoryButton.addEventListener("click", () => toggleInventory(false));
+  openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
+  closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
+  openOptionsButton.addEventListener("click", () => toggleOptions(true));
+  closeOptionsButton.addEventListener("click", () => toggleOptions(false));
+  openHighscoresButton.addEventListener("click", () => toggleHighscores(true));
+  closeHighscoresButton.addEventListener("click", () => toggleHighscores(false));
+  openHelpButton.addEventListener("click", () => toggleHelp(true));
+  closeHelpButton.addEventListener("click", () => toggleHelp(false));
+  restartFromDeathButton.addEventListener("click", () => restartRun());
+  openDeathKillsButton.addEventListener("click", () => openRunStatsFromDeath());
+  closeDeathKillsButton.addEventListener("click", () => toggleDeathKills(false));
+  closeDeathButton.addEventListener("click", () => hideDeathModal());
+}
+
+function bindInventoryControls() {
+  startFreshRunButton.addEventListener("click", () => restartRun());
+  inventoryFilterButtons.forEach((button) => {
+    button.addEventListener("click", () => setInventoryFilter(button.dataset.filter ?? "all"));
+  });
+}
+
+function bindCollapsibleCardControls() {
+  collapsibleCards.forEach((card) => {
+    const button = card.querySelector(".collapse-btn");
+    button?.addEventListener("click", () => toggleCardCollapse(button.dataset.target));
+  });
+}
+
+function bindTopbarTooltips() {
+  bindTooltip(topbarHpCardElement, () => getTopbarTooltipContent().hp);
+  bindTooltip(topbarLevelCardElement, () => getTopbarTooltipContent().level);
+  bindTooltip(topbarDamageCardElement, () => getTopbarTooltipContent().damage);
+  bindTooltip(topbarHitCardElement, () => getTopbarTooltipContent().hit);
+  bindTooltip(topbarCritCardElement, () => getTopbarTooltipContent().crit);
+  bindTooltip(topbarBlockCardElement, () => getTopbarTooltipContent().block);
+}
+
+function bindOptionControls() {
+  saveGameButtonElement.addEventListener("click", () => saveCurrentGame());
+  loadGameButtonElement.addEventListener("click", () => loadCurrentGame());
+  toggleStepSoundElement.addEventListener("change", () => {
+    state.options.stepSound = toggleStepSoundElement.checked;
+    saveOptions();
+  });
+  toggleDeathSoundElement.addEventListener("change", () => {
+    state.options.deathSound = toggleDeathSoundElement.checked;
+    saveOptions();
+  });
+}
+
+function bindStartControls() {
+  startFormElement.addEventListener("submit", (event) => {
+    event.preventDefault();
+    applyStartProfile();
+  });
+  loadGameFromStartButtonElement.addEventListener("click", () => loadCurrentGame());
+}
+
+function bindAppControls() {
+  bindChoiceControls();
+  bindModalControls();
+  bindInventoryControls();
+  bindCollapsibleCardControls();
+  bindTopbarTooltips();
+  bindOptionControls();
+  bindStartControls();
+  bindKeyboardInput(document);
+}
+
+function bootstrapApp() {
+  bindAppControls();
+  initializeGame();
+  detectNearbyTraps();
+  render();
+  syncStartModalControls();
+}
+
+bootstrapApp();

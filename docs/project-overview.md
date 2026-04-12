@@ -32,10 +32,10 @@ Aktive Dateien:
 
 Legacy-Dateien:
 
-- `src/main.mjs`
-- `src/dom.mjs`
-- `src/render.mjs`
-- `src/state.mjs`
+- `src/legacy/main.mjs`
+- `src/legacy/dom.mjs`
+- `src/legacy/render.mjs`
+- `src/legacy/state.mjs`
 
 Die Legacy-Dateien sind noch im Repository, aber nicht der produktive Einstieg. Wer Änderungen implementiert, sollte zuerst prüfen, ob er versehentlich im alten Pfad gelandet ist.
 

@@ -86,12 +86,18 @@ export function createTooltipView(context) {
     const state = getState();
     const weapon = getMainHand(state.player);
     const offHand = getOffHand(state.player);
+    const precisionPenalty = (state.player.statusEffects ?? [])
+      .filter((effect) => effect.type === "precision_malus")
+      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
+    const reactionPenalty = (state.player.statusEffects ?? [])
+      .filter((effect) => effect.type === "reaction_malus")
+      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
     const baseDamage = Math.max(1, state.player.strength + weapon.damage);
-    const hitValue = state.player.precision * 2 + weapon.hitBonus;
-    const critChance = clamp(state.player.precision + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
+    const hitValue = (state.player.precision - precisionPenalty) * 2 + weapon.hitBonus;
+    const critChance = clamp(state.player.precision - precisionPenalty + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
     const blockBase = offHand?.subtype === "shield" ? offHand.blockChance : 0;
     const blockChance = offHand?.subtype === "shield"
-      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0), 5, 75)
+      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0) - reactionPenalty, 5, 75)
       : 0;
 
     return {

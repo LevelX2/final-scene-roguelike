@@ -203,6 +203,48 @@ test("inventory sorts items by class and can be filtered", async ({ page }) => {
   await expect(page.locator("#inventoryList .inventory-item strong")).toHaveText("Sandwich");
 });
 
+test("inventory keeps weapon variants with different effects separate", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    const baseWeapon = {
+      type: "weapon",
+      id: "kitchen-knife",
+      name: "Küchenmesser",
+      source: "Tests",
+      handedness: "one-handed",
+      damage: 2,
+      hitBonus: 0,
+      critBonus: 0,
+      rarity: "rare",
+      attackMode: "melee",
+      description: "Nur für Tests.",
+      modifierIds: [],
+      numericMods: [],
+    };
+
+    window.__TEST_API__.addInventoryItem({
+      ...baseWeapon,
+      effects: [],
+      lightBonus: 0,
+    });
+    window.__TEST_API__.addInventoryItem({
+      ...baseWeapon,
+      effects: [{ type: "light_bonus", trigger: "passive", tier: 1, source: "mod", value: 1 }],
+      lightBonus: 1,
+    });
+  });
+
+  await page.keyboard.press("i");
+
+  await expect(page.locator("#inventoryList .inventory-section-title")).toHaveText("Waffen");
+  await expect(page.locator("#inventoryList .inventory-item")).toHaveCount(2);
+  await expect(page.locator("#inventoryList .inventory-item strong")).toHaveText(["Küchenmesser", "Küchenmesser"]);
+  await expect(page.locator("#inventoryList")).not.toContainText("Küchenmesser x2");
+  await expect(page.locator("#inventoryList")).toContainText("Licht +1");
+});
+
 test("inventory uses svg icons for potions and keys when available", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -384,26 +426,26 @@ test("equipment rarity modifiers are applied to generated drops", async ({ page 
 
   const generated = await page.evaluate(() => window.__TEST_API__.previewGeneratedEquipment(
     {
-      type: "weapon",
-      id: "preview-cleaver",
-      name: "Preview-Beil",
+      type: "offhand",
+      subtype: "shield",
+      itemType: "shield",
+      id: "preview-shield",
+      name: "Preview-Schild",
       source: "Tests",
-      handedness: "one-handed",
-      damage: 3,
-      hitBonus: 0,
-      critBonus: 0,
+      blockChance: 16,
+      blockValue: 2,
       description: "Nur für Tests.",
     },
     {
       forceRarity: "rare",
-      forceModifiers: ["brutal", "precise"],
+      forceModifiers: ["sturdy", "reactive"],
       dropSourceTag: "chest",
     },
   ));
 
   expect(generated.rarity).toBe("rare");
   expect(generated.modifiers).toHaveLength(2);
-  expect(generated.damage).toBe(4);
-  expect(generated.hitBonus).toBe(2);
-  expect(generated.name).toContain("Preview-Beil");
+  expect(generated.blockChance).toBe(21);
+  expect(generated.blockValue).toBe(3);
+  expect(generated.name).toContain("Preview-Schild");
 });

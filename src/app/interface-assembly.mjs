@@ -31,7 +31,6 @@ export function assembleInterfaceModules(context) {
     useInventoryItem,
     renderSelf,
     setShowFloatingText,
-    syncStartModalControls,
     addMessage,
     moveToFloor,
     endTurn,
@@ -43,6 +42,10 @@ export function assembleInterfaceModules(context) {
     handleWait,
     tryCloseAdjacentDoor,
     quickUsePotion,
+    enterTargetMode,
+    cancelTargetMode,
+    moveTargetCursor,
+    confirmTargetAttack,
   } = runtime;
   const {
     getMainHand,
@@ -61,7 +64,8 @@ export function assembleInterfaceModules(context) {
     loadLastHighscoreMarker,
     clearSavedGame,
     updateSavegameControls,
-    initializeGame,
+    hasLineOfSight,
+    isStraightShot,
   } = core;
   const {
     boardElement,
@@ -87,7 +91,6 @@ export function assembleInterfaceModules(context) {
     stairsStayButton,
     deathModalElement,
     deathSummaryElement,
-    deathKillsElement,
   } = ui;
 
   const renderApi = createRenderApi({
@@ -121,6 +124,8 @@ export function assembleInterfaceModules(context) {
     getMainHand,
     getOffHand,
     getCombatWeapon,
+    hasLineOfSight,
+    isStraightShot,
     formatWeaponStats,
     formatOffHandStats,
     getOffHandTooltipLines,
@@ -144,8 +149,7 @@ export function assembleInterfaceModules(context) {
     clearSavedGame,
     createSheetRow: renderApi.createSheetRow,
     updateSavegameControls,
-    initializeGame,
-    syncStartModalControls,
+    returnToStartScreen: runtime.returnToStartScreen,
     renderSelf,
     addMessage,
     moveToFloor,
@@ -164,7 +168,6 @@ export function assembleInterfaceModules(context) {
     stairsStayButton,
     deathModalElement,
     deathSummaryElement,
-    deathKillsElement,
   });
   setShowDeathModal(modalController.showDeathModal);
   setShowChoiceModal(modalController.showChoiceModal);
@@ -182,11 +185,15 @@ export function assembleInterfaceModules(context) {
     toggleOptions: modalController.toggleOptions,
     toggleHelp: modalController.toggleHelp,
     toggleHighscores: modalController.toggleHighscores,
-    toggleDeathKills: modalController.toggleDeathKills,
+    closeStartModal: runtime.closeStartModal,
     movePlayer,
     handleWait,
     tryCloseAdjacentDoor,
     quickUsePotion,
+    enterTargetMode,
+    cancelTargetMode,
+    moveTargetCursor,
+    confirmTargetAttack,
   });
 
   return {

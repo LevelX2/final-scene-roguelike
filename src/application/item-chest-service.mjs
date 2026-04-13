@@ -16,8 +16,8 @@ export function createItemChestService(context) {
 
     removeChestAt(index);
     state.openedChests = (state.openedChests ?? 0) + 1;
-    addMessage("Du hebelst eine verstaubte Requisitenkiste auf.", "important");
-    return spawnChestContentAtPlayer(chest.content);
+    addMessage(`Du öffnest ${chest.containerName ?? 'eine verstaubte Requisitenkiste'}.`, "important");
+    return spawnChestContentAtPlayer(chest.content, chest.containerName);
   }
 
   return { openChest };

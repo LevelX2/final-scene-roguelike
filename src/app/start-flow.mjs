@@ -12,9 +12,18 @@ export function createStartFlowApi(context) {
     saveHeroClassId,
     initializeGame,
     getState,
+    renderSelf,
+    focusGameSurface,
   } = context;
 
   let heroIdentityStatusTimeout;
+  const DEFAULT_START_STATUS = "Wird fÃ¼r dieses und das nÃ¤chste Spiel gemerkt.";
+
+  function resetStartIdentityFeedback() {
+    saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
+    heroIdentityStatusElement.textContent = DEFAULT_START_STATUS;
+    heroIdentityStatusElement.classList.remove("success");
+  }
 
   function renderClassOptions(selectedClassId) {
     classOptionsElement.innerHTML = "";
@@ -33,6 +42,7 @@ export function createStartFlowApi(context) {
           <span>${heroClass.passiveName}: ${heroClass.passiveSummary}</span>
         </div>
       `;
+
       const input = label.querySelector('input[name="heroClass"]');
       const applySelection = () => {
         if (!input) {
@@ -44,6 +54,7 @@ export function createStartFlowApi(context) {
           option.classList.toggle("selected", option === label);
         });
       };
+
       label.addEventListener("click", applySelection);
       label.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -60,10 +71,41 @@ export function createStartFlowApi(context) {
     const fallbackName = getState()?.player?.name ?? loadHeroName();
     const fallbackClassId = getState()?.player?.classId ?? loadHeroClassId();
     heroNameInputElement.value = fallbackName;
-    saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
-    heroIdentityStatusElement.textContent = "Wird für dieses und das nächste Spiel gemerkt.";
-    heroIdentityStatusElement.classList.remove("success");
+    resetStartIdentityFeedback();
     renderClassOptions(fallbackClassId);
+  }
+
+  function openStartModal() {
+    const state = getState();
+    if (!state) {
+      return;
+    }
+
+    syncStartModalControls();
+    state.modals.startOpen = true;
+    renderSelf();
+  }
+
+  function closeStartModal() {
+    const state = getState();
+    if (!state) {
+      return;
+    }
+
+    state.modals.startOpen = false;
+    renderSelf();
+  }
+
+  function returnToStartScreen(options = {}) {
+    initializeGame(
+      {},
+      {
+        openStartModal: Boolean(options.openStartModal),
+        clearSavedGame: Boolean(options.clearSavedGame),
+        view: "start",
+      },
+    );
+    syncStartModalControls();
   }
 
   function applyStartProfile() {
@@ -76,19 +118,21 @@ export function createStartFlowApi(context) {
     heroIdentityStatusElement.classList.add("success");
     window.clearTimeout(heroIdentityStatusTimeout);
     heroIdentityStatusTimeout = window.setTimeout(() => {
-      saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
-      heroIdentityStatusElement.textContent = "Wird für dieses und das nächste Spiel gemerkt.";
-      heroIdentityStatusElement.classList.remove("success");
+      resetStartIdentityFeedback();
     }, 1400);
 
     initializeGame(
       { heroName: nextName, heroClassId: nextClassId },
-      { openStartModal: false, clearSavedGame: true, reuseExistingFloor: true },
+      { openStartModal: false, clearSavedGame: true, reuseExistingFloor: true, view: "game" },
     );
+    window.setTimeout(() => focusGameSurface?.(), 0);
   }
 
   return {
     syncStartModalControls,
+    openStartModal,
+    closeStartModal,
+    returnToStartScreen,
     applyStartProfile,
   };
 }

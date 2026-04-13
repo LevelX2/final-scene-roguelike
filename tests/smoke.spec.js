@@ -3,8 +3,8 @@ const { test, expect } = require("playwright/test");
 test("production runtime does not expose the test api by default", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.locator("#startModal")).toBeVisible();
-  await expect(page.locator("#heroNameInput")).toBeVisible();
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Neues Spiel beginnen" })).toBeVisible();
 
   const hasTestApi = await page.evaluate(() => "__TEST_API__" in window);
   expect(hasTestApi).toBeFalsy();
@@ -33,6 +33,8 @@ test("app still renders with blocked localStorage access", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("The Final Scene");
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
   await expect(page.locator("#startModal")).toBeVisible();
   await page.locator("#startForm").evaluate((form) => form.requestSubmit());
   await expect(page.locator("#startModal")).toBeHidden();

@@ -9,16 +9,19 @@ export function createUiBindingsApi(context) {
     closeInventoryButton,
     openRunStatsButton,
     closeRunStatsButton,
+    saveGameQuickButtonElement,
     openOptionsButton,
     closeOptionsButton,
     openHighscoresButton,
     closeHighscoresButton,
     openHelpButton,
     closeHelpButton,
-    restartFromDeathButton,
     openDeathKillsButton,
-    closeDeathKillsButton,
     closeDeathButton,
+    startNewGameButton,
+    loadGameFromLandingButtonElement,
+    openHighscoresLandingButton,
+    openHelpLandingButton,
     startFreshRunButton,
     inventoryFilterButtons,
     collapsibleCards,
@@ -26,8 +29,8 @@ export function createUiBindingsApi(context) {
     loadGameButtonElement,
     toggleStepSoundElement,
     toggleDeathSoundElement,
+    toggleVoiceAnnouncementsElement,
     startFormElement,
-    loadGameFromStartButtonElement,
     bindTooltip,
     topbarHpCardElement,
     topbarLevelCardElement,
@@ -44,14 +47,15 @@ export function createUiBindingsApi(context) {
     toggleHelp,
     toggleHighscores,
     restartRun,
+    leaveToStartScreen,
     openRunStatsFromDeath,
-    toggleDeathKills,
     toggleCardCollapse,
     setInventoryFilter,
     saveCurrentGame,
     loadCurrentGame,
     getState,
     saveOptions,
+    openStartModal,
     applyStartProfile,
     bindKeyboardInput,
   } = context;
@@ -69,16 +73,15 @@ export function createUiBindingsApi(context) {
     closeInventoryButton.addEventListener("click", () => toggleInventory(false));
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
+    saveGameQuickButtonElement.addEventListener("click", () => saveCurrentGame());
     openOptionsButton.addEventListener("click", () => toggleOptions(true));
     closeOptionsButton.addEventListener("click", () => toggleOptions(false));
     openHighscoresButton.addEventListener("click", () => toggleHighscores(true));
     closeHighscoresButton.addEventListener("click", () => toggleHighscores(false));
     openHelpButton.addEventListener("click", () => toggleHelp(true));
     closeHelpButton.addEventListener("click", () => toggleHelp(false));
-    restartFromDeathButton.addEventListener("click", () => restartRun());
     openDeathKillsButton.addEventListener("click", () => openRunStatsFromDeath());
-    closeDeathKillsButton.addEventListener("click", () => toggleDeathKills(false));
-    closeDeathButton.addEventListener("click", () => context.hideDeathModal());
+    closeDeathButton.addEventListener("click", () => leaveToStartScreen());
   }
 
   function bindInventoryControls() {
@@ -115,17 +118,24 @@ export function createUiBindingsApi(context) {
       getState().options.deathSound = toggleDeathSoundElement.checked;
       saveOptions();
     });
+    toggleVoiceAnnouncementsElement.addEventListener("change", () => {
+      getState().options.voiceAnnouncements = toggleVoiceAnnouncementsElement.checked;
+      saveOptions();
+    });
   }
 
   function bindStartControls() {
+    startNewGameButton.addEventListener("click", () => openStartModal());
+    loadGameFromLandingButtonElement.addEventListener("click", () => loadCurrentGame());
+    openHighscoresLandingButton.addEventListener("click", () => toggleHighscores(true));
+    openHelpLandingButton.addEventListener("click", () => toggleHelp(true));
     startFormElement.addEventListener("submit", (event) => {
       event.preventDefault();
       applyStartProfile();
     });
-    loadGameFromStartButtonElement.addEventListener("click", () => loadCurrentGame());
   }
 
-  function bindAppControls(documentTarget = document) {
+  function bindAppControls(documentTarget = window) {
     bindChoiceControls();
     bindModalControls();
     bindInventoryControls();

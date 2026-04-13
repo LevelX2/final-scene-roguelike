@@ -17,12 +17,16 @@ export function createRenderCycleApi(context) {
     topbarCritElement,
     topbarBlockElement,
     topbarFoodElement,
+    topbarStatusSummaryElement,
+    targetModeHintElement,
     xpLabelElement,
     xpFillElement,
     nutritionLabelElement,
     nutritionFillElement,
     nutritionStateElement,
+    playerStatusSummaryElement,
     topbarFoodCardElement,
+    getActorStatusDisplay,
     getHungerStateLabel,
     HUNGER_STATE,
     renderPlayerSheet,
@@ -31,6 +35,8 @@ export function createRenderCycleApi(context) {
     renderHighscores,
     renderRunStats,
     renderLog,
+    startScreenElement,
+    gameHeaderElement,
     startFreshRunButton,
     inventoryModalElement,
     runStatsModalElement,
@@ -40,10 +46,10 @@ export function createRenderCycleApi(context) {
     startModalElement,
     gameShellElement,
     stairsModalElement,
-    deathKillsModalElement,
     deathModalElement,
     toggleStepSoundElement,
     toggleDeathSoundElement,
+    toggleVoiceAnnouncementsElement,
     updateSavegameControls,
     collapsibleCards,
     updatePotionChoiceSelection,
@@ -53,8 +59,10 @@ export function createRenderCycleApi(context) {
     const state = getState();
     syncTestApi();
     const combatSummary = getPlayerCombatSummary();
+    const activeStatusEffects = getActorStatusDisplay(state.player);
     const hungerClass = `state-${String(state.player.hungerState ?? HUNGER_STATE.NORMAL).toLowerCase()}`;
     const currentStudioArchetypeId = getCurrentStudioArchetypeId();
+    const inGameView = state.view === "game";
     updateVisibility();
     renderBoard();
     depthTitleElement.textContent = formatStudioWithArchetype(state.floor, currentStudioArchetypeId);
@@ -74,12 +82,26 @@ export function createRenderCycleApi(context) {
     nutritionStateElement.textContent = getHungerStateLabel(state.player.hungerState);
     nutritionStateElement.className = `nutrition-state ${hungerClass}`;
     topbarFoodCardElement.className = `board-stat-pill ${hungerClass}`;
+    const statusSummary = activeStatusEffects
+      .map((effect) => `${effect.label}${effect.duration > 0 ? ` ${effect.duration}` : ""}`)
+      .join(" | ");
+    topbarStatusSummaryElement.textContent = statusSummary;
+    topbarStatusSummaryElement.classList.toggle("ui-hidden", !statusSummary);
+    const targetHint = state.targeting?.active
+      ? "Zielmodus aktiv: WASD bewegt das Fadenkreuz, Enter schießt, Esc bricht ab."
+      : "";
+    targetModeHintElement.textContent = targetHint;
+    targetModeHintElement.classList.toggle("ui-hidden", !targetHint);
+    playerStatusSummaryElement.textContent = statusSummary ? `Status: ${statusSummary}` : "";
+    playerStatusSummaryElement.classList.toggle("ui-hidden", !statusSummary);
     renderPlayerSheet();
     renderEnemySheet();
     renderInventory();
     renderHighscores();
     renderRunStats();
     renderLog();
+    startScreenElement.classList.toggle("ui-hidden", inGameView);
+    gameHeaderElement.classList.toggle("ui-hidden", !inGameView);
     startFreshRunButton.classList.toggle("ui-hidden", !state.gameOver);
     inventoryModalElement.classList.toggle("hidden", !state.modals.inventoryOpen);
     inventoryModalElement.setAttribute("aria-hidden", String(!state.modals.inventoryOpen));
@@ -93,16 +115,15 @@ export function createRenderCycleApi(context) {
     highscoresModalElement.setAttribute("aria-hidden", String(!state.modals.highscoresOpen));
     startModalElement.classList.toggle("hidden", !state.modals.startOpen);
     startModalElement.setAttribute("aria-hidden", String(!state.modals.startOpen));
-    gameShellElement.classList.toggle("prestart-hidden", state.modals.startOpen);
+    gameShellElement.classList.toggle("prestart-hidden", !inGameView);
     stairsModalElement.classList.toggle("hidden", !state.pendingStairChoice);
     stairsModalElement.setAttribute("aria-hidden", String(!state.pendingStairChoice));
-    deathKillsModalElement.classList.toggle("hidden", !state.modals.deathKillsOpen);
-    deathKillsModalElement.setAttribute("aria-hidden", String(!state.modals.deathKillsOpen));
     deathModalElement.classList.contains("hidden")
       ? deathModalElement.setAttribute("aria-hidden", "true")
       : deathModalElement.setAttribute("aria-hidden", "false");
     toggleStepSoundElement.checked = state.options.stepSound;
     toggleDeathSoundElement.checked = state.options.deathSound;
+    toggleVoiceAnnouncementsElement.checked = state.options.voiceAnnouncements;
     updateSavegameControls();
     collapsibleCards.forEach((card) => {
       const key = card.dataset.collapsible;

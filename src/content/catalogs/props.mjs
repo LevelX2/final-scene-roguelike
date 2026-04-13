@@ -39,7 +39,7 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "slasher",
     name: "Unheimliche Puppe",
     source: "Child's Play",
-    sourceLabelDe: "Chucky - Die Moerderpuppe",
+    sourceLabelDe: "Chucky - Die Mörderpuppe",
   },
   chainsaw: {
     id: "chainsaw",
@@ -89,7 +89,7 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "adventure",
     name: "Goldenes Idol",
     source: "Raiders of the Lost Ark",
-    sourceLabelDe: "Jaeger des verlorenen Schatzes",
+    sourceLabelDe: "Jäger des verlorenen Schatzes",
   },
   "fedora-whip": {
     id: "fedora-whip",
@@ -103,7 +103,7 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "adventure",
     name: "Kristallschaedel",
     source: "Indiana Jones and the Kingdom of the Crystal Skull",
-    sourceLabelDe: "Indiana Jones und das Koenigreich des Kristallschaedels",
+    sourceLabelDe: "Indiana Jones und das Königreich des Kristallschädels",
   },
   "zorro-mask": {
     id: "zorro-mask",
@@ -125,14 +125,14 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "space_opera",
     name: "Fluxkompensator",
     source: "Back to the Future",
-    sourceLabelDe: "Zurueck in die Zukunft",
+    sourceLabelDe: "Zurück in die Zukunft",
   },
   hoverboard: {
     id: "hoverboard",
     archetype: "space_opera",
     name: "Hoverboard",
     source: "Back to the Future Part II",
-    sourceLabelDe: "Zurueck in die Zukunft II",
+    sourceLabelDe: "Zurück in die Zukunft II",
   },
   "cyber-hand": {
     id: "cyber-hand",
@@ -183,14 +183,14 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "romcom",
     name: "Rose unter Glas",
     source: "Beauty and the Beast",
-    sourceLabelDe: "Die Schoene und das Biest",
+    sourceLabelDe: "Die Schöne und das Biest",
   },
   "cafe-menu-board": {
     id: "cafe-menu-board",
     archetype: "romcom",
     name: "Cafe-Menueboard",
     source: "You've Got Mail",
-    sourceLabelDe: "e-m@il fuer Dich",
+    sourceLabelDe: "e-m@il für Dich",
   },
   "engagement-ring-box": {
     id: "engagement-ring-box",
@@ -240,7 +240,7 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "social_drama",
     name: "Portemonnaie mit Fahrkarte",
     source: "The Pursuit of Happyness",
-    sourceLabelDe: "Das Streben nach Glueck",
+    sourceLabelDe: "Das Streben nach Glück",
   },
 
   "terminator-jacket-glasses": {
@@ -252,17 +252,17 @@ export const DISPLAY_CASE_DEFS = {
   },
   "motion-tracker": {
     id: "motion-tracker",
-    archetype: "action",
+    archetype: "space_opera",
     name: "Bewegungsscanner",
     source: "Aliens",
-    sourceLabelDe: "Aliens - Die Rueckkehr",
+    sourceLabelDe: "Aliens - Die Rückkehr",
   },
   "ghostbusters-radios": {
     id: "ghostbusters-radios",
     archetype: "action",
     name: "Funkgeraete",
     source: "Ghostbusters",
-    sourceLabelDe: "Ghostbusters - Die Geisterjaeger",
+    sourceLabelDe: "Ghostbusters - Die Geisterjäger",
   },
   "tactical-vest": {
     id: "tactical-vest",
@@ -284,14 +284,14 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "western",
     name: "Sheriffstern",
     source: "High Noon",
-    sourceLabelDe: "Zwoelf Uhr mittags",
+    sourceLabelDe: "Zwölf Uhr mittags",
   },
   "wanted-poster": {
     id: "wanted-poster",
     archetype: "western",
     name: "Steckbrief",
     source: "For a Few Dollars More",
-    sourceLabelDe: "Fuer ein paar Dollar mehr",
+    sourceLabelDe: "Für ein paar Dollar mehr",
   },
   "silver-buckle": {
     id: "silver-buckle",
@@ -349,14 +349,14 @@ export const DISPLAY_CASE_DEFS = {
     archetype: "creature_feature",
     name: "Geisterfalle",
     source: "Ghostbusters",
-    sourceLabelDe: "Ghostbusters - Die Geisterjaeger",
+    sourceLabelDe: "Ghostbusters - Die Geisterjäger",
   },
   "pke-meter": {
     id: "pke-meter",
     archetype: "creature_feature",
     name: "PKE-Meter",
     source: "Ghostbusters",
-    sourceLabelDe: "Ghostbusters - Die Geisterjaeger",
+    sourceLabelDe: "Ghostbusters - Die Geisterjäger",
   },
 
   "film-clapper": {

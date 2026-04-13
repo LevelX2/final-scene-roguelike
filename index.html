@@ -8,15 +8,40 @@
 </head>
 <body>
   <main class="layout">
-    <section class="panel hero">
+    <section id="startScreen" class="start-screen panel">
+      <div class="start-screen-backdrop" aria-hidden="true">
+        <div class="start-screen-art"></div>
+      </div>
+      <div class="start-screen-content">
+        <div class="start-screen-copy">
+          <p class="eyebrow">Fight Through a Dying Movieverse</p>
+          <h1 class="sr-only">The Final Scene</h1>
+          <p class="start-screen-lede">
+            Durchquere verfluchte Studiokomplexe, besetze deine Hauptrolle neu und entscheide selbst,
+            ob du ein neues Kapitel drehst, einen Spielstand wieder aufnimmst oder erst im Archiv
+            nachsiehst, wer es tiefer geschafft hat.
+          </p>
+        </div>
+        <div class="start-screen-menu">
+          <button id="startNewGame" class="choice-btn accent start-screen-btn" type="button">Neues Spiel beginnen</button>
+          <button id="loadGameFromLanding" class="choice-btn start-screen-btn" type="button">Spiel laden</button>
+          <button id="openHighscoresLanding" class="choice-btn start-screen-btn" type="button">Highscores ansehen</button>
+          <button id="openHelpLanding" class="choice-btn ghost start-screen-btn" type="button">Hilfe ansehen</button>
+          <p id="landingSavegameStatus" class="hero-identity-note">Kein Spielstand gefunden.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameHeader" class="panel hero ui-hidden">
       <div class="hero-title-block">
         <p class="eyebrow">Fight Through a Dying Movieverse</p>
         <h1>The Final Scene</h1>
       </div>
       <div class="hero-actions">
-        <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Zurück in den Studiokomplex</button>
+        <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Neues Spiel beginnen</button>
         <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Spielverlauf</button>
         <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
+        <button id="saveGameQuick" class="mini-btn hero-help-btn" type="button">Speichern</button>
         <button id="openOptions" class="mini-btn hero-help-btn" type="button">Optionen</button>
         <button id="openHighscores" class="mini-btn hero-help-btn" type="button">Highscores</button>
         <button id="openHelp" class="mini-btn hero-help-btn" type="button">Hilfe</button>
@@ -61,6 +86,8 @@
             </div>
           </div>
         </div>
+        <div id="topbarStatusSummary" class="topbar-status-summary ui-hidden" aria-live="polite"></div>
+        <div id="targetModeHint" class="target-mode-hint ui-hidden" aria-live="polite"></div>
         <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
       </section>
 
@@ -91,6 +118,7 @@
                 <div id="nutritionFill" class="xp-fill nutrition-fill"></div>
               </div>
               <p id="nutritionState" class="nutrition-state state-normal">Normal</p>
+              <div id="playerStatusSummary" class="player-status-summary ui-hidden" aria-live="polite"></div>
             </div>
             <div id="playerSheet" class="sheet"></div>
           </div>
@@ -184,6 +212,10 @@
           <span>Todesgeräusch</span>
           <input id="toggleDeathSound" type="checkbox">
         </label>
+        <label class="option-row">
+          <span>Studioansagen</span>
+          <input id="toggleVoiceAnnouncements" type="checkbox">
+        </label>
         <div class="modal-actions">
           <button id="saveGameButton" class="choice-btn accent" type="button">Spiel speichern</button>
           <button id="loadGameButton" class="choice-btn" type="button">Spielstand laden</button>
@@ -205,12 +237,13 @@
       <div class="help-list">
         <div class="help-row"><span><kbd>WASD</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen</strong></div>
         <div class="help-row"><span><kbd>Leertaste</kbd></span><strong>Warten</strong></div>
+        <div class="help-row"><span><kbd>F</kbd></span><strong>Zielmodus für Fernkampf öffnen</strong></div>
         <div class="help-row"><span><kbd>H</kbd></span><strong>Schnell Heiltrank trinken</strong></div>
         <div class="help-row"><span><kbd>C</kbd></span><strong>Benachbarte offene Tür schließen</strong></div>
         <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>
         <div class="help-row"><span><kbd>O</kbd></span><strong>Optionen anzeigen</strong></div>
         <div class="help-row"><span><kbd>R</kbd></span><strong>Spiel neu starten</strong></div>
-        <div class="help-row"><span><kbd>Enter</kbd></span><strong>Fund- oder Treppenwahl bestätigen</strong></div>
+        <div class="help-row"><span><kbd>Enter</kbd></span><strong>Fund-, Treppen- oder Zielwahl bestätigen</strong></div>
         <div class="help-row"><span><kbd>Esc</kbd></span><strong>Offene Fenster schließen</strong></div>
       </div>
     </div>
@@ -252,32 +285,16 @@
 
   <div id="deathModal" class="modal hidden" aria-hidden="true">
     <div class="modal-card panel">
-      <p class="modal-eyebrow">Letzter Versuch</p>
-      <h2>Du bist gefallen</h2>
+      <p class="modal-eyebrow">Abspann</p>
+      <h2>Das war der letzte Take</h2>
       <div id="deathSummary" class="sheet"></div>
-      <p class="modal-copy">Die ausführliche Gegnerstatistik ist in einem eigenen Fenster untergebracht, damit dieses Ende-Fenster kompakt bleibt.</p>
+      <p class="modal-copy">Den vollständigen Spielverlauf kannst du dir separat ansehen, damit dieses Ende-Fenster kompakt bleibt.</p>
       <div class="modal-actions death-actions">
         <div class="death-details-action">
-          <button id="openDeathKills" class="choice-btn" type="button">Besiegte Gegner</button>
-        </div>
-        <div class="death-primary-actions">
-          <button id="closeDeath" class="choice-btn" type="button" title="Zeigt dir den Studiokomplex genau so, wie er beim Tod deines Helden aussah.">Zum Studiokomplex</button>
-          <button id="restartFromDeath" class="choice-btn accent" type="button">Neues Spiel</button>
+          <button id="openDeathKills" class="choice-btn" type="button">Spielverlauf</button>
+          <button id="closeDeath" class="choice-btn" type="button">Zum Startbildschirm</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div id="deathKillsModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-card panel scroll-modal-card">
-      <div class="inventory-inline-head">
-        <div>
-          <p class="modal-eyebrow">Statistik</p>
-          <h2>Besiegte Gegner</h2>
-        </div>
-        <button id="closeDeathKills" class="mini-btn" type="button">Schließen</button>
-      </div>
-      <div id="deathKills" class="sheet modal-list modal-scroll-section"></div>
     </div>
   </div>
 
@@ -296,7 +313,6 @@
         <p id="heroIdentityStatus" class="hero-identity-note">Wird für dieses und das nächste Spiel gemerkt.</p>
         <div class="modal-actions">
           <button id="saveHeroName" class="choice-btn accent" type="submit">Betrete den Studiokomplex</button>
-          <button id="loadGameFromStart" class="choice-btn" type="button">Spielstand laden</button>
         </div>
         <p id="startSavegameStatus" class="hero-identity-note">Kein Spielstand gefunden.</p>
       </form>

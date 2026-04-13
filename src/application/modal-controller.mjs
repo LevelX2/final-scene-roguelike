@@ -8,8 +8,7 @@ export function createModalController(context) {
     clearSavedGame,
     createSheetRow,
     updateSavegameControls,
-    initializeGame,
-    syncStartModalControls,
+    returnToStartScreen,
     renderSelf,
     addMessage,
     moveToFloor,
@@ -28,18 +27,31 @@ export function createModalController(context) {
     stairsStayButton,
     deathModalElement,
     deathSummaryElement,
-    deathKillsElement,
   } = context;
+
+  function setDeathModalVisibility(visible) {
+    deathModalElement.classList.toggle("hidden", !visible);
+    deathModalElement.setAttribute("aria-hidden", String(!visible));
+  }
+
+  function closeTransientModals() {
+    toggleInventory(false);
+    toggleRunStats(false);
+    toggleOptions(false);
+    toggleHelp(false);
+    toggleHighscores(false);
+  }
 
   function showDeathModal(rank) {
     const state = getState();
     const currentFloor = state.floors?.[state.floor];
+    const deathCopyElement = deathModalElement.querySelector(".modal-copy");
     clearSavedGame();
-    const fallenHero = `${state.player.classLabel ?? "Held"} ${state.player.name}`;
-    const deathLead = `Der ${fallenHero} ${state.deathCause ?? "erlebte eine unbekannte Schluss-Szene."}`;
+    const deathLead = `Die Hauptrolle ${state.player.name} ${state.deathCause ?? "verschwand im letzten Akt aus dem Bild."}`;
     deathSummaryElement.innerHTML = [
       `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
-      createSheetRow("Held", fallenHero),
+      createSheetRow("Hauptrolle", state.player.name),
+      createSheetRow("Klasse", state.player.classLabel ?? "Unbekannt"),
       createSheetRow("Level", state.player.level),
       createSheetRow("Gestorben in", formatStudioLabel(state.floor)),
       createSheetRow("Archetyp", getStudioArchetypeLabel(currentFloor?.studioArchetypeId) ?? "Unbekannt"),
@@ -47,23 +59,16 @@ export function createModalController(context) {
       createSheetRow("Gegner besiegt", state.kills),
       createSheetRow("Schritte", state.turn),
       createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Außer Wertung"),
-    ].join("");
-    const killEntries = Object.entries(state.killStats)
-      .sort((a, b) => b[1] - a[1]);
-    deathKillsElement.innerHTML = killEntries.length > 0
-      ? killEntries.map(([name, count]) => createSheetRow(name, count)).join("")
-      : `<div class="inventory-empty">Keine Gegner besiegt.</div>`;
-    state.modals.deathKillsOpen = false;
-    deathModalElement.classList.remove("hidden");
-    deathModalElement.setAttribute("aria-hidden", "false");
+    ].join("").replace("AuÃŸer Wertung", "Außer Wertung");
+    if (deathCopyElement) {
+      deathCopyElement.textContent = "Den vollständigen Spielverlauf kannst du separat ansehen. Dieses Ende-Fenster bleibt bewusst kompakt.";
+    }
+    setDeathModalVisibility(true);
     updateSavegameControls("Kein Spielstand gefunden.");
   }
 
   function hideDeathModal() {
-    const state = getState();
-    state.modals.deathKillsOpen = false;
-    deathModalElement.classList.add("hidden");
-    deathModalElement.setAttribute("aria-hidden", "true");
+    setDeathModalVisibility(false);
   }
 
   function toggleInventory(forceOpen) {
@@ -75,6 +80,9 @@ export function createModalController(context) {
   function toggleRunStats(forceOpen) {
     const state = getState();
     state.modals.runStatsOpen = forceOpen ?? !state.modals.runStatsOpen;
+    if (!state.modals.runStatsOpen && state.gameOver && deathModalElement.classList.contains("hidden")) {
+      setDeathModalVisibility(true);
+    }
     renderSelf();
   }
 
@@ -93,16 +101,6 @@ export function createModalController(context) {
   function toggleHighscores(forceOpen) {
     const state = getState();
     state.modals.highscoresOpen = forceOpen ?? !state.modals.highscoresOpen;
-    renderSelf();
-  }
-
-  function toggleDeathKills(forceOpen) {
-    const state = getState();
-    state.modals.deathKillsOpen = forceOpen ?? !state.modals.deathKillsOpen;
-    if (!state.modals.deathKillsOpen && state.gameOver) {
-      deathModalElement.classList.remove("hidden");
-      deathModalElement.setAttribute("aria-hidden", "false");
-    }
     renderSelf();
   }
 
@@ -246,24 +244,26 @@ export function createModalController(context) {
   function restartRun() {
     hideChoiceModal();
     hideStairChoice();
-    toggleInventory(false);
-    toggleRunStats(false);
-    toggleOptions(false);
-    toggleHelp(false);
-    toggleHighscores(false);
-    toggleDeathKills(false);
+    closeTransientModals();
     hideDeathModal();
-    initializeGame({}, { clearSavedGame: true });
-    syncStartModalControls();
+    returnToStartScreen({ openStartModal: true, clearSavedGame: true });
   }
 
   function confirmRestartRun() {
     restartRun();
   }
 
+  function leaveToStartScreen() {
+    hideChoiceModal();
+    hideStairChoice();
+    closeTransientModals();
+    hideDeathModal();
+    returnToStartScreen({ openStartModal: false, clearSavedGame: false });
+  }
+
   function openRunStatsFromDeath() {
     hideDeathModal();
-    toggleDeathKills(true);
+    toggleRunStats(true);
   }
 
   return {
@@ -271,6 +271,7 @@ export function createModalController(context) {
     hideDeathModal,
     restartRun,
     confirmRestartRun,
+    leaveToStartScreen,
     openRunStatsFromDeath,
     showChoiceModal,
     hideChoiceModal,
@@ -286,6 +287,5 @@ export function createModalController(context) {
     toggleOptions,
     toggleHelp,
     toggleHighscores,
-    toggleDeathKills,
   };
 }

@@ -104,6 +104,35 @@ test("studio archetypes stay stable when returning to a previous studio", async 
   await expect(page.locator("#depthTitle")).toHaveText(firstStudioTitle);
 });
 
+test("spoken studio announcements only play on first entry to a studio", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  let speechCalls = await page.evaluate(() => window.__speechCalls.map((entry) => entry.text));
+  expect(speechCalls).toHaveLength(1);
+  expect(speechCalls[0]).toContain("Studio 1");
+
+  await openDownstairsPrompt(page);
+  await page.getByRole("button", { name: "Betreten" }).click();
+
+  speechCalls = await page.evaluate(() => window.__speechCalls.map((entry) => entry.text));
+  expect(speechCalls).toHaveLength(2);
+  expect(speechCalls[1]).toContain("Studio 2");
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.teleportPlayer(snapshot.stairsUp);
+    window.__TEST_API__.promptCurrentStairs();
+  });
+  await page.locator("#stairsConfirm").click();
+
+  await openDownstairsPrompt(page);
+  await page.getByRole("button", { name: "Betreten" }).click();
+
+  speechCalls = await page.evaluate(() => window.__speechCalls.map((entry) => entry.text));
+  expect(speechCalls).toHaveLength(2);
+});
+
 test("closed doors open automatically when the player walks into them", async ({ page }) => {
   await page.goto("/");
   await startRun(page);

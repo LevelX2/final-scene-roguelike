@@ -9,6 +9,7 @@ export function createVisibilityService(context) {
     getDoorAt,
     isDoorClosed,
     createGrid,
+    getEquippedLightBonus,
   } = context;
 
   function createMaskGrid(fill = false) {
@@ -25,6 +26,10 @@ export function createVisibilityService(context) {
     }
 
     return isDoorClosed(getDoorAt(x, y, floorState));
+  }
+
+  function isStraightShot(fromX, fromY, toX, toY) {
+    return fromX === toX || fromY === toY;
   }
 
   function hasLineOfSight(floorState, fromX, fromY, toX, toY) {
@@ -78,6 +83,7 @@ export function createVisibilityService(context) {
     if (!floorState) {
       return;
     }
+    const visionRadius = VISION_RADIUS + (getEquippedLightBonus?.(state.player) ?? 0);
 
     floorState.visible = createMaskGrid(false);
     floorState.visible[state.player.y][state.player.x] = true;
@@ -86,7 +92,7 @@ export function createVisibilityService(context) {
     for (let y = 0; y < HEIGHT; y += 1) {
       for (let x = 0; x < WIDTH; x += 1) {
         const distance = Math.max(Math.abs(x - state.player.x), Math.abs(y - state.player.y));
-        if (distance > VISION_RADIUS) {
+        if (distance > visionRadius) {
           continue;
         }
 
@@ -129,6 +135,8 @@ export function createVisibilityService(context) {
   }
 
   return {
+    isStraightShot,
+    hasLineOfSight,
     updateVisibility,
   };
 }

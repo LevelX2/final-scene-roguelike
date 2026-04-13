@@ -1,3 +1,6 @@
+import { createStatusEffectService } from '../application/status-effect-service.mjs';
+import { getEffectStateLabel } from '../content/catalogs/weapon-effects.mjs';
+
 export function assembleGameplayModules(context) {
   const { factories, config, runtime, equipment, core, interface: interfaceApi, presentation } = context;
   const {
@@ -21,6 +24,8 @@ export function assembleGameplayModules(context) {
     getLevelUpRewards,
     formatStudioLabel,
     formatArchetypeLabel,
+    buildStudioAnnouncement,
+    getArchetypeForFloor,
   } = config;
   const {
     getState,
@@ -105,7 +110,25 @@ export function assembleGameplayModules(context) {
     formatOffHandStats,
   } = presentation;
 
-  const combatApi = createCombatApi({
+  let combatApi = null;
+
+  const statusEffectService = createStatusEffectService({
+    getEffectStateLabel,
+    getState,
+    getCurrentFloorState,
+    addMessage,
+    showFloatingText,
+    noteMonsterEncounter,
+    playEnemyHitSound,
+    playPlayerHitSound,
+    saveHighscoreIfNeeded,
+    createDeathCause,
+    showDeathModal,
+    playDeathSound,
+    grantExperience: (...args) => combatApi?.grantExperience?.(...args),
+  });
+
+  combatApi = createCombatApi({
     BASE_HIT_CHANCE,
     MIN_HIT_CHANCE,
     MAX_HIT_CHANCE,
@@ -129,6 +152,9 @@ export function assembleGameplayModules(context) {
     getLevelUpRewards,
     getWeaponConditionalDamageBonus,
     itemHasModifier,
+    getActorPrecisionModifier: statusEffectService.getActorPrecisionModifier,
+    getActorReactionModifier: statusEffectService.getActorReactionModifier,
+    tryApplyWeaponEffects: statusEffectService.tryApplyWeaponEffects,
     noteMonsterEncounter,
     addMessage,
     renderSelf,
@@ -157,6 +183,10 @@ export function assembleGameplayModules(context) {
     showDeathModal,
     noteMonsterEncounter,
     handleActorEnterTile,
+    hasLineOfSight: core.hasLineOfSight,
+    isStraightShot: core.isStraightShot,
+    canActorMove: statusEffectService.canActorMove,
+    tryApplyWeaponEffects: statusEffectService.tryApplyWeaponEffects,
   });
 
   const itemsApi = createItemsApi({
@@ -196,6 +226,9 @@ export function assembleGameplayModules(context) {
     addMessage,
     formatStudioLabel,
     formatArchetypeLabel,
+    buildStudioAnnouncement,
+    getArchetypeForFloor,
+    playStudioAnnouncement: core.playStudioAnnouncement,
     showStairChoice,
     renderSelf,
   });
@@ -225,6 +258,11 @@ export function assembleGameplayModules(context) {
     playLockedDoorSound,
     hasNearbyEnemy: aiApi.hasNearbyEnemy,
     moveEnemies: aiApi.moveEnemies,
+    hasLineOfSight: core.hasLineOfSight,
+    isStraightShot: core.isStraightShot,
+    getCombatWeapon,
+    canActorMove: statusEffectService.canActorMove,
+    processRoundStatusEffects: statusEffectService.processRoundStatusEffects,
     processContinuousTraps,
     processSafeRegeneration: aiApi.processSafeRegeneration,
     applyPlayerNutritionTurnCost,
@@ -250,6 +288,12 @@ export function assembleGameplayModules(context) {
     createDoor,
     createKeyPickup,
     generateEquipmentItem,
+    enterTargetMode: playerTurnController.enterTargetMode,
+    cancelTargetMode: playerTurnController.cancelTargetMode,
+    moveTargetCursor: playerTurnController.moveTargetCursor,
+    confirmTargetAttack: playerTurnController.confirmTargetAttack,
+    applyStatusEffect: statusEffectService.applyStatusEffect,
+    processRoundStatusEffects: statusEffectService.processRoundStatusEffects,
     setRandomSequence,
     clearRandomSequence,
     tryUseStairs,
@@ -269,6 +313,7 @@ export function assembleGameplayModules(context) {
     ...itemsApi,
     ...floorTransitionService,
     ...playerTurnController,
+    ...statusEffectService,
     ...testApi,
   };
 }

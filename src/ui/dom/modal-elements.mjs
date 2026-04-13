@@ -16,5 +16,3 @@ export const helpModalElement = document.getElementById("helpModal");
 export const highscoresModalElement = document.getElementById("highscoresModal");
 export const deathModalElement = document.getElementById("deathModal");
 export const deathSummaryElement = document.getElementById("deathSummary");
-export const deathKillsElement = document.getElementById("deathKills");
-export const deathKillsModalElement = document.getElementById("deathKillsModal");

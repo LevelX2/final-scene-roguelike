@@ -27,6 +27,12 @@ export function createTestApiSnapshots(context) {
         nutrition: state.player.nutrition,
         nutritionMax: state.player.nutritionMax,
         hungerState: state.player.hungerState,
+        statusEffects: (state.player.statusEffects ?? []).map((effect) => ({ ...effect })),
+      },
+      targeting: {
+        active: Boolean(state.targeting?.active),
+        cursorX: state.targeting?.cursorX ?? null,
+        cursorY: state.targeting?.cursorY ?? null,
       },
       stairsDown: floorState.stairsDown ? { ...floorState.stairsDown } : null,
       stairsUp: floorState.stairsUp ? { ...floorState.stairsUp } : null,
@@ -92,6 +98,7 @@ export function createTestApiSnapshots(context) {
         healingProfile: enemy.healingProfile ?? "slow",
         healingLabel: enemy.healingLabel ?? "Langsam",
         isRetreating: Boolean(enemy.isRetreating),
+        statusEffects: (enemy.statusEffects ?? []).map((effect) => ({ ...effect })),
       })),
     };
   }

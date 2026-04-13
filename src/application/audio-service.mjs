@@ -26,6 +26,35 @@ export function createAudioService(context) {
     return Boolean(getState()?.options?.deathSound);
   }
 
+  function isVoiceAnnouncementEnabled() {
+    return Boolean(getState()?.options?.voiceAnnouncements);
+  }
+
+  function getSpeechSynthesisApi() {
+    if (typeof window === "undefined") {
+      return null;
+    }
+    if (typeof window.speechSynthesis === "undefined") {
+      return null;
+    }
+    if (typeof window.SpeechSynthesisUtterance !== "function") {
+      return null;
+    }
+    return window.speechSynthesis;
+  }
+
+  function resolveAnnouncementVoice(speechSynthesisApi) {
+    const voices = speechSynthesisApi?.getVoices?.() ?? [];
+    if (voices.length <= 0) {
+      return null;
+    }
+
+    return voices.find((voice) => /^de(?:-|$)/i.test(voice.lang ?? ""))
+      ?? voices.find((voice) => /deutsch|german/i.test(voice.name ?? ""))
+      ?? voices.find((voice) => voice.default)
+      ?? voices[0];
+  }
+
   function playDeathSound() {
     if (!isDeathSoundEnabled()) {
       return;
@@ -148,7 +177,7 @@ export function createAudioService(context) {
     }
   }
 
-  function playPlayerHitSound(critical = false) {
+  function playPlayerHitSound(critical = false, hitType = "melee") {
     if (!isStepSoundEnabled()) {
       return;
     }
@@ -161,14 +190,23 @@ export function createAudioService(context) {
     const now = context.currentTime;
     const master = context.createGain();
     master.gain.setValueAtTime(0.001, now);
-    master.gain.exponentialRampToValueAtTime(critical ? 0.16 : 0.11, now + 0.02);
+    master.gain.exponentialRampToValueAtTime(
+      hitType === "ranged" ? (critical ? 0.2 : 0.14) : (critical ? 0.16 : 0.11),
+      now + 0.02,
+    );
     master.gain.exponentialRampToValueAtTime(0.001, now + (critical ? 0.36 : 0.24));
     master.connect(context.destination);
 
     const body = context.createOscillator();
-    body.type = "square";
-    body.frequency.setValueAtTime(critical ? 150 : 130, now);
-    body.frequency.exponentialRampToValueAtTime(critical ? 58 : 72, now + (critical ? 0.34 : 0.22));
+    body.type = hitType === "ranged" ? "triangle" : "square";
+    body.frequency.setValueAtTime(
+      hitType === "ranged" ? (critical ? 240 : 210) : (critical ? 150 : 130),
+      now,
+    );
+    body.frequency.exponentialRampToValueAtTime(
+      hitType === "ranged" ? (critical ? 96 : 124) : (critical ? 58 : 72),
+      now + (critical ? 0.34 : 0.22),
+    );
     body.connect(master);
     body.start(now);
     body.stop(now + (critical ? 0.36 : 0.24));
@@ -176,15 +214,36 @@ export function createAudioService(context) {
     const sting = context.createOscillator();
     const stingGain = context.createGain();
     sting.type = "triangle";
-    sting.frequency.setValueAtTime(critical ? 420 : 300, now);
-    sting.frequency.exponentialRampToValueAtTime(critical ? 170 : 150, now + 0.12);
+    sting.frequency.setValueAtTime(
+      hitType === "ranged" ? (critical ? 760 : 620) : (critical ? 420 : 300),
+      now,
+    );
+    sting.frequency.exponentialRampToValueAtTime(
+      hitType === "ranged" ? (critical ? 260 : 220) : (critical ? 170 : 150),
+      now + 0.12,
+    );
     stingGain.gain.setValueAtTime(0.0001, now);
-    stingGain.gain.exponentialRampToValueAtTime(0.03, now + 0.012);
+    stingGain.gain.exponentialRampToValueAtTime(hitType === "ranged" ? 0.045 : 0.03, now + 0.012);
     stingGain.gain.exponentialRampToValueAtTime(0.0001, now + (critical ? 0.18 : 0.12));
     sting.connect(stingGain);
     stingGain.connect(context.destination);
     sting.start(now);
     sting.stop(now + (critical ? 0.18 : 0.12));
+
+    if (hitType === "ranged") {
+      const crack = context.createOscillator();
+      const crackGain = context.createGain();
+      crack.type = "square";
+      crack.frequency.setValueAtTime(critical ? 1180 : 980, now);
+      crack.frequency.exponentialRampToValueAtTime(critical ? 540 : 420, now + 0.08);
+      crackGain.gain.setValueAtTime(0.0001, now);
+      crackGain.gain.exponentialRampToValueAtTime(critical ? 0.03 : 0.02, now + 0.01);
+      crackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+      crack.connect(crackGain);
+      crackGain.connect(context.destination);
+      crack.start(now);
+      crack.stop(now + 0.09);
+    }
   }
 
   function playDodgeSound() {
@@ -397,6 +456,29 @@ export function createAudioService(context) {
     oscillator.stop(now + 0.12);
   }
 
+  function playStudioAnnouncement(text) {
+    if (!isVoiceAnnouncementEnabled()) {
+      return;
+    }
+
+    const speechSynthesisApi = getSpeechSynthesisApi();
+    const message = String(text ?? "").trim();
+    if (!speechSynthesisApi || message.length <= 0) {
+      return;
+    }
+
+    const utterance = new window.SpeechSynthesisUtterance(message);
+    const voice = resolveAnnouncementVoice(speechSynthesisApi);
+    utterance.lang = voice?.lang ?? "de-DE";
+    utterance.voice = voice ?? null;
+    utterance.rate = 0.94;
+    utterance.pitch = 0.92;
+    utterance.volume = 0.9;
+
+    speechSynthesisApi.cancel?.();
+    speechSynthesisApi.speak?.(utterance);
+  }
+
   return {
     playDeathSound,
     playVictorySound,
@@ -409,5 +491,6 @@ export function createAudioService(context) {
     playLockedDoorSound,
     playShowcaseAmbienceSound,
     playStepSound,
+    playStudioAnnouncement,
   };
 }

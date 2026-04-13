@@ -1,3 +1,5 @@
+import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
+
 export function createStateBlueprintApi(context) {
   const {
     HERO_NAME_KEY,
@@ -9,15 +11,25 @@ export function createStateBlueprintApi(context) {
     writeStorage,
     resolveHeroClassId,
     createBareHandsWeapon,
+    generateEquipmentItem,
     xpForNextLevel,
     getNutritionMax,
     getNutritionStart,
     getHungerState,
+    createRunArchetypeSequence,
+    randomInt,
   } = context;
+
+  const STARTING_WEAPON_POOLS = {
+    lead: ["relic-dagger", "rune-sword", "service-pistol", "expedition-revolver"],
+    stuntman: ["combat-knife", "woodcutter-axe", "breach-axe", "bowie-knife"],
+    director: ["pocket-revolver", "cane-blade", "electro-scalpel", "serum-launcher"],
+  };
 
   const DEFAULT_OPTIONS = {
     stepSound: true,
     deathSound: true,
+    voiceAnnouncements: true,
   };
 
   function normalizeHeroName(name) {
@@ -44,6 +56,29 @@ export function createStateBlueprintApi(context) {
     const nextClassId = resolveHeroClassId(classId, DEFAULT_HERO_CLASS);
     writeStorage(HERO_CLASS_KEY, nextClassId);
     return nextClassId;
+  }
+
+  function createStartingWeapon(heroClass) {
+    const templatePool = STARTING_WEAPON_POOLS[heroClass.id] ?? STARTING_WEAPON_POOLS[DEFAULT_HERO_CLASS];
+    const templateId = templatePool[randomInt(0, templatePool.length - 1)];
+    const template = getWeaponTemplate(templateId);
+    if (!template || !generateEquipmentItem) {
+      return createBareHandsWeapon();
+    }
+
+    const weapon = generateEquipmentItem(template, {
+      floorNumber: 1,
+      forceRarity: "common",
+      dropSourceTag: "starting-loadout",
+      sourceArchetypeId: template.archetypeId,
+    });
+
+    return {
+      ...weapon,
+      name: template.name,
+      displayName: template.name,
+      source: `Startausstattung | ${heroClass.label}`,
+    };
   }
 
   function createPlayerFromProfile(heroName, heroClassId) {
@@ -76,8 +111,9 @@ export function createStateBlueprintApi(context) {
       trapDetectionBonus: heroClass.trapDetectionBonus ?? 0,
       trapAvoidBonus: heroClass.trapAvoidBonus ?? 0,
       shieldBlockBonus: heroClass.shieldBlockBonus ?? 0,
-      mainHand: createBareHandsWeapon(),
+      mainHand: createStartingWeapon(heroClass),
       offHand: null,
+      statusEffects: [],
     };
   }
 
@@ -88,7 +124,6 @@ export function createStateBlueprintApi(context) {
       optionsOpen: false,
       helpOpen: false,
       highscoresOpen: false,
-      deathKillsOpen: false,
       startOpen: openStartModal,
     };
   }
@@ -111,6 +146,7 @@ export function createStateBlueprintApi(context) {
 
   function createFreshState(heroName, heroClassId, options = {}) {
     const openStartModal = options.openStartModal ?? true;
+    const view = options.view ?? (openStartModal ? "start" : "game");
     const initialOptions = options.initialOptions ?? DEFAULT_OPTIONS;
     const player = createPlayerFromProfile(heroName, heroClassId);
     player.nutritionMax = getNutritionMax(player);
@@ -120,10 +156,12 @@ export function createStateBlueprintApi(context) {
     return {
       floor: 1,
       deepestFloor: 1,
+      view,
       turn: 0,
       messages: [],
       inventory: [],
       floatingTexts: [],
+      boardEffects: [],
       gameOver: false,
       safeRestTurns: 0,
       pendingChoice: null,
@@ -140,12 +178,19 @@ export function createStateBlueprintApi(context) {
       consumedFoods: 0,
       knownMonsterTypes: {},
       seenMonsterCounts: {},
+      visitedFloors: [],
       lastScoreRank: null,
+      runArchetypeSequence: createRunArchetypeSequence(randomInt),
       modals: createDefaultModals(openStartModal),
       collapsedCards: createDefaultCollapsedCards(),
       options: { ...initialOptions },
       floors: {},
       preferences: createDefaultPreferences(),
+      targeting: {
+        active: false,
+        cursorX: 0,
+        cursorY: 0,
+      },
       player,
     };
   }

@@ -1,6 +1,10 @@
 const { expect } = require("playwright/test");
 
 async function startRun(page, options = {}) {
+  if (!(await page.locator("#startModal").isVisible())) {
+    await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
+  }
+
   if (await page.locator("#startModal").isVisible()) {
     if (options.name) {
       await page.locator("#heroNameInput").fill(options.name);

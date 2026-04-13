@@ -140,7 +140,7 @@ export function createItemFloorStateApi(context) {
     addMessage(`${pickup.item.name} füllt ${restored} Nahrung auf.`, "important");
   }
 
-  function spawnChestContentAtPlayer(content) {
+  function spawnChestContentAtPlayer(content, containerName = 'Requisitenkiste') {
     const state = getState();
     const floorState = getCurrentFloorState();
     if (!content) {
@@ -153,25 +153,25 @@ export function createItemFloorStateApi(context) {
         y: state.player.y,
         heal: content.item.heal,
       });
-      addMessage("Darin klirrt ein Heiltrank gegen morsches Holz.", "important");
+      addMessage(`In der ${containerName} klirrt ein Heiltrank gegen morsches Holz.`, "important");
       return true;
     }
 
     if (content.type === "weapon") {
       floorState.weapons.push(createWeaponPickup(content.item, state.player.x, state.player.y));
-      addMessage(`${content.item.name} lag zwischen altem Filmkrempel versteckt.`, "important");
+      addMessage(`${content.item.name} lag in der ${containerName} verborgen.`, "important");
       return true;
     }
 
     if (content.type === "offhand") {
       floorState.offHands.push(createOffHandPickup(content.item, state.player.x, state.player.y));
-      addMessage(`${content.item.name} wartet in der aufgesprungenen Requisitenkiste.`, "important");
+      addMessage(`${content.item.name} wartet in der ${containerName}.`, "important");
       return true;
     }
 
     if (content.type === "food") {
       floorState.foods.push(createFoodPickup(content.item, state.player.x, state.player.y));
-      addMessage(`${content.item.name} steckt in der Requisitenkiste zwischen altem Schrott.`, "important");
+      addMessage(`${content.item.name} steckt in der ${containerName} zwischen altem Schrott.`, "important");
       return true;
     }
 

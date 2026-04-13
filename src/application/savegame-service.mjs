@@ -13,6 +13,7 @@ export function createSavegameService(context) {
     detectNearbyTraps,
     addMessage,
     renderSelf,
+    focusGameSurface,
   } = context;
 
   function formatSavegameSummary() {
@@ -30,13 +31,13 @@ export function createSavegameService(context) {
     const state = getState();
     const savedGameExists = hasSavedGame();
     setLoadButtonsDisabled(!savedGameExists);
-    setSaveButtonDisabled(!state || state.gameOver || state.modals.startOpen);
+    setSaveButtonDisabled(!state || state.gameOver || state.view !== "game" || state.modals.startOpen);
     setSavegameStatus(statusText);
   }
 
   function saveCurrentGame() {
     const state = getState();
-    if (state.gameOver || state.modals.startOpen) {
+    if (state.gameOver || state.view !== "game" || state.modals.startOpen) {
       updateSavegameControls("Speichern ist erst während eines Spiels möglich.");
       return;
     }
@@ -72,6 +73,7 @@ export function createSavegameService(context) {
     addMessage("Spielstand geladen.", "important");
     updateSavegameControls(formatSavegameSummary());
     renderSelf();
+    window.setTimeout(() => focusGameSurface?.(), 0);
   }
 
   return {

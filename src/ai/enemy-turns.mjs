@@ -10,6 +10,10 @@ export function createEnemyTurnApi(context) {
     getOffHand,
     resolveCombatAttack,
     resolveBlock,
+    hasLineOfSight,
+    isStraightShot,
+    canActorMove,
+    tryApplyWeaponEffects,
     addMessage,
     showFloatingText,
     createDeathCause,
@@ -34,6 +38,13 @@ export function createEnemyTurnApi(context) {
 
   function getHealingProfile(enemy) {
     return enemy.healingProfile ?? "slow";
+  }
+
+  function getEnemyWeaponLabel(weapon) {
+    if (!weapon || weapon.id === "bare-hands") {
+      return "bloßen Fäusten";
+    }
+    return weapon.name ?? "einer unbekannten Waffe";
   }
 
   function getMobilityLeash(enemy) {
@@ -309,6 +320,16 @@ export function createEnemyTurnApi(context) {
 
       const playerPosition = { x: state.player.x, y: state.player.y };
       const distance = manhattanDistance(enemy, playerPosition);
+      const weapon = enemy.mainHand;
+      const weaponRange = Math.max(1, weapon?.range ?? 1);
+      const canShootPlayer = Boolean(
+        weapon &&
+        weapon.attackMode === 'ranged' &&
+        distance > 1 &&
+        distance <= weaponRange &&
+        isStraightShot?.(enemy.x, enemy.y, state.player.x, state.player.y) &&
+        hasLineOfSight?.(floorState, enemy.x, enemy.y, state.player.x, state.player.y),
+      );
       tryEnemyRegeneration(enemy, distance, floorState);
       const adjacent = distance === 1;
       const retreating = shouldEnemyRetreat(enemy, state.player, distance);
@@ -325,7 +346,7 @@ export function createEnemyTurnApi(context) {
 
         state.safeRestTurns = 0;
         noteMonsterEncounter(enemy);
-        const result = resolveCombatAttack(enemy, state.player);
+        const result = resolveCombatAttack(enemy, state.player, { distance: 1, weapon });
 
         if (!result.hit) {
           showFloatingText(state.player.x, state.player.y, "Dodge", "dodge");
@@ -335,8 +356,13 @@ export function createEnemyTurnApi(context) {
         }
 
         const blockResult = resolveBlock(state.player, result.damage);
+        const weaponLabel = getEnemyWeaponLabel(weapon);
         state.player.hp -= blockResult.damage;
         state.damageTaken = (state.damageTaken ?? 0) + Math.max(0, blockResult.damage);
+        tryApplyWeaponEffects?.(enemy, state.player, weapon, {
+          ...result,
+          damage: blockResult.damage,
+        });
         if (blockResult.damage > 0) {
           showFloatingText(state.player.x, state.player.y, `-${blockResult.damage}`, result.critical ? "crit" : "taken");
           playPlayerHitSound(result.critical);
@@ -348,20 +374,89 @@ export function createEnemyTurnApi(context) {
         }
         addMessage(
           result.critical
-            ? `${enemy.name} landet einen kritischen Treffer für ${blockResult.damage} Schaden!`
-            : `${enemy.name} trifft dich für ${blockResult.damage} Schaden.`,
+            ? `${enemy.name} landet mit ${weaponLabel} einen kritischen Treffer für ${blockResult.damage} Schaden!`
+            : `${enemy.name} trifft dich mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
           "danger",
         );
         if (state.player.hp <= 0) {
           state.player.hp = 0;
           state.gameOver = true;
-          state.deathCause = createDeathCause(enemy, { critical: result.critical });
+          state.deathCause = createDeathCause(enemy, { critical: result.critical, ranged: false });
           playDeathSound();
           const rank = saveHighscoreIfNeeded();
           addMessage("Du bist gefallen. Drücke R für einen neuen Versuch.", "danger");
           showDeathModal(rank);
           return;
         }
+        continue;
+      }
+
+      if (canShootPlayer) {
+        state.safeRestTurns = 0;
+        noteMonsterEncounter(enemy);
+        const result = resolveCombatAttack(enemy, state.player, { distance, weapon });
+        const rangedBoardEffect = {
+          boardEffect: {
+            fromX: enemy.x,
+            fromY: enemy.y,
+            kind: result.critical ? 'hostile-shot-crit' : 'hostile-shot',
+            flash: true,
+          },
+        };
+
+        if (!result.hit) {
+          showFloatingText(state.player.x, state.player.y, 'Dodge', 'dodge', {
+            title: 'Schuss vorbei',
+            duration: 900,
+            ...rangedBoardEffect,
+          });
+          playDodgeSound();
+          addMessage(`Du weichst dem Schuss von ${enemy.name} aus.`, 'important');
+          continue;
+        }
+
+        const blockResult = resolveBlock(state.player, result.damage);
+        const weaponLabel = getEnemyWeaponLabel(weapon);
+        state.player.hp -= blockResult.damage;
+        state.damageTaken = (state.damageTaken ?? 0) + Math.max(0, blockResult.damage);
+        tryApplyWeaponEffects?.(enemy, state.player, weapon, {
+          ...result,
+          damage: blockResult.damage,
+        });
+        if (blockResult.damage > 0) {
+          showFloatingText(state.player.x, state.player.y, `-${blockResult.damage}`, result.critical ? 'crit' : 'taken', {
+            title: result.critical ? 'Krit-Schuss' : 'Schuss',
+            duration: 950,
+            ...rangedBoardEffect,
+          });
+          playPlayerHitSound(result.critical, 'ranged');
+        } else {
+          showFloatingText(state.player.x, state.player.y, 'Block', 'heal', {
+            title: 'Schuss geblockt',
+            duration: 900,
+            ...rangedBoardEffect,
+          });
+        }
+        addMessage(
+          result.critical
+            ? `${enemy.name} trifft dich aus der Distanz mit ${weaponLabel} kritisch für ${blockResult.damage} Schaden!`
+            : `${enemy.name} trifft dich aus der Distanz mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
+          'danger',
+        );
+        if (state.player.hp <= 0) {
+          state.player.hp = 0;
+          state.gameOver = true;
+          state.deathCause = createDeathCause(enemy, { critical: result.critical, ranged: true });
+          playDeathSound();
+          const rank = saveHighscoreIfNeeded();
+          addMessage('Du bist gefallen. Drücke R für einen neuen Versuch.', 'danger');
+          showDeathModal(rank);
+          return;
+        }
+        continue;
+      }
+
+      if (!canActorMove?.(enemy)) {
         continue;
       }
       const mobility = getMobility(enemy);
@@ -378,7 +473,7 @@ export function createEnemyTurnApi(context) {
         enemy.aggro = true;
       }
 
-      if (retreating) {
+      if (retreating || (weapon?.attackMode === 'ranged' && distance <= 2)) {
         fleeFromTarget(enemy, playerPosition, floorState);
         continue;
       }

@@ -8,6 +8,7 @@ export function createPlayerAttackApi(context) {
     createFoodPickup,
     resolveCombatAttack,
     resolveBlock,
+    tryApplyWeaponEffects,
     grantExperience,
     showFloatingText,
     playEnemyHitSound,
@@ -20,16 +21,34 @@ export function createPlayerAttackApi(context) {
     renderSelf,
   } = context;
 
-  function attackEnemy(enemy) {
+  function attackEnemy(enemy, options = {}) {
     const state = getState();
     state.safeRestTurns = 0;
     enemy.aggro = true;
     noteMonsterEncounter(enemy);
     const weapon = getCombatWeapon(state.player);
-    const result = resolveCombatAttack(state.player, enemy);
+    const result = resolveCombatAttack(state.player, enemy, {
+      distance: options.distance ?? 1,
+      weapon,
+    });
+    const isRangedAttack = (options.distance ?? 1) > 1 && weapon?.attackMode === 'ranged';
+    const rangedBoardEffect = isRangedAttack
+      ? {
+          boardEffect: {
+            fromX: state.player.x,
+            fromY: state.player.y,
+            kind: result.critical ? 'hero-shot-crit' : 'hero-shot',
+            flash: true,
+          },
+        }
+      : null;
 
     if (!result.hit) {
-      showFloatingText(enemy.x, enemy.y, "Dodge", "dodge");
+      showFloatingText(enemy.x, enemy.y, "Dodge", "dodge", isRangedAttack ? {
+        title: "Schuss vorbei",
+        duration: 900,
+        ...rangedBoardEffect,
+      } : {});
       playDodgeSound();
       if (result.usedOpeningStrike) {
         addMessage(`${state.player.classPassiveName} setzt den ersten Beat, aber ${enemy.name} entkommt knapp.`, "important");
@@ -43,12 +62,24 @@ export function createPlayerAttackApi(context) {
     const blockResult = resolveBlock(enemy, result.damage);
     enemy.hp -= blockResult.damage;
     state.damageDealt = (state.damageDealt ?? 0) + Math.max(0, blockResult.damage);
+    tryApplyWeaponEffects?.(state.player, enemy, weapon, {
+      ...result,
+      damage: blockResult.damage,
+    });
 
     if (blockResult.damage > 0) {
-      showFloatingText(enemy.x, enemy.y, `-${blockResult.damage}`, result.critical ? "crit" : "dealt");
+      showFloatingText(enemy.x, enemy.y, `-${blockResult.damage}`, result.critical ? "crit" : "dealt", isRangedAttack ? {
+        title: result.critical ? "Krit-Schuss" : "Schuss",
+        duration: 950,
+        ...rangedBoardEffect,
+      } : {});
       playEnemyHitSound(result.critical);
     } else {
-      showFloatingText(enemy.x, enemy.y, "Block", "heal");
+      showFloatingText(enemy.x, enemy.y, "Block", "heal", isRangedAttack ? {
+        title: "Schuss geblockt",
+        duration: 900,
+        ...rangedBoardEffect,
+      } : {});
     }
 
     if (blockResult.blocked) {

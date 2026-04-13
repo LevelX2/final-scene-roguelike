@@ -76,6 +76,86 @@ export function createInventoryView(context) {
     iconElement.style.color = "transparent";
   }
 
+  function serializeWeaponEffects(item) {
+    return (item.effects ?? [])
+      .map((effect) => [
+        effect.type ?? "",
+        effect.trigger ?? "",
+        effect.tier ?? "",
+        effect.source ?? "",
+        effect.value ?? "",
+        effect.procChance ?? "",
+        effect.duration ?? "",
+        effect.dotDamage ?? "",
+        effect.penalty ?? "",
+      ].join(":"))
+      .join("|");
+  }
+
+  function serializeWeaponNumericMods(item) {
+    return (item.numericMods ?? [])
+      .map((modifier) => [
+        modifier.id ?? "",
+        modifier.stat ?? "",
+        modifier.amount ?? "",
+        modifier.label ?? "",
+        modifier.namePrefix ?? "",
+        modifier.nameSuffix ?? "",
+      ].join(":"))
+      .join("|");
+  }
+
+  function serializeShieldModifiers(item) {
+    return (item.modifiers ?? [])
+      .map((modifier) => [
+        modifier.id ?? "",
+        modifier.affix ?? "",
+        modifier.summary ?? "",
+      ].join(":"))
+      .join("|");
+  }
+
+  function buildInventoryGroupKey(item) {
+    if (item.type === "weapon") {
+      return [
+        item.type,
+        item.id ?? "",
+        item.name ?? "",
+        item.rarity ?? "common",
+        (item.modifierIds ?? []).join(","),
+        item.damage ?? "",
+        item.hitBonus ?? "",
+        item.critBonus ?? "",
+        item.range ?? "",
+        item.meleePenaltyHit ?? "",
+        item.lightBonus ?? "",
+        item.attackMode ?? "",
+        item.handedness ?? "",
+        serializeWeaponNumericMods(item),
+        serializeWeaponEffects(item),
+      ].join(":");
+    }
+
+    if (item.type === "offhand") {
+      return [
+        item.type,
+        item.id ?? "",
+        item.name ?? "",
+        item.rarity ?? "common",
+        (item.modifierIds ?? []).join(","),
+        item.blockChance ?? "",
+        item.blockValue ?? "",
+        serializeShieldModifiers(item),
+      ].join(":");
+    }
+
+    if (item.type === "food") {
+      return `${item.type}:${item.id}:${item.nutritionRestore}`;
+    }
+
+    return `${item.type}:${item.name}`;
+  }
+
   function renderInventory() {
     const state = getState();
     inventoryListElement.innerHTML = "";
@@ -92,13 +172,7 @@ export function createInventoryView(context) {
     const groupMap = new Map();
 
     state.inventory.forEach((item, index) => {
-      const key = item.type === "weapon"
-        ? `${item.type}:${item.id}:${item.rarity ?? "common"}:${(item.modifierIds ?? []).join(",")}:${item.damage}:${item.hitBonus}:${item.critBonus}`
-        : item.type === "offhand"
-          ? `${item.type}:${item.id}:${item.rarity ?? "common"}:${(item.modifierIds ?? []).join(",")}:${item.blockChance}:${item.blockValue}`
-          : item.type === "food"
-            ? `${item.type}:${item.id}:${item.nutritionRestore}`
-            : `${item.type}:${item.name}`;
+      const key = buildInventoryGroupKey(item);
 
       if (!groupMap.has(key)) {
         const group = {
@@ -143,7 +217,7 @@ export function createInventoryView(context) {
           ? formatOffHandStats(item)
           : null;
       const detailLine = item.type === "weapon"
-        ? `${formatRarityLabel(item.rarity ?? "common")} | ${item.source}${item.modifiers?.length ? ` | Mods: ${getItemModifierSummary(item)}` : ""} | ${item.description}`
+        ? `${formatRarityLabel(item.rarity ?? "common")} | ${item.source} | Mods: ${getItemModifierSummary(item)} | ${item.attackMode === "ranged" && (item.range ?? 1) > 1 ? `Fernkampf ${item.range}` : "Nahkampf"}${(item.meleePenaltyHit ?? 0) < 0 ? ` | Nahkampf ${item.meleePenaltyHit}` : ""}${(item.lightBonus ?? 0) > 0 ? ` | Licht +${item.lightBonus}` : ""} | ${item.description}`
         : item.type === "offhand"
           ? `${formatRarityLabel(item.rarity ?? "common")} | ${item.source}${item.modifiers?.length ? ` | Mods: ${getItemModifierSummary(item)}` : ""} | ${item.description}`
           : item.type === "key"

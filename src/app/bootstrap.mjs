@@ -9,7 +9,7 @@ export function createAppBootstrap(context) {
 
   function bootstrapApp() {
     bindAppControls();
-    initializeGame();
+    initializeGame({}, { openStartModal: false, view: "start" });
     detectNearbyTraps();
     renderSelf();
     syncStartModalControls();

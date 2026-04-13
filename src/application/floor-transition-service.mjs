@@ -9,6 +9,9 @@ export function createFloorTransitionService(context) {
     addMessage,
     formatStudioLabel,
     formatArchetypeLabel,
+    buildStudioAnnouncement,
+    getArchetypeForFloor,
+    playStudioAnnouncement,
     showStairChoice,
     renderSelf,
   } = context;
@@ -16,7 +19,10 @@ export function createFloorTransitionService(context) {
   function ensureFloorExists(floorNumber) {
     const state = getState();
     if (!state.floors[floorNumber]) {
-      state.floors[floorNumber] = createDungeonLevel(floorNumber);
+      state.floors[floorNumber] = createDungeonLevel(floorNumber, {
+        studioArchetypeId: getArchetypeForFloor(state.runArchetypeSequence, floorNumber),
+        runArchetypeSequence: state.runArchetypeSequence,
+      });
     }
   }
 
@@ -59,6 +65,7 @@ export function createFloorTransitionService(context) {
     const targetFloor = state.floor + direction;
     state.safeRestTurns = 0;
     const sourceStair = direction > 0 ? currentFloorState.stairsDown : currentFloorState.stairsUp;
+    const isFirstVisit = !state.visitedFloors.includes(targetFloor);
 
     if (direction > 0) {
       ensureFloorExists(targetFloor);
@@ -74,6 +81,12 @@ export function createFloorTransitionService(context) {
       const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
       addMessage(`Du betrittst ${formatStudioLabel(state.floor)}.`, "important");
       addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), "important");
+      if (isFirstVisit) {
+        state.visitedFloors.push(targetFloor);
+        const announcement = buildStudioAnnouncement(state.floor, state.floors[targetFloor].studioArchetypeId);
+        addMessage(announcement, "important");
+        playStudioAnnouncement(announcement);
+      }
       if (follower) {
         addMessage(`${follower.name} folgt dir über die Treppe.`, "danger");
       }

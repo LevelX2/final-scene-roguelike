@@ -11,52 +11,75 @@ export function createInputController(context) {
     toggleOptions,
     toggleHelp,
     toggleHighscores,
-    toggleDeathKills,
+    closeStartModal,
     movePlayer,
     handleWait,
     tryCloseAdjacentDoor,
     quickUsePotion,
+    enterTargetMode,
+    cancelTargetMode,
+    moveTargetCursor,
+    confirmTargetAttack,
   } = context;
 
   function handleInput(event) {
-    const state = getState();
-    const key = event.key.toLowerCase();
+    if (event.__rogueHandled) {
+      return;
+    }
+    event.__rogueHandled = true;
 
-    if (key === "r") {
+    const state = getState();
+    const key = typeof event.key === "string" ? event.key.toLowerCase() : "";
+    const code = typeof event.code === "string" ? event.code : "";
+    const matchesShortcut = (keys = [], codes = []) => keys.includes(key) || codes.includes(code);
+
+    if (matchesShortcut(["r"], ["KeyR"]) && state.view === "game") {
       confirmRestartRun();
       return;
     }
 
     if (state.modals.startOpen) {
+      if (matchesShortcut(["escape"], ["Escape"])) {
+        event.preventDefault();
+        closeStartModal();
+      }
+      return;
+    }
+
+    if (state.view !== "game") {
+      if (matchesShortcut(["escape"], ["Escape"]) && (state.modals.helpOpen || state.modals.highscoresOpen)) {
+        toggleHelp(false);
+        toggleHighscores(false);
+      }
       return;
     }
 
     if (state.pendingStairChoice) {
-      if (key === "enter") {
+      if (matchesShortcut(["enter"], ["Enter"])) {
         event.preventDefault();
         resolveStairChoice(state.pendingStairChoice.selectedAction);
         return;
       }
 
-      if (key === "escape") {
+      if (matchesShortcut(["escape"], ["Escape"])) {
         event.preventDefault();
         resolveStairChoice("stay");
         return;
       }
 
-      if (key === "arrowleft" || key === "a") {
+      if (matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])) {
         event.preventDefault();
         cycleStairChoice(-1);
         return;
       }
 
-      if (key === "arrowright" || key === "d") {
+      if (matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])) {
         event.preventDefault();
         cycleStairChoice(1);
         return;
       }
 
-      if (key === "w" || key === "arrowup" || key === "s" || key === "arrowdown") {
+      if (matchesShortcut(["w", "arrowup", "s", "arrowdown"], ["KeyW", "ArrowUp", "KeyS", "ArrowDown"])) {
         event.preventDefault();
         cycleStairChoice(1);
         return;
@@ -66,19 +89,19 @@ export function createInputController(context) {
     }
 
     if (state.pendingChoice) {
-      if (key === "enter") {
+      if (matchesShortcut(["enter"], ["Enter"])) {
         event.preventDefault();
         resolvePotionChoice(state.pendingChoice.selectedAction);
         return;
       }
 
-      if (key === "arrowleft" || key === "a") {
+      if (matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])) {
         event.preventDefault();
         cyclePotionChoice(-1);
         return;
       }
 
-      if (key === "arrowright" || key === "d") {
+      if (matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])) {
         event.preventDefault();
         cyclePotionChoice(1);
         return;
@@ -87,52 +110,80 @@ export function createInputController(context) {
       return;
     }
 
-    if (key === "i") {
+    if (state.targeting?.active) {
+      if (matchesShortcut(["enter"], ["Enter"])) {
+        event.preventDefault();
+        confirmTargetAttack();
+        return;
+      }
+
+      if (matchesShortcut(["escape"], ["Escape"])) {
+        event.preventDefault();
+        cancelTargetMode();
+        return;
+      }
+
+      const targetingMovement = matchesShortcut(["arrowup", "w"], ["ArrowUp", "KeyW"])
+        ? [0, -1]
+        : matchesShortcut(["arrowdown", "s"], ["ArrowDown", "KeyS"])
+          ? [0, 1]
+          : matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])
+            ? [-1, 0]
+            : matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])
+              ? [1, 0]
+              : null;
+
+      if (targetingMovement) {
+        event.preventDefault();
+        moveTargetCursor(...targetingMovement);
+      }
+      return;
+    }
+
+    if (matchesShortcut(["i"], ["KeyI"])) {
       event.preventDefault();
       toggleInventory();
       return;
     }
 
-    if (key === "l") {
+    if (matchesShortcut(["l"], ["KeyL"])) {
       event.preventDefault();
       toggleRunStats();
       return;
     }
 
-    if (key === "o") {
+    if (matchesShortcut(["o"], ["KeyO"])) {
       event.preventDefault();
       toggleOptions();
       return;
     }
 
-    if (key === "?") {
+    if (matchesShortcut(["?"], ["Slash"])) {
       event.preventDefault();
       toggleHelp();
       return;
     }
 
-    if (state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.helpOpen || state.modals.highscoresOpen || state.modals.deathKillsOpen) {
-      if (key === "escape") {
+    if (state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+      if (matchesShortcut(["escape"], ["Escape"])) {
         toggleInventory(false);
         toggleRunStats(false);
         toggleOptions(false);
         toggleHelp(false);
         toggleHighscores(false);
-        toggleDeathKills(false);
       }
       return;
     }
 
-    const movement = {
-      arrowup: [0, -1],
-      w: [0, -1],
-      arrowdown: [0, 1],
-      s: [0, 1],
-      arrowleft: [-1, 0],
-      a: [-1, 0],
-      arrowright: [1, 0],
-      d: [1, 0],
-    }[key];
+    const movement = matchesShortcut(["arrowup", "w"], ["ArrowUp", "KeyW"])
+      ? [0, -1]
+      : matchesShortcut(["arrowdown", "s"], ["ArrowDown", "KeyS"])
+        ? [0, 1]
+        : matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])
+          ? [-1, 0]
+          : matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])
+            ? [1, 0]
+            : null;
 
     if (movement) {
       event.preventDefault();
@@ -140,26 +191,35 @@ export function createInputController(context) {
       return;
     }
 
-    if (key === " ") {
+    if (matchesShortcut([" "], ["Space"])) {
       event.preventDefault();
       handleWait();
       return;
     }
 
-    if (key === "c") {
+    if (matchesShortcut(["c"], ["KeyC"])) {
       event.preventDefault();
       tryCloseAdjacentDoor();
       return;
     }
 
-    if (key === "h") {
+    if (matchesShortcut(["f"], ["KeyF"])) {
+      event.preventDefault();
+      enterTargetMode();
+      return;
+    }
+
+    if (matchesShortcut(["h"], ["KeyH"])) {
       event.preventDefault();
       quickUsePotion();
     }
   }
 
-  function bindKeyboardInput(target = document) {
+  function bindKeyboardInput(target = window) {
     target.addEventListener("keydown", handleInput);
+    if (target === window && typeof document !== "undefined") {
+      document.addEventListener("keydown", handleInput);
+    }
   }
 
   return {

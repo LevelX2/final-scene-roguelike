@@ -17,6 +17,12 @@ export function createTestApiMutators(context) {
     setRandomSequence,
     clearRandomSequence,
     tryUseStairs,
+    enterTargetMode,
+    cancelTargetMode,
+    moveTargetCursor,
+    confirmTargetAttack,
+    applyStatusEffect,
+    processRoundStatusEffects,
     renderSelf,
   } = context;
 
@@ -272,6 +278,47 @@ export function createTestApiMutators(context) {
     renderSelf();
   }
 
+  function enterTargetModeForTests() {
+    enterTargetMode?.();
+    renderSelf();
+  }
+
+  function cancelTargetModeForTests() {
+    cancelTargetMode?.();
+    renderSelf();
+  }
+
+  function moveTargetCursorForTests(dx, dy) {
+    moveTargetCursor?.(dx, dy);
+    renderSelf();
+  }
+
+  function confirmTargetAttackForTests() {
+    confirmTargetAttack?.();
+    renderSelf();
+  }
+
+  function applyStatusToPlayer(effect) {
+    const state = getState();
+    applyStatusEffect?.(state.player, effect, { actorType: "test", name: "Tests" });
+    renderSelf();
+  }
+
+  function applyStatusToEnemy(effect, enemyIndex = 0) {
+    const floorState = getCurrentFloorState();
+    const enemy = floorState.enemies?.[enemyIndex];
+    if (!enemy) {
+      return;
+    }
+    applyStatusEffect?.(enemy, effect, { actorType: "test", name: "Tests" });
+    renderSelf();
+  }
+
+  function processStatusRoundForTests() {
+    processRoundStatusEffects?.();
+    renderSelf();
+  }
+
   return {
     teleportPlayer,
     promptCurrentStairs,
@@ -290,5 +337,12 @@ export function createTestApiMutators(context) {
     placeShowcase,
     placeTrap,
     setupCombatScenario,
+    enterTargetMode: enterTargetModeForTests,
+    cancelTargetMode: cancelTargetModeForTests,
+    moveTargetCursor: moveTargetCursorForTests,
+    confirmTargetAttack: confirmTargetAttackForTests,
+    applyStatusToPlayer,
+    applyStatusToEnemy,
+    processStatusRound: processStatusRoundForTests,
   };
 }

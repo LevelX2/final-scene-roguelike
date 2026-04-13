@@ -49,6 +49,9 @@ export function assembleCoreModules(context) {
     DEFAULT_HERO_NAME,
     DEFAULT_HERO_CLASS,
     HERO_CLASSES,
+    formatStudioLabel,
+    formatArchetypeLabel,
+    buildStudioAnnouncement,
   } = config;
   const {
     getState,
@@ -77,8 +80,9 @@ export function assembleCoreModules(context) {
   const {
     savegameStatusElement,
     startSavegameStatusElement,
+    landingSavegameStatusElement,
     loadGameButtonElement,
-    loadGameFromStartButtonElement,
+    loadGameFromLandingButtonElement,
     saveGameButtonElement,
   } = ui;
 
@@ -86,6 +90,7 @@ export function assembleCoreModules(context) {
     ITEM_RARITY_MODIFIER_COUNTS,
     getEquipmentRarityWeights,
     randomChance,
+    randomInt,
   });
 
   const audioService = createAudioService({
@@ -165,6 +170,7 @@ export function assembleCoreModules(context) {
     getDoorAt: doorService.getDoorAt,
     isDoorClosed: doorService.isDoorClosed,
     createGrid,
+    getEquippedLightBonus: (actor) => actor?.mainHand?.lightBonus ?? 0,
   });
 
   const stateApi = createStateApi({
@@ -180,9 +186,14 @@ export function assembleCoreModules(context) {
     getState,
     setState,
     createBareHandsWeapon,
+    generateEquipmentItem: itemizationApi.generateEquipmentItem,
     createDungeonLevel: dungeonApi.createDungeonLevel,
     updateVisibility: visibilityService.updateVisibility,
     addMessage,
+    formatStudioLabel,
+    formatArchetypeLabel,
+    buildStudioAnnouncement,
+    playStudioAnnouncement: (text) => audioService.playStudioAnnouncement(text),
     renderSelf,
     randomInt,
   });
@@ -196,10 +207,11 @@ export function assembleCoreModules(context) {
     setSavegameStatus: (text) => {
       savegameStatusElement.textContent = text;
       startSavegameStatusElement.textContent = text;
+      landingSavegameStatusElement.textContent = text;
     },
     setLoadButtonsDisabled: (disabled) => {
       loadGameButtonElement.disabled = disabled;
-      loadGameFromStartButtonElement.disabled = disabled;
+      loadGameFromLandingButtonElement.disabled = disabled;
     },
     setSaveButtonDisabled: (disabled) => {
       saveGameButtonElement.disabled = disabled;
@@ -207,6 +219,7 @@ export function assembleCoreModules(context) {
     detectNearbyTraps: trapsApi.detectNearbyTraps,
     addMessage,
     renderSelf,
+    focusGameSurface: ui.focusGameSurface,
   });
 
   return {

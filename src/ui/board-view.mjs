@@ -11,6 +11,8 @@ export function createBoardView(context) {
     getCurrentFloorState,
     getMainHand,
     getOffHand,
+    hasLineOfSight,
+    isStraightShot,
     formatWeaponStats,
     formatOffHandStats,
     getOffHandTooltipLines,
@@ -211,9 +213,12 @@ export function createBoardView(context) {
             formatRarityLabel(weaponPickup.item.rarity ?? "common"),
             weaponPickup.item.source,
             formatWeaponStats(weaponPickup.item),
-            weaponPickup.item.modifiers?.length ? `Mods: ${getItemModifierSummary(weaponPickup.item)}` : "Keine Modifikatoren",
+            weaponPickup.item.range && weaponPickup.item.range > 1 ? `Reichweite ${weaponPickup.item.range}` : 'Nahkampf',
+            (weaponPickup.item.meleePenaltyHit ?? 0) < 0 ? `Nahkampfmalus ${weaponPickup.item.meleePenaltyHit}` : null,
+            (weaponPickup.item.lightBonus ?? 0) > 0 ? `Lichtbonus +${weaponPickup.item.lightBonus}` : null,
+            `Mods: ${getItemModifierSummary(weaponPickup.item)}`,
             weaponPickup.item.description,
-          ],
+          ].filter(Boolean),
         },
       };
     }
@@ -239,16 +244,19 @@ export function createBoardView(context) {
       ? floorState.chests?.find((item) => item.x === x && item.y === y)
       : null;
     if (chestPickup) {
+      const chestImageUrl = chestPickup.containerAssetId
+        ? `./assets/containers/${chestPickup.containerAssetId}.svg`
+        : "./assets/chest.svg";
       return {
         type: `floor studio-${studioArchetypeId} chest`,
         glyph: TILE.CHEST,
-        overlayImageUrl: "./assets/chest.svg",
+        overlayImageUrl: chestImageUrl,
         tooltip: {
-          title: "Requisitenkiste",
-          imageUrl: "./assets/chest.svg",
+          title: chestPickup.containerName ?? "Requisitenkiste",
+          imageUrl: chestImageUrl,
           imageClass: "tooltip-art-chest",
           lines: [
-            "Eine schwere Transportkiste aus dem Fundus.",
+            "Ein thematischer Loot-Container dieses Studios.",
             "Tritt darauf, um sie aufzubrechen.",
           ],
         },
@@ -369,10 +377,30 @@ export function createBoardView(context) {
     };
   }
 
+  function getTargetCursorState(x, y, state, floorState) {
+    if (!state.targeting?.active) {
+      return null;
+    }
+
+    const weapon = getMainHand(state.player);
+    const enemy = floorState.enemies.find((entry) => entry.x === x && entry.y === y);
+    if (!enemy || weapon.attackMode !== "ranged" || (weapon.range ?? 1) <= 1) {
+      return "invalid";
+    }
+
+    const distance = Math.abs(enemy.x - state.player.x) + Math.abs(enemy.y - state.player.y);
+    const hasRange = distance <= (weapon.range ?? 1);
+    const hasAlignment = Boolean(isStraightShot?.(state.player.x, state.player.y, enemy.x, enemy.y));
+    const hasSight = Boolean(hasLineOfSight?.(floorState, state.player.x, state.player.y, enemy.x, enemy.y));
+    return hasRange && hasAlignment && hasSight ? "valid" : "invalid";
+  }
+
   function renderBoard() {
     const state = getState();
+    const floorState = getCurrentFloorState();
     boardElement.style.gridTemplateColumns = `repeat(${WIDTH}, ${TILE_SIZE}px)`;
     boardElement.style.gridTemplateRows = `repeat(${HEIGHT}, ${TILE_SIZE}px)`;
+    boardElement.classList.toggle('targeting-mode', Boolean(state.targeting?.active));
     boardElement.innerHTML = "";
 
     for (let y = 0; y < HEIGHT; y += 1) {
@@ -380,6 +408,10 @@ export function createBoardView(context) {
         const tile = tileAt(x, y);
         const cell = document.createElement("div");
         cell.className = `tile ${tile.type}`;
+        if (state.targeting?.active && state.targeting.cursorX === x && state.targeting.cursorY === y) {
+          cell.classList.add('target-cursor');
+          cell.classList.add(`target-cursor-${getTargetCursorState(x, y, state, floorState) ?? "invalid"}`);
+        }
         cell.textContent = tile.glyph ?? "";
         if (tile.overlayImageUrl) {
           cell.classList.add("has-overlay");
@@ -407,6 +439,50 @@ export function createBoardView(context) {
         boardElement.appendChild(cell);
       }
     }
+
+    state.boardEffects?.forEach((entry) => {
+      const startX = BOARD_PADDING + entry.fromX * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+      const startY = BOARD_PADDING + entry.fromY * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+      const endX = BOARD_PADDING + entry.toX * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+      const endY = BOARD_PADDING + entry.toY * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const length = Math.max(10, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx);
+
+      const line = document.createElement("div");
+      line.className = `projectile-effect-line ${entry.kind ?? "hero-shot"}`;
+      line.style.left = `${startX}px`;
+      line.style.top = `${startY}px`;
+      line.style.width = `${length}px`;
+      line.style.transform = `translateY(-50%) rotate(${angle}rad)`;
+      if (entry.duration) {
+        line.style.animationDuration = `${entry.duration}ms`;
+      }
+      boardElement.appendChild(line);
+
+      const impact = document.createElement("div");
+      impact.className = `projectile-effect-impact ${entry.kind ?? "hero-shot"}`;
+      impact.style.left = `${endX}px`;
+      impact.style.top = `${endY}px`;
+      if (entry.duration) {
+        impact.style.animationDuration = `${entry.duration}ms`;
+      }
+      boardElement.appendChild(impact);
+
+      if (entry.flash) {
+        const flash = document.createElement("div");
+        flash.className = `projectile-effect-flash ${entry.kind ?? "hero-shot"}`;
+        flash.style.left = `${BOARD_PADDING + entry.toX * (TILE_SIZE + TILE_GAP)}px`;
+        flash.style.top = `${BOARD_PADDING + entry.toY * (TILE_SIZE + TILE_GAP)}px`;
+        flash.style.width = `${TILE_SIZE}px`;
+        flash.style.height = `${TILE_SIZE}px`;
+        if (entry.duration) {
+          flash.style.animationDuration = `${entry.duration}ms`;
+        }
+        boardElement.appendChild(flash);
+      }
+    });
 
     state.floatingTexts.forEach((entry) => {
       const text = document.createElement("div");
@@ -438,6 +514,25 @@ export function createBoardView(context) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const duration = options.duration ?? 700;
     state.floatingTexts.push({ id, x, y, text, kind, title: options.title ?? "", duration });
+    if (options.boardEffect) {
+      const effectId = `${id}-board`;
+      const effectDuration = options.boardEffect.duration ?? Math.min(duration, 420);
+      state.boardEffects.push({
+        id: effectId,
+        fromX: options.boardEffect.fromX ?? x,
+        fromY: options.boardEffect.fromY ?? y,
+        toX: x,
+        toY: y,
+        kind: options.boardEffect.kind ?? "hero-shot",
+        flash: options.boardEffect.flash ?? false,
+        duration: effectDuration,
+      });
+      window.setTimeout(() => {
+        const nextState = getState();
+        nextState.boardEffects = (nextState.boardEffects ?? []).filter((entry) => entry.id !== effectId);
+        renderSelf();
+      }, effectDuration);
+    }
     renderSelf();
     window.setTimeout(() => {
       const nextState = getState();

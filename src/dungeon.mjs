@@ -1,9 +1,5 @@
-import { DUNGEON_WEAPON_TIERS, PROP_CATALOG } from './data.mjs';
+import { PROP_CATALOG } from './data.mjs';
 import {
-  CHEST_WEAPON_CHANCE,
-  CHEST_SHIELD_CHANCE,
-  DUNGEON_WEAPON_WEIGHT_BONUS,
-  DUPLICATE_WEAPON_WEIGHT_PENALTY,
   NON_ICONIC_MONSTER_WEIGHT_BONUS,
   ICONIC_MONSTER_WEIGHT_PENALTY,
   ENEMY_HP_PER_SCALE,
@@ -25,7 +21,9 @@ import { createDungeonEnemyFactory } from './dungeon/enemy-factory.mjs';
 import { createDungeonPickupFactory } from './dungeon/pickup-factory.mjs';
 import { createShowcasePlacementApi } from './dungeon/showcase-placement.mjs';
 import { createDungeonSpatialApi } from './dungeon/spatial-helpers.mjs';
-import { rollStudioArchetypeId } from './studio-theme.mjs';
+import { getArchetypeForFloor } from './studio-theme.mjs';
+import { createWeaponGenerationService } from './application/weapon-generation-service.mjs';
+import { getContainerConfigForArchetype } from './content/catalogs/studio-archetypes.mjs';
 
 export function createDungeonApi(context) {
   const {
@@ -36,7 +34,6 @@ export function createDungeonApi(context) {
     MAX_ROOM_SIZE,
     TILE,
     MONSTER_CATALOG,
-    WEAPON_CATALOG,
     OFFHAND_CATALOG,
     PROP_CATALOG: propCatalog = PROP_CATALOG,
     DOOR_TYPE,
@@ -74,18 +71,12 @@ export function createDungeonApi(context) {
   } = pickupFactory;
 
   const equipmentRolls = createDungeonEquipmentRolls({
-    MONSTER_CATALOG,
-    WEAPON_CATALOG,
     OFFHAND_CATALOG,
-    DUNGEON_WEAPON_TIERS,
-    CHEST_WEAPON_CHANCE,
-    CHEST_SHIELD_CHANCE,
-    DUNGEON_WEAPON_WEIGHT_BONUS,
-    DUPLICATE_WEAPON_WEIGHT_PENALTY,
     cloneWeapon,
     cloneOffHandItem,
     generateEquipmentItem,
     getState,
+    createLootWeapon: (...args) => weaponGenerationService.createLootWeapon(...args),
   });
 
   const {
@@ -97,14 +88,19 @@ export function createDungeonApi(context) {
     rollChestContent,
   } = equipmentRolls;
 
+  const weaponGenerationService = createWeaponGenerationService({
+    randomInt,
+    generateEquipmentItem,
+    getState,
+  });
+
   const {
     createEnemy,
     chooseWeightedMonster,
   } = createDungeonEnemyFactory({
-    WEAPON_CATALOG,
     OFFHAND_CATALOG,
     cloneOffHandItem,
-    generateEquipmentItem,
+    createMonsterWeapon: (...args) => weaponGenerationService.createMonsterWeapon(...args),
     randomInt,
     getEnemyScaleForFloor,
     ENEMY_HP_PER_SCALE,
@@ -695,7 +691,8 @@ export function createDungeonApi(context) {
   function createDungeonLevel(floorNumber, options = {}) {
     const grid = createGrid();
     const rooms = [];
-    const studioArchetypeId = options.studioArchetypeId ?? rollStudioArchetypeId(randomInt);
+    const studioArchetypeId = options.studioArchetypeId
+      ?? getArchetypeForFloor(getState()?.runArchetypeSequence ?? [], floorNumber);
     const layoutProfile = rollLayoutProfile();
     const targetRoomCount = randomInt(
       layoutProfile.targetRooms.min,
@@ -934,7 +931,7 @@ export function createDungeonApi(context) {
         if (state?.seenMonsterCounts) {
           state.seenMonsterCounts[monster.id] = (state.seenMonsterCounts[monster.id] ?? 0) + 1;
         }
-        const enemy = createEnemy(nextFloorPosition(), floorNumber, monster);
+        const enemy = createEnemy(nextFloorPosition(), floorNumber, monster, { sourceArchetypeId: studioArchetypeId });
         const plannedDrop = rollMonsterPlannedDrop(enemy.id, foodBudget.monsters);
         if (plannedDrop) {
           enemy.lootDrop = {
@@ -956,13 +953,18 @@ export function createDungeonApi(context) {
       }
 
       if (context.shouldSpawnFloorWeapon(floorNumber)) {
-        const weapon = chooseWeightedWeapon(availableWeapons, state?.player);
-        if (weapon) {
-          const pos = nextFloorPosition();
-          weapons.push(createWeaponPickup(generateEquipmentItem(weapon, {
+        const weaponCount = weaponGenerationService.getFloorWeaponSpawnCount(floorNumber);
+        for (let index = 0; index < weaponCount; index += 1) {
+          const weapon = chooseWeightedWeapon(availableWeapons, state?.player, {
             floorNumber,
-            dropSourceTag: "floor-weapon",
-          }), pos.x, pos.y));
+            dropSourceTag: 'floor-weapon',
+            runArchetypeSequence: options.runArchetypeSequence ?? state?.runArchetypeSequence ?? [],
+          });
+          if (!weapon) {
+            continue;
+          }
+          const pos = nextFloorPosition();
+          weapons.push(createWeaponPickup(weapon, pos.x, pos.y));
         }
       }
 
@@ -981,13 +983,29 @@ export function createDungeonApi(context) {
         const chestCount = context.getChestCountForFloor(floorNumber);
         for (let i = 0; i < chestCount; i += 1) {
           const pos = nextFloorPosition();
-          chests.push(createChestPickup(rollChestContent(floorNumber, availableWeapons, availableShields, { dropSourceTag: "chest" }), pos.x, pos.y));
+          const containerConfig = getContainerConfigForArchetype(studioArchetypeId);
+          chests.push(createChestPickup(
+            rollChestContent(floorNumber, availableWeapons, availableShields, {
+              dropSourceTag: 'chest',
+              runArchetypeSequence: options.runArchetypeSequence ?? state?.runArchetypeSequence ?? [],
+            }),
+            pos.x,
+            pos.y,
+            {
+              containerName: containerConfig.name,
+              containerAssetId: containerConfig.assetId,
+            },
+          ));
         }
       }
 
       for (const foodItem of buildFoodItemsForBudget(foodBudget.containers)) {
         const pos = nextFloorPosition();
-        chests.push(createChestPickup({ type: "food", item: foodItem }, pos.x, pos.y));
+        const containerConfig = getContainerConfigForArchetype(studioArchetypeId);
+        chests.push(createChestPickup({ type: "food", item: foodItem }, pos.x, pos.y, {
+          containerName: containerConfig.name,
+          containerAssetId: containerConfig.assetId,
+        }));
       }
 
       const lockedDoors = assignLockedDoors({
@@ -1021,7 +1039,20 @@ export function createDungeonApi(context) {
 
         if (lockedRoomTiles.length > 0 && context.shouldPlaceLockedRoomChest()) {
           const chestPosition = lockedRoomTiles[randomInt(0, lockedRoomTiles.length - 1)];
-          chests.push(createChestPickup(rollChestContent(floorNumber + 1, bonusChestWeapons, bonusChestShields, { dropSourceTag: "locked-room-chest" }), chestPosition.x, chestPosition.y));
+          const containerConfig = getContainerConfigForArchetype(studioArchetypeId);
+          chests.push(createChestPickup(
+            rollChestContent(floorNumber + 1, bonusChestWeapons, bonusChestShields, {
+              dropSourceTag: 'locked-room-chest',
+              boostSpecial: true,
+              runArchetypeSequence: options.runArchetypeSequence ?? state?.runArchetypeSequence ?? [],
+            }),
+            chestPosition.x,
+            chestPosition.y,
+            {
+              containerName: containerConfig.name,
+              containerAssetId: containerConfig.assetId,
+            },
+          ));
           markOccupied(chestPosition);
         }
       });

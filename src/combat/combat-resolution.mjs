@@ -12,6 +12,8 @@ export function createCombatResolutionApi(context) {
     getOffHand,
     getWeaponConditionalDamageBonus,
     itemHasModifier,
+    getActorPrecisionModifier,
+    getActorReactionModifier,
   } = context;
 
   function resolveBlock(defender, damage) {
@@ -47,13 +49,20 @@ export function createCombatResolutionApi(context) {
     };
   }
 
-  function resolveCombatAttack(attacker, defender) {
+  function resolveCombatAttack(attacker, defender, options = {}) {
     const state = getState();
-    const weapon = getCombatWeapon(attacker);
+    const weapon = options.weapon ?? getCombatWeapon(attacker);
+    const distance = Math.max(1, options.distance ?? 1);
     const isPlayerAttack = attacker === state.player && defender?.type === "monster";
     const usesOpeningStrike = isPlayerAttack && !defender.openingStrikeSpent;
-    const hitValue = attacker.precision * 2 + weapon.hitBonus + (usesOpeningStrike ? (attacker.openingStrikeHitBonus ?? 0) : 0);
-    const dodgeValue = defender.reaction * 2 + defender.nerves;
+    const meleePenalty = weapon.attackMode === 'ranged' && distance <= 1
+      ? weapon.meleePenaltyHit ?? 0
+      : 0;
+    const hitValue = (attacker.precision + (getActorPrecisionModifier?.(attacker) ?? 0)) * 2
+      + weapon.hitBonus
+      + meleePenalty
+      + (usesOpeningStrike ? (attacker.openingStrikeHitBonus ?? 0) : 0);
+    const dodgeValue = (defender.reaction + (getActorReactionModifier?.(defender) ?? 0)) * 2 + defender.nerves;
     const hitChance = clamp(BASE_HIT_CHANCE + (hitValue - dodgeValue), MIN_HIT_CHANCE, MAX_HIT_CHANCE);
     if (usesOpeningStrike) {
       defender.openingStrikeSpent = true;
@@ -69,7 +78,7 @@ export function createCombatResolutionApi(context) {
     }
 
     const critChance = clamp(
-      attacker.precision + weapon.critBonus + (usesOpeningStrike ? (attacker.openingStrikeCritBonus ?? 0) : 0),
+      attacker.precision + (getActorPrecisionModifier?.(attacker) ?? 0) + weapon.critBonus + (usesOpeningStrike ? (attacker.openingStrikeCritBonus ?? 0) : 0),
       MIN_CRIT_CHANCE,
       MAX_CRIT_CHANCE,
     );
@@ -83,6 +92,8 @@ export function createCombatResolutionApi(context) {
       critical,
       damage,
       usedOpeningStrike: usesOpeningStrike,
+      hitChance,
+      distance,
     };
   }
 

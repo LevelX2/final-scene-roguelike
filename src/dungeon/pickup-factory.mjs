@@ -23,12 +23,14 @@ export function createDungeonPickupFactory(context) {
     };
   }
 
-  function createChestPickup(content, x, y) {
+  function createChestPickup(content, x, y, options = {}) {
     return {
       x,
       y,
       content,
       opened: false,
+      containerName: options.containerName ?? 'Requisitenkiste',
+      containerAssetId: options.containerAssetId ?? 'requisite-crate',
     };
   }
 
@@ -72,6 +74,8 @@ export function createDungeonPickupFactory(context) {
         tags: [...(modifier.tags ?? [])],
       })) : [],
       modifierIds: [...(weapon.modifierIds ?? [])],
+      numericMods: [...(weapon.numericMods ?? [])],
+      effects: (weapon.effects ?? []).map((effect) => ({ ...effect })),
     };
   }
 

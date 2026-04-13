@@ -16,7 +16,6 @@ test('state-persistence normalizes transient modal state on load', () => {
     optionsOpen: false,
     helpOpen: false,
     highscoresOpen: false,
-    deathKillsOpen: false,
   });
   const createDefaultCollapsedCards = () => ({ player: 'summary', log: 'compact' });
   const createDefaultPreferences = () => ({ inventoryFilter: 'all' });
@@ -42,10 +41,11 @@ test('state-persistence normalizes transient modal state on load', () => {
     consumedFoods: 0,
     knownMonsterTypes: {},
     seenMonsterCounts: {},
+    visitedFloors: [],
     lastScoreRank: null,
     modals: createDefaultModals(false),
     collapsedCards: createDefaultCollapsedCards(),
-    options: { stepSound: true, deathSound: true },
+    options: { stepSound: true, deathSound: true, voiceAnnouncements: true },
     preferences: createDefaultPreferences(),
     floors: { 1: { studioArchetypeId: 'slasher', grid: [['.']], visible: [[true]], enemies: [] } },
     player: {
@@ -76,7 +76,7 @@ test('state-persistence normalizes transient modal state on load', () => {
     OPTIONS_KEY: 'options',
     SAVEGAME_KEY: 'savegame',
     SAVEGAME_VERSION: 3,
-    DEFAULT_OPTIONS: { stepSound: true, deathSound: true },
+    DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true },
     readStorage: (key) => storage.get(key) ?? null,
     writeStorage: (key, value) => storage.set(key, value),
     removeStorage: (key) => storage.delete(key),
@@ -91,7 +91,8 @@ test('state-persistence normalizes transient modal state on load', () => {
     resolveHeroClassId: (value, fallback) => HERO_CLASSES[value] ? value : fallback,
     HERO_CLASSES,
     randomInt: () => 0,
-    rollStudioArchetypeId: () => 'slasher',
+    createRunArchetypeSequence: () => ['slasher'],
+    getArchetypeForFloor: () => 'slasher',
     xpForNextLevel: () => 20,
     getNutritionMax: () => 100,
     getNutritionStart: () => 80,
@@ -122,4 +123,6 @@ test('state-persistence normalizes transient modal state on load', () => {
   assert.equal(state.pendingChoice, null);
   assert.equal(state.pendingStairChoice, null);
   assert.equal(state.player.name, 'Ripley');
+  assert.equal(state.options.voiceAnnouncements, true);
+  assert.deepEqual(state.visitedFloors, [1]);
 });

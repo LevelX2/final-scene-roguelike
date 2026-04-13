@@ -1,3 +1,5 @@
+import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
+
 export function createStatePersistenceApi(context) {
   const {
     HIGHSCORE_KEY,
@@ -22,7 +24,8 @@ export function createStatePersistenceApi(context) {
     resolveHeroClassId,
     HERO_CLASSES,
     randomInt,
-    rollStudioArchetypeId,
+    createRunArchetypeSequence,
+    getArchetypeForFloor,
     xpForNextLevel,
     getNutritionMax,
     getNutritionStart,
@@ -93,7 +96,14 @@ export function createStatePersistenceApi(context) {
   function createSerializableSnapshot(state) {
     return {
       ...state,
+      view: "game",
       floatingTexts: [],
+      boardEffects: [],
+      targeting: {
+        active: false,
+        cursorX: Number(state.targeting?.cursorX) || 0,
+        cursorY: Number(state.targeting?.cursorY) || 0,
+      },
       modals: {
         ...createDefaultModals(false),
         ...(state.modals ?? {}),
@@ -102,10 +112,76 @@ export function createStatePersistenceApi(context) {
         optionsOpen: false,
         helpOpen: false,
         highscoresOpen: false,
-        deathKillsOpen: false,
         startOpen: false,
       },
     };
+  }
+
+  function resolveWeaponTemplateForItem(item) {
+    if (!item || typeof item !== "object") {
+      return null;
+    }
+
+    const templateId = item.templateId ?? item.baseItemId ?? item.id ?? null;
+    return templateId ? getWeaponTemplate(templateId) : null;
+  }
+
+  function normalizeWeaponItem(item) {
+    if (!item || typeof item !== "object") {
+      return item ?? null;
+    }
+
+    const template = resolveWeaponTemplateForItem(item);
+    return {
+      ...item,
+      type: "weapon",
+      itemType: item.itemType ?? "weapon",
+      templateId: item.templateId ?? template?.id ?? item.id ?? null,
+      baseItemId: item.baseItemId ?? template?.id ?? item.id ?? null,
+      handedness: item.handedness ?? template?.handedness ?? "one-handed",
+      attackMode: item.attackMode ?? template?.attackMode ?? "melee",
+      range: item.range ?? template?.range ?? 1,
+      meleePenaltyHit: item.meleePenaltyHit ?? template?.meleePenaltyHit ?? 0,
+      archetypeId: item.archetypeId ?? template?.archetypeId ?? null,
+      weaponRole: item.weaponRole ?? template?.weaponRole ?? null,
+      profileId: item.profileId ?? template?.profileId ?? null,
+      iconAsset: item.iconAsset ?? template?.iconAsset ?? null,
+      lightBonus: item.lightBonus ?? 0,
+      effects: Array.isArray(item.effects) ? item.effects : [],
+      numericMods: Array.isArray(item.numericMods) ? item.numericMods : [],
+      modifiers: Array.isArray(item.modifiers) ? item.modifiers : [],
+      modifierIds: Array.isArray(item.modifierIds) ? item.modifierIds : [],
+    };
+  }
+
+  function normalizeWeaponPickup(entry) {
+    if (!entry || typeof entry !== "object") {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      item: normalizeWeaponItem(entry.item),
+    };
+  }
+
+  function normalizeFloorStateWeapons(floorState) {
+    if (!floorState || typeof floorState !== "object") {
+      return floorState;
+    }
+
+    floorState.weapons = Array.isArray(floorState.weapons)
+      ? floorState.weapons.map(normalizeWeaponPickup)
+      : [];
+    floorState.enemies = Array.isArray(floorState.enemies)
+      ? floorState.enemies.map((enemy) => ({
+          ...enemy,
+          mainHand: normalizeWeaponItem(enemy.mainHand),
+          weapon: normalizeWeaponItem(enemy.weapon),
+          lootWeapon: normalizeWeaponItem(enemy.lootWeapon),
+        }))
+      : [];
+    return floorState;
   }
 
   function saveGame() {
@@ -126,6 +202,7 @@ export function createStatePersistenceApi(context) {
     const heroClassId = resolveHeroClassId(savedState.player?.classId, loadHeroClassId());
     const normalizedState = createFreshState(heroName, heroClassId, { openStartModal: false });
 
+    normalizedState.view = "game";
     normalizedState.floor = Math.max(1, Number(savedState.floor) || 1);
     normalizedState.deepestFloor = Math.max(normalizedState.floor, Number(savedState.deepestFloor) || normalizedState.floor);
     normalizedState.turn = Math.max(0, Number(savedState.turn) || 0);
@@ -148,6 +225,9 @@ export function createStatePersistenceApi(context) {
     normalizedState.knownMonsterTypes = savedState.knownMonsterTypes ?? {};
     normalizedState.seenMonsterCounts = savedState.seenMonsterCounts ?? {};
     normalizedState.lastScoreRank = savedState.lastScoreRank ?? null;
+    normalizedState.runArchetypeSequence = Array.isArray(savedState.runArchetypeSequence) && savedState.runArchetypeSequence.length > 0
+      ? savedState.runArchetypeSequence
+      : createRunArchetypeSequence(randomInt);
     normalizedState.modals = {
       ...createDefaultModals(false),
       ...(savedState.modals ?? {}),
@@ -156,7 +236,6 @@ export function createStatePersistenceApi(context) {
       optionsOpen: false,
       helpOpen: false,
       highscoresOpen: false,
-      deathKillsOpen: false,
       startOpen: false,
     };
     normalizedState.collapsedCards = {
@@ -171,11 +250,22 @@ export function createStatePersistenceApi(context) {
       ...createDefaultPreferences(),
       ...(savedState.preferences ?? {}),
     };
+    normalizedState.targeting = {
+      active: false,
+      cursorX: Number(savedState.targeting?.cursorX) || 0,
+      cursorY: Number(savedState.targeting?.cursorY) || 0,
+    };
     normalizedState.floors = savedState.floors ?? {};
+    normalizedState.visitedFloors = Array.from(new Set(
+      Array.isArray(savedState.visitedFloors)
+        ? savedState.visitedFloors.map((entry) => Math.max(1, Number(entry) || 1))
+        : Object.keys(normalizedState.floors).map((entry) => Math.max(1, Number(entry) || 1)),
+    )).sort((left, right) => left - right);
     Object.values(normalizedState.floors).forEach((floorState) => {
       if (floorState && !floorState.studioArchetypeId) {
-        floorState.studioArchetypeId = rollStudioArchetypeId(randomInt);
+        floorState.studioArchetypeId = getArchetypeForFloor(normalizedState.runArchetypeSequence, floorState.floorNumber ?? 1);
       }
+      normalizeFloorStateWeapons(floorState);
     });
 
     normalizedState.player = {
@@ -195,8 +285,11 @@ export function createStatePersistenceApi(context) {
       trapAvoidBonus: HERO_CLASSES[heroClassId]?.trapAvoidBonus ?? 0,
       shieldBlockBonus: HERO_CLASSES[heroClassId]?.shieldBlockBonus ?? 0,
     };
-    normalizedState.player.mainHand = savedState.player?.mainHand ?? normalizedState.player.mainHand;
+    normalizedState.player.mainHand = normalizeWeaponItem(savedState.player?.mainHand ?? normalizedState.player.mainHand);
     normalizedState.player.offHand = savedState.player?.offHand ?? normalizedState.player.offHand;
+    normalizedState.player.statusEffects = Array.isArray(savedState.player?.statusEffects)
+      ? savedState.player.statusEffects
+      : [];
     normalizedState.player.xpToNext = Number(savedState.player?.xpToNext) || xpForNextLevel(normalizedState.player.level);
     normalizedState.player.nutritionMax = getNutritionMax(normalizedState.player);
     normalizedState.player.nutrition = typeof savedState.player?.nutrition === "number"
@@ -206,6 +299,11 @@ export function createStatePersistenceApi(context) {
 
     if (!normalizedState.floors[normalizedState.floor]) {
       return null;
+    }
+
+    if (!normalizedState.visitedFloors.includes(normalizedState.floor)) {
+      normalizedState.visitedFloors.push(normalizedState.floor);
+      normalizedState.visitedFloors.sort((left, right) => left - right);
     }
 
     return normalizedState;

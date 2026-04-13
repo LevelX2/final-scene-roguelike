@@ -1,15 +1,45 @@
+import { getWeaponTemplate } from './content/catalogs/weapon-templates.mjs';
+
 export function createBareHandsWeapon() {
   return {
-    type: "weapon",
-    id: "bare-hands",
-    name: "Bloße Fäuste",
-    source: "Start",
-    handedness: "one-handed",
+    type: 'weapon',
+    id: 'bare-hands',
+    name: 'Bloße Fäuste',
+    source: 'Start',
+    handedness: 'one-handed',
+    attackMode: 'melee',
+    range: 1,
     damage: 1,
     hitBonus: 0,
     critBonus: 0,
-    description: "Nicht ideal, aber immerhin ehrlich.",
+    lightBonus: 0,
+    effects: [],
+    description: 'Nicht ideal, aber immerhin ehrlich.',
   };
+}
+
+function normalizeWeaponRuntimeFields(weapon) {
+  if (!weapon || typeof weapon !== 'object' || weapon.id === 'bare-hands') {
+    return weapon;
+  }
+
+  const templateId = weapon.templateId ?? weapon.baseItemId ?? weapon.id ?? null;
+  const template = templateId ? getWeaponTemplate(templateId) : null;
+  if (!template) {
+    return weapon;
+  }
+
+  weapon.templateId = weapon.templateId ?? template.id;
+  weapon.baseItemId = weapon.baseItemId ?? template.id;
+  weapon.handedness = weapon.handedness ?? template.handedness ?? 'one-handed';
+  weapon.attackMode = weapon.attackMode ?? template.attackMode ?? 'melee';
+  weapon.range = weapon.range ?? template.range ?? 1;
+  weapon.meleePenaltyHit = weapon.meleePenaltyHit ?? template.meleePenaltyHit ?? 0;
+  weapon.weaponRole = weapon.weaponRole ?? template.weaponRole ?? null;
+  weapon.profileId = weapon.profileId ?? template.profileId ?? null;
+  weapon.archetypeId = weapon.archetypeId ?? template.archetypeId ?? null;
+  weapon.lightBonus = weapon.lightBonus ?? 0;
+  return weapon;
 }
 
 export function cloneOffHandItem(item) {
@@ -19,7 +49,7 @@ export function cloneOffHandItem(item) {
 
   return {
     ...item,
-    type: item.type ?? "offhand",
+    type: item.type ?? 'offhand',
     modifiers: item.modifiers ? item.modifiers.map((modifier) => ({
       ...modifier,
       allowedItemTypes: [...(modifier.allowedItemTypes ?? [])],
@@ -27,12 +57,14 @@ export function cloneOffHandItem(item) {
       tags: [...(modifier.tags ?? [])],
     })) : [],
     modifierIds: [...(item.modifierIds ?? [])],
+    numericMods: [...(item.numericMods ?? [])],
+    effects: (item.effects ?? []).map((effect) => ({ ...effect })),
     statMods: { ...(item.statMods ?? {}) },
   };
 }
 
 export function getMainHand(entity) {
-  return entity.mainHand ?? entity.weapon ?? createBareHandsWeapon();
+  return normalizeWeaponRuntimeFields(entity.mainHand ?? entity.weapon ?? createBareHandsWeapon());
 }
 
 export function getOffHand(entity) {
@@ -46,33 +78,33 @@ export function getCombatWeapon(entity) {
 export function createEquipmentPresentationHelpers({ formatRarityLabel, getItemModifierSummary }) {
   function getStatLabel(stat) {
     return {
-      strength: "Stärke",
-      precision: "Präzision",
-      reaction: "Reaktion",
-      nerves: "Nerven",
-      intelligence: "Intelligenz",
-      endurance: "Ausdauer",
-      charm: "Charme",
+      strength: 'Stärke',
+      precision: 'Präzision',
+      reaction: 'Reaktion',
+      nerves: 'Nerven',
+      intelligence: 'Intelligenz',
+      endurance: 'Ausdauer',
+      charm: 'Charme',
     }[stat] ?? stat;
   }
 
   function formatStatMod(value) {
-    return `${value >= 0 ? "+" : ""}${value}`;
+    return `${value >= 0 ? '+' : ''}${value}`;
   }
 
   function formatStatMods(statMods = {}) {
     return Object.entries(statMods)
       .filter(([, value]) => value)
       .map(([stat, value]) => `${getStatLabel(stat)} ${formatStatMod(value)}`)
-      .join(" | ");
+      .join(' | ');
   }
 
   function formatModifier(value) {
-    return `${value >= 0 ? "+" : ""}${value}`;
+    return `${value >= 0 ? '+' : ''}${value}`;
   }
 
   function getHandednessLabel(handedness) {
-    return handedness === "two-handed" ? "2H" : "1H";
+    return handedness === 'two-handed' ? '2H' : '1H';
   }
 
   function formatWeaponStats(weapon) {
@@ -82,7 +114,7 @@ export function createEquipmentPresentationHelpers({ formatRarityLabel, getItemM
       `${formatModifier(weapon.hitBonus)} Treffer`,
     ];
 
-    if (weapon.rarity && weapon.rarity !== "common") {
+    if (weapon.rarity && weapon.rarity !== 'common') {
       stats.unshift(formatRarityLabel(weapon.rarity));
     }
 
@@ -90,35 +122,43 @@ export function createEquipmentPresentationHelpers({ formatRarityLabel, getItemM
       stats.push(`${formatModifier(weapon.critBonus)} Krit`);
     }
 
-    return stats.join(" | ");
+    if ((weapon.range ?? 1) > 1) {
+      stats.push(`${weapon.range} Reichweite`);
+    }
+
+    if ((weapon.lightBonus ?? 0) > 0) {
+      stats.push(`+${weapon.lightBonus} Sicht`);
+    }
+
+    return stats.join(' | ');
   }
 
   function formatOffHandStats(item) {
     if (!item) {
-      return "Leer";
+      return 'Leer';
     }
 
-    if (item.subtype === "shield") {
+    if (item.subtype === 'shield') {
       const stats = [`${item.blockChance}% Block`, `${item.blockValue} Blockwert`];
       const statMods = formatStatMods(item.statMods);
       if (statMods) {
         stats.push(statMods);
       }
-      if (item.rarity && item.rarity !== "common") {
+      if (item.rarity && item.rarity !== 'common') {
         stats.unshift(formatRarityLabel(item.rarity));
       }
-      return stats.join(" | ");
+      return stats.join(' | ');
     }
 
-    return item.description ?? "Nebenhand-Item";
+    return item.description ?? 'Nebenhand-Item';
   }
 
   function getOffHandTooltipLines(item) {
     if (!item) {
-      return ["Kein Gegenstand ausgerüstet."];
+      return ['Kein Gegenstand ausgerüstet.'];
     }
 
-    if (item.subtype === "shield") {
+    if (item.subtype === 'shield') {
       const lines = [
         item.source,
         item.rarity ? formatRarityLabel(item.rarity) : null,
@@ -132,8 +172,8 @@ export function createEquipmentPresentationHelpers({ formatRarityLabel, getItemM
     }
 
     return [
-      item.source ?? "Nebenhand",
-      item.description ?? "Kein weiterer Effekt bekannt.",
+      item.source ?? 'Nebenhand',
+      item.description ?? 'Kein weiterer Effekt bekannt.',
     ];
   }
 

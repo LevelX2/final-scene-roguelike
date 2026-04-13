@@ -3,7 +3,7 @@ import { createBrowserStorageApi } from './application/browser-storage.mjs';
 import { createStateBlueprintApi } from './application/state-blueprint.mjs';
 import { createStatePersistenceApi } from './application/state-persistence.mjs';
 import { getNutritionMax, getNutritionStart, getHungerState } from './nutrition.mjs';
-import { rollStudioArchetypeId } from './studio-theme.mjs';
+import { createRunArchetypeSequence, getArchetypeForFloor } from './studio-theme.mjs';
 
 export function createStateApi(context) {
   const {
@@ -19,15 +19,20 @@ export function createStateApi(context) {
     getState,
     setState,
     createBareHandsWeapon,
+    generateEquipmentItem,
     createDungeonLevel,
     updateVisibility,
     addMessage,
+    formatStudioLabel,
+    formatArchetypeLabel,
+    buildStudioAnnouncement,
+    playStudioAnnouncement,
     renderSelf,
     randomInt,
   } = context;
   const HIGHSCORE_LAST_ENTRY_KEY = "dungeon-rogue-highscores-last-entry";
   const SAVEGAME_KEY = "dungeon-rogue-savegame";
-  const SAVEGAME_VERSION = 1;
+  const SAVEGAME_VERSION = 2;
   const storageApi = createBrowserStorageApi();
 
   function readStorage(key) {
@@ -63,10 +68,13 @@ export function createStateApi(context) {
     writeStorage,
     resolveHeroClassId,
     createBareHandsWeapon,
+    generateEquipmentItem,
     xpForNextLevel,
     getNutritionMax,
     getNutritionStart,
     getHungerState,
+    createRunArchetypeSequence,
+    randomInt,
   });
 
   const persistenceApi = createStatePersistenceApi({
@@ -92,7 +100,8 @@ export function createStateApi(context) {
     resolveHeroClassId,
     HERO_CLASSES,
     randomInt,
-    rollStudioArchetypeId,
+    createRunArchetypeSequence,
+    getArchetypeForFloor,
     xpForNextLevel,
     getNutritionMax,
     getNutritionStart,
@@ -142,13 +151,15 @@ export function createStateApi(context) {
   }
 
   function createDeathCause(enemy, options = {}) {
-    const critPrefix = options.critical ? "durch einen kritischen Treffer " : "";
+    const enemyName = enemy?.baseName ?? enemy?.name ?? "etwas Unbekanntem";
+    const rangedSuffix = options.ranged ? " aus der Distanz" : "";
+    const criticalSuffix = options.critical ? " mit einem kritischen Treffer" : "";
     const quips = [
-      `wurde ${critPrefix}von ${enemy.name} unsanft aus dem Abspann gekickt.`,
-      `verlor den finalen Schnitt ${critPrefix ? `${critPrefix}` : ""}gegen ${enemy.name}.`,
-      `bekam ${critPrefix}von ${enemy.name} eine sehr persoenliche Schluss-Szene verpasst.`,
-      `blieb im letzten Akt ${critPrefix ? `${critPrefix}` : ""}an ${enemy.name} haengen.`,
-      `wurde ${critPrefix}von ${enemy.name} direkt aus dem Bild getragen.`,
+      `wurde im letzten Akt von ${enemyName}${rangedSuffix}${criticalSuffix} zu Fall gebracht.`,
+      `schaffte es nicht durch den letzten Akt: ${enemyName}${rangedSuffix}${criticalSuffix} beendete die Szene.`,
+      `verlor im letzten Akt gegen ${enemyName}${rangedSuffix}${criticalSuffix}.`,
+      `kam im letzten Akt gegen ${enemyName}${rangedSuffix}${criticalSuffix} nicht mehr zurück ins Bild.`,
+      `wurde im letzten Akt von ${enemyName}${rangedSuffix} aus der Szene genommen${options.critical ? " - kritisch und endgültig." : "."}`,
     ];
 
     return quips[randomInt(0, quips.length - 1)];
@@ -158,14 +169,16 @@ export function createStateApi(context) {
     const currentState = getState();
     const heroName = profile.heroName ? saveHeroName(profile.heroName) : loadHeroName();
     const heroClassId = profile.heroClassId ? saveHeroClassId(profile.heroClassId) : loadHeroClassId();
+    const nextView = options.view ?? (options.openStartModal ? "start" : "game");
     const nextState = createFreshState(heroName, heroClassId, {
       ...options,
+      view: nextView,
       initialOptions: loadOptions(),
     });
     const reusableInitialStudio = Boolean(
       options.reuseExistingFloor &&
       currentState &&
-      currentState.modals?.startOpen &&
+      currentState.view === "start" &&
       !currentState.gameOver &&
       currentState.turn === 0 &&
       currentState.floor === 1 &&
@@ -181,11 +194,16 @@ export function createStateApi(context) {
     nextState.player.hungerState = getHungerState(nextState.player);
 
     if (reusableInitialStudio) {
+      nextState.runArchetypeSequence = [...(currentState.runArchetypeSequence ?? nextState.runArchetypeSequence)];
       nextState.floors[1] = currentState.floors[1];
       nextState.player.x = currentState.player.x;
       nextState.player.y = currentState.player.y;
     } else {
-      nextState.floors[1] = createDungeonLevel(1, { stairsUp: null });
+      nextState.floors[1] = createDungeonLevel(1, {
+        stairsUp: null,
+        studioArchetypeId: getArchetypeForFloor(nextState.runArchetypeSequence, 1),
+        runArchetypeSequence: nextState.runArchetypeSequence,
+      });
       nextState.player.x = nextState.floors[1].startPosition.x;
       nextState.player.y = nextState.floors[1].startPosition.y;
     }
@@ -195,6 +213,17 @@ export function createStateApi(context) {
     setState(nextState);
     updateVisibility();
     addMessage(`${heroName} steht als ${nextState.player.classLabel} im Scheinwerferlicht.`, "important");
+    if (nextView === "game") {
+      const initialArchetypeId = nextState.floors[1]?.studioArchetypeId ?? null;
+      if (!nextState.visitedFloors.includes(1)) {
+        nextState.visitedFloors.push(1);
+      }
+      addMessage(`Du betrittst ${formatStudioLabel(1)}.`, "important");
+      addMessage(formatArchetypeLabel(initialArchetypeId), "important");
+      const announcement = buildStudioAnnouncement(1, initialArchetypeId);
+      addMessage(announcement, "important");
+      playStudioAnnouncement(announcement);
+    }
     renderSelf();
   }
 

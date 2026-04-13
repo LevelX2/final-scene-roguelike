@@ -21,8 +21,10 @@ import {
   shouldSpawnFloorShield,
 } from './balance.mjs';
 import { createDungeonEquipmentRolls } from './dungeon/equipment-rolls.mjs';
+import { createDungeonEnemyFactory } from './dungeon/enemy-factory.mjs';
 import { createDungeonPickupFactory } from './dungeon/pickup-factory.mjs';
 import { createShowcasePlacementApi } from './dungeon/showcase-placement.mjs';
+import { createDungeonSpatialApi } from './dungeon/spatial-helpers.mjs';
 import { rollStudioArchetypeId } from './studio-theme.mjs';
 
 export function createDungeonApi(context) {
@@ -95,330 +97,53 @@ export function createDungeonApi(context) {
     rollChestContent,
   } = equipmentRolls;
 
-  function createEnemy(position, floor, monster) {
-    const scale = getEnemyScaleForFloor(floor, monster.rank);
-    const variant = rollMonsterVariant(floor);
-    const variantModifiers = rollMonsterVariantModifiers(variant);
-    const baseHp = monster.hp + scale * ENEMY_HP_PER_SCALE + randomInt(0, 2);
-    const baseStrength = monster.strength + Math.floor((scale + 1) / ENEMY_STRENGTH_SCALE_STEP);
-    const basePrecision = monster.precision + Math.floor(scale / ENEMY_PRECISION_SCALE_STEP);
-    const baseReaction = monster.reaction + Math.floor(scale / ENEMY_REACTION_SCALE_STEP);
-    const baseNerves = monster.nerves + Math.floor(scale / ENEMY_NERVES_SCALE_STEP);
-    const baseIntelligence = monster.intelligence + Math.floor(scale / ENEMY_INTELLIGENCE_SCALE_STEP);
-    const baseAggroRadius = monster.aggroRadius + Math.min(ENEMY_AGGRO_RADIUS_CAP, Math.floor(scale / 3));
-    const variantBonus = getMonsterVariantStatBonus(variantModifiers);
-    const maxHp = Math.max(1, Math.round(baseHp * variant.hpMultiplier) + (variantBonus.hpFlat ?? 0));
-    const weapon = WEAPON_CATALOG[monster.id];
-    const offHand = monster.offHand ? OFFHAND_CATALOG[monster.offHand] : null;
-    const variantName = buildMonsterVariantName(monster.name, variant, variantModifiers);
-    const mobilityAggroBonus = monster.mobility === "relentless"
-      ? 2
-      : monster.mobility === "roaming"
-        ? 1
-        : 0;
-    const dropSourceTag = variant.id === "normal"
-      ? `monster:${monster.id}`
-      : `monster:${monster.id}:${variant.id}`;
+  const {
+    createEnemy,
+    chooseWeightedMonster,
+  } = createDungeonEnemyFactory({
+    WEAPON_CATALOG,
+    OFFHAND_CATALOG,
+    cloneOffHandItem,
+    generateEquipmentItem,
+    randomInt,
+    getEnemyScaleForFloor,
+    ENEMY_HP_PER_SCALE,
+    ENEMY_XP_PER_SCALE,
+    ENEMY_STRENGTH_SCALE_STEP,
+    ENEMY_PRECISION_SCALE_STEP,
+    ENEMY_REACTION_SCALE_STEP,
+    ENEMY_NERVES_SCALE_STEP,
+    ENEMY_INTELLIGENCE_SCALE_STEP,
+    ENEMY_AGGRO_RADIUS_CAP,
+    MONSTER_VARIANT_TIERS,
+    MONSTER_VARIANT_MODIFIERS,
+    getMonsterVariantWeights,
+    NON_ICONIC_MONSTER_WEIGHT_BONUS,
+    ICONIC_MONSTER_WEIGHT_PENALTY,
+  });
 
-    return {
-      ...position,
-      type: "monster",
-      id: monster.id,
-      baseName: monster.name,
-      name: variantName,
-      rank: monster.rank,
-      variantTier: variant.id,
-      variantLabel: variant.label,
-      variantModifiers,
-      behavior: monster.behavior,
-      behaviorLabel: monster.behaviorLabel,
-      mobility: monster.mobility,
-      mobilityLabel: monster.mobilityLabel,
-      retreatProfile: monster.retreatProfile,
-      retreatLabel: monster.retreatLabel,
-      healingProfile: monster.healingProfile,
-      healingLabel: monster.healingLabel,
-      isRetreating: false,
-      description: monster.description,
-      special: monster.special,
-      originX: position.x,
-      originY: position.y,
-      aggro: false,
-      turnsSinceHit: 0,
-      canChangeFloors: Boolean(monster.canChangeFloors),
-      mainHand: weapon
-        ? {
-            ...weapon,
-            type: "weapon",
-          }
-        : null,
-      offHand: offHand ? cloneOffHandItem(offHand) : null,
-      lootWeapon: weapon ? generateEquipmentItem(weapon, { floorNumber: floor, dropSourceTag }) : null,
-      lootOffHand: offHand ? generateEquipmentItem(offHand, { floorNumber: floor, dropSourceTag }) : null,
-      weaponDropChance: variant.weaponDropChance,
-      offHandDropChance: variant.offHandDropChance,
-      xpReward: Math.round((monster.xpReward + scale * ENEMY_XP_PER_SCALE) * variant.xpMultiplier),
-      maxHp,
-      hp: maxHp,
-      strength: baseStrength + (variantBonus.strength ?? 0),
-      precision: basePrecision + (variantBonus.precision ?? 0),
-      reaction: baseReaction + (variantBonus.reaction ?? 0),
-      nerves: baseNerves + (variantBonus.nerves ?? 0),
-      intelligence: baseIntelligence + (variantBonus.intelligence ?? 0),
-      aggroRadius: baseAggroRadius + mobilityAggroBonus + (variantBonus.aggroRadius ?? 0),
-    };
-  }
-
-  function collectUsedShowcasePropIds() {
-    const state = getState();
-    if (!state?.floors) {
-      return new Set();
-    }
-
-    const usedPropIds = new Set();
-    Object.values(state.floors).forEach((floorState) => {
-      (floorState?.showcases ?? []).forEach((showcase) => {
-        const propId = showcase?.item?.id;
-        if (propId) {
-          usedPropIds.add(propId);
-        }
-      });
-    });
-    return usedPropIds;
-  }
-
-  function getRoomCenter(room) {
-    return {
-      x: room.x + Math.floor(room.width / 2),
-      y: room.y + Math.floor(room.height / 2),
-    };
-  }
-
-  function getCardinalNeighbors(x, y) {
-    return [
-      { x: x + 1, y },
-      { x: x - 1, y },
-      { x, y: y + 1 },
-      { x, y: y - 1 },
-    ];
-  }
-
-  function clampToRoom(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-  }
-
-  function getRoomConnectionPoint(room, target) {
-    const center = getRoomCenter(room);
-    const deltaX = target.x - center.x;
-    const deltaY = target.y - center.y;
-
-    if (Math.abs(deltaX) >= Math.abs(deltaY)) {
-      return {
-        x: deltaX >= 0 ? room.x + room.width - 1 : room.x,
-        y: clampToRoom(target.y, room.y, room.y + room.height - 1),
-      };
-    }
-
-    return {
-      x: clampToRoom(target.x, room.x, room.x + room.width - 1),
-      y: deltaY >= 0 ? room.y + room.height - 1 : room.y,
-    };
-  }
-
-  function isPositionInsideRoom(position, room) {
-    return (
-      position.x >= room.x &&
-      position.x < room.x + room.width &&
-      position.y >= room.y &&
-      position.y < room.y + room.height
-    );
-  }
-
-  function buildTunnelPath(start, end) {
-    const path = [{ x: start.x, y: start.y }];
-    let x = start.x;
-    let y = start.y;
-
-    while (x !== end.x) {
-      x += x < end.x ? 1 : -1;
-      path.push({ x, y });
-    }
-
-    while (y !== end.y) {
-      y += y < end.y ? 1 : -1;
-      path.push({ x, y });
-    }
-
-    return path;
-  }
-
-  function isWallOrOutside(grid, x, y) {
-    return x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT || grid[y][x] === TILE.WALL;
-  }
-
-  function isTileWalkable(grid, x, y) {
-    return x >= 0 && y >= 0 && x < WIDTH && y < HEIGHT && grid[y][x] === TILE.FLOOR;
-  }
-
-  function isValidDoorSlot(grid, x, y) {
-    if (grid[y]?.[x] !== TILE.FLOOR) {
-      return false;
-    }
-
-    const wallsLeftRight = isWallOrOutside(grid, x - 1, y) && isWallOrOutside(grid, x + 1, y);
-    const wallsUpDown = isWallOrOutside(grid, x, y - 1) && isWallOrOutside(grid, x, y + 1);
-    return wallsLeftRight || wallsUpDown;
-  }
-
-  function getDoorCandidate(grid, previous, current, roomIdA, roomIdB, tunnelPath = null) {
-    const path = tunnelPath ?? buildTunnelPath(getRoomCenter(previous), getRoomCenter(current));
-
-    for (let index = 1; index < path.length; index += 1) {
-      const currentStep = path[index];
-      const previousStep = path[index - 1];
-      const entersCurrentRoom =
-        isPositionInsideRoom(currentStep, current) &&
-        !isPositionInsideRoom(previousStep, current);
-
-      if (entersCurrentRoom) {
-        const slotCandidates = path
-          .map((step, candidateIndex) => ({
-            ...step,
-            distanceToEntry: Math.abs(candidateIndex - (index - 1)),
-          }))
-          .filter((step) => isValidDoorSlot(grid, step.x, step.y))
-          .sort((left, right) => left.distanceToEntry - right.distanceToEntry);
-
-        if (slotCandidates.length > 0) {
-          return createDoor(slotCandidates[0].x, slotCandidates[0].y, { roomIdA, roomIdB });
-        }
-
-        return null;
-      }
-    }
-
-    return null;
-  }
-
-  function computeReachableTiles(grid, startPosition, doors) {
-    const queue = [startPosition];
-    const seen = new Set([`${startPosition.x},${startPosition.y}`]);
-    const reachable = [];
-
-    while (queue.length > 0) {
-      const current = queue.shift();
-      reachable.push(current);
-
-      for (const direction of [
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 0, y: -1 },
-      ]) {
-        const nextX = current.x + direction.x;
-        const nextY = current.y + direction.y;
-        const key = `${nextX},${nextY}`;
-
-        if (seen.has(key)) {
-          continue;
-        }
-
-        if (nextX < 0 || nextY < 0 || nextX >= WIDTH || nextY >= HEIGHT) {
-          continue;
-        }
-
-        if (grid[nextY][nextX] !== TILE.FLOOR) {
-          continue;
-        }
-
-        const door = doors.find((entry) => entry.x === nextX && entry.y === nextY);
-        if (door && !door.isOpen && door.doorType === DOOR_TYPE.LOCKED) {
-          continue;
-        }
-
-        seen.add(key);
-        queue.push({ x: nextX, y: nextY });
-      }
-    }
-
-    return reachable;
-  }
-
-  function computeReachableTilesWithBlockedPositions(grid, startPosition, doors, blockedPositions = []) {
-    const blocked = new Set(blockedPositions.map((position) => `${position.x},${position.y}`));
-    const queue = [startPosition];
-    const seen = new Set([`${startPosition.x},${startPosition.y}`]);
-    const reachable = [];
-
-    while (queue.length > 0) {
-      const current = queue.shift();
-      reachable.push(current);
-
-      for (const direction of [
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 0, y: -1 },
-      ]) {
-        const nextX = current.x + direction.x;
-        const nextY = current.y + direction.y;
-        const key = `${nextX},${nextY}`;
-
-        if (seen.has(key) || blocked.has(key)) {
-          continue;
-        }
-
-        if (!isTileWalkable(grid, nextX, nextY)) {
-          continue;
-        }
-
-        const door = doors.find((entry) => entry.x === nextX && entry.y === nextY);
-        if (door && !door.isOpen && door.doorType === DOOR_TYPE.LOCKED) {
-          continue;
-        }
-
-        seen.add(key);
-        queue.push({ x: nextX, y: nextY });
-      }
-    }
-
-    return reachable;
-  }
-
-  function hasReachableMatchingKey(grid, startPosition, doors, keys, lockedDoor) {
-    if (!lockedDoor || lockedDoor.doorType !== DOOR_TYPE.LOCKED) {
-      return true;
-    }
-
-    const reachableKeys = computeReachableTiles(grid, startPosition, doors);
-    return reachableKeys.some((tile) =>
-      keys.some((entry) =>
-        entry.x === tile.x &&
-        entry.y === tile.y &&
-        entry.item.keyColor === lockedDoor.lockColor &&
-        entry.item.keyFloor != null
-      )
-    );
-  }
-
-  function isLockedRoomSealed(grid, startPosition, doors, room, lockedDoor) {
-    if (!room || !lockedDoor) {
-      return false;
-    }
-
-    const simulatedDoors = doors.map((door) =>
-      door === lockedDoor
-        ? {
-            ...door,
-            isOpen: false,
-            doorType: DOOR_TYPE.LOCKED,
-          }
-        : door
-    );
-    const reachableTiles = computeReachableTiles(grid, startPosition, simulatedDoors);
-
-    return !reachableTiles.some((tile) => isPositionInsideRoom(tile, room));
-  }
+  const {
+    collectUsedShowcasePropIds,
+    getRoomCenter,
+    getCardinalNeighbors,
+    clampToRoom,
+    getRoomConnectionPoint,
+    isPositionInsideRoom,
+    isTileWalkable,
+    isValidDoorSlot,
+    getDoorCandidate,
+    computeReachableTiles,
+    computeReachableTilesWithBlockedPositions,
+    hasReachableMatchingKey,
+    isLockedRoomSealed,
+  } = createDungeonSpatialApi({
+    WIDTH,
+    HEIGHT,
+    TILE,
+    DOOR_TYPE,
+    createDoor,
+    getState,
+  });
 
   const showcasePlacementApi = createShowcasePlacementApi({
     propCatalog,
@@ -436,99 +161,6 @@ export function createDungeonApi(context) {
     getShowcaseCandidateTiles,
     placeShowcases,
   } = showcasePlacementApi;
-
-  function chooseWeightedMonster(availableMonsters, floorNumber, runSeenCounts, floorSeenCounts) {
-    const iconicMonsterIds = new Set([
-      "bates",
-      "ghostface",
-      "chucky",
-      "myers",
-      "jason",
-      "freddy",
-      "pennywise",
-      "xenomorph",
-      "predator",
-      "vader",
-      "terminator",
-    ]);
-
-    const weighted = availableMonsters.map((monster) => {
-      const runSeen = runSeenCounts[monster.id] ?? 0;
-      const floorSeen = floorSeenCounts[monster.id] ?? 0;
-      const recencyBonus = Math.max(0, (monster.rank - 1) / Math.max(1, floorNumber + 1));
-      const iconWeight = iconicMonsterIds.has(monster.id)
-        ? ICONIC_MONSTER_WEIGHT_PENALTY
-        : NON_ICONIC_MONSTER_WEIGHT_BONUS;
-      const weight = Math.max(
-        0.2,
-        (1.2 +
-          recencyBonus * 1.4 -
-          runSeen * 0.18 -
-          floorSeen * 0.4) * iconWeight
-      );
-      return { monster, weight };
-    });
-
-    const totalWeight = weighted.reduce((sum, entry) => sum + entry.weight, 0);
-    let roll = Math.random() * totalWeight;
-
-    for (const entry of weighted) {
-      roll -= entry.weight;
-      if (roll <= 0) {
-        return entry.monster;
-      }
-    }
-
-    return weighted[weighted.length - 1].monster;
-  }
-
-  function weightedPickFromMap(weights) {
-    return weightedPick(
-      Object.entries(weights).map(([value, weight]) => ({ value, weight })),
-    );
-  }
-
-  function rollMonsterVariant(floorNumber) {
-    const weights = getMonsterVariantWeights(floorNumber);
-    const tierId = weightedPickFromMap(weights) ?? "normal";
-    return MONSTER_VARIANT_TIERS[tierId] ?? MONSTER_VARIANT_TIERS.normal;
-  }
-
-  function rollMonsterVariantModifiers(variant) {
-    const modifierCount = variant.modCount ?? 0;
-    if (modifierCount <= 0) {
-      return [];
-    }
-
-    const modifiers = [];
-    const pool = [...MONSTER_VARIANT_MODIFIERS];
-    while (modifiers.length < modifierCount && pool.length > 0) {
-      const index = randomInt(0, pool.length - 1);
-      modifiers.push(pool.splice(index, 1)[0]);
-    }
-    return modifiers;
-  }
-
-  function getMonsterVariantStatBonus(modifiers) {
-    return modifiers.reduce((sum, modifier) => {
-      Object.entries(modifier.statChanges ?? {}).forEach(([stat, value]) => {
-        sum[stat] = (sum[stat] ?? 0) + value;
-      });
-      return sum;
-    }, {});
-  }
-
-  function buildMonsterVariantName(baseName, variant, modifiers) {
-    if (variant.id === "normal" || modifiers.length === 0) {
-      return baseName;
-    }
-
-    const affixes = modifiers
-      .map((modifier) => modifier.label)
-      .slice(0, variant.id === "dire" ? 2 : 1)
-      .join(" ");
-    return `${affixes} ${baseName}`;
-  }
 
   function rollLayoutProfile() {
     return weightedPick([

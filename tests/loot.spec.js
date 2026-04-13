@@ -245,6 +245,37 @@ test("inventory keeps weapon variants with different effects separate", async ({
   await expect(page.locator("#inventoryList")).toContainText("Licht +1");
 });
 
+test("inventory weapon details show studio origin and generated modifiers", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.addInventoryItem({
+      type: "weapon",
+      id: "kitchen-knife",
+      name: "Küchenmesser",
+      source: "Tests",
+      handedness: "one-handed",
+      attackMode: "melee",
+      damage: 3,
+      hitBonus: 2,
+      critBonus: 0,
+      rarity: "uncommon",
+      floorNumber: 4,
+      numericMods: [{ id: "hit", stat: "hitBonus", amount: 1, label: "Präzise", namePrefix: "Präzise" }],
+      effects: [],
+      modifiers: [],
+      description: "Nur für Tests.",
+    });
+  });
+
+  await page.keyboard.press("i");
+
+  const inventoryEntry = page.locator("#inventoryList .inventory-item").first();
+  await expect(inventoryEntry).toContainText("Aus Studio 4");
+  await expect(inventoryEntry).toContainText("Mods: Präzise");
+});
+
 test("inventory uses svg icons for potions and keys when available", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -348,6 +379,37 @@ test("weapon loot modal compares against the currently equipped weapon and shows
   await expect(page.locator("#choiceText")).toContainText("Buck Knife");
   await expect(page.locator("#choiceText .choice-rarity.rarity-rare")).toContainText("Selten");
   await expect(page.locator("#choiceText .choice-rarity.rarity-uncommon")).toContainText("Ungewöhnlich");
+});
+
+test("weapon loot details show studio origin and numeric modifiers", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupWeaponAtPlayerStep(page, {
+    type: "weapon",
+    id: "kitchen-knife",
+    name: "Küchenmesser",
+    source: "Tests",
+    handedness: "one-handed",
+    attackMode: "melee",
+    damage: 3,
+    hitBonus: 2,
+    critBonus: 0,
+    rarity: "uncommon",
+    floorNumber: 3,
+    numericMods: [{ id: "hit", stat: "hitBonus", amount: 1, label: "Präzise", namePrefix: "Präzise" }],
+    effects: [],
+    modifiers: [],
+    description: "Nur für Tests.",
+  });
+
+  await page.keyboard.press("ArrowRight");
+
+  const foundCard = page.locator("#choiceText .choice-compare-card").first();
+  await expect(page.locator("#choiceModal")).toBeVisible();
+  await expect(foundCard).toContainText("Aus Studio 3");
+  await expect(foundCard).toContainText("Mods: Präzise");
+  await expect(foundCard).not.toContainText("Keine Modifikatoren");
 });
 
 test("shields can be equipped directly into the offhand", async ({ page }) => {

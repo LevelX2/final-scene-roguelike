@@ -1,3 +1,5 @@
+import { formatStudioOrigin } from '../studio-theme.mjs';
+
 export function createInventoryView(context) {
   const {
     inventoryListElement,
@@ -157,6 +159,14 @@ export function createInventoryView(context) {
     return `${item.type}:${item.name}`;
   }
 
+  function getItemOriginLabel(item) {
+    if (!Number.isFinite(item?.floorNumber)) {
+      return null;
+    }
+
+    return formatStudioOrigin(item.floorNumber);
+  }
+
   function renderInventory() {
     const state = getState();
     inventoryListElement.innerHTML = "";
@@ -220,10 +230,24 @@ export function createInventoryView(context) {
         : item.type === "offhand"
           ? formatOffHandStats(item)
           : null;
+      const originLine = getItemOriginLabel(item);
       const detailLine = item.type === "weapon"
-        ? `${formatRarityLabel(item.rarity ?? "common")} | ${item.source} | Mods: ${getItemModifierSummary(item)} | ${item.attackMode === "ranged" && (item.range ?? 1) > 1 ? `Fernkampf ${item.range}` : "Nahkampf"}${(item.meleePenaltyHit ?? 0) < 0 ? ` | Nahkampf ${item.meleePenaltyHit}` : ""}${(item.lightBonus ?? 0) > 0 ? ` | Licht +${item.lightBonus}` : ""} | ${item.description}`
+        ? [
+            formatRarityLabel(item.rarity ?? "common"),
+            item.source,
+            originLine,
+            `Mods: ${getItemModifierSummary(item)}`,
+            `${item.attackMode === "ranged" && (item.range ?? 1) > 1 ? `Fernkampf ${item.range}` : "Nahkampf"}${(item.meleePenaltyHit ?? 0) < 0 ? ` | Nahkampf ${item.meleePenaltyHit}` : ""}${(item.lightBonus ?? 0) > 0 ? ` | Licht +${item.lightBonus}` : ""}`,
+            item.description,
+          ].filter(Boolean).join(" | ")
         : item.type === "offhand"
-          ? `${formatRarityLabel(item.rarity ?? "common")} | ${item.source}${item.modifiers?.length ? ` | Mods: ${getItemModifierSummary(item)}` : ""} | ${item.description}`
+          ? [
+              formatRarityLabel(item.rarity ?? "common"),
+              item.source,
+              originLine,
+              item.modifiers?.length ? `Mods: ${getItemModifierSummary(item)}` : null,
+              item.description,
+            ].filter(Boolean).join(" | ")
           : item.type === "key"
             ? item.description
             : item.type === "food"

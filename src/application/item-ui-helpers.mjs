@@ -1,5 +1,11 @@
+import { formatStudioOrigin } from '../studio-theme.mjs';
+
 export function createItemUiHelpers(context) {
-  const { formatRarityLabel, formatWeaponDisplayName = (item) => item?.name ?? 'Unbekannt' } = context;
+  const {
+    formatRarityLabel,
+    formatWeaponDisplayName = (item) => item?.name ?? 'Unbekannt',
+    getItemModifierSummary = () => 'Keine Modifikatoren',
+  } = context;
 
   function getRarityClass(item) {
     return `rarity-${item?.rarity ?? "common"}`;
@@ -37,15 +43,23 @@ export function createItemUiHelpers(context) {
     return `<div class="choice-compare-icon ${rarityClass}" style="background-image: url('${iconUrl}')"></div>`;
   }
 
+  function getItemOriginLabel(item) {
+    if (!Number.isFinite(item?.floorNumber)) {
+      return null;
+    }
+
+    return formatStudioOrigin(item.floorNumber);
+  }
+
   function buildEquipmentCompareHtml(foundItem, equippedItem, typeLabel, statsFormatter) {
     const foundRarity = formatRarityLabel(foundItem.rarity ?? "common");
     const equippedRarity = equippedItem ? formatRarityLabel(equippedItem.rarity ?? "common") : null;
-    const foundMods = foundItem.modifiers?.length
-      ? `Mods: ${foundItem.modifiers.map((modifier) => modifier.summary ?? modifier.affix ?? modifier.id).join(", ")}`
-      : "Keine Modifikatoren";
-    const equippedMods = equippedItem?.modifiers?.length
-      ? `Mods: ${equippedItem.modifiers.map((modifier) => modifier.summary ?? modifier.affix ?? modifier.id).join(", ")}`
-      : "Keine Modifikatoren";
+    const foundOrigin = getItemOriginLabel(foundItem);
+    const equippedOrigin = getItemOriginLabel(equippedItem);
+    const foundMods = `Mods: ${getItemModifierSummary(foundItem)}`;
+    const equippedMods = equippedItem
+      ? `Mods: ${getItemModifierSummary(equippedItem)}`
+      : "Hier landet die neue Ausrüstung direkt.";
 
     return `
       <div class="choice-compare">
@@ -55,7 +69,7 @@ export function createItemUiHelpers(context) {
           <p class="choice-compare-name">${typeLabel === "Waffe" ? formatWeaponDisplayName(foundItem) : foundItem.name}</p>
           <p class="choice-rarity ${getRarityClass(foundItem)}">${foundRarity}</p>
           <p class="choice-compare-stats">${statsFormatter(foundItem)}</p>
-          <p class="choice-compare-detail">${foundMods}</p>
+          <p class="choice-compare-detail">${[foundOrigin, foundMods].filter(Boolean).join(" | ")}</p>
         </div>
         <div class="choice-compare-card ${equippedItem ? getRarityClass(equippedItem) : "rarity-common"}">
           <p class="choice-compare-label">Derzeit getragen</p>
@@ -63,7 +77,7 @@ export function createItemUiHelpers(context) {
           <p class="choice-compare-name">${equippedItem ? (typeLabel === "Waffe" ? formatWeaponDisplayName(equippedItem) : equippedItem.name) : "Leer"}</p>
           <p class="choice-rarity ${equippedItem ? getRarityClass(equippedItem) : "rarity-common"}">${equippedRarity ?? "Nichts ausgerüstet"}</p>
           <p class="choice-compare-stats">${equippedItem ? statsFormatter(equippedItem) : "Kein Gegenstand."}</p>
-          <p class="choice-compare-detail">${equippedItem ? equippedMods : "Hier landet die neue Ausrüstung direkt."}</p>
+          <p class="choice-compare-detail">${equippedItem ? [equippedOrigin, equippedMods].filter(Boolean).join(" | ") : equippedMods}</p>
         </div>
       </div>
       <p class="choice-compare-note">Möchtest du direkt ausrüsten, ins Inventar legen oder den Fund liegen lassen?</p>

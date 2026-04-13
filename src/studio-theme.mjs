@@ -26,6 +26,10 @@ export function formatStudioLabel(studioNumber) {
   return `Studio ${studioNumber}`;
 }
 
+export function formatStudioOrigin(studioNumber) {
+  return `Aus ${formatStudioLabel(studioNumber)}`;
+}
+
 export function formatArchetypeLabel(archetypeId) {
   const label = getStudioArchetypeLabel(archetypeId);
   return label ? `Archetyp: ${label}` : 'Archetyp: Unbekannt';

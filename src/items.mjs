@@ -19,6 +19,7 @@ export function createItemsApi(context) {
     formatWeaponStats,
     formatOffHandStats,
     formatRarityLabel,
+    getItemModifierSummary,
     addMessage,
     showChoiceModal,
     hideChoiceModal,
@@ -32,6 +33,7 @@ export function createItemsApi(context) {
   const { buildEquipmentCompareHtml } = createItemUiHelpers({
     formatRarityLabel,
     formatWeaponDisplayName,
+    getItemModifierSummary,
   });
 
   const equipmentApi = createItemEquipmentApi({

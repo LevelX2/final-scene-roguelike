@@ -102,6 +102,7 @@ export function createShowcasePlacementApi(context) {
     );
     const activePropPool = themedPool.length > 0 ? themedPool : propCatalog;
     const availableProps = [...activePropPool].sort(() => Math.random() - 0.5);
+    const fallbackUniqueProps = propCatalog.filter((prop) => !activePropPool.some((entry) => entry.id === prop.id));
     const usedPropIds = collectUsedShowcasePropIds();
 
     for (const { room, index } of shuffledRooms) {
@@ -154,6 +155,7 @@ export function createShowcasePlacementApi(context) {
       }
 
       const prop = availableProps.find((entry) => !usedPropIds.has(entry.id))
+        ?? fallbackUniqueProps.find((entry) => !usedPropIds.has(entry.id))
         ?? activePropPool[randomInt(0, activePropPool.length - 1)];
       usedPropIds.add(prop.id);
       showcases.push(createShowcase(prop, candidate.x, candidate.y));

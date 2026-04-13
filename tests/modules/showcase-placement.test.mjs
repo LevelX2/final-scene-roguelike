@@ -94,3 +94,46 @@ test('showcase-placement only picks archetype-matching or global display cases',
   ));
   assert.ok(showcases.every((showcase) => showcase.item.archetype !== 'slasher'));
 });
+
+test('showcase-placement falls back to other unused props before repeating themed ones', () => {
+  const propCatalog = [
+    { id: 'western-prop', archetype: 'western', name: 'Western', source: 'Test', description: 'Western.' },
+    { id: 'global-prop', archetype: 'global', name: 'Global', source: 'Test', description: 'Global.' },
+    { id: 'slasher-prop', archetype: 'slasher', name: 'Slasher', source: 'Test', description: 'Slasher.' },
+  ];
+
+  const api = createShowcasePlacementApi({
+    propCatalog,
+    randomInt: (min) => min,
+    createShowcase: (prop, x, y) => ({ x, y, item: { ...prop } }),
+    collectUsedShowcasePropIds: () => new Set(['western-prop', 'global-prop']),
+    getCardinalNeighbors,
+    isTileWalkable,
+    computeReachableTilesWithBlockedPositions,
+    isPositionInsideRoom,
+  });
+
+  const grid = createFloorGrid(18, 12);
+  const rooms = [
+    { x: 1, y: 1, width: 5, height: 5 },
+    { x: 12, y: 1, width: 5, height: 5 },
+    { x: 1, y: 6, width: 6, height: 5 },
+    { x: 10, y: 6, width: 6, height: 5 },
+  ];
+
+  const showcases = api.placeShowcases({
+    grid,
+    rooms,
+    startRoomIndex: 0,
+    goalRoomIndex: 1,
+    doors: [],
+    occupied: [],
+    stairsUp: null,
+    stairsDown: null,
+    startPosition: { x: 2, y: 2 },
+    studioArchetypeId: 'western',
+  });
+
+  assert.ok(showcases.length > 0);
+  assert.ok(showcases.some((showcase) => showcase.item.id === 'slasher-prop'));
+});

@@ -2,6 +2,7 @@ const { defineConfig } = require("playwright/test");
 
 module.exports = defineConfig({
   testDir: "./tests",
+  testIgnore: ["./tests/modules/**"],
   timeout: 30_000,
   outputDir: "./.playwright-temp/results",
   use: {

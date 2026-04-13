@@ -126,3 +126,128 @@ test('state-persistence normalizes transient modal state on load', () => {
   assert.equal(state.options.voiceAnnouncements, true);
   assert.deepEqual(state.visitedFloors, [1]);
 });
+
+test('state-persistence ranks final scenes by studio, level, kills, then turns', () => {
+  const storage = new Map();
+  const HERO_CLASSES = {
+    lead: { label: 'Hauptrolle', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
+  };
+  let state = {
+    floor: 7,
+    deepestFloor: 7,
+    turn: 120,
+    scoreSaved: false,
+    lastScoreRank: null,
+    kills: 14,
+    deathCause: 'wurde von einem Testgegner aus dem Bild genommen.',
+    floors: {
+      7: { studioArchetypeId: 'noir' },
+    },
+    player: {
+      name: 'Ripley',
+      classId: 'lead',
+      classLabel: HERO_CLASSES.lead.label,
+      level: 4,
+      hp: 2,
+      maxHp: 18,
+    },
+  };
+
+  const persistence = createStatePersistenceApi({
+    HIGHSCORE_KEY: 'highscores',
+    HIGHSCORE_STORAGE_VERSION: 1,
+    HIGHSCORE_VERSION_KEY: 'highscores-version',
+    HIGHSCORE_LAST_ENTRY_KEY: 'highscores-last',
+    OPTIONS_KEY: 'options',
+    SAVEGAME_KEY: 'savegame',
+    SAVEGAME_VERSION: 3,
+    DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true },
+    readStorage: (key) => storage.get(key) ?? null,
+    writeStorage: (key, value) => storage.set(key, value),
+    removeStorage: (key) => storage.delete(key),
+    getState: () => state,
+    setState: (nextState) => { state = nextState; },
+    loadHeroClassId: () => 'lead',
+    createFreshState: () => state,
+    createDefaultModals: () => ({}),
+    createDefaultCollapsedCards: () => ({}),
+    createDefaultPreferences: () => ({}),
+    normalizeHeroName: (value) => value?.trim() || 'Final Girl',
+    resolveHeroClassId: (value, fallback) => HERO_CLASSES[value] ? value : fallback,
+    HERO_CLASSES,
+    randomInt: () => 0,
+    createRunArchetypeSequence: () => ['slasher'],
+    getArchetypeForFloor: () => 'slasher',
+    xpForNextLevel: () => 20,
+    getNutritionMax: () => 100,
+    getNutritionStart: () => 80,
+    getHungerState: () => 'NORMAL',
+    updateVisibility: () => {},
+    renderSelf: () => {},
+  });
+
+  storage.set('highscores-version', 1);
+  storage.set('highscores', JSON.stringify([
+    {
+      marker: 'same-studio-more-turns',
+      heroName: 'Casey',
+      heroClassId: 'lead',
+      heroClass: 'Hauptrolle',
+      date: '13.04.2026, 12:00:00',
+      deathFloor: 7,
+      deathStudioArchetypeId: 'noir',
+      deepestFloor: 7,
+      deepestStudioArchetypeId: 'noir',
+      level: 4,
+      hp: 12,
+      maxHp: 18,
+      turns: 140,
+      kills: 14,
+      deathCause: 'Test',
+    },
+    {
+      marker: 'same-studio-less-level',
+      heroName: 'Billy',
+      heroClassId: 'lead',
+      heroClass: 'Hauptrolle',
+      date: '13.04.2026, 12:00:01',
+      deathFloor: 7,
+      deathStudioArchetypeId: 'noir',
+      deepestFloor: 7,
+      deepestStudioArchetypeId: 'noir',
+      level: 3,
+      hp: 18,
+      maxHp: 18,
+      turns: 90,
+      kills: 30,
+      deathCause: 'Test',
+    },
+    {
+      marker: 'higher-studio',
+      heroName: 'Sidney',
+      heroClassId: 'lead',
+      heroClass: 'Hauptrolle',
+      date: '13.04.2026, 12:00:02',
+      deathFloor: 8,
+      deathStudioArchetypeId: 'slasher',
+      deepestFloor: 8,
+      deepestStudioArchetypeId: 'slasher',
+      level: 2,
+      hp: 1,
+      maxHp: 18,
+      turns: 300,
+      kills: 2,
+      deathCause: 'Test',
+    },
+  ]));
+
+  const rank = persistence.saveHighscoreIfNeeded();
+  const scores = JSON.parse(storage.get('highscores'));
+
+  assert.equal(rank, 2);
+  assert.deepEqual(
+    scores.slice(0, 4).map((entry) => entry.marker),
+    ['higher-studio', scores[1].marker, 'same-studio-more-turns', 'same-studio-less-level'],
+  );
+  assert.equal(scores[1].heroName, 'Ripley');
+});

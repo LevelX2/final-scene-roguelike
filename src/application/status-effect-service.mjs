@@ -1,3 +1,5 @@
+import { recordKillStat } from '../kill-stats.mjs';
+
 export function createStatusEffectService(context) {
   const {
     getEffectStateLabel,
@@ -174,7 +176,7 @@ export function createStatusEffectService(context) {
         } else if (actor.type === 'monster') {
           floorState.enemies = floorState.enemies.filter((entry) => entry !== actor);
           state.kills += 1;
-          state.killStats[actor.name] = (state.killStats[actor.name] ?? 0) + 1;
+          state.killStats = recordKillStat(state.killStats, actor);
           if (effect.sourceActorType === 'player') {
             grantExperience(actor.xpReward, actor.name);
           }

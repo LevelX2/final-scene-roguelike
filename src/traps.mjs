@@ -1,3 +1,5 @@
+import { recordKillStat } from './kill-stats.mjs';
+
 const TRAP_VARIANTS = {
   floor: [
     {
@@ -257,7 +259,7 @@ export function createTrapsApi(context) {
 
     floorState.enemies = floorState.enemies.filter((enemy) => enemy !== actor);
     state.kills += 1;
-    state.killStats[actor.baseName ?? actor.name] = (state.killStats[actor.baseName ?? actor.name] ?? 0) + 1;
+    state.killStats = recordKillStat(state.killStats, actor);
     grantExperience(actor.xpReward ?? 0, actor.name);
     addMessage(`${actor.name} geht in ${trap.name} zugrunde.`, "important");
   }

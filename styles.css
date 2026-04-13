@@ -245,6 +245,8 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
   transition: border-color 120ms ease, transform 120ms ease, background-color 120ms ease;
 }
 
@@ -282,17 +284,42 @@ select {
 
 .class-option-copy {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
-.class-option strong {
-  font-size: 1rem;
+.class-option-title {
+  font-size: 1.14rem;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
 }
 
 .class-option span {
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.class-option-tagline {
+  color: rgba(245, 236, 214, 0.86);
+}
+
+.class-option-passive {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(125, 220, 138, 0.18);
+}
+
+.class-option-passive-label {
+  color: rgba(180, 238, 190, 0.96);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.class-option-passive-copy {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 #playerPanelTitle {
@@ -589,6 +616,8 @@ kbd {
   gap: 2px;
   justify-content: start;
   align-content: start;
+  caret-color: transparent;
+  outline: none;
   padding: 8px;
   min-height: 726px;
   background:

@@ -1,6 +1,6 @@
 const { test, expect } = require("playwright/test");
 require("./test-setup");
-const { startRun } = require("./helpers");
+const { startRun, setupWeaponAtPlayerStep } = require("./helpers");
 
 async function sendGameKey(page, key) {
   await page.evaluate((nextKey) => {
@@ -12,7 +12,7 @@ test("start screen renders the new title", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("The Final Scene");
-  await expect(page.locator("#startScreen").getByText("Fight Through a Dying Movieverse")).toBeVisible();
+  await expect(page.locator("#startScreen").getByText("Kämpfe dich durch ein sterbendes Filmarchiv")).toBeVisible();
   await expect(page.locator("#startScreen")).toBeVisible();
   await expect(page.getByRole("button", { name: "Neues Spiel beginnen" })).toBeVisible();
   await expect(page.locator("#gameShell")).toHaveClass(/prestart-hidden/);
@@ -44,6 +44,7 @@ test("hero class cards can be selected from the start screen", async ({ page }) 
   await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
   await expect(page.locator("#startModal")).toBeVisible();
   await expect(page.locator("#classOptions .class-option-art")).toHaveCount(3);
+  await expect(page.locator("#classOptions")).toContainText("Spezialfähigkeit: Triff deine Marke");
   await page.locator("#classOptions").getByText("Stuntman", { exact: true }).click();
   await expect(page.locator(".class-option.selected strong")).toHaveText("Stuntman");
 
@@ -62,6 +63,23 @@ test("hero class cards can be selected from the start screen", async ({ page }) 
 
   expect(heroVisuals.tileBackground).toContain("sprite-stuntman.svg");
   expect(heroVisuals.titleIcon).toContain("class-stuntman.svg");
+});
+
+test("hero class cards support arrow-key selection on the start screen", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
+  await expect(page.locator("#startModal")).toBeVisible();
+
+  await page.locator(".class-option.selected").focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".class-option.selected strong")).toHaveText("Stuntman");
+
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".class-option.selected strong")).toHaveText("Regisseur");
+
+  await page.keyboard.press("ArrowUp");
+  await expect(page.locator(".class-option.selected strong")).toHaveText("Stuntman");
 });
 
 test("each hero class starts with a matching random weapon", async ({ page }) => {
@@ -490,6 +508,46 @@ test("fresh starts allow target mode with a newly equipped expedition revolver",
   await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
 });
 
+test("weapon tooltips show the inflected combat-log form", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupWeaponAtPlayerStep(page, {
+    type: "weapon",
+    id: "expedition-revolver",
+    templateId: "expedition-revolver",
+    baseItemId: "expedition-revolver",
+    name: "Leuchtend Expeditionsrevolver der Flamme",
+    grammar: {
+      gender: "masculine",
+      displayName: "Leuchtend Expeditionsrevolver der Flamme",
+      definiteForms: {
+        nominative: "der leuchtende Expeditionsrevolver der Flamme",
+        accusative: "den leuchtenden Expeditionsrevolver der Flamme",
+        dative: "dem leuchtenden Expeditionsrevolver der Flamme",
+      },
+    },
+    nameParts: {
+      prefix: "Leuchtend",
+      baseName: "Expeditionsrevolver",
+      suffix: "der Flamme",
+      decadeSuffix: null,
+    },
+    source: "Tests",
+    handedness: "one-handed",
+    attackMode: "ranged",
+    range: 6,
+    damage: 3,
+    hitBonus: 1,
+    critBonus: 1,
+    meleePenaltyHit: 0,
+    description: "Nur fuer Tests.",
+  });
+
+  await page.locator(".tile.weapon-drop").hover();
+  await expect(page.locator("#hoverTooltip")).toContainText("Kampflog: mit dem leuchtenden Expeditionsrevolver der Flamme");
+});
+
 test("topbar shows summed combat values while tooltips keep the breakdown", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -604,6 +662,40 @@ test("ranged weapons enter target mode and mark a valid target", async ({ page }
   await expect(page.locator("#targetModeHint")).toContainText("Zielmodus aktiv");
   await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
   await expect(page.locator("#enemySheet")).toContainText("Aktiv markiert");
+});
+
+test("target mode can also be opened from the header button", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+  });
+
+  await page.getByRole("button", { name: "Zielen" }).click();
+
+  await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
+  await expect(page.locator("#targetModeHint")).toContainText("Zielmodus aktiv");
 });
 
 test("target mode shows a clear hint even without a valid straight shot target", async ({ page }) => {

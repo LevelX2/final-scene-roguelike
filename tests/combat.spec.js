@@ -80,6 +80,7 @@ test("player attacks can miss and be logged as dodged", async ({ page }) => {
 
   expect(snapshot.enemies[0].hp).toBe(20);
   expect(messages.some((entry) => entry.text.includes("weicht deinem Angriff aus"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Als Stuntman gehst du sofort in die Szene"))).toBeTruthy();
 });
 
 test("Hauptrolle gets a boosted opening strike against a fresh enemy", async ({ page }) => {
@@ -118,6 +119,41 @@ test("Hauptrolle gets a boosted opening strike against a fresh enemy", async ({ 
 
   expect(snapshot.enemies[0].hp).toBe(14);
   expect(messages.some((entry) => entry.text.includes("Triff deine Marke"))).toBeTruthy();
+});
+
+test("Regisseur gets a class-specific opening strike log line", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { classLabel: "Regisseur" });
+
+  await setupCombat(page, {
+    player: {
+      precision: 6,
+      reaction: 4,
+      nerves: 3,
+      weapon: {
+        type: "weapon",
+        id: "test-lens-blade",
+        name: "Blickklinge",
+        source: "Tests",
+        damage: 2,
+        hitBonus: 1,
+        critBonus: 0,
+        description: "Nur für Tests.",
+      },
+    },
+    enemy: {
+      hp: 20,
+      maxHp: 20,
+      reaction: 1,
+      nerves: 0,
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99, 0.99]));
+  await page.keyboard.press("ArrowRight");
+
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(messages.some((entry) => entry.text.includes("Mit Szenenblick liest du den ersten Moment richtig"))).toBeTruthy();
 });
 
 test("critical hits deal increased damage and are logged", async ({ page }) => {
@@ -537,6 +573,113 @@ test("player death opens the death modal", async ({ page }) => {
 
   await expect(page.locator("#deathModal")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Du bist gefallen" })).toBeVisible();
+});
+
+test("death modal describes who killed the player and with which weapon", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { name: "Level X2" });
+
+  await setupCombat(page, {
+    player: {
+      hp: 4,
+      maxHp: 20,
+      reaction: 0,
+      nerves: 0,
+    },
+    enemy: {
+      id: "kellerkriecher",
+      baseName: "Kellerkriecher",
+      name: "Kellerkriecher",
+      hp: 12,
+      maxHp: 12,
+      strength: 6,
+      precision: 9,
+      reaction: 1,
+      nerves: 0,
+      weapon: {
+        type: "weapon",
+        id: "expedition-revolver",
+        templateId: "expedition-revolver",
+        baseItemId: "expedition-revolver",
+        name: "Leuchtend Expeditionsrevolver der Flamme",
+        nameParts: {
+          prefix: "Leuchtend",
+          baseName: "Expeditionsrevolver",
+          suffix: "der Flamme",
+          decadeSuffix: null,
+        },
+        source: "Tests",
+        damage: 3,
+        hitBonus: 2,
+        critBonus: 0,
+        description: "Nur für Tests.",
+      },
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0]));
+  await page.keyboard.press(" ");
+
+  await expect(page.locator("#deathSummary")).toContainText("ein Kellerkriecher");
+  await expect(page.locator("#deathSummary")).toContainText("dem leuchtenden Expeditionsrevolver der Flamme");
+});
+
+test("enemy attack log uses the inflected weapon phrase", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    player: {
+      hp: 20,
+      maxHp: 20,
+      reaction: 0,
+      nerves: 0,
+    },
+    enemy: {
+      id: "kellerkriecher",
+      baseName: "Kellerkriecher",
+      name: "Kellerkriecher",
+      hp: 12,
+      maxHp: 12,
+      strength: 6,
+      precision: 9,
+      reaction: 1,
+      nerves: 0,
+      weapon: {
+        type: "weapon",
+        id: "expedition-revolver",
+        templateId: "expedition-revolver",
+        baseItemId: "expedition-revolver",
+        name: "Leuchtend Expeditionsrevolver der Flamme",
+        grammar: {
+          gender: "masculine",
+          displayName: "Leuchtend Expeditionsrevolver der Flamme",
+          definiteForms: {
+            nominative: "der leuchtende Expeditionsrevolver der Flamme",
+            accusative: "den leuchtenden Expeditionsrevolver der Flamme",
+            dative: "dem leuchtenden Expeditionsrevolver der Flamme",
+          },
+        },
+        nameParts: {
+          prefix: "Leuchtend",
+          baseName: "Expeditionsrevolver",
+          suffix: "der Flamme",
+          decadeSuffix: null,
+        },
+        source: "Tests",
+        damage: 3,
+        hitBonus: 2,
+        critBonus: 0,
+        description: "Nur für Tests.",
+      },
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0]));
+  await page.keyboard.press(" ");
+
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(messages.some((entry) => entry.text.includes("mit dem leuchtenden Expeditionsrevolver der Flamme"))).toBeTruthy();
 });
 
 test("a death writes a highscore entry", async ({ page }) => {

@@ -1,5 +1,6 @@
 import { formatStudioLabel, formatStudioWithArchetype, getStudioArchetypeLabel } from '../studio-theme.mjs';
 import { getWeaponEffectDefinition, getEffectStateLabel } from '../content/catalogs/weapon-effects.mjs';
+import { formatKillStatLabel, getKillStatEntries } from '../kill-stats.mjs';
 
 export function createHudView(context) {
   const {
@@ -13,6 +14,7 @@ export function createHudView(context) {
     getCurrentFloorState,
     getMainHand,
     getOffHand,
+    formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
     loadHighscores,
@@ -100,7 +102,7 @@ export function createHudView(context) {
     const summaryRows = [
       createSheetRow('Klasse', state.player.classLabel ?? '-'),
       createSheetRow('Passive', state.player.classPassiveName ?? '-'),
-      createSheetRow('Haupthand', `${getMainHand(state.player).name} (${formatWeaponStats(getMainHand(state.player))})`),
+      createSheetRow('Haupthand', `${formatWeaponDisplayName(getMainHand(state.player))} (${formatWeaponStats(getMainHand(state.player))})`),
       createSheetRow('Waffenstil', formatWeaponRoleSummary(getMainHand(state.player))),
       createSheetRow('Nebenhand', getOffHand(state.player) ? `${getOffHand(state.player).name} (${formatOffHandStats(getOffHand(state.player))})` : 'Leer'),
       createSheetRow('Status', formatStatusSummary(state.player)),
@@ -148,7 +150,7 @@ export function createHudView(context) {
             createSheetRow('Rückzug', target.enemy.retreatLabel ?? 'Standhaft'),
             createSheetRow('Regeneration', target.enemy.healingLabel ?? 'Langsam'),
             createSheetRow('Entfernung', `${target.distance} Felder`),
-            createSheetRow('Waffe', target.enemy.mainHand ? `${target.enemy.mainHand.name} (${formatWeaponStats(target.enemy.mainHand)})` : 'Keine'),
+            createSheetRow('Waffe', target.enemy.mainHand ? `${formatWeaponDisplayName(target.enemy.mainHand)} (${formatWeaponStats(target.enemy.mainHand)})` : 'Keine'),
             createSheetRow('Kampfprofil', formatWeaponRoleSummary(target.enemy.mainHand)),
             createSheetRow('Status', formatStatusSummary(target.enemy)),
             createSheetRow('Leben', `${target.enemy.hp}/${target.enemy.maxHp}`),
@@ -213,10 +215,9 @@ export function createHudView(context) {
       createSheetRow('Schritte', state.turn),
     ].join('');
 
-    const killEntries = Object.entries(state.killStats ?? {})
-      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'de'));
+    const killEntries = getKillStatEntries(state.killStats);
     runStatsKillsElement.innerHTML = killEntries.length > 0
-      ? killEntries.map(([name, count]) => createSheetRow(name, count)).join('')
+      ? killEntries.map((entry) => createSheetRow(formatKillStatLabel(entry), entry.count)).join('')
       : `<div class="inventory-empty">Noch keine Gegnertypen besiegt.</div>`;
   }
 

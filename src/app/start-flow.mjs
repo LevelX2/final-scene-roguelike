@@ -17,7 +17,7 @@ export function createStartFlowApi(context) {
   } = context;
 
   let heroIdentityStatusTimeout;
-  const DEFAULT_START_STATUS = "Wird fÃ¼r dieses und das nÃ¤chste Spiel gemerkt.";
+  const DEFAULT_START_STATUS = "Wird für dieses und das nächste Spiel gemerkt.";
 
   function resetStartIdentityFeedback() {
     saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
@@ -37,33 +37,83 @@ export function createStartFlowApi(context) {
         <input type="radio" name="heroClass" value="${heroClass.id}" ${heroClass.id === selectedClassId ? "checked" : ""}>
         <div class="class-option-art" aria-hidden="true"${classIconUrl ? ` style="--class-icon: url('${classIconUrl}')"` : ""}></div>
         <div class="class-option-copy">
-          <strong>${heroClass.label}</strong>
-          <span>${heroClass.tagline}</span>
-          <span>${heroClass.passiveName}: ${heroClass.passiveSummary}</span>
+          <strong class="class-option-title">${heroClass.label}</strong>
+          <span class="class-option-tagline">${heroClass.tagline}</span>
+          <div class="class-option-passive">
+            <span class="class-option-passive-label">Spezialfähigkeit: ${heroClass.passiveName}</span>
+            <span class="class-option-passive-copy">${heroClass.passiveSummary}</span>
+          </div>
         </div>
       `;
 
       const input = label.querySelector('input[name="heroClass"]');
-      const applySelection = () => {
+      const getOptions = () => Array.from(classOptionsElement.querySelectorAll(".class-option"));
+      const syncOptionFocusability = (activeOption) => {
+        getOptions().forEach((option) => {
+          option.tabIndex = option === activeOption ? 0 : -1;
+        });
+      };
+      const applySelection = ({ focus = false } = {}) => {
         if (!input) {
           return;
         }
 
         input.checked = true;
-        classOptionsElement.querySelectorAll(".class-option").forEach((option) => {
+        getOptions().forEach((option) => {
           option.classList.toggle("selected", option === label);
         });
+        syncOptionFocusability(label);
+        if (focus) {
+          label.focus();
+        }
+      };
+      const moveSelection = (direction) => {
+        const options = getOptions();
+        const currentIndex = options.indexOf(label);
+        if (currentIndex < 0) {
+          return;
+        }
+
+        const nextIndex = (currentIndex + direction + options.length) % options.length;
+        const nextOption = options[nextIndex];
+        const nextInput = nextOption?.querySelector('input[name="heroClass"]');
+        if (!nextOption || !nextInput) {
+          return;
+        }
+
+        nextInput.checked = true;
+        options.forEach((option) => {
+          option.classList.toggle("selected", option === nextOption);
+        });
+        syncOptionFocusability(nextOption);
+        nextOption.focus();
       };
 
-      label.addEventListener("click", applySelection);
+      label.addEventListener("click", () => applySelection({ focus: true }));
       label.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          applySelection();
+          applySelection({ focus: true });
+          return;
+        }
+
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          event.preventDefault();
+          moveSelection(1);
+          return;
+        }
+
+        if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          event.preventDefault();
+          moveSelection(-1);
         }
       });
-      input?.addEventListener("change", applySelection);
+      input?.addEventListener("change", () => applySelection());
       classOptionsElement.appendChild(label);
+
+      if (heroClass.id === selectedClassId) {
+        syncOptionFocusability(label);
+      }
     });
   }
 

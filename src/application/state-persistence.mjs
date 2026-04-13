@@ -1,4 +1,5 @@
 import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
+import { normalizeKillStats } from '../kill-stats.mjs';
 
 export function createStatePersistenceApi(context) {
   const {
@@ -215,7 +216,7 @@ export function createStatePersistenceApi(context) {
     normalizedState.deathCause = savedState.deathCause ?? null;
     normalizedState.scoreSaved = Boolean(savedState.scoreSaved);
     normalizedState.kills = Math.max(0, Number(savedState.kills) || 0);
-    normalizedState.killStats = savedState.killStats ?? {};
+    normalizedState.killStats = normalizeKillStats(savedState.killStats);
     normalizedState.damageDealt = Math.max(0, Number(savedState.damageDealt) || 0);
     normalizedState.damageTaken = Math.max(0, Number(savedState.damageTaken) || 0);
     normalizedState.xpGained = Math.max(0, Number(savedState.xpGained) || 0);
@@ -386,7 +387,6 @@ export function createStatePersistenceApi(context) {
       b.deepestFloor - a.deepestFloor ||
       b.level - a.level ||
       b.kills - a.kills ||
-      b.hp - a.hp ||
       a.turns - b.turns
     );
 

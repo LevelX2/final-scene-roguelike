@@ -1,3 +1,25 @@
+import { recordKillStat } from '../kill-stats.mjs';
+import { formatWeaponReference } from '../text/combat-phrasing.mjs';
+
+const OPENING_STRIKE_LOGS = {
+  lead: {
+    hit: (enemyName) => `Triff deine Marke gibt dir den perfekten Auftakt gegen ${enemyName}.`,
+    miss: (enemyName) => `Triff deine Marke setzt den ersten Beat, aber ${enemyName} entkommt knapp.`,
+  },
+  stuntman: {
+    hit: (enemyName) => `Als Stuntman gehst du sofort entschlossen in die Szene und bringst ${enemyName} unter Druck.`,
+    miss: (enemyName) => `Als Stuntman gehst du sofort in die Szene, aber ${enemyName} entkommt knapp.`,
+  },
+  director: {
+    hit: (enemyName) => `Mit Szenenblick liest du den ersten Moment richtig und setzt ${enemyName} sofort unter Druck.`,
+    miss: (enemyName) => `Mit Szenenblick erkennst du den Moment, aber ${enemyName} entkommt knapp.`,
+  },
+  default: {
+    hit: (enemyName) => `Du setzt ${enemyName} vom ersten Moment an unter Druck.`,
+    miss: (enemyName) => `${enemyName} entkommt deinem ersten Ansatz knapp.`,
+  },
+};
+
 export function createPlayerAttackApi(context) {
   const {
     getState,
@@ -20,6 +42,12 @@ export function createPlayerAttackApi(context) {
     addMessage,
     renderSelf,
   } = context;
+
+  function getOpeningStrikeMessage(player, enemyName, outcome) {
+    const classId = player?.classId ?? 'default';
+    const messages = OPENING_STRIKE_LOGS[classId] ?? OPENING_STRIKE_LOGS.default;
+    return messages[outcome]?.(enemyName) ?? OPENING_STRIKE_LOGS.default[outcome](enemyName);
+  }
 
   function attackEnemy(enemy, options = {}) {
     const state = getState();
@@ -51,7 +79,7 @@ export function createPlayerAttackApi(context) {
       } : {});
       playDodgeSound();
       if (result.usedOpeningStrike) {
-        addMessage(`${state.player.classPassiveName} setzt den ersten Beat, aber ${enemy.name} entkommt knapp.`, "important");
+        addMessage(getOpeningStrikeMessage(state.player, enemy.name, 'miss'), "important");
       }
       addMessage(`${enemy.name} weicht deinem Angriff aus.`, "danger");
       renderSelf();
@@ -93,10 +121,10 @@ export function createPlayerAttackApi(context) {
     }
 
     if (itemHasModifier(weapon, "final") && getWeaponConditionalDamageBonus(state.player, weapon) > 0) {
-      addMessage(`${weapon.name} trifft im letzten Akt härter zu.`, "important");
+      addMessage(`Mit ${formatWeaponReference(weapon, { article: "definite", grammaticalCase: "dative" })} triffst du im letzten Akt härter zu.`, "important");
     }
     if (result.usedOpeningStrike) {
-      addMessage(`${state.player.classPassiveName} gibt dir den perfekten Auftakt gegen ${enemy.name}.`, "important");
+      addMessage(getOpeningStrikeMessage(state.player, enemy.name, 'hit'), "important");
     }
 
     addMessage(
@@ -110,10 +138,10 @@ export function createPlayerAttackApi(context) {
       const floorState = getCurrentFloorState();
       floorState.enemies = floorState.enemies.filter((entry) => entry !== enemy);
       state.kills += 1;
-      state.killStats[enemy.name] = (state.killStats[enemy.name] ?? 0) + 1;
+      state.killStats = recordKillStat(state.killStats, enemy);
       if (enemy.lootWeapon && Math.random() < (enemy.weaponDropChance ?? 0.55)) {
         floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
-        addMessage(`${enemy.name} lässt ${enemy.lootWeapon.name} fallen.`, "important");
+        addMessage(`${enemy.name} lässt ${formatWeaponReference(enemy.lootWeapon, { article: "definite", grammaticalCase: "accusative" })} fallen.`, "important");
       }
       if (enemy.lootOffHand && Math.random() < (enemy.offHandDropChance ?? 0.45)) {
         floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));

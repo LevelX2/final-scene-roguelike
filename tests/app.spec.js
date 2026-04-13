@@ -309,6 +309,38 @@ test("an incompatible save is rejected with a clear message", async ({ page }) =
   await expect(page.locator("#startSavegameStatus")).toContainText("nicht kompatibel");
 });
 
+test("loading a saved game restores gameplay state but keeps transient modals closed", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { name: "Modalcheck" });
+
+  await page.evaluate(() => {
+    window.__TEST_API__.addInventoryItem({
+      type: "food",
+      id: "modal-snack",
+      name: "Modal Snack",
+      nutritionRestore: 20,
+      description: "Nur für Tests.",
+    });
+  });
+
+  await page.keyboard.press("i");
+  await expect(page.locator("#inventoryModal")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("o");
+  await expect(page.locator("#optionsModal")).toBeVisible();
+  await page.getByRole("button", { name: "Spiel speichern" }).click();
+  await expect(page.locator("#savegameStatus")).toContainText("Modalcheck");
+
+  await page.reload();
+  await page.locator("#loadGameFromStart").evaluate((button) => button.click());
+  await expect(page.locator("#startModal")).toBeHidden();
+  await expect(page.locator("#inventoryModal")).toBeHidden();
+  await expect(page.locator("#optionsModal")).toBeHidden();
+
+  const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
+  expect(inventory.foodCount).toBe(1);
+});
+
 test("topbar shows summed combat values while tooltips keep the breakdown", async ({ page }) => {
   await page.goto("/");
   await startRun(page);

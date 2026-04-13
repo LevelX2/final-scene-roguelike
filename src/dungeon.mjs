@@ -20,6 +20,9 @@ import {
   getEnemyScaleForFloor,
   shouldSpawnFloorShield,
 } from './balance.mjs';
+import { createDungeonEquipmentRolls } from './dungeon/equipment-rolls.mjs';
+import { createDungeonPickupFactory } from './dungeon/pickup-factory.mjs';
+import { createShowcasePlacementApi } from './dungeon/showcase-placement.mjs';
 import { rollStudioArchetypeId } from './studio-theme.mjs';
 
 export function createDungeonApi(context) {
@@ -51,6 +54,46 @@ export function createDungeonApi(context) {
     generateEquipmentItem,
     getState,
   } = context;
+
+  const pickupFactory = createDungeonPickupFactory({
+    DOOR_TYPE,
+    cloneOffHandItem,
+  });
+
+  const {
+    createWeaponPickup,
+    createOffHandPickup,
+    createChestPickup,
+    createFoodPickup,
+    createShowcase,
+    cloneWeapon,
+    createDoor,
+    createKeyPickup,
+  } = pickupFactory;
+
+  const equipmentRolls = createDungeonEquipmentRolls({
+    MONSTER_CATALOG,
+    WEAPON_CATALOG,
+    OFFHAND_CATALOG,
+    DUNGEON_WEAPON_TIERS,
+    CHEST_WEAPON_CHANCE,
+    CHEST_SHIELD_CHANCE,
+    DUNGEON_WEAPON_WEIGHT_BONUS,
+    DUPLICATE_WEAPON_WEIGHT_PENALTY,
+    cloneWeapon,
+    cloneOffHandItem,
+    generateEquipmentItem,
+    getState,
+  });
+
+  const {
+    weightedPick,
+    buildAvailableWeaponsForFloor,
+    chooseWeightedWeapon,
+    buildAvailableShieldsForFloor,
+    chooseWeightedShield,
+    rollChestContent,
+  } = equipmentRolls;
 
   function createEnemy(position, floor, monster) {
     const scale = getEnemyScaleForFloor(floor, monster.rank);
@@ -126,59 +169,6 @@ export function createDungeonApi(context) {
     };
   }
 
-  function createWeaponPickup(weapon, x, y) {
-    return {
-      x,
-      y,
-      item: {
-        ...weapon,
-        type: "weapon",
-      },
-    };
-  }
-
-  function createOffHandPickup(item, x, y) {
-    return {
-      x,
-      y,
-      item: cloneOffHandItem(item),
-    };
-  }
-
-  function createChestPickup(content, x, y) {
-    return {
-      x,
-      y,
-      content,
-      opened: false,
-    };
-  }
-
-  function createFoodPickup(item, x, y) {
-    return {
-      x,
-      y,
-      item: {
-        ...item,
-        type: item.type ?? "food",
-      },
-    };
-  }
-
-  function createShowcase(prop, x, y) {
-    const ambienceId = prop.ambienceId ?? prop.id;
-    return {
-      x,
-      y,
-      item: {
-        ...prop,
-        type: "showcase",
-        ambienceId,
-        iconAsset: prop.iconAsset ?? `./assets/displays/${ambienceId}.svg`,
-      },
-    };
-  }
-
   function collectUsedShowcasePropIds() {
     const state = getState();
     if (!state?.floors) {
@@ -195,58 +185,6 @@ export function createDungeonApi(context) {
       });
     });
     return usedPropIds;
-  }
-
-  function cloneWeapon(weapon) {
-    if (!weapon) {
-      return null;
-    }
-
-    return {
-      ...weapon,
-      type: "weapon",
-      modifiers: weapon.modifiers ? weapon.modifiers.map((modifier) => ({
-        ...modifier,
-        allowedItemTypes: [...(modifier.allowedItemTypes ?? [])],
-        statChanges: { ...(modifier.statChanges ?? {}) },
-        tags: [...(modifier.tags ?? [])],
-      })) : [],
-      modifierIds: [...(weapon.modifierIds ?? [])],
-    };
-  }
-
-  function createDoor(x, y, config = {}) {
-    return {
-      x,
-      y,
-      doorType: config.doorType ?? DOOR_TYPE.NORMAL,
-      isOpen: config.isOpen ?? false,
-      lockColor: config.lockColor ?? null,
-      roomIdA: config.roomIdA ?? null,
-      roomIdB: config.roomIdB ?? null,
-    };
-  }
-
-  function createKeyPickup(color, x, y, floorNumber = null) {
-    const label = color === "green"
-      ? "Grüner"
-      : color === "blue"
-        ? "Blauer"
-        : `${color}er`;
-    const colorLabel = color === "green" ? "grünen" : color === "blue" ? "blauen" : color;
-    return {
-      x,
-      y,
-      item: {
-        type: "key",
-        name: `${label} Schlüssel`,
-        description: floorNumber
-          ? `Passt zu ${colorLabel} Türen in Studio ${floorNumber}. Wird beim Öffnen verbraucht.`
-          : `Passt zu ${colorLabel} Türen. Wird beim Öffnen verbraucht.`,
-        keyColor: color,
-        keyFloor: floorNumber,
-      },
-    };
   }
 
   function getRoomCenter(room) {
@@ -482,194 +420,22 @@ export function createDungeonApi(context) {
     return !reachableTiles.some((tile) => isPositionInsideRoom(tile, room));
   }
 
-  function chooseShowcaseRooms(rooms, startRoomIndex, goalRoomIndex) {
-    return rooms
-      .map((room, index) => ({ room, index }))
-      .filter(({ room, index }) =>
-        room.width >= 5 &&
-        room.height >= 5 &&
-        index !== startRoomIndex &&
-        index !== goalRoomIndex
-      );
-  }
+  const showcasePlacementApi = createShowcasePlacementApi({
+    propCatalog,
+    randomInt,
+    createShowcase,
+    collectUsedShowcasePropIds,
+    getCardinalNeighbors,
+    isTileWalkable,
+    computeReachableTilesWithBlockedPositions,
+    isPositionInsideRoom,
+  });
 
-  function getShowcaseCandidateTiles(grid, room, roomIndex, doors, occupied, stairsUp, stairsDown, startPosition) {
-    const blockedKeys = new Set(occupied.map((entry) => `${entry.x},${entry.y}`));
-    const avoidPoints = [
-      startPosition,
-      stairsUp,
-      stairsDown,
-      ...doors
-        .filter((door) => door.roomIdA === roomIndex || door.roomIdB === roomIndex)
-        .map((door) => ({ x: door.x, y: door.y })),
-    ].filter(Boolean);
-
-    const candidates = [];
-    for (let y = room.y; y < room.y + room.height; y += 1) {
-      for (let x = room.x; x < room.x + room.width; x += 1) {
-        const key = `${x},${y}`;
-        if (blockedKeys.has(key)) {
-          continue;
-        }
-
-        const tooCloseToImportantTile = avoidPoints.some((point) =>
-          Math.abs(point.x - x) + Math.abs(point.y - y) <= 1
-        );
-        if (tooCloseToImportantTile) {
-          continue;
-        }
-
-        const walkableNeighbors = getCardinalNeighbors(x, y)
-          .filter((neighbor) => isTileWalkable(grid, neighbor.x, neighbor.y));
-        if (walkableNeighbors.length < 2) {
-          continue;
-        }
-
-        const touchesOuterWall = getCardinalNeighbors(x, y)
-          .some((neighbor) => !isTileWalkable(grid, neighbor.x, neighbor.y));
-        const distanceToRoomCenter =
-          Math.abs((room.x + Math.floor(room.width / 2)) - x) +
-          Math.abs((room.y + Math.floor(room.height / 2)) - y);
-        const edgeBias = touchesOuterWall ? 2 : 0;
-
-        candidates.push({
-          x,
-          y,
-          score: walkableNeighbors.length * 3 + edgeBias - distanceToRoomCenter * 0.15 + Math.random() * 0.75,
-        });
-      }
-    }
-
-    return candidates.sort((left, right) => right.score - left.score);
-  }
-
-  function placeShowcases({
-    grid,
-    rooms,
-    startRoomIndex,
-    goalRoomIndex,
-    doors,
-    occupied,
-    stairsUp,
-    stairsDown,
-    startPosition,
-  }) {
-    const showcases = [];
-    const eligibleRooms = chooseShowcaseRooms(rooms, startRoomIndex, goalRoomIndex);
-    if (!eligibleRooms.length) {
-      return showcases;
-    }
-
-    const desiredCount = Math.max(
-      2,
-      Math.min(
-        10,
-        Math.round(eligibleRooms.length * (0.35 + Math.random() * 0.18)),
-      ),
-    );
-    const shuffledRooms = [...eligibleRooms].sort(() => Math.random() - 0.5);
-    const availableProps = [...propCatalog].sort(() => Math.random() - 0.5);
-    const usedPropIds = collectUsedShowcasePropIds();
-
-    for (const { room, index } of shuffledRooms) {
-      if (showcases.length >= desiredCount) {
-        break;
-      }
-
-      const candidateTiles = getShowcaseCandidateTiles(
-        grid,
-        room,
-        index,
-        doors,
-        occupied,
-        stairsUp,
-        stairsDown,
-        startPosition,
-      );
-      if (!candidateTiles.length) {
-        continue;
-      }
-
-      const baselineReachableTiles = computeReachableTilesWithBlockedPositions(
-        grid,
-        startPosition,
-        doors,
-        showcases,
-      );
-      const baselineReachableKeys = new Set(
-        baselineReachableTiles.map((tile) => `${tile.x},${tile.y}`),
-      );
-
-      const candidate = candidateTiles[0];
-      const reachableTiles = computeReachableTilesWithBlockedPositions(
-        grid,
-        startPosition,
-        doors,
-        [...showcases, candidate],
-      );
-      const reachableKeys = new Set(reachableTiles.map((tile) => `${tile.x},${tile.y}`));
-      const roomStillReachable = reachableTiles.some((tile) => isPositionInsideRoom(tile, room));
-      const candidateOnlyRemovesItself = [...baselineReachableKeys].every((key) => {
-        if (key === `${candidate.x},${candidate.y}`) {
-          return true;
-        }
-        return reachableKeys.has(key);
-      });
-
-      if (!roomStillReachable || !candidateOnlyRemovesItself) {
-        continue;
-      }
-
-      if (usedPropIds.size >= propCatalog.length) {
-        usedPropIds.clear();
-      }
-
-      const prop = availableProps.find((entry) => !usedPropIds.has(entry.id))
-        ?? propCatalog[randomInt(0, propCatalog.length - 1)];
-      usedPropIds.add(prop.id);
-      showcases.push(createShowcase(prop, candidate.x, candidate.y));
-      occupied.push({ x: candidate.x, y: candidate.y });
-    }
-
-    return showcases;
-  }
-
-  function rollChestContent(floorNumber, availableWeapons, availableShields, dropContext = {}) {
-    const roll = Math.random();
-
-    if (availableShields.length > 0 && floorNumber >= 2 && roll < CHEST_SHIELD_CHANCE) {
-      return {
-        type: "offhand",
-        item: generateEquipmentItem(chooseWeightedShield(availableShields, getState()?.player), {
-          floorNumber,
-          dropSourceTag: dropContext.dropSourceTag ?? "chest",
-        }),
-      };
-    }
-
-    if (availableWeapons.length > 0 && roll < CHEST_SHIELD_CHANCE + CHEST_WEAPON_CHANCE) {
-      return {
-        type: "weapon",
-        item: generateEquipmentItem(
-          chooseWeightedWeapon(availableWeapons, getState()?.player),
-          {
-            floorNumber,
-            dropSourceTag: dropContext.dropSourceTag ?? "chest",
-          },
-        ),
-      };
-    }
-
-    return {
-      type: "potion",
-      item: {
-        type: "potion",
-        name: "Heiltrank",
-        description: "Stellt 8 Lebenspunkte wieder her.",
-        heal: 8,
-      },
-    };
-  }
+  const {
+    chooseShowcaseRooms,
+    getShowcaseCandidateTiles,
+    placeShowcases,
+  } = showcasePlacementApi;
 
   function chooseWeightedMonster(availableMonsters, floorNumber, runSeenCounts, floorSeenCounts) {
     const iconicMonsterIds = new Set([
@@ -714,81 +480,6 @@ export function createDungeonApi(context) {
     }
 
     return weighted[weighted.length - 1].monster;
-  }
-
-  function buildAvailableWeaponsForFloor(floorNumber, unlockedMonsterRank) {
-    const signatureWeapons = MONSTER_CATALOG
-      .filter((monster) => monster.rank <= unlockedMonsterRank)
-      .map((monster) => WEAPON_CATALOG[monster.id])
-      .filter(Boolean)
-      .map((weapon) => ({
-        ...cloneWeapon(weapon),
-        weaponPool: "signature",
-      }));
-
-    const dungeonWeapons = DUNGEON_WEAPON_TIERS
-      .filter((tier) => floorNumber >= tier.minFloor)
-      .flatMap((tier) => tier.weapons.map((weapon) => ({
-        ...cloneWeapon(weapon),
-        weaponPool: "dungeon",
-        minFloor: tier.minFloor,
-      })));
-
-    const uniqueWeapons = new Map();
-    for (const weapon of [...signatureWeapons, ...dungeonWeapons]) {
-      uniqueWeapons.set(weapon.id, weapon);
-    }
-
-    return [...uniqueWeapons.values()];
-  }
-
-  function chooseWeightedWeapon(availableWeapons, player = null) {
-    if (!availableWeapons.length) {
-      return null;
-    }
-
-    const ownedWeaponIds = new Map();
-    const registerWeapon = (weapon) => {
-      if (!weapon?.id) {
-        return;
-      }
-      ownedWeaponIds.set(weapon.id, (ownedWeaponIds.get(weapon.id) ?? 0) + 1);
-    };
-
-    registerWeapon(player?.mainHand);
-    (player?.inventory ?? [])
-      .filter((item) => item.type === "weapon")
-      .forEach(registerWeapon);
-
-    const weightedWeapons = availableWeapons.map((weapon) => {
-      const duplicateCount = ownedWeaponIds.get(weapon.id) ?? 0;
-      const poolWeight = weapon.weaponPool === "dungeon" ? DUNGEON_WEAPON_WEIGHT_BONUS : 1;
-      const duplicatePenalty = duplicateCount > 0
-        ? Math.max(0.15, 1 - duplicateCount * DUPLICATE_WEAPON_WEIGHT_PENALTY)
-        : 1;
-      return {
-        weapon,
-        weight: poolWeight * duplicatePenalty,
-      };
-    });
-
-    const totalWeight = weightedWeapons.reduce((sum, entry) => sum + entry.weight, 0);
-    let roll = Math.random() * totalWeight;
-
-    for (const entry of weightedWeapons) {
-      roll -= entry.weight;
-      if (roll <= 0) {
-        return cloneWeapon(entry.weapon);
-      }
-    }
-
-    return cloneWeapon(weightedWeapons[weightedWeapons.length - 1].weapon);
-  }
-
-  function buildAvailableShieldsForFloor(floorNumber) {
-    return Object.values(OFFHAND_CATALOG)
-      .filter((shield) => (shield.minFloor ?? 1) <= floorNumber)
-      .map((shield) => cloneOffHandItem(shield));
   }
 
   function weightedPickFromMap(weights) {
@@ -837,43 +528,6 @@ export function createDungeonApi(context) {
       .slice(0, variant.id === "dire" ? 2 : 1)
       .join(" ");
     return `${affixes} ${baseName}`;
-  }
-
-  function chooseWeightedShield(availableShields, player = null) {
-    if (!availableShields.length) {
-      return null;
-    }
-
-    const currentShieldId = player?.offHand?.id;
-    const weightedShields = availableShields.map((shield) => ({
-      shield,
-      weight: shield.id === currentShieldId ? 0.35 : 1,
-    }));
-    const totalWeight = weightedShields.reduce((sum, entry) => sum + entry.weight, 0);
-    let roll = Math.random() * totalWeight;
-
-    for (const entry of weightedShields) {
-      roll -= entry.weight;
-      if (roll <= 0) {
-        return cloneOffHandItem(entry.shield);
-      }
-    }
-
-    return cloneOffHandItem(weightedShields[weightedShields.length - 1].shield);
-  }
-
-  function weightedPick(entries) {
-    const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0);
-    let roll = Math.random() * totalWeight;
-
-    for (const entry of entries) {
-      roll -= entry.weight;
-      if (roll <= 0) {
-        return entry.value;
-      }
-    }
-
-    return entries[entries.length - 1]?.value ?? null;
   }
 
   function rollLayoutProfile() {

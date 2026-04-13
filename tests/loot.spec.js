@@ -356,6 +356,28 @@ test("loot chests can open into a usable reward", async ({ page }) => {
   expect(messages.some((entry) => entry.text.includes("Requisitenkiste"))).toBeTruthy();
 });
 
+test("potion chests chain directly into the potion choice modal on the same tile", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupChestAtPlayerStep(page, {
+    type: "potion",
+    item: {
+      type: "potion",
+      name: "Heiltrank",
+      description: "Nur für Tests.",
+      heal: 8,
+    },
+  });
+
+  await page.keyboard.press("ArrowRight");
+
+  await expect(page.locator("#choiceModal")).toBeVisible();
+  await expect(page.locator("#choiceTitle")).toContainText("Heiltrank gefunden");
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(messages.some((entry) => entry.text.includes("Requisitenkiste"))).toBeTruthy();
+});
+
 test("equipment rarity modifiers are applied to generated drops", async ({ page }) => {
   await page.goto("/");
   await startRun(page);

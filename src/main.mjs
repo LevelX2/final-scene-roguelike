@@ -15,11 +15,15 @@ import { createAiApi } from './ai.mjs';
 import { createItemsApi } from './items.mjs';
 import { createTestApi } from './test-api.mjs';
 import { createAudioService } from './application/audio-service.mjs';
+import { createDoorService } from './application/door-service.mjs';
+import { createFloorTransitionService } from './application/floor-transition-service.mjs';
 import { createInputController } from './application/input-controller.mjs';
 import { createInventoryStatsApi } from './application/inventory-stats.mjs';
 import { createSavegameService } from './application/savegame-service.mjs';
 import { createVisibilityService } from './application/visibility-service.mjs';
 import { createModalController } from './application/modal-controller.mjs';
+import { createPlayerTurnController } from './application/player-turn-controller.mjs';
+import { createUiBindingsApi } from './application/ui-bindings.mjs';
 import { createBareHandsWeapon, cloneOffHandItem, getMainHand, getOffHand, getCombatWeapon, createEquipmentPresentationHelpers } from './equipment-helpers.mjs';
 import { clamp, randomInt, createGrid, carveRoom, carveTunnel, roomsOverlap } from './utils.mjs';
 import { formatArchetypeLabel, formatStudioLabel, formatStudioWithArchetype } from './studio-theme.mjs';
@@ -60,6 +64,12 @@ const showFloatingTextAction = createDeferredAction("showFloatingText");
 const showDeathModalAction = createDeferredAction("showDeathModal");
 const showChoiceModalAction = createDeferredAction("showChoiceModal");
 const hideChoiceModalAction = createDeferredAction("hideChoiceModal");
+const moveToFloorAction = createDeferredAction("moveToFloor");
+const tryUseStairsAction = createDeferredAction("tryUseStairs");
+const endTurnAction = createDeferredAction("endTurn");
+const tryCloseAdjacentDoorAction = createDeferredAction("tryCloseAdjacentDoor");
+const movePlayerAction = createDeferredAction("movePlayer");
+const handleWaitAction = createDeferredAction("handleWait");
 const resolvePotionChoiceAction = createDeferredAction("resolvePotionChoice");
 const useInventoryItemAction = createDeferredAction("useInventoryItem");
 const quickUsePotionAction = createDeferredAction("quickUsePotion");
@@ -105,6 +115,15 @@ function assembleCoreModules() {
 
   const audioService = createAudioService({
     getState: () => state,
+  });
+
+  const doorService = createDoorService({
+    DOOR_TYPE,
+    getState: () => state,
+    getCurrentFloorState,
+    addMessage,
+    playDoorOpenSound: () => audioService.playDoorOpenSound(),
+    playDoorCloseSound: () => audioService.playDoorCloseSound(),
   });
 
   const trapsApi = createTrapsApi({
@@ -168,8 +187,8 @@ function assembleCoreModules() {
     TILE,
     getState: () => state,
     getCurrentFloorState,
-    getDoorAt,
-    isDoorClosed,
+    getDoorAt: doorService.getDoorAt,
+    isDoorClosed: doorService.isDoorClosed,
     createGrid,
   });
 
@@ -220,6 +239,7 @@ function assembleCoreModules() {
   return {
     ...itemizationApi,
     ...audioService,
+    ...doorService,
     ...trapsApi,
     ...dungeonApi,
     ...visibilityService,
@@ -260,6 +280,12 @@ const {
   cloneWeapon,
   createDungeonLevel,
   updateVisibility,
+  getDoorAt,
+  isDoorClosed,
+  getDoorColorLabels,
+  canPlayerOpenDoor,
+  openDoor,
+  closeDoor,
   loadHighscores,
   loadHeroName,
   saveHeroName,
@@ -350,8 +376,8 @@ function assembleInterfaceModules() {
     syncStartModalControls,
     renderSelf: () => render(),
     addMessage,
-    moveToFloor: (...args) => moveToFloor(...args),
-    endTurn: (...args) => endTurn(...args),
+    moveToFloor: (...args) => moveToFloorAction.call(...args),
+    endTurn: (...args) => endTurnAction.call(...args),
     resolvePotionChoice: (...args) => resolvePotionChoiceAction.call(...args),
     choiceModalElement,
     choiceTitleElement,
@@ -385,9 +411,9 @@ function assembleInterfaceModules() {
     toggleHelp: modalController.toggleHelp,
     toggleHighscores: modalController.toggleHighscores,
     toggleDeathKills: modalController.toggleDeathKills,
-    movePlayer: (...args) => movePlayer(...args),
-    handleWait: () => handleWait(),
-    tryCloseAdjacentDoor: () => tryCloseAdjacentDoor(),
+    movePlayer: (...args) => movePlayerAction.call(...args),
+    handleWait: () => handleWaitAction.call(),
+    tryCloseAdjacentDoor: () => tryCloseAdjacentDoorAction.call(),
     quickUsePotion: (...args) => quickUsePotionAction.call(...args),
   });
 
@@ -510,7 +536,7 @@ function assembleGameplayModules() {
     addMessage,
     showChoiceModal: (...args) => showChoiceModalAction.call(...args),
     hideChoiceModal: (...args) => hideChoiceModalAction.call(...args),
-    endTurn,
+    endTurn: (...args) => endTurnAction.call(...args),
     healPlayer: combatApi.healPlayer,
     restoreNutrition,
     refreshNutritionState,
@@ -519,6 +545,51 @@ function assembleGameplayModules() {
   resolvePotionChoiceAction.set(itemsApi.resolvePotionChoice);
   useInventoryItemAction.set(itemsApi.useInventoryItem);
   quickUsePotionAction.set(itemsApi.quickUsePotion);
+
+  const floorTransitionService = createFloorTransitionService({
+    getState: () => state,
+    getCurrentFloorState,
+    createDungeonLevel,
+    detectNearbyTraps,
+    maybeTriggerShowcaseAmbience,
+    manhattanDistance: aiApi.manhattanDistance,
+    addMessage,
+    formatStudioLabel,
+    formatArchetypeLabel,
+    showStairChoice,
+    renderSelf: () => render(),
+  });
+
+  const playerTurnController = createPlayerTurnController({
+    WIDTH,
+    HEIGHT,
+    TILE,
+    DOOR_TYPE,
+    getState: () => state,
+    getCurrentFloorState,
+    getDoorAt,
+    getShowcaseAt,
+    openDoor,
+    closeDoor,
+    canPlayerOpenDoor,
+    getDoorColorLabels,
+    manhattanDistance: aiApi.manhattanDistance,
+    addMessage,
+    attackEnemy: combatApi.attackEnemy,
+    tryPickupLoot: itemsApi.tryPickupLoot,
+    tryUseStairs: floorTransitionService.tryUseStairs,
+    detectNearbyTraps,
+    maybeTriggerShowcaseAmbience,
+    handleActorEnterTile,
+    playStepSound,
+    playLockedDoorSound,
+    hasNearbyEnemy: aiApi.hasNearbyEnemy,
+    moveEnemies: aiApi.moveEnemies,
+    processContinuousTraps,
+    processSafeRegeneration: aiApi.processSafeRegeneration,
+    applyPlayerNutritionTurnCost,
+    renderSelf: () => render(),
+  });
 
   const testApi = createTestApi({
     WIDTH,
@@ -545,14 +616,23 @@ function assembleGameplayModules() {
     clearRandomSequence: () => {
       testRandomQueue = [];
     },
-    tryUseStairs,
+    tryUseStairs: (...args) => tryUseStairsAction.call(...args),
     renderSelf: () => render(),
   });
+
+  moveToFloorAction.set(floorTransitionService.moveToFloor);
+  tryUseStairsAction.set(floorTransitionService.tryUseStairs);
+  endTurnAction.set(playerTurnController.endTurn);
+  tryCloseAdjacentDoorAction.set(playerTurnController.tryCloseAdjacentDoor);
+  movePlayerAction.set(playerTurnController.movePlayer);
+  handleWaitAction.set(playerTurnController.handleWait);
 
   return {
     ...combatApi,
     ...aiApi,
     ...itemsApi,
+    ...floorTransitionService,
+    ...playerTurnController,
     ...testApi,
   };
 }
@@ -572,6 +652,12 @@ const {
   equipWeapon,
   canEquipOffHand,
   equipOffHand,
+  moveToFloor,
+  tryUseStairs,
+  endTurn,
+  tryCloseAdjacentDoor,
+  movePlayer,
+  handleWait,
   resolvePotionChoice,
   useInventoryItem,
   quickUsePotion,
@@ -646,10 +732,6 @@ function getCurrentStudioArchetypeId() {
   return getCurrentFloorState()?.studioArchetypeId ?? null;
 }
 
-function getDoorAt(x, y, floorState = getCurrentFloorState()) {
-  return floorState?.doors?.find((door) => door.x === x && door.y === y) ?? null;
-}
-
 function getShowcaseAt(x, y, floorState = getCurrentFloorState()) {
   return floorState?.showcases?.find((showcase) => showcase.x === x && showcase.y === y) ?? null;
 }
@@ -697,123 +779,6 @@ function maybeTriggerShowcaseAmbience() {
   addMessage(line);
   playShowcaseAmbienceSound();
   floorState.showcaseAmbienceSeen[roomIndex] = true;
-}
-
-function isDoorClosed(door) {
-  return Boolean(door) && !door.isOpen;
-}
-
-function hasKeyForDoor(door, entity = state.player) {
-  if (!door) {
-    return false;
-  }
-
-  return entity === state.player && state.inventory.some((item) =>
-    item.type === "key" &&
-    item.keyColor === door.lockColor &&
-    item.keyFloor === state.floor
-  );
-}
-
-function consumeKeyForDoor(door, entity = state.player) {
-  if (entity !== state.player || !door) {
-    return null;
-  }
-
-  const keyIndex = state.inventory.findIndex((item) =>
-    item.type === "key" &&
-    item.keyColor === door.lockColor &&
-    item.keyFloor === state.floor
-  );
-
-  if (keyIndex === -1) {
-    return null;
-  }
-
-  const [usedKey] = state.inventory.splice(keyIndex, 1);
-  return usedKey ?? null;
-}
-
-function getDoorColorLabels(color) {
-  if (color === "green") {
-    return { adjective: "grüne", adjectiveDative: "grüne", key: "grüner" };
-  }
-
-  if (color === "blue") {
-    return { adjective: "blaue", adjectiveDative: "blauen", key: "blauer" };
-  }
-
-  return { adjective: color, adjectiveDative: color, key: color };
-}
-
-function canPlayerOpenDoor(door) {
-  if (!door) {
-    return true;
-  }
-
-  if (door.isOpen) {
-    return true;
-  }
-
-  if (door.doorType === DOOR_TYPE.LOCKED) {
-    return hasKeyForDoor(door);
-  }
-
-  return true;
-}
-
-function openDoor(door, actor = "player") {
-  if (!door || door.isOpen) {
-    return true;
-  }
-
-  let usedKey = null;
-  if (door.doorType === DOOR_TYPE.LOCKED) {
-    usedKey = consumeKeyForDoor(door);
-    if (!usedKey) {
-      return false;
-    }
-  }
-
-  if (door.doorType === DOOR_TYPE.LOCKED && !usedKey) {
-    return false;
-  }
-
-  door.isOpen = true;
-  playDoorOpenSound();
-  if (actor === "player") {
-    const colorLabels = getDoorColorLabels(door.lockColor);
-    addMessage(
-      door.doorType === DOOR_TYPE.LOCKED
-        ? `Der ${colorLabels.key} Schlüssel aus Studio ${usedKey.keyFloor} entriegelt die Tür und wird verbraucht.`
-        : "Die Tür schwingt auf.",
-      "important",
-    );
-  } else {
-    addMessage(`${actor.name} drückt eine Tür auf.`, "danger");
-  }
-  if (door.doorType === DOOR_TYPE.LOCKED) {
-    door.doorType = DOOR_TYPE.NORMAL;
-    door.lockColor = null;
-  }
-  return true;
-}
-
-function closeDoor(door) {
-  if (!door || !door.isOpen) {
-    return false;
-  }
-
-  const floorState = getCurrentFloorState();
-  const occupiedByEnemy = floorState.enemies.some((enemy) => enemy.x === door.x && enemy.y === door.y);
-  const occupiedByPlayer = state.player.x === door.x && state.player.y === door.y;
-  if (occupiedByEnemy || occupiedByPlayer) {
-    return false;
-  }
-
-  door.isOpen = false;
-  playDoorCloseSound();
-  return true;
 }
 
 function render() {
@@ -941,256 +906,6 @@ function setInventoryFilter(filter) {
   render();
 }
 
-function ensureFloorExists(floorNumber) {
-  if (!state.floors[floorNumber]) {
-    state.floors[floorNumber] = createDungeonLevel(floorNumber);
-  }
-}
-
-function transferFloorFollower(fromFloor, targetFloor, sourceStair, targetStair) {
-  const sourceFloor = state.floors[fromFloor];
-  const destinationFloor = state.floors[targetFloor];
-  if (!sourceFloor || !destinationFloor || !sourceStair || !targetStair) {
-    return null;
-  }
-
-  const follower = sourceFloor.enemies.find((enemy) =>
-    enemy.canChangeFloors &&
-    enemy.aggro &&
-    manhattanDistance(enemy, sourceStair) <= 2
-  );
-
-  if (!follower) {
-    return null;
-  }
-
-  const occupied = destinationFloor.enemies.some((enemy) => enemy.x === targetStair.x && enemy.y === targetStair.y) ||
-    (state.player.x === targetStair.x && state.player.y === targetStair.y);
-  if (occupied) {
-    return null;
-  }
-
-  sourceFloor.enemies = sourceFloor.enemies.filter((enemy) => enemy !== follower);
-  follower.x = targetStair.x;
-  follower.y = targetStair.y;
-  follower.originX = targetStair.x;
-  follower.originY = targetStair.y;
-  destinationFloor.enemies.push(follower);
-  return follower;
-}
-
-function moveToFloor(direction) {
-  const currentFloorState = getCurrentFloorState();
-  const targetFloor = state.floor + direction;
-  state.safeRestTurns = 0;
-  const sourceStair = direction > 0 ? currentFloorState.stairsDown : currentFloorState.stairsUp;
-
-  if (direction > 0) {
-    ensureFloorExists(targetFloor);
-    state.floor = targetFloor;
-    state.deepestFloor = Math.max(state.deepestFloor, state.floor);
-    const targetStair = state.floors[targetFloor].stairsUp
-      ? state.floors[targetFloor].stairsUp
-      : state.floors[targetFloor].startPosition;
-    state.player.x = targetStair.x;
-    state.player.y = targetStair.y;
-    detectNearbyTraps();
-    maybeTriggerShowcaseAmbience();
-    const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
-    addMessage(`Du betrittst ${formatStudioLabel(state.floor)}.`, "important");
-    addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), "important");
-    if (follower) {
-      addMessage(`${follower.name} folgt dir über die Treppe.`, "danger");
-    }
-    return true;
-  }
-
-  if (direction < 0 && currentFloorState.stairsUp && state.floor > 1) {
-    state.floor = targetFloor;
-    const targetStair = state.floors[targetFloor].stairsDown;
-    state.player.x = targetStair.x;
-    state.player.y = targetStair.y;
-    detectNearbyTraps();
-    maybeTriggerShowcaseAmbience();
-    const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetStair);
-    addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück.`, "important");
-    addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), "important");
-    if (follower) {
-      addMessage(`${follower.name} setzt dir weiter nach.`, "danger");
-    }
-    return true;
-  }
-
-  return false;
-}
-
-function tryUseStairs() {
-  const floorState = getCurrentFloorState();
-
-  if (floorState.stairsDown && floorState.stairsDown.x === state.player.x && floorState.stairsDown.y === state.player.y) {
-    showStairChoice({
-      direction: 1,
-      title: "Übergang",
-      text: `Du stehst an einem Übergang. Möchtest du ${formatStudioLabel(state.floor + 1)} betreten oder hier bleiben?`,
-      confirmLabel: "Betreten",
-      stayLabel: "Hier bleiben",
-    });
-    render();
-    return true;
-  }
-
-  if (floorState.stairsUp && floorState.stairsUp.x === state.player.x && floorState.stairsUp.y === state.player.y) {
-    showStairChoice({
-      direction: -1,
-      title: "Übergang",
-      text: `Du stehst an einem Übergang. Möchtest du in ${formatStudioLabel(state.floor - 1)} zurückkehren oder hier bleiben?`,
-      confirmLabel: "Zurückkehren",
-      stayLabel: "Hier bleiben",
-    });
-    render();
-    return true;
-  }
-
-  return false;
-}
-
-function endTurn({ skipEnemyMove = false, actionType = "other" } = {}) {
-  state.turn += 1;
-  if (!state.gameOver) {
-    applyPlayerNutritionTurnCost();
-  }
-  if (!state.gameOver && !skipEnemyMove) {
-    moveEnemies();
-  }
-  if (!state.gameOver) {
-    processContinuousTraps();
-  }
-  if (!state.gameOver) {
-    processSafeRegeneration(actionType);
-  }
-  render();
-}
-
-function tryCloseAdjacentDoor() {
-  if (state.gameOver || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.helpOpen || state.modals.highscoresOpen || state.modals.deathKillsOpen) {
-    return;
-  }
-
-  const floorState = getCurrentFloorState();
-  const adjacentDoors = (floorState.doors ?? []).filter((door) =>
-    door.isOpen &&
-    manhattanDistance(door, state.player) === 1
-  );
-
-  if (adjacentDoors.length === 0) {
-    addMessage("Keine offene Tür direkt neben dir.");
-    render();
-    return;
-  }
-
-  const targetDoor = adjacentDoors[0];
-  if (!closeDoor(targetDoor)) {
-    addMessage("Die Tür lässt sich gerade nicht schließen.");
-    render();
-    return;
-  }
-
-  addMessage("Du ziehst die Tür wieder zu.", "important");
-  endTurn({ actionType: "other" });
-}
-
-function movePlayer(dx, dy) {
-  if (state.gameOver || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.helpOpen || state.modals.highscoresOpen || state.modals.deathKillsOpen) {
-    return;
-  }
-
-  const floorState = getCurrentFloorState();
-  const targetX = state.player.x + dx;
-  const targetY = state.player.y + dy;
-
-  if (targetX < 0 || targetX >= WIDTH || targetY < 0 || targetY >= HEIGHT) {
-    return;
-  }
-
-  if (floorState.grid[targetY][targetX] === TILE.WALL) {
-    addMessage("Nur kalter Stein. Dort kommst du nicht durch.");
-    render();
-    return;
-  }
-
-  const door = getDoorAt(targetX, targetY, floorState);
-  if (door && !door.isOpen) {
-    if (!canPlayerOpenDoor(door)) {
-      playLockedDoorSound();
-      const hasWrongFloorKey = state.inventory.some((item) =>
-        item.type === "key" &&
-        item.keyColor === door.lockColor &&
-        item.keyFloor !== state.floor
-      );
-      addMessage(
-        hasWrongFloorKey
-          ? `Die ${getDoorColorLabels(door.lockColor).adjective} Tür reagiert nicht auf deinen Schlüssel aus einem anderen Studio.`
-          : `Die ${getDoorColorLabels(door.lockColor).adjective} Tür bleibt verschlossen.`,
-      );
-      render();
-      return;
-    }
-
-    openDoor(door, "player");
-  }
-
-  if (getShowcaseAt(targetX, targetY, floorState)) {
-    addMessage("Eine Glasvitrine versperrt dir hier den Weg.");
-    render();
-    return;
-  }
-
-  const enemy = floorState.enemies.find((entry) => entry.x === targetX && entry.y === targetY);
-  if (enemy) {
-    attackEnemy(enemy);
-    endTurn({ actionType: "other" });
-    return;
-  }
-
-  state.player.x = targetX;
-  state.player.y = targetY;
-  playStepSound();
-
-  handleActorEnterTile(state.player);
-  if (state.gameOver) {
-    render();
-    return;
-  }
-  detectNearbyTraps();
-  maybeTriggerShowcaseAmbience();
-
-  if (tryPickupLoot()) {
-    return;
-  }
-
-  const stairPromptShown = tryUseStairs();
-  if (stairPromptShown) {
-    return;
-  }
-
-  endTurn({ actionType: "move" });
-}
-
-function handleWait() {
-  if (state.gameOver || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.helpOpen || state.modals.highscoresOpen || state.modals.deathKillsOpen) {
-    return;
-  }
-
-  if (hasNearbyEnemy()) {
-    addMessage("Du wartest, aber in der Nähe ist noch Gefahr.");
-  } else {
-    addMessage("Du horchst in die Dunkelheit und sammelst langsam wieder Kraft.");
-  }
-  playStepSound();
-  detectNearbyTraps();
-  endTurn({ actionType: "wait" });
-}
-
 function renderClassOptions(selectedClassId) {
   classOptionsElement.innerHTML = "";
 
@@ -1262,85 +977,63 @@ function applyStartProfile() {
   );
 }
 
-function bindChoiceControls() {
-  choiceDrinkButton.addEventListener("click", () => resolveChoiceBySlot(0));
-  choiceStoreButton.addEventListener("click", () => resolveChoiceBySlot(1));
-  choiceLeaveButton.addEventListener("click", () => resolveChoiceBySlot(2));
-  stairsConfirmButton.addEventListener("click", () => resolveStairChoice("change-floor"));
-  stairsStayButton.addEventListener("click", () => resolveStairChoice("stay"));
-}
-
-function bindModalControls() {
-  openInventoryButton.addEventListener("click", () => toggleInventory(true));
-  closeInventoryButton.addEventListener("click", () => toggleInventory(false));
-  openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
-  closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
-  openOptionsButton.addEventListener("click", () => toggleOptions(true));
-  closeOptionsButton.addEventListener("click", () => toggleOptions(false));
-  openHighscoresButton.addEventListener("click", () => toggleHighscores(true));
-  closeHighscoresButton.addEventListener("click", () => toggleHighscores(false));
-  openHelpButton.addEventListener("click", () => toggleHelp(true));
-  closeHelpButton.addEventListener("click", () => toggleHelp(false));
-  restartFromDeathButton.addEventListener("click", () => restartRun());
-  openDeathKillsButton.addEventListener("click", () => openRunStatsFromDeath());
-  closeDeathKillsButton.addEventListener("click", () => toggleDeathKills(false));
-  closeDeathButton.addEventListener("click", () => hideDeathModal());
-}
-
-function bindInventoryControls() {
-  startFreshRunButton.addEventListener("click", () => restartRun());
-  inventoryFilterButtons.forEach((button) => {
-    button.addEventListener("click", () => setInventoryFilter(button.dataset.filter ?? "all"));
-  });
-}
-
-function bindCollapsibleCardControls() {
-  collapsibleCards.forEach((card) => {
-    const button = card.querySelector(".collapse-btn");
-    button?.addEventListener("click", () => toggleCardCollapse(button.dataset.target));
-  });
-}
-
-function bindTopbarTooltips() {
-  bindTooltip(topbarHpCardElement, () => getTopbarTooltipContent().hp);
-  bindTooltip(topbarLevelCardElement, () => getTopbarTooltipContent().level);
-  bindTooltip(topbarDamageCardElement, () => getTopbarTooltipContent().damage);
-  bindTooltip(topbarHitCardElement, () => getTopbarTooltipContent().hit);
-  bindTooltip(topbarCritCardElement, () => getTopbarTooltipContent().crit);
-  bindTooltip(topbarBlockCardElement, () => getTopbarTooltipContent().block);
-}
-
-function bindOptionControls() {
-  saveGameButtonElement.addEventListener("click", () => saveCurrentGame());
-  loadGameButtonElement.addEventListener("click", () => loadCurrentGame());
-  toggleStepSoundElement.addEventListener("change", () => {
-    state.options.stepSound = toggleStepSoundElement.checked;
-    saveOptions();
-  });
-  toggleDeathSoundElement.addEventListener("change", () => {
-    state.options.deathSound = toggleDeathSoundElement.checked;
-    saveOptions();
-  });
-}
-
-function bindStartControls() {
-  startFormElement.addEventListener("submit", (event) => {
-    event.preventDefault();
-    applyStartProfile();
-  });
-  loadGameFromStartButtonElement.addEventListener("click", () => loadCurrentGame());
-}
-
-function bindAppControls() {
-  bindChoiceControls();
-  bindModalControls();
-  bindInventoryControls();
-  bindCollapsibleCardControls();
-  bindTopbarTooltips();
-  bindOptionControls();
-  bindStartControls();
-  bindKeyboardInput(document);
-}
+const { bindAppControls } = createUiBindingsApi({
+  choiceDrinkButton,
+  choiceStoreButton,
+  choiceLeaveButton,
+  stairsConfirmButton,
+  stairsStayButton,
+  openInventoryButton,
+  closeInventoryButton,
+  openRunStatsButton,
+  closeRunStatsButton,
+  openOptionsButton,
+  closeOptionsButton,
+  openHighscoresButton,
+  closeHighscoresButton,
+  openHelpButton,
+  closeHelpButton,
+  restartFromDeathButton,
+  openDeathKillsButton,
+  closeDeathKillsButton,
+  closeDeathButton,
+  startFreshRunButton,
+  inventoryFilterButtons,
+  collapsibleCards,
+  saveGameButtonElement,
+  loadGameButtonElement,
+  toggleStepSoundElement,
+  toggleDeathSoundElement,
+  startFormElement,
+  loadGameFromStartButtonElement,
+  bindTooltip,
+  topbarHpCardElement,
+  topbarLevelCardElement,
+  topbarDamageCardElement,
+  topbarHitCardElement,
+  topbarCritCardElement,
+  topbarBlockCardElement,
+  getTopbarTooltipContent,
+  resolveChoiceBySlot,
+  resolveStairChoice,
+  toggleInventory,
+  toggleRunStats,
+  toggleOptions,
+  toggleHelp,
+  toggleHighscores,
+  restartRun,
+  openRunStatsFromDeath,
+  toggleDeathKills,
+  hideDeathModal,
+  toggleCardCollapse,
+  setInventoryFilter,
+  saveCurrentGame,
+  loadCurrentGame,
+  getState: () => state,
+  saveOptions,
+  applyStartProfile,
+  bindKeyboardInput,
+});
 
 function bootstrapApp() {
   bindAppControls();

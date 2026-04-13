@@ -28,17 +28,19 @@ import { createAppBootstrap } from './app/bootstrap.mjs';
 import { assembleCoreModules } from './app/core-assembly.mjs';
 import { assembleGameplayModules } from './app/gameplay-assembly.mjs';
 import { assembleInterfaceModules } from './app/interface-assembly.mjs';
+import { createRuntimeActionsApi } from './app/runtime-actions.mjs';
 import { createRuntimeContext } from './app/runtime-context.mjs';
+import { createRuntimeRandomApi } from './app/runtime-random.mjs';
 import { createRenderCycleApi } from './app/render-cycle.mjs';
 import { createShowcaseAmbienceApi } from './app/showcase-ambience.mjs';
 import { createStartFlowApi } from './app/start-flow.mjs';
+import { createRuntimeSupportApi } from './app/runtime-support.mjs';
 import { createUiPreferencesApi } from './app/ui-preferences.mjs';
 import { createBareHandsWeapon, cloneOffHandItem, getMainHand, getOffHand, getCombatWeapon, createEquipmentPresentationHelpers } from './equipment-helpers.mjs';
 import { clamp, randomInt, createGrid, carveRoom, carveTunnel, roomsOverlap } from './utils.mjs';
 import { formatArchetypeLabel, formatStudioLabel, formatStudioWithArchetype } from './studio-theme.mjs';
 
 let state;
-let testRandomQueue = [];
 const OPTIONS_KEY = "dungeon-rogue-options";
 const HERO_NAME_KEY = "movieverse-hero-name";
 const HERO_CLASS_KEY = "movieverse-hero-class";
@@ -52,38 +54,11 @@ const CHOICE_ACTIONS = {
 };
 const STAIR_ACTIONS = ["change-floor", "stay"];
 
-function createDeferredAction(name) {
-  let implementation = null;
-
-  return {
-    call(...args) {
-      if (typeof implementation !== "function") {
-        throw new Error(`${name} wurde vor der Initialisierung aufgerufen.`);
-      }
-      return implementation(...args);
-    },
-    set(nextImplementation) {
-      implementation = nextImplementation;
-    },
-  };
-}
-
-const showFloatingTextAction = createDeferredAction("showFloatingText");
-const showDeathModalAction = createDeferredAction("showDeathModal");
-const showChoiceModalAction = createDeferredAction("showChoiceModal");
-const hideChoiceModalAction = createDeferredAction("hideChoiceModal");
-const moveToFloorAction = createDeferredAction("moveToFloor");
-const tryUseStairsAction = createDeferredAction("tryUseStairs");
-const endTurnAction = createDeferredAction("endTurn");
-const tryCloseAdjacentDoorAction = createDeferredAction("tryCloseAdjacentDoor");
-const movePlayerAction = createDeferredAction("movePlayer");
-const handleWaitAction = createDeferredAction("handleWait");
-const resolvePotionChoiceAction = createDeferredAction("resolvePotionChoice");
-const useInventoryItemAction = createDeferredAction("useInventoryItem");
-const quickUsePotionAction = createDeferredAction("quickUsePotion");
-const renderAction = createDeferredAction("render");
-const getShowcaseAtAction = createDeferredAction("getShowcaseAt");
-const maybeTriggerShowcaseAmbienceAction = createDeferredAction("maybeTriggerShowcaseAmbience");
+const runtimeActionsApi = createRuntimeActionsApi();
+const runtimeRandomApi = createRuntimeRandomApi();
+let playDeathSound = null;
+let saveHighscoreIfNeeded = null;
+let showDeathModal = null;
 
 const {
   countPotionsInInventory,
@@ -91,17 +66,6 @@ const {
 } = createInventoryStatsApi({
   getState: () => state,
 });
-
-function rollPercent(chance) {
-  return randomChance() * 100 < chance;
-}
-
-function randomChance() {
-  if (testRandomQueue.length > 0) {
-    return testRandomQueue.shift();
-  }
-  return Math.random();
-}
 
 function applyItemStatMods(entity, item, direction = 1) {
   if (!entity || !item?.statMods) {
@@ -117,16 +81,33 @@ function applyItemStatMods(entity, item, direction = 1) {
   });
 }
 
+const runtimeSupportApi = createRuntimeSupportApi({
+  getState: () => state,
+  LOG_LIMIT,
+  getNutritionMax,
+  getNutritionStart,
+  clampNutritionValue,
+  getHungerState,
+  getHungerStateMessage,
+  HUNGER_STATE,
+  NUTRITION_COST_PER_ACTION,
+  DAMAGE_PER_ACTION_WHILE_DYING,
+  showFloatingText: (...args) => runtimeActionsApi.runtimeBindings.showFloatingText(...args),
+  getPlayDeathSound: () => playDeathSound,
+  getSaveHighscoreIfNeeded: () => saveHighscoreIfNeeded,
+  getShowDeathModal: () => showDeathModal,
+});
+
 function render(...args) {
-  return renderAction.call(...args);
+  return runtimeActionsApi.render(...args);
 }
 
 function getShowcaseAt(...args) {
-  return getShowcaseAtAction.call(...args);
+  return runtimeActionsApi.getShowcaseAt(...args);
 }
 
 function maybeTriggerShowcaseAmbience(...args) {
-  return maybeTriggerShowcaseAmbienceAction.call(...args);
+  return runtimeActionsApi.maybeTriggerShowcaseAmbience(...args);
 }
 
 const runtimeContext = createRuntimeContext({
@@ -292,63 +273,34 @@ const runtimeContext = createRuntimeContext({
     setState: (nextState) => {
       state = nextState;
     },
-    getCurrentFloorState,
-    addMessage,
+    getCurrentFloorState: runtimeSupportApi.getCurrentFloorState,
+    addMessage: runtimeSupportApi.addMessage,
     renderSelf: () => render(),
-    randomChance,
+    randomChance: runtimeRandomApi.randomChance,
     randomInt,
     createGrid,
     carveRoom,
     carveTunnel,
     roomsOverlap,
     clamp,
-    rollPercent,
+    rollPercent: runtimeRandomApi.rollPercent,
     getHungerStateLabel,
-    showFloatingText: (...args) => showFloatingTextAction.call(...args),
-    showDeathModal: (...args) => showDeathModalAction.call(...args),
-    showChoiceModal: (...args) => showChoiceModalAction.call(...args),
-    hideChoiceModal: (...args) => hideChoiceModalAction.call(...args),
-    moveToFloor: (...args) => moveToFloorAction.call(...args),
-    tryUseStairs: (...args) => tryUseStairsAction.call(...args),
-    endTurn: (...args) => endTurnAction.call(...args),
-    tryCloseAdjacentDoor: () => tryCloseAdjacentDoorAction.call(),
-    movePlayer: (...args) => movePlayerAction.call(...args),
-    handleWait: () => handleWaitAction.call(),
-    resolvePotionChoice: (...args) => resolvePotionChoiceAction.call(...args),
-    useInventoryItem: (...args) => useInventoryItemAction.call(...args),
-    quickUsePotion: (...args) => quickUsePotionAction.call(...args),
+    ...runtimeActionsApi.runtimeBindings,
     getShowcaseAt,
     maybeTriggerShowcaseAmbience,
-    setShowFloatingText: (implementation) => showFloatingTextAction.set(implementation),
-    setShowDeathModal: (implementation) => showDeathModalAction.set(implementation),
-    setShowChoiceModal: (implementation) => showChoiceModalAction.set(implementation),
-    setHideChoiceModal: (implementation) => hideChoiceModalAction.set(implementation),
-    setResolvePotionChoice: (implementation) => resolvePotionChoiceAction.set(implementation),
-    setUseInventoryItem: (implementation) => useInventoryItemAction.set(implementation),
-    setQuickUsePotion: (implementation) => quickUsePotionAction.set(implementation),
-    setMoveToFloor: (implementation) => moveToFloorAction.set(implementation),
-    setTryUseStairs: (implementation) => tryUseStairsAction.set(implementation),
-    setEndTurn: (implementation) => endTurnAction.set(implementation),
-    setTryCloseAdjacentDoor: (implementation) => tryCloseAdjacentDoorAction.set(implementation),
-    setMovePlayer: (implementation) => movePlayerAction.set(implementation),
-    setHandleWait: (implementation) => handleWaitAction.set(implementation),
     healPlayer: (...args) => healPlayer(...args),
-    refreshNutritionState: (...args) => refreshNutritionState(...args),
+    refreshNutritionState: (...args) => runtimeSupportApi.refreshNutritionState(...args),
     grantExperience: (...args) => grantExperience(...args),
     createDeathCause: (...args) => createDeathCause(...args),
     saveHighscoreIfNeeded: () => saveHighscoreIfNeeded(),
-    noteMonsterEncounter,
-    restoreNutrition,
+    noteMonsterEncounter: runtimeSupportApi.noteMonsterEncounter,
+    restoreNutrition: runtimeSupportApi.restoreNutrition,
     applyItemStatMods,
-    applyPlayerNutritionTurnCost,
+    applyPlayerNutritionTurnCost: runtimeSupportApi.applyPlayerNutritionTurnCost,
     countPotionsInInventory,
     countFoodInInventory,
-    setRandomSequence: (values) => {
-      testRandomQueue = [...values];
-    },
-    clearRandomSequence: () => {
-      testRandomQueue = [];
-    },
+    setRandomSequence: runtimeRandomApi.setRandomSequence,
+    clearRandomSequence: runtimeRandomApi.clearRandomSequence,
     syncStartModalControls: (...args) => syncStartModalControls(...args),
   },
   equipment: {
@@ -361,6 +313,8 @@ const runtimeContext = createRuntimeContext({
 });
 
 Object.assign(runtimeContext.core, assembleCoreModules(runtimeContext));
+playDeathSound = runtimeContext.core.playDeathSound;
+saveHighscoreIfNeeded = runtimeContext.core.saveHighscoreIfNeeded;
 
 const {
   formatRarityLabel,
@@ -368,7 +322,6 @@ const {
   getItemModifierSummary,
   getWeaponConditionalDamageBonus,
   itemHasModifier,
-  playDeathSound,
   playVictorySound,
   playLevelUpSound,
   playEnemyHitSound,
@@ -412,7 +365,6 @@ const {
   loadSavedGame,
   clearSavedGame,
   loadLastHighscoreMarker,
-  saveHighscoreIfNeeded,
   createDeathCause,
   xpForNextLevel,
   initializeGame,
@@ -435,6 +387,9 @@ const {
 
 Object.assign(runtimeContext.interface, assembleInterfaceModules(runtimeContext));
 
+const interfaceApi = runtimeContext.interface;
+showDeathModal = interfaceApi.showDeathModal;
+
 const {
   getPlayerCombatSummary,
   getTopbarTooltipContent,
@@ -452,7 +407,6 @@ const {
   moveTooltip,
   hideTooltip,
   tileAt,
-  showDeathModal,
   hideDeathModal,
   restartRun,
   confirmRestartRun,
@@ -473,7 +427,7 @@ const {
   toggleHighscores,
   toggleDeathKills,
   bindKeyboardInput,
-} = runtimeContext.interface;
+} = interfaceApi;
 
 Object.assign(runtimeContext.gameplay, assembleGameplayModules(runtimeContext));
 
@@ -504,91 +458,22 @@ const {
   syncTestApi,
 } = runtimeContext.gameplay;
 
-function addMessage(text, tone = "") {
-  state.messages.unshift({ text, tone });
-  state.messages = state.messages.slice(0, LOG_LIMIT);
-}
-
-function refreshNutritionState(previousState = null) {
-  state.player.nutritionMax = getNutritionMax(state.player);
-  state.player.nutrition = clampNutritionValue(state.player.nutrition ?? getNutritionStart(state.player), state.player);
-  const nextState = getHungerState(state.player);
-  state.player.hungerState = nextState;
-
-  if (previousState && previousState !== nextState) {
-    const message = getHungerStateMessage(nextState);
-    if (message) {
-      addMessage(message, nextState === HUNGER_STATE.DYING ? "danger" : "important");
-    }
-  }
-
-  return nextState;
-}
-
-function restoreNutrition(amount) {
-  const previous = state.player.nutrition ?? getNutritionStart(state.player);
-  const previousState = state.player.hungerState;
-  state.player.nutrition = previous + amount;
-  refreshNutritionState(previousState);
-  return Math.max(0, state.player.nutrition - previous);
-}
-
-function noteMonsterEncounter(enemy) {
-  if (!enemy?.id) {
-    return;
-  }
-
-  state.knownMonsterTypes[enemy.id] = true;
-}
-
-function applyPlayerNutritionTurnCost() {
-  const previousState = state.player.hungerState;
-  state.player.nutrition = (state.player.nutrition ?? getNutritionStart(state.player)) - NUTRITION_COST_PER_ACTION;
-  const nextState = refreshNutritionState(previousState);
-
-  if (nextState !== HUNGER_STATE.DYING) {
-    return;
-  }
-
-  state.player.hp = Math.max(0, state.player.hp - DAMAGE_PER_ACTION_WHILE_DYING);
-  state.damageTaken = (state.damageTaken ?? 0) + DAMAGE_PER_ACTION_WHILE_DYING;
-  showFloatingText(state.player.x, state.player.y, `-${DAMAGE_PER_ACTION_WHILE_DYING}`, "taken");
-  addMessage("Der Hunger zerfrisst dich.", "danger");
-  if (state.player.hp <= 0) {
-    state.gameOver = true;
-    state.deathCause = "verhungerte hinter den Kulissen des Studiokomplexes.";
-    playDeathSound();
-    const rank = saveHighscoreIfNeeded();
-    addMessage("Du bist verhungert. Drücke R für einen neuen Versuch.", "danger");
-    showDeathModal(rank);
-  }
-}
-
-function getCurrentFloorState() {
-  return state.floors[state.floor];
-}
-
-function getCurrentStudioArchetypeId() {
-  return getCurrentFloorState()?.studioArchetypeId ?? null;
-}
-
 const showcaseAmbienceApi = createShowcaseAmbienceApi({
   getState: () => state,
-  getCurrentFloorState,
+  getCurrentFloorState: runtimeSupportApi.getCurrentFloorState,
   DISPLAY_CASE_AMBIENCE,
   randomInt,
-  addMessage,
-  showFloatingText: (...args) => showFloatingTextAction.call(...args),
+  addMessage: runtimeSupportApi.addMessage,
+  showFloatingText: (...args) => runtimeActionsApi.runtimeBindings.showFloatingText(...args),
   playShowcaseAmbienceSound,
 });
-getShowcaseAtAction.set(showcaseAmbienceApi.getShowcaseAt);
-maybeTriggerShowcaseAmbienceAction.set(showcaseAmbienceApi.maybeTriggerShowcaseAmbience);
+runtimeActionsApi.bindShowcaseAmbienceApi(showcaseAmbienceApi);
 
 const renderCycleApi = createRenderCycleApi({
   getState: () => state,
   syncTestApi,
   getPlayerCombatSummary,
-  getCurrentStudioArchetypeId,
+  getCurrentStudioArchetypeId: runtimeSupportApi.getCurrentStudioArchetypeId,
   updateVisibility,
   renderBoard,
   formatStudioWithArchetype,
@@ -633,7 +518,7 @@ const renderCycleApi = createRenderCycleApi({
   collapsibleCards,
   updatePotionChoiceSelection,
 });
-renderAction.set(renderCycleApi.render);
+runtimeActionsApi.setRender(renderCycleApi.render);
 
 const { toggleCardCollapse, setInventoryFilter } = createUiPreferencesApi({
   getState: () => state,

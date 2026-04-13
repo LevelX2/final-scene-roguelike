@@ -235,9 +235,11 @@ export function createModalController(context) {
       return;
     }
 
-    addMessage(pending.direction > 0
-      ? "Du bleibst auf der Treppe stehen, ohne hinabzusteigen."
-      : "Du bleibst auf der Treppe stehen, ohne hinaufzusteigen.");
+    addMessage(
+      pending.direction > 0
+        ? "Du bleibst auf der Treppe stehen, ohne hinabzusteigen."
+        : "Du bleibst auf der Treppe stehen, ohne hinaufzusteigen.",
+    );
     renderSelf();
   }
 

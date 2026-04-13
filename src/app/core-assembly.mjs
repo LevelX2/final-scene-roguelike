@@ -1,27 +1,19 @@
 export function assembleCoreModules(context) {
+  const { factories, config, runtime, equipment, ui } = context;
   const {
     createItemizationApi,
-    ITEM_RARITY_MODIFIER_COUNTS,
-    getEquipmentRarityWeights,
-    randomChance,
     createAudioService,
     createDoorService,
-    DOOR_TYPE,
-    getState,
-    getCurrentFloorState,
-    addMessage,
-    playDoorOpenSound,
-    playDoorCloseSound,
     createTrapsApi,
-    randomInt,
-    showFloatingText,
-    healPlayer,
-    refreshNutritionState,
-    grantExperience,
-    createDeathCause,
-    saveHighscoreIfNeeded,
-    showDeathModal,
-    playDeathSound,
+    createDungeonApi,
+    createVisibilityService,
+    createStateApi,
+    createSavegameService,
+  } = factories;
+  const {
+    ITEM_RARITY_MODIFIER_COUNTS,
+    getEquipmentRarityWeights,
+    DOOR_TYPE,
     WIDTH,
     HEIGHT,
     ROOM_ATTEMPTS,
@@ -47,15 +39,7 @@ export function assembleCoreModules(context) {
     shouldPlaceLockedRoomChest,
     NON_ICONIC_MONSTER_WEIGHT_BONUS,
     ICONIC_MONSTER_WEIGHT_PENALTY,
-    createDungeonApi,
-    createGrid,
-    carveRoom,
-    carveTunnel,
-    roomsOverlap,
-    cloneOffHandItem,
-    createVisibilityService,
     VISION_RADIUS,
-    createStateApi,
     HIGHSCORE_KEY,
     HIGHSCORE_STORAGE_VERSION,
     HIGHSCORE_VERSION_KEY,
@@ -65,16 +49,38 @@ export function assembleCoreModules(context) {
     DEFAULT_HERO_NAME,
     DEFAULT_HERO_CLASS,
     HERO_CLASSES,
+  } = config;
+  const {
+    getState,
     setState,
-    createBareHandsWeapon,
+    getCurrentFloorState,
+    addMessage,
+    randomChance,
+    randomInt,
+    createGrid,
+    carveRoom,
+    carveTunnel,
+    roomsOverlap,
+    showFloatingText,
+    healPlayer,
+    refreshNutritionState,
+    grantExperience,
+    createDeathCause,
+    saveHighscoreIfNeeded,
+    showDeathModal,
     renderSelf,
+  } = runtime;
+  const {
+    cloneOffHandItem,
+    createBareHandsWeapon,
+  } = equipment;
+  const {
     savegameStatusElement,
     startSavegameStatusElement,
     loadGameButtonElement,
     loadGameFromStartButtonElement,
     saveGameButtonElement,
-    createSavegameService,
-  } = context;
+  } = ui;
 
   const itemizationApi = createItemizationApi({
     ITEM_RARITY_MODIFIER_COUNTS,
@@ -91,8 +97,8 @@ export function assembleCoreModules(context) {
     getState,
     getCurrentFloorState,
     addMessage,
-    playDoorOpenSound,
-    playDoorCloseSound,
+    playDoorOpenSound: () => audioService.playDoorOpenSound(),
+    playDoorCloseSound: () => audioService.playDoorCloseSound(),
   });
 
   const trapsApi = createTrapsApi({
@@ -108,7 +114,7 @@ export function assembleCoreModules(context) {
     createDeathCause,
     saveHighscoreIfNeeded,
     showDeathModal,
-    playDeathSound,
+    playDeathSound: () => audioService.playDeathSound(),
   });
 
   const dungeonApi = createDungeonApi({

@@ -106,6 +106,8 @@ export function assembleGameplayModules(context) {
     showStairChoice,
   } = interfaceApi;
   const {
+    formatWeaponDisplayName,
+    formatWeaponReference,
     formatWeaponStats,
     formatOffHandStats,
   } = presentation;
@@ -156,6 +158,7 @@ export function assembleGameplayModules(context) {
     getActorReactionModifier: statusEffectService.getActorReactionModifier,
     tryApplyWeaponEffects: statusEffectService.tryApplyWeaponEffects,
     noteMonsterEncounter,
+    formatWeaponReference,
     addMessage,
     renderSelf,
   });
@@ -200,6 +203,8 @@ export function assembleGameplayModules(context) {
     createWeaponPickup,
     createOffHandPickup,
     createFoodPickup,
+    formatWeaponDisplayName,
+    formatWeaponReference,
     formatWeaponStats,
     formatOffHandStats,
     formatRarityLabel,

@@ -1,5 +1,5 @@
 export function createItemUiHelpers(context) {
-  const { formatRarityLabel } = context;
+  const { formatRarityLabel, formatWeaponDisplayName = (item) => item?.name ?? 'Unbekannt' } = context;
 
   function getRarityClass(item) {
     return `rarity-${item?.rarity ?? "common"}`;
@@ -52,7 +52,7 @@ export function createItemUiHelpers(context) {
         <div class="choice-compare-card ${getRarityClass(foundItem)}">
           <p class="choice-compare-label">Gefundenes ${typeLabel}</p>
           ${buildCompareIconHtml(foundItem)}
-          <p class="choice-compare-name">${foundItem.name}</p>
+          <p class="choice-compare-name">${typeLabel === "Waffe" ? formatWeaponDisplayName(foundItem) : foundItem.name}</p>
           <p class="choice-rarity ${getRarityClass(foundItem)}">${foundRarity}</p>
           <p class="choice-compare-stats">${statsFormatter(foundItem)}</p>
           <p class="choice-compare-detail">${foundMods}</p>
@@ -60,7 +60,7 @@ export function createItemUiHelpers(context) {
         <div class="choice-compare-card ${equippedItem ? getRarityClass(equippedItem) : "rarity-common"}">
           <p class="choice-compare-label">Derzeit getragen</p>
           ${equippedItem ? buildCompareIconHtml(equippedItem) : '<div class="choice-compare-icon rarity-common is-empty" aria-hidden="true"></div>'}
-          <p class="choice-compare-name">${equippedItem ? equippedItem.name : "Leer"}</p>
+          <p class="choice-compare-name">${equippedItem ? (typeLabel === "Waffe" ? formatWeaponDisplayName(equippedItem) : equippedItem.name) : "Leer"}</p>
           <p class="choice-rarity ${equippedItem ? getRarityClass(equippedItem) : "rarity-common"}">${equippedRarity ?? "Nichts ausgerüstet"}</p>
           <p class="choice-compare-stats">${equippedItem ? statsFormatter(equippedItem) : "Kein Gegenstand."}</p>
           <p class="choice-compare-detail">${equippedItem ? equippedMods : "Hier landet die neue Ausrüstung direkt."}</p>

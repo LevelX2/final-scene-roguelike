@@ -14,6 +14,8 @@ export function createItemsApi(context) {
     createWeaponPickup,
     createOffHandPickup,
     createFoodPickup,
+    formatWeaponDisplayName,
+    formatWeaponReference,
     formatWeaponStats,
     formatOffHandStats,
     formatRarityLabel,
@@ -29,6 +31,7 @@ export function createItemsApi(context) {
 
   const { buildEquipmentCompareHtml } = createItemUiHelpers({
     formatRarityLabel,
+    formatWeaponDisplayName,
   });
 
   const equipmentApi = createItemEquipmentApi({
@@ -37,6 +40,7 @@ export function createItemsApi(context) {
     applyItemStatMods,
     cloneWeapon,
     cloneOffHandItem,
+    formatWeaponReference,
     addMessage,
     endTurn,
     healPlayer,
@@ -55,6 +59,8 @@ export function createItemsApi(context) {
     createWeaponPickup,
     createOffHandPickup,
     createFoodPickup,
+    formatWeaponDisplayName,
+    formatWeaponReference,
     formatWeaponStats,
     formatOffHandStats,
     addMessage,

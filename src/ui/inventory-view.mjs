@@ -3,6 +3,7 @@ export function createInventoryView(context) {
     inventoryListElement,
     inventoryFilterButtons = [],
     getState,
+    formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
     formatRarityLabel,
@@ -193,7 +194,10 @@ export function createInventoryView(context) {
       .filter(({ item }) => inventoryFilter === "all" || item.type === inventoryFilter)
       .sort((left, right) =>
         getInventoryItemTypeOrder(left.item) - getInventoryItemTypeOrder(right.item) ||
-        left.item.name.localeCompare(right.item.name, "de")
+        (left.item.type === "weapon" ? formatWeaponDisplayName(left.item) : left.item.name).localeCompare(
+          right.item.type === "weapon" ? formatWeaponDisplayName(right.item) : right.item.name,
+          "de",
+        )
       );
 
     if (visibleGroups.length === 0) {
@@ -231,7 +235,7 @@ export function createInventoryView(context) {
       wrapper.innerHTML = `
         <div class="inventory-icon inventory-icon-${item.type} ${getItemRarityClass(item)}" aria-hidden="true">${getInventoryItemIcon(item)}</div>
         <div class="inventory-meta">
-          <strong>${item.name}${count > 1 ? ` x${count}` : ""}</strong>
+          <strong>${item.type === "weapon" ? formatWeaponDisplayName(item) : item.name}${count > 1 ? ` x${count}` : ""}</strong>
           ${statsLine ? `<span>${statsLine}</span>` : ""}
           <span>${detailLine}</span>
         </div>

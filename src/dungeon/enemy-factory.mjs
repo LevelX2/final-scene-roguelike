@@ -211,6 +211,7 @@ export function createDungeonEnemyFactory(context) {
       variantTier: variant.id,
       variantLabel: variant.label,
       variantModifiers,
+      grammar: monster.grammar ? { ...monster.grammar } : null,
       behavior: monster.behavior,
       behaviorLabel: monster.behaviorLabel,
       mobility: monster.mobility,

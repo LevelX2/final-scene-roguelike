@@ -11,6 +11,8 @@ export function createBoardView(context) {
     getCurrentFloorState,
     getMainHand,
     getOffHand,
+    formatWeaponDisplayName,
+    formatWeaponReference,
     hasLineOfSight,
     isStraightShot,
     formatWeaponStats,
@@ -71,7 +73,7 @@ export function createBoardView(context) {
             `Reaktion ${state.player.reaction}`,
             `Nerven ${state.player.nerves}`,
             `Intelligenz ${state.player.intelligence}`,
-            `Haupthand ${getMainHand(state.player).name} (${formatWeaponStats(getMainHand(state.player))})`,
+            `Waffe ${formatWeaponReference(getMainHand(state.player), { article: "definite", grammaticalCase: "nominative" })} (${formatWeaponStats(getMainHand(state.player))})`,
             `Nebenhand ${getOffHand(state.player)?.name ?? "Leer"}${getOffHand(state.player) ? ` (${formatOffHandStats(getOffHand(state.player))})` : ""}`,
             state.player.classPassiveDescription,
             `XP ${state.player.xp}/${state.player.xpToNext}`,
@@ -97,8 +99,9 @@ export function createBoardView(context) {
           imageClass: getEnemyTooltipImageClass(enemy),
           lines: revealed
             ? [
-                enemy.description,
-                `Variante: ${enemy.variantLabel ?? "Normal"}`,
+            enemy.description,
+            enemy.mainHand ? `Waffe: ${formatWeaponReference(enemy.mainHand, { article: "definite", grammaticalCase: "nominative" })}` : "Waffe: Unbewaffnet",
+            `Variante: ${enemy.variantLabel ?? "Normal"}`,
                 enemy.variantModifiers?.length
                   ? `Merkmale: ${enemy.variantModifiers.map((modifier) => modifier.label).join(", ")}`
                   : "Merkmale: Keine",
@@ -206,12 +209,13 @@ export function createBoardView(context) {
         glyph: "",
         overlayImageUrl: getWeaponIconAssetUrl(weaponPickup.item),
         tooltip: {
-          title: weaponPickup.item.name,
+          title: formatWeaponDisplayName(weaponPickup.item),
           imageUrl: getWeaponIconAssetUrl(weaponPickup.item),
           imageClass: `tooltip-art-weapon ${getItemRarityClass(weaponPickup.item)}`,
           lines: [
             formatRarityLabel(weaponPickup.item.rarity ?? "common"),
             weaponPickup.item.source,
+            `Kampflog: mit ${formatWeaponReference(weaponPickup.item, { article: "definite", grammaticalCase: "dative" })}`,
             formatWeaponStats(weaponPickup.item),
             weaponPickup.item.range && weaponPickup.item.range > 1 ? `Reichweite ${weaponPickup.item.range}` : 'Nahkampf',
             (weaponPickup.item.meleePenaltyHit ?? 0) < 0 ? `Nahkampfmalus ${weaponPickup.item.meleePenaltyHit}` : null,

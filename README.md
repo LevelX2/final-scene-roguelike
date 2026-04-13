@@ -39,7 +39,15 @@ Die Playwright-Suite deckt Startflow, Navigation, Kampf, Loot, Hunger, Persisten
 
 1. Abhängigkeiten installieren: `npm install`
 2. Browser-Bundle bauen: `npm run build`
-3. `index.html` im Browser öffnen
+3. Lokalen App-Server starten: `npm run start:app`
+4. `http://127.0.0.1:4173` im Browser öffnen
+
+Für OpenAI-TTS optional:
+
+1. `.env.example` nach `.env` kopieren
+2. `OPENAI_API_KEY` in `.env` setzen
+
+Ohne API-Key nutzt die App für Studioansagen automatisch weiter die Browser-Stimme als Fallback.
 
 Für E2E-Tests:
 
@@ -54,7 +62,9 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 - `npm run check:js`
   Führt Syntax-Prüfungen für den aktuell konfigurierten Satz an Kernmodulen aus.
 - `npm run start:test`
-  Startet einen einfachen statischen Server für die Testumgebung auf Port `4173`.
+  Startet den lokalen Test-/App-Server auf Port `4173`.
+- `npm run start:app`
+  Baut das Bundle und startet den lokalen App-Server auf Port `4173`.
 - `npm run test:e2e`
   Baut das Projekt und startet danach die Playwright-Suite.
 

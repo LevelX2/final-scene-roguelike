@@ -3,6 +3,7 @@ export function createItemChoiceConfigs(context) {
     getState,
     getMainHand,
     getOffHand,
+    formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
     buildEquipmentCompareHtml,
@@ -39,7 +40,7 @@ export function createItemChoiceConfigs(context) {
       kind: "weapon",
       weaponIndex,
       selectedAction: "equip",
-      title: `${weapon.name} gefunden`,
+      title: `${formatWeaponDisplayName(weapon)} gefunden`,
       htmlText: buildEquipmentCompareHtml(weapon, currentWeapon?.id === "bare-hands" ? null : currentWeapon, "Waffe", formatWeaponStats),
       labels: ["Ausrüsten", "Ins Inventar", "Liegen lassen"],
     };

@@ -1,7 +1,8 @@
 import { getWeaponTemplate } from './content/catalogs/weapon-templates.mjs';
+import { buildWeaponGrammar, formatWeaponDisplayName as formatWeaponDisplayNameText, formatWeaponReference as formatWeaponReferenceText } from './text/combat-phrasing.mjs';
 
 export function createBareHandsWeapon() {
-  return {
+  const weapon = {
     type: 'weapon',
     id: 'bare-hands',
     name: 'Bloße Fäuste',
@@ -16,6 +17,8 @@ export function createBareHandsWeapon() {
     effects: [],
     description: 'Nicht ideal, aber immerhin ehrlich.',
   };
+  weapon.grammar = buildWeaponGrammar(weapon);
+  return weapon;
 }
 
 function normalizeWeaponRuntimeFields(weapon) {
@@ -39,6 +42,7 @@ function normalizeWeaponRuntimeFields(weapon) {
   weapon.profileId = weapon.profileId ?? template.profileId ?? null;
   weapon.archetypeId = weapon.archetypeId ?? template.archetypeId ?? null;
   weapon.lightBonus = weapon.lightBonus ?? 0;
+  weapon.grammar = weapon.grammar ?? buildWeaponGrammar(weapon);
   return weapon;
 }
 
@@ -76,6 +80,14 @@ export function getCombatWeapon(entity) {
 }
 
 export function createEquipmentPresentationHelpers({ formatRarityLabel, getItemModifierSummary }) {
+  function formatWeaponDisplayName(weapon) {
+    return formatWeaponDisplayNameText(weapon);
+  }
+
+  function formatWeaponReference(weapon, options = {}) {
+    return formatWeaponReferenceText(weapon, options);
+  }
+
   function getStatLabel(stat) {
     return {
       strength: 'Stärke',
@@ -178,6 +190,8 @@ export function createEquipmentPresentationHelpers({ formatRarityLabel, getItemM
   }
 
   return {
+    formatWeaponDisplayName,
+    formatWeaponReference,
     formatWeaponStats,
     formatOffHandStats,
     getOffHandTooltipLines,

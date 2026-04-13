@@ -6,6 +6,7 @@ export function createUiBindingsApi(context) {
     stairsConfirmButton,
     stairsStayButton,
     openInventoryButton,
+    openTargetModeButton,
     closeInventoryButton,
     openRunStatsButton,
     closeRunStatsButton,
@@ -57,6 +58,7 @@ export function createUiBindingsApi(context) {
     saveOptions,
     openStartModal,
     applyStartProfile,
+    enterTargetMode,
     bindKeyboardInput,
   } = context;
 
@@ -70,6 +72,7 @@ export function createUiBindingsApi(context) {
 
   function bindModalControls() {
     openInventoryButton.addEventListener("click", () => toggleInventory(true));
+    openTargetModeButton.addEventListener("click", () => enterTargetMode());
     closeInventoryButton.addEventListener("click", () => toggleInventory(false));
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));

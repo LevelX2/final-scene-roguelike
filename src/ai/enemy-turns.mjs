@@ -1,3 +1,5 @@
+import { formatWeaponReference } from '../text/combat-phrasing.mjs';
+
 export function createEnemyTurnApi(context) {
   const {
     WIDTH,
@@ -356,7 +358,10 @@ export function createEnemyTurnApi(context) {
         }
 
         const blockResult = resolveBlock(state.player, result.damage);
-        const weaponLabel = getEnemyWeaponLabel(weapon);
+        const weaponLabel = formatWeaponReference(weapon, {
+          article: 'definite',
+          grammaticalCase: 'dative',
+        });
         state.player.hp -= blockResult.damage;
         state.damageTaken = (state.damageTaken ?? 0) + Math.max(0, blockResult.damage);
         tryApplyWeaponEffects?.(enemy, state.player, weapon, {
@@ -381,7 +386,12 @@ export function createEnemyTurnApi(context) {
         if (state.player.hp <= 0) {
           state.player.hp = 0;
           state.gameOver = true;
-          state.deathCause = createDeathCause(enemy, { critical: result.critical, ranged: false });
+          state.deathCause = createDeathCause(enemy, {
+            critical: result.critical,
+            ranged: false,
+            victimName: state.player.name,
+            weapon,
+          });
           playDeathSound();
           const rank = saveHighscoreIfNeeded();
           addMessage("Du bist gefallen. Drücke R für einen neuen Versuch.", "danger");
@@ -416,7 +426,10 @@ export function createEnemyTurnApi(context) {
         }
 
         const blockResult = resolveBlock(state.player, result.damage);
-        const weaponLabel = getEnemyWeaponLabel(weapon);
+        const weaponLabel = formatWeaponReference(weapon, {
+          article: 'definite',
+          grammaticalCase: 'dative',
+        });
         state.player.hp -= blockResult.damage;
         state.damageTaken = (state.damageTaken ?? 0) + Math.max(0, blockResult.damage);
         tryApplyWeaponEffects?.(enemy, state.player, weapon, {
@@ -446,7 +459,12 @@ export function createEnemyTurnApi(context) {
         if (state.player.hp <= 0) {
           state.player.hp = 0;
           state.gameOver = true;
-          state.deathCause = createDeathCause(enemy, { critical: result.critical, ranged: true });
+          state.deathCause = createDeathCause(enemy, {
+            critical: result.critical,
+            ranged: true,
+            victimName: state.player.name,
+            weapon,
+          });
           playDeathSound();
           const rank = saveHighscoreIfNeeded();
           addMessage('Du bist gefallen. Drücke R für einen neuen Versuch.', 'danger');

@@ -5,6 +5,7 @@ export function createItemEquipmentApi(context) {
     applyItemStatMods,
     cloneWeapon,
     cloneOffHandItem,
+    formatWeaponReference,
     addMessage,
     endTurn,
     healPlayer,
@@ -25,10 +26,10 @@ export function createItemEquipmentApi(context) {
       state.inventory.push(previousOffHand);
       state.player.offHand = null;
       refreshNutritionState(state.player.hungerState);
-      addMessage(`${nextWeapon.name} braucht beide Haende. ${previousOffHand.name} wandert ins Inventar.`);
+      addMessage(`Mit ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "dative" })} sind beide Haende belegt. ${previousOffHand.name} wandert ins Inventar.`);
     }
 
-    addMessage(`Du führst jetzt ${nextWeapon.name}.`, "important");
+    addMessage(`Du führst jetzt ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "accusative" })}.`, "important");
     if (previousMainHand && previousMainHand.id !== "bare-hands") {
       state.inventory.push(previousMainHand);
     }

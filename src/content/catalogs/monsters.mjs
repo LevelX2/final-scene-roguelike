@@ -36,10 +36,17 @@ export const MONSTER_HEALING_LABELS = {
   [MONSTER_HEALING_PROFILE.LURKING]: "Nur außerhalb des Kampfes",
 };
 
+const MONSTER_GRAMMAR = {
+  NAMED_MASCULINE: Object.freeze({ articleMode: "none", gender: "masculine" }),
+  GENERIC_MASCULINE: Object.freeze({ articleMode: "indefinite", gender: "masculine" }),
+  GENERIC_FEMININE: Object.freeze({ articleMode: "indefinite", gender: "feminine" }),
+};
+
 export const MONSTER_CATALOG = [
   {
     id: "bates",
     name: "Norman Bates",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 1,
     behavior: "dormant",
     behaviorLabel: "Schläfer",
@@ -58,6 +65,7 @@ export const MONSTER_CATALOG = [
   {
     id: "motel-shlurfer",
     name: "Motel-Schlurfer",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 1,
     behavior: "wanderer",
     behaviorLabel: "Schlurfer",
@@ -76,6 +84,7 @@ export const MONSTER_CATALOG = [
   {
     id: "kellerkriecher",
     name: "Kellerkriecher",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 1,
     behavior: "wanderer",
     behaviorLabel: "Kriecher",
@@ -95,6 +104,7 @@ export const MONSTER_CATALOG = [
   {
     id: "ghostface",
     name: "Ghostface",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 2,
     behavior: "stalker",
     behaviorLabel: "Verfolger",
@@ -114,6 +124,7 @@ export const MONSTER_CATALOG = [
   {
     id: "maskierter-nachahmer",
     name: "Maskierter Nachahmer",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 2,
     behavior: "stalker",
     behaviorLabel: "Verfolger",
@@ -132,6 +143,7 @@ export const MONSTER_CATALOG = [
   {
     id: "videotheken-stalker",
     name: "Videotheken-Stalker",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 2,
     behavior: "stalker",
     behaviorLabel: "Jäger",
@@ -151,6 +163,7 @@ export const MONSTER_CATALOG = [
   {
     id: "chucky",
     name: "Chucky",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 3,
     behavior: "wanderer",
     behaviorLabel: "Wirrling",
@@ -169,6 +182,7 @@ export const MONSTER_CATALOG = [
   {
     id: "besessene-puppe",
     name: "Besessene Puppe",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_FEMININE },
     rank: 3,
     behavior: "wanderer",
     behaviorLabel: "Wirrling",
@@ -187,6 +201,7 @@ export const MONSTER_CATALOG = [
   {
     id: "gremlin",
     name: "Gremlin",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 3,
     behavior: "trickster",
     behaviorLabel: "Störenfried",
@@ -206,6 +221,7 @@ export const MONSTER_CATALOG = [
   {
     id: "myers",
     name: "Michael Myers",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 4,
     behavior: "juggernaut",
     behaviorLabel: "Unerbittlich",
@@ -224,6 +240,7 @@ export const MONSTER_CATALOG = [
   {
     id: "stummer-maskentraeger",
     name: "Stummer Maskenträger",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 4,
     behavior: "juggernaut",
     behaviorLabel: "Unerbittlich",
@@ -242,6 +259,7 @@ export const MONSTER_CATALOG = [
   {
     id: "friedhofsschlurfer",
     name: "Friedhofsschlurfer",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 4,
     behavior: "juggernaut",
     behaviorLabel: "Untoter",
@@ -261,6 +279,7 @@ export const MONSTER_CATALOG = [
   {
     id: "jason",
     name: "Jason Voorhees",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 5,
     behavior: "juggernaut",
     behaviorLabel: "Schlächter",
@@ -279,6 +298,7 @@ export const MONSTER_CATALOG = [
   {
     id: "camp-schlaechter",
     name: "Camp-Schlächter",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 5,
     behavior: "juggernaut",
     behaviorLabel: "Schlächter",
@@ -297,6 +317,7 @@ export const MONSTER_CATALOG = [
   {
     id: "mutierter-hinterwaeldler",
     name: "Mutierter Hinterwäldler",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 5,
     behavior: "juggernaut",
     behaviorLabel: "Brecher",
@@ -316,6 +337,7 @@ export const MONSTER_CATALOG = [
   {
     id: "freddy",
     name: "Freddy Krüger",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 6,
     behavior: "stalker",
     behaviorLabel: "Jäger",
@@ -335,6 +357,7 @@ export const MONSTER_CATALOG = [
   {
     id: "traumwandler",
     name: "Traumwandler",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 6,
     behavior: "stalker",
     behaviorLabel: "Jäger",
@@ -353,6 +376,7 @@ export const MONSTER_CATALOG = [
   {
     id: "kesselraum-peiniger",
     name: "Kesselraum-Peiniger",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 6,
     behavior: "stalker",
     behaviorLabel: "Peiniger",
@@ -372,6 +396,7 @@ export const MONSTER_CATALOG = [
   {
     id: "pennywise",
     name: "Pennywise",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 7,
     behavior: "trickster",
     behaviorLabel: "Trickser",
@@ -390,6 +415,7 @@ export const MONSTER_CATALOG = [
   {
     id: "kanalclown",
     name: "Kanalclown",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 7,
     behavior: "trickster",
     behaviorLabel: "Trickser",
@@ -408,6 +434,7 @@ export const MONSTER_CATALOG = [
   {
     id: "gestaltlaeufer",
     name: "Gestaltläufer",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 7,
     behavior: "trickster",
     behaviorLabel: "Irrbild",
@@ -427,6 +454,7 @@ export const MONSTER_CATALOG = [
   {
     id: "xenomorph",
     name: "Xenomorph",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 8,
     behavior: "stalker",
     behaviorLabel: "Raubtier",
@@ -445,6 +473,7 @@ export const MONSTER_CATALOG = [
   {
     id: "critter",
     name: "Critter",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 8,
     behavior: "stalker",
     behaviorLabel: "Beißer",
@@ -463,6 +492,7 @@ export const MONSTER_CATALOG = [
   {
     id: "tunnelkriecher",
     name: "Tunnelkriecher",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 8,
     behavior: "stalker",
     behaviorLabel: "Raubtier",
@@ -482,6 +512,7 @@ export const MONSTER_CATALOG = [
   {
     id: "predator",
     name: "Predator",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 9,
     behavior: "hunter",
     behaviorLabel: "Jagdprofi",
@@ -501,6 +532,7 @@ export const MONSTER_CATALOG = [
   {
     id: "trophaeenjaeger",
     name: "Trophäenjäger",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 9,
     behavior: "hunter",
     behaviorLabel: "Jagdprofi",
@@ -519,6 +551,7 @@ export const MONSTER_CATALOG = [
   {
     id: "soeldner-tracker",
     name: "Söldner-Tracker",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 9,
     behavior: "hunter",
     behaviorLabel: "Tracker",
@@ -538,6 +571,7 @@ export const MONSTER_CATALOG = [
   {
     id: "vader",
     name: "Darth Vader",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 10,
     behavior: "hunter",
     behaviorLabel: "Dunkler Lord",
@@ -556,6 +590,7 @@ export const MONSTER_CATALOG = [
   {
     id: "dunkler-vollstrecker",
     name: "Dunkler Vollstrecker",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 10,
     behavior: "hunter",
     behaviorLabel: "Vollstrecker",
@@ -574,6 +609,7 @@ export const MONSTER_CATALOG = [
   {
     id: "sternen-inquisitor",
     name: "Sternen-Inquisitor",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 10,
     behavior: "hunter",
     behaviorLabel: "Inquisitor",
@@ -593,6 +629,7 @@ export const MONSTER_CATALOG = [
   {
     id: "terminator",
     name: "Terminator",
+    grammar: { ...MONSTER_GRAMMAR.NAMED_MASCULINE },
     rank: 11,
     behavior: "hunter",
     behaviorLabel: "Unaufhaltsam",
@@ -612,6 +649,7 @@ export const MONSTER_CATALOG = [
   {
     id: "killerdrohne",
     name: "Killerdrohne",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_FEMININE },
     rank: 11,
     behavior: "hunter",
     behaviorLabel: "Maschine",
@@ -630,6 +668,7 @@ export const MONSTER_CATALOG = [
   {
     id: "cyborg-vollstrecker",
     name: "Cyborg-Vollstrecker",
+    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
     rank: 11,
     behavior: "juggernaut",
     behaviorLabel: "Unaufhaltsam",

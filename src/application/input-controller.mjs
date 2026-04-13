@@ -203,7 +203,7 @@ export function createInputController(context) {
       return;
     }
 
-    if (matchesShortcut(["f"], ["KeyF"])) {
+    if (matchesShortcut(["f", "t"], ["KeyF", "KeyT"])) {
       event.preventDefault();
       enterTargetMode();
       return;
@@ -216,9 +216,9 @@ export function createInputController(context) {
   }
 
   function bindKeyboardInput(target = window) {
-    target.addEventListener("keydown", handleInput);
+    target.addEventListener("keydown", handleInput, { capture: true });
     if (target === window && typeof document !== "undefined") {
-      document.addEventListener("keydown", handleInput);
+      document.addEventListener("keydown", handleInput, { capture: true });
     }
   }
 

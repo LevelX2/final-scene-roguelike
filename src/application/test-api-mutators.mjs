@@ -178,6 +178,7 @@ export function createTestApiMutators(context) {
     const floorState = getCurrentFloorState();
     const playerPosition = config.playerPosition ?? { x: 2, y: 2 };
     const enemyPosition = config.enemyPosition ?? { x: playerPosition.x + 1, y: playerPosition.y };
+    const enemyName = config.enemy?.name ?? "Testgegner";
 
     if (config.clearGrid) {
       for (let y = 0; y < HEIGHT; y += 1) {
@@ -232,8 +233,9 @@ export function createTestApiMutators(context) {
       x: enemyPosition.x,
       y: enemyPosition.y,
       type: "monster",
-      id: "test-enemy",
-      name: config.enemy?.name ?? "Testgegner",
+      id: config.enemy?.id ?? "test-enemy",
+      baseName: config.enemy?.baseName ?? enemyName,
+      name: enemyName,
       rank: 1,
       behavior: config.enemy?.behavior ?? "dormant",
       behaviorLabel: config.enemy?.behaviorLabel ?? "Test",
@@ -246,6 +248,7 @@ export function createTestApiMutators(context) {
       isRetreating: false,
       description: config.enemy?.description ?? "Kontrollierter Testgegner.",
       special: config.enemy?.special ?? "Nur fuer Tests.",
+      grammar: config.enemy?.grammar ?? null,
       originX: enemyPosition.x,
       originY: enemyPosition.y,
       aggro: config.enemy?.aggro ?? false,

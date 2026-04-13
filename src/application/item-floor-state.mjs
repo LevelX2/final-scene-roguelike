@@ -7,6 +7,7 @@ export function createItemFloorStateApi(context) {
     createWeaponPickup,
     createOffHandPickup,
     createFoodPickup,
+    formatWeaponReference,
     addMessage,
     healPlayer,
     restoreNutrition,
@@ -57,7 +58,7 @@ export function createItemFloorStateApi(context) {
 
     removeWeaponAt(index);
     state.inventory.push(cloneWeapon(item));
-    addMessage(`${item.name} wandert in dein Inventar.`, "important");
+    addMessage(`Du packst ${formatWeaponReference(item, { article: "definite", grammaticalCase: "accusative" })} in dein Inventar.`, "important");
   }
 
   function storeOffHand(index) {
@@ -159,7 +160,7 @@ export function createItemFloorStateApi(context) {
 
     if (content.type === "weapon") {
       floorState.weapons.push(createWeaponPickup(content.item, state.player.x, state.player.y));
-      addMessage(`${content.item.name} lag in der ${containerName} verborgen.`, "important");
+      addMessage(`In der ${containerName} lag ${formatWeaponReference(content.item, { article: "definite", grammaticalCase: "nominative" })} verborgen.`, "important");
       return true;
     }
 

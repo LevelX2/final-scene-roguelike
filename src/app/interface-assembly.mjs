@@ -53,6 +53,8 @@ export function assembleInterfaceModules(context) {
     getCombatWeapon,
   } = equipment;
   const {
+    formatWeaponDisplayName,
+    formatWeaponReference,
     formatWeaponStats,
     formatOffHandStats,
     getOffHandTooltipLines,
@@ -126,6 +128,8 @@ export function assembleInterfaceModules(context) {
     getCombatWeapon,
     hasLineOfSight,
     isStraightShot,
+    formatWeaponDisplayName,
+    formatWeaponReference,
     formatWeaponStats,
     formatOffHandStats,
     getOffHandTooltipLines,

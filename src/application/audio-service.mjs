@@ -4,6 +4,10 @@ export function createAudioService(context) {
   } = context;
 
   let audioContext;
+  let announcementAudio = null;
+  let announcementAudioUrl = null;
+  let announcementProvider = "unknown";
+  let announcementPlaybackToken = 0;
 
   function getAudioContext() {
     if (!audioContext) {
@@ -41,6 +45,18 @@ export function createAudioService(context) {
       return null;
     }
     return window.speechSynthesis;
+  }
+
+  function stopAnnouncementAudio() {
+    if (announcementAudio) {
+      announcementAudio.pause?.();
+      announcementAudio.src = "";
+      announcementAudio = null;
+    }
+    if (announcementAudioUrl && typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+      URL.revokeObjectURL(announcementAudioUrl);
+      announcementAudioUrl = null;
+    }
   }
 
   function resolveAnnouncementVoice(speechSynthesisApi) {
@@ -456,15 +472,11 @@ export function createAudioService(context) {
     oscillator.stop(now + 0.12);
   }
 
-  function playStudioAnnouncement(text) {
-    if (!isVoiceAnnouncementEnabled()) {
-      return;
-    }
-
+  function playBrowserStudioAnnouncement(text) {
     const speechSynthesisApi = getSpeechSynthesisApi();
     const message = String(text ?? "").trim();
     if (!speechSynthesisApi || message.length <= 0) {
-      return;
+      return false;
     }
 
     const utterance = new window.SpeechSynthesisUtterance(message);
@@ -477,6 +489,90 @@ export function createAudioService(context) {
 
     speechSynthesisApi.cancel?.();
     speechSynthesisApi.speak?.(utterance);
+    return true;
+  }
+
+  async function playOpenAiStudioAnnouncement(text) {
+    if (announcementProvider === "browser-fallback") {
+      return false;
+    }
+    if (typeof fetch !== "function" || typeof Audio !== "function" || typeof URL?.createObjectURL !== "function") {
+      announcementProvider = "browser-fallback";
+      return false;
+    }
+
+    const playbackToken = ++announcementPlaybackToken;
+    stopAnnouncementAudio();
+
+    const response = await fetch("/api/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: text,
+        instructions: "Sprich auf Deutsch, cineastisch, ruhig, bedeutungsvoll und leicht geheimnisvoll. Klinge wie eine stilvolle Trailer-Stimme mit klarer Artikulation.",
+        voice: "cedar",
+      }),
+    });
+
+    if (response.status === 404 || response.status === 405 || response.status === 501) {
+      announcementProvider = "browser-fallback";
+      return false;
+    }
+    if (!response.ok) {
+      return false;
+    }
+
+    const audioBlob = await response.blob();
+    if (playbackToken !== announcementPlaybackToken) {
+      return true;
+    }
+
+    announcementAudioUrl = URL.createObjectURL(audioBlob);
+    announcementAudio = new Audio(announcementAudioUrl);
+    announcementAudio.preload = "auto";
+    announcementAudio.addEventListener("ended", () => {
+      if (playbackToken === announcementPlaybackToken) {
+        stopAnnouncementAudio();
+      }
+    }, { once: true });
+    announcementAudio.addEventListener("error", () => {
+      if (playbackToken === announcementPlaybackToken) {
+        stopAnnouncementAudio();
+      }
+    }, { once: true });
+
+    try {
+      await announcementAudio.play();
+      announcementProvider = "openai";
+      return true;
+    } catch {
+      stopAnnouncementAudio();
+      return false;
+    }
+  }
+
+  function playStudioAnnouncement(text) {
+    if (!isVoiceAnnouncementEnabled()) {
+      return;
+    }
+
+    const message = String(text ?? "").trim();
+    if (message.length <= 0) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const playedViaOpenAi = await playOpenAiStudioAnnouncement(message);
+        if (!playedViaOpenAi) {
+          playBrowserStudioAnnouncement(message);
+        }
+      } catch {
+        playBrowserStudioAnnouncement(message);
+      }
+    })();
   }
 
   return {

@@ -4,6 +4,7 @@ import { createStateBlueprintApi } from './application/state-blueprint.mjs';
 import { createStatePersistenceApi } from './application/state-persistence.mjs';
 import { getNutritionMax, getNutritionStart, getHungerState } from './nutrition.mjs';
 import { createRunArchetypeSequence, getArchetypeForFloor } from './studio-theme.mjs';
+import { formatMonsterKillerLabel, formatWeaponDativePhrase } from './text/combat-phrasing.mjs';
 
 export function createStateApi(context) {
   const {
@@ -152,8 +153,15 @@ export function createStateApi(context) {
 
   function createDeathCause(enemy, options = {}) {
     const enemyName = enemy?.baseName ?? enemy?.name ?? "etwas Unbekanntem";
+    const victimName = options.victimName ?? 'die Hauptrolle';
+    const weapon = options.weapon ?? enemy?.mainHand ?? enemy?.weapon ?? null;
     const rangedSuffix = options.ranged ? " aus der Distanz" : "";
     const criticalSuffix = options.critical ? " mit einem kritischen Treffer" : "";
+
+    if (weapon) {
+      return `schaffte es nicht durch den letzten Akt: ${formatMonsterKillerLabel(enemy)} beendete die Szene und traf ${victimName}${rangedSuffix} mit ${formatWeaponDativePhrase(weapon)}.${options.critical ? " Der letzte Treffer war kritisch." : ""}`;
+    }
+
     const quips = [
       `wurde im letzten Akt von ${enemyName}${rangedSuffix}${criticalSuffix} zu Fall gebracht.`,
       `schaffte es nicht durch den letzten Akt: ${enemyName}${rangedSuffix}${criticalSuffix} beendete die Szene.`,

@@ -5,6 +5,7 @@ export const openHelpLandingButton = document.getElementById("openHelpLanding");
 export const openRunStatsButton = document.getElementById("openRunStats");
 export const closeRunStatsButton = document.getElementById("closeRunStats");
 export const openInventoryButton = document.getElementById("openInventory");
+export const openTargetModeButton = document.getElementById("openTargetMode");
 export const closeInventoryButton = document.getElementById("closeInventory");
 export const saveGameQuickButtonElement = document.getElementById("saveGameQuick");
 export const startFreshRunButton = document.getElementById("startFreshRun");

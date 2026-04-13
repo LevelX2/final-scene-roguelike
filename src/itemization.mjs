@@ -2,6 +2,7 @@ import { RARITY_LABELS, WEAPON_MODIFIER_DEFS, SHIELD_MODIFIER_DEFS } from './con
 import { getStudioCycleIndex } from './studio-theme.mjs';
 import { getDecadePrefix, STANDARD_EFFECT_IDS, HIGH_IMPACT_EFFECT_IDS, getWeaponEffectDefinition, getProcBonusForFloor, getEffectNameParts, getEffectSummary } from './content/catalogs/weapon-effects.mjs';
 import { getFloorScalingBonus, getWeaponProfile } from './content/catalogs/weapon-templates.mjs';
+import { buildWeaponGrammar } from './text/combat-phrasing.mjs';
 
 function cloneModifier(modifier) {
   return {
@@ -303,7 +304,16 @@ export function createItemizationApi(context) {
     return decadeSuffix ? `${name} ${decadeSuffix}`.trim() : name;
   }
 
-  function buildWeaponName(baseItem, rarity, numericMods, effects, floorNumber) {
+  function formatWeaponNameParts(nameParts) {
+    return [
+      nameParts.prefix,
+      nameParts.baseName,
+      nameParts.suffix,
+      nameParts.decadeSuffix,
+    ].filter(Boolean).join(' ').trim();
+  }
+
+  function buildWeaponNameParts(baseItem, rarity, numericMods, effects, floorNumber) {
     const decadeSuffix = getDecadePrefix(getStudioCycleIndex(floorNumber));
     const allEffects = effects.filter(Boolean);
     const primaryEffect = allEffects[0] ?? null;
@@ -316,31 +326,43 @@ export function createItemizationApi(context) {
     const suffix = secondaryParts?.suffix?.[0] ?? primaryParts?.suffix?.[0] ?? fallbackSuffix;
 
     if (rarity === 'common') {
-      return appendDecadeSuffix(baseItem.name, decadeSuffix);
+      return {
+        prefix: null,
+        baseName: baseItem.name,
+        suffix: null,
+        decadeSuffix,
+      };
     }
 
     if (rarity === 'uncommon') {
       if (prefix) {
-        return appendDecadeSuffix(`${prefix} ${baseItem.name}`.trim(), decadeSuffix);
+        return {
+          prefix,
+          baseName: baseItem.name,
+          suffix: null,
+          decadeSuffix,
+        };
       }
       if (suffix) {
-        return appendDecadeSuffix(`${baseItem.name} ${suffix}`.trim(), decadeSuffix);
+        return {
+          prefix: null,
+          baseName: baseItem.name,
+          suffix,
+          decadeSuffix,
+        };
       }
     }
 
-    if (prefix && suffix) {
-      return appendDecadeSuffix(`${prefix} ${baseItem.name} ${suffix}`.trim(), decadeSuffix);
-    }
+    return {
+      prefix: prefix || null,
+      baseName: baseItem.name,
+      suffix: suffix || null,
+      decadeSuffix,
+    };
+  }
 
-    if (prefix) {
-      return appendDecadeSuffix(`${prefix} ${baseItem.name}`.trim(), decadeSuffix);
-    }
-
-    if (suffix) {
-      return appendDecadeSuffix(`${baseItem.name} ${suffix}`.trim(), decadeSuffix);
-    }
-
-    return appendDecadeSuffix(baseItem.name, decadeSuffix);
+  function buildWeaponName(baseItem, rarity, numericMods, effects, floorNumber) {
+    return formatWeaponNameParts(buildWeaponNameParts(baseItem, rarity, numericMods, effects, floorNumber));
   }
 
   function generateWeaponItem(baseItem, dropContext = {}) {
@@ -367,7 +389,16 @@ export function createItemizationApi(context) {
 
     const numericallyModified = applyNumericMods(baseStats, numericMods);
     const finalStats = applyPassiveEffects(numericallyModified, effects);
+    const nameParts = buildWeaponNameParts(baseItem, rarity, numericMods, effects, floorNumber);
     const displayName = buildWeaponName(baseItem, rarity, numericMods, effects, floorNumber);
+    const grammar = buildWeaponGrammar({
+      ...baseItem,
+      id: baseItem.id,
+      templateId: baseItem.id,
+      baseItemId: baseItem.id,
+      name: displayName,
+      nameParts,
+    });
 
     return {
       ...baseItem,
@@ -387,6 +418,8 @@ export function createItemizationApi(context) {
       lightBonus: finalStats.lightBonus ?? 0,
       displayName,
       name: displayName,
+      nameParts,
+      grammar,
       dropSourceTag: dropContext.dropSourceTag ?? null,
       sourceArchetypeId: dropContext.sourceArchetypeId ?? baseItem.archetypeId ?? null,
       floorNumber,

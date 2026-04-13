@@ -10,7 +10,7 @@ module.exports = defineConfig({
     headless: true,
   },
   webServer: {
-    command: "node ./node_modules/http-server/bin/http-server . -p 4173 -c-1",
+    command: "node ./server.mjs --port 4173",
     port: 4173,
     reuseExistingServer: true,
     timeout: 30_000,

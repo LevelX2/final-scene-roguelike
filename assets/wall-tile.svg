@@ -1,51 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#4f7d62"/>
-      <stop offset="100%" stop-color="#3a624c"/>
+    <linearGradient id="wallBase" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#62896f"/>
+      <stop offset="100%" stop-color="#456451"/>
     </linearGradient>
-    <linearGradient id="brick" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#6ea07d"/>
-      <stop offset="100%" stop-color="#567d62"/>
+    <linearGradient id="brickFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#87ab92"/>
+      <stop offset="100%" stop-color="#6a8e76"/>
     </linearGradient>
-    <linearGradient id="topGlow" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#d7f3da" stop-opacity="0.30"/>
-      <stop offset="100%" stop-color="#d7f3da" stop-opacity="0"/>
+    <linearGradient id="mortarShade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#294135"/>
+      <stop offset="100%" stop-color="#23372d"/>
     </linearGradient>
+    <pattern id="brickRows" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="url(#wallBase)"/>
+
+      <rect x="0.85" y="0.85" width="6.3" height="5.1" rx="0.7" fill="url(#brickFill)"/>
+      <rect x="8.85" y="0.85" width="6.3" height="5.1" rx="0.7" fill="url(#brickFill)"/>
+      <rect x="-7.15" y="8.85" width="6.3" height="5.1" rx="0.7" fill="url(#brickFill)"/>
+      <rect x="0.85" y="8.85" width="6.3" height="5.1" rx="0.7" fill="url(#brickFill)"/>
+      <rect x="8.85" y="8.85" width="6.3" height="5.1" rx="0.7" fill="url(#brickFill)"/>
+
+      <path d="M0 0H16M0 8H16M0 16H16" stroke="url(#mortarShade)" stroke-width="1.5" opacity="0.95"/>
+      <path d="M8 0V8M0 8V16M8 8V16" stroke="url(#mortarShade)" stroke-width="1.3" opacity="0.95"/>
+
+      <path d="M1.8 2.1H5.6M9.8 2.1H13.6M1.8 10.1H5.6M9.8 10.1H13.6" stroke="#edf8ee" stroke-width="0.6" stroke-linecap="round" opacity="0.24"/>
+      <path d="M2.2 5.2H6.2M10.2 5.2H14.2M2.2 13.2H6.2M10.2 13.2H14.2" stroke="#1c2b23" stroke-width="0.65" stroke-linecap="round" opacity="0.18"/>
+    </pattern>
   </defs>
 
-  <rect x="0" y="0" width="32" height="32" fill="url(#bg)"/>
-  <rect x="0.5" y="0.5" width="31" height="31" fill="none" stroke="#7fb08d" stroke-width="0.7" opacity="0.45"/>
-
-  <g fill="url(#brick)" stroke="#294634" stroke-width="0.8">
-    <rect x="2.2" y="2.8" width="9.6" height="5.2"/>
-    <rect x="12.1" y="2.8" width="9.6" height="5.2"/>
-    <rect x="22" y="2.8" width="7.8" height="5.2"/>
-
-    <rect x="3" y="9.1" width="9.6" height="5.2"/>
-    <rect x="12.9" y="9.1" width="9.6" height="5.2"/>
-    <rect x="22.8" y="9.1" width="6.8" height="5.2"/>
-
-    <rect x="2.2" y="15.4" width="9.6" height="5.2"/>
-    <rect x="12.1" y="15.4" width="9.6" height="5.2"/>
-    <rect x="22" y="15.4" width="7.8" height="5.2"/>
-
-    <rect x="3" y="21.7" width="9.6" height="5.2"/>
-    <rect x="12.9" y="21.7" width="9.6" height="5.2"/>
-    <rect x="22.8" y="21.7" width="6.8" height="5.2"/>
-  </g>
-
-  <g opacity="0.28" fill="#e7f9e8">
-    <rect x="3.6" y="3.7" width="6.2" height="0.9"/>
-    <rect x="13.5" y="3.7" width="6.2" height="0.9"/>
-    <rect x="4.4" y="10" width="6.2" height="0.9"/>
-    <rect x="14.3" y="10" width="6.2" height="0.9"/>
-    <rect x="3.6" y="16.3" width="6.2" height="0.9"/>
-    <rect x="13.5" y="16.3" width="6.2" height="0.9"/>
-    <rect x="4.4" y="22.6" width="6.2" height="0.9"/>
-    <rect x="14.3" y="22.6" width="6.2" height="0.9"/>
-  </g>
-
-  <rect x="0" y="0" width="32" height="10" fill="url(#topGlow)"/>
-  <path d="M0 31.2H32" stroke="#21382a" stroke-width="0.8" opacity="0.28"/>
+  <rect width="32" height="32" fill="url(#brickRows)"/>
 </svg>

@@ -909,7 +909,6 @@ kbd {
 
 .tile.trap {
   color: transparent;
-  background-image: none;
 }
 
 .tile.trap-floor {

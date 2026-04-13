@@ -1,0 +1,12 @@
+export const boardElement = document.getElementById("board");
+export const gameShellElement = document.getElementById("gameShell");
+export const startModalElement = document.getElementById("startModal");
+export const startFormElement = document.getElementById("startForm");
+export const classOptionsElement = document.getElementById("classOptions");
+export const heroNameInputElement = document.getElementById("heroNameInput");
+export const saveHeroNameButtonElement = document.getElementById("saveHeroName");
+export const heroIdentityStatusElement = document.getElementById("heroIdentityStatus");
+export const loadGameFromStartButtonElement = document.getElementById("loadGameFromStart");
+export const startSavegameStatusElement = document.getElementById("startSavegameStatus");
+export const messageLogElement = document.getElementById("messageLog");
+export const hoverTooltipElement = document.getElementById("hoverTooltip");

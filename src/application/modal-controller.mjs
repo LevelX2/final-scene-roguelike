@@ -58,7 +58,7 @@ export function createModalController(context) {
       createSheetRow("Erreichtes Studio", formatStudioLabel(state.deepestFloor)),
       createSheetRow("Gegner besiegt", state.kills),
       createSheetRow("Schritte", state.turn),
-      createSheetRow("Highscore-Platz", rank ? `#${rank}` : "Außer Wertung"),
+      createSheetRow("Platz in den Final Scenes", rank ? `#${rank}` : "Außer Wertung"),
     ].join("").replace("AuÃŸer Wertung", "Außer Wertung");
     if (deathCopyElement) {
       deathCopyElement.textContent = "Den vollständigen Spielverlauf kannst du separat ansehen. Dieses Ende-Fenster bleibt bewusst kompakt.";

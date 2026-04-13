@@ -140,7 +140,7 @@ test("highscores render class icons for stored runs", async ({ page }) => {
   });
 
   await startRun(page);
-  await page.getByRole("button", { name: "Highscores" }).click();
+  await page.getByRole("button", { name: "Final Scenes" }).click();
   await expect(page.locator("#highscoresModal")).toBeVisible();
   await expect(page.locator(".score-class-badge")).toHaveCount(1);
 
@@ -193,7 +193,7 @@ test("highscores open from a button instead of the sidebar", async ({ page }) =>
   await page.goto("/");
   await startRun(page);
 
-  await page.getByRole("button", { name: "Highscores" }).click();
+  await page.getByRole("button", { name: "Final Scenes" }).click();
   await expect(page.locator("#highscoresModal")).toBeVisible();
 
   await page.keyboard.press("Escape");

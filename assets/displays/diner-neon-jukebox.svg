@@ -1,31 +1,30 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
 
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2b2f3a"/>
-      <stop offset="1" stop-color="#171a20"/>
-    </linearGradient>
-    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#7a6648"/>
-      <stop offset="1" stop-color="#4a3b2a"/>
-    </linearGradient>
-    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#bfe9ff" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#e8f8ff" stop-opacity="0.08"/>
-    </linearGradient>
-  </defs>
-
+<defs>
+  <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#7a6648"/>
+    <stop offset="1" stop-color="#4a3b2a"/>
+  </linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#bfe9ff" stop-opacity="0.28"/>
+    <stop offset="1" stop-color="#e8f8ff" stop-opacity="0.08"/>
+  </linearGradient>
+</defs>
   <rect x="16" y="50" width="32" height="8" rx="2" fill="#584736"/>
   <rect x="18" y="52" width="28" height="4" rx="1" fill="#76614a"/>
   <rect x="14" y="12" width="36" height="40" rx="2" fill="url(#frame)"/>
   <rect x="18" y="16" width="28" height="32" rx="1" fill="#10151c"/>
+
+  <path d="M24 20 H40 C41.5 20 43 21.5 43 23 V38 C43 40.2 40.8 42 38.5 42 H25.5 C23.2 42 21 40.2 21 38 V23 C21 21.5 22.5 20 24 20 Z"
+        fill="#7d2f4b" stroke="#442031" stroke-width="1.2"/>
+  <path d="M26 22 H38 C39.5 22 41 23.5 41 25 V37 C41 38.5 39.5 40 38 40 H26 C24.5 40 23 38.5 23 37 V25 C23 23.5 24.5 22 26 22 Z"
+        fill="#2f3147" stroke="#8fd5ff" stroke-width="1"/>
+  <rect x="27" y="26" width="10" height="5" rx="1" fill="#4fd0ff"/>
+  <path d="M27 34 H37" stroke="#f25ea8" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M39 24 V38" stroke="#d5b24b" stroke-width="1.2"/>
+
   <rect x="24" y="42" width="16" height="4" rx="1" fill="#6b5a45"/>
-
-  <path d="M24 22 Q24 20 26 20 L38 20 Q40 20 40 22 L40 38 Q40 40 38 40 L26 40 Q24 40 24 38 Z" fill="#7f4c88"/>
-  <rect x="27" y="24" width="10" height="8" rx="1" fill="#59d2e6"/>
-  <rect x="28" y="34" width="8" height="3" rx="1" fill="#f0b44e"/>
-
   <rect x="18" y="16" width="28" height="32" rx="1" fill="url(#glass)" stroke="#d8f3ff" stroke-opacity="0.18" stroke-width="0.8"/>
   <path d="M21 18 L27 18 L21 34 Z" fill="#ffffff" fill-opacity="0.13"/>
-  <path d="M29 18 L32 18 L22 44 L19 44 Z" fill="#ffffff" fill-opacity="0.06"/></svg>
-
+  <path d="M29 18 L32 18 L22 44 L19 44 Z" fill="#ffffff" fill-opacity="0.06"/>
+</svg>

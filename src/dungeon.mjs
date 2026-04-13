@@ -1277,6 +1277,7 @@ export function createDungeonApi(context) {
         stairsUp,
         stairsDown,
         startPosition,
+        studioArchetypeId,
       }));
 
       traps.push(

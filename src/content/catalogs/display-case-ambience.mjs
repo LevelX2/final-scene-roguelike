@@ -100,7 +100,7 @@
     "Hinter der Scheibe liegt ein Werkzeug für Unsichtbares. Das ist nicht beruhigend.",
   ],
   "red-balloon": [
-    "Ein einzelner roter Ballon wurde in der Vitrine befestigt. Seine Fröhlichkeit wirkt hier unten falsch.",
+    "Ein einzelner roter Ballon wurde in der Vitrine befestigt. Seine Froehlichkeit wirkt in diesem Raum falsch.",
     "Das kräftige Rot im Glas stört die Dunkelheit des Raums auf unangenehme Weise.",
     "Etwas so Einfaches sollte nicht so bedrohlich wirken, und doch tut es das.",
   ],
@@ -120,24 +120,24 @@
     "Das Objekt glänzt schön genug, um gefaehrlich zu sein.",
   ],
   "heart-jewel-box": [
-    "In einer geöffneten Schatulle liegt ein Herzsymbol, das hier unten eher melancholisch als romantisch wirkt.",
+    "In einer geoeffneten Schatulle liegt ein Herzsymbol, das in diesem Raum eher melancholisch als romantisch wirkt.",
     "Selbst Liebe sieht in diesem Raum aus wie eine Erinnerung mit schlechtem Ausgang.",
     "Die Vitrine zeigt etwas Zartes, und gerade deshalb wirkt es fehl am Platz.",
   ],
   "rose-under-glass": [
     "Eine einzelne Rose steht geschützt in der Vitrine. Ihre Schönheit beruhigt den Raum kein bisschen.",
     "Die Blume wirkt zu vollkommen für diesen Ort.",
-    "Hinter Glas blüht etwas Sanftes, das im Studiokomplex fast unheimlicher wirkt als jede Klinge.",
+    "Hinter Glas blueht etwas Sanftes, das an diesem Ort fast unheimlicher wirkt als jede Klinge.",
   ],
   "film-clapper": [
     "Eine alte Filmklappe lehnt auf dem Sockel. Der Raum fühlt sich an, als hätte gerade eine Szene begonnen.",
     "Hinter Glas wartet das Zeichen für Action, aber niemand hat dir das Drehbuch gegeben.",
-    "Die Klappe erinnert daran, dass dieser Ort sich manchmal mehr wie ein Set als wie ein Studiokomplex anfühlt.",
+    "Die Klappe erinnert daran, dass dieser Ort sich manchmal mehr wie ein Set als wie ein echter Ort anfuehlt.",
   ],
   "film-award": [
-    "Eine goldene Trophäe glänzt in der Vitrine, als gaebe es hier unten etwas zu feiern.",
+    "Eine goldene Trophaee glaenzt in der Vitrine, als gaebe es in diesem Raum etwas zu feiern.",
     "Der Preis hinter Glas wirkt wie ein schlechter Witz an einem Ort wie diesem.",
-    "Selbst Ruhm sieht im Studiokomplex aus wie etwas, das zu spät gekommen ist.",
+    "Selbst Ruhm sieht hier aus wie etwas, das zu spaet gekommen ist.",
   ],
   "terminator-jacket-glasses": [
     "Jacke und Brille ruhen wie Überreste jemandes, der selten um Erlaubnis bat.",
@@ -191,13 +191,78 @@
   ],
   "cowboy-hat-spurs": [
     "Ein abgewetzter Hut und ein Paar Sporen erinnern an staubige Strassen und letzte Duelle.",
-    "Selbst hier unten haftet diesen Dingen noch etwas von Weite und Gefahr an.",
+    "Selbst hier haftet diesen Dingen noch etwas von Weite und Gefahr an.",
     "Die Vitrine trägt den Geruch von Sonne, Leder und Entscheidungen, die man nur einmal trifft.",
   ],
   "diner-neon-jukebox": [
     "Ein Stück greller Americana leuchtet hinter Glas. Der Raum wirkt wie die Erinnerung an einen Ort, der nie sicher war.",
     "Zwischen Neon und Nostalgie liegt hier ein seltsamer Hauch von Gefahr.",
     "Die Vitrine summt fast nach Musik, obwohl nichts spielt.",
+  ],
+  "case-files": [
+    "Ein Stapel abgegriffener Fallakten liegt hinter Glas. Der Raum fühlt sich an, als haette hier jemand zu lange nach der Wahrheit gesucht.",
+    "Vergilbte Seiten, Randnotizen und alte Fotos machen aus dieser Vitrine eher ein Geständnis als ein Archivstück.",
+    "Je länger du die Akten ansiehst, desto eher wirkt es, als sei der Fall nie wirklich abgeschlossen worden.",
+  ],
+  "cafe-menu-board": [
+    "Eine kleine Kreidetafel mit Getraenken und Tagesangeboten steht in der Vitrine. Der Raum bekommt fuer einen Moment etwas von einem verpassten Treffen.",
+    "Das Menu wirkt harmlos und freundlich, fast zu freundlich fuer diesen Ort.",
+    "Hinter Glas bleibt die Erinnerung an einen Ort, an dem Probleme sonst nur mit Kaffee und Blicken begonnen haben.",
+  ],
+  "engagement-ring-box": [
+    "Ein kleines Ringschaechtelchen ruht geoeffnet auf dem Sockel. Es wirkt wie der eingefrorene Augenblick einer Antwort, die vielleicht nie kam.",
+    "Die Schatulle ist winzig, aber sie bringt mehr verletzliche Spannung in den Raum als manches Messer.",
+    "Hinter Glas liegt ein Versprechen, das an diesem Ort eher nach Risiko als nach Zukunft aussieht.",
+  ],
+  "jukebox-module": [
+    "Ein ausgebautes Musikmodul liegt hinter Glas, als haette jemand den Tanz aus dem Raum entfernt und nur das Echo zurueckgelassen.",
+    "Verchromte Kanten und alte Tasten bringen einen Hauch Leichtigkeit an einen Ort, der wenig davon uebrig hat.",
+    "Die Vitrine wirkt, als muesste gleich ein Song anspringen, der bessere Zeiten verspricht.",
+  ],
+  lunchbox: [
+    "Eine verbeulte Brotdose wurde hier ausgestellt, als waere auch der gewoehnliche Alltag eine Art Reliquie.",
+    "Das Objekt wirkt banal, fast trostlos, und gerade deshalb bleibt dein Blick daran haengen.",
+    "Hinter Glas liegt etwas, das mehr nach Schichtende als nach Heldentum aussieht.",
+  ],
+  "work-boots": [
+    "Ein Paar abgetragener Arbeitsstiefel steht in der Vitrine. Staub und Gebrauchsspuren machen den Raum ploetzlich ehrlicher.",
+    "Die Stiefel tragen nichts Ikonisches an sich, nur Gewicht, Wege und schlechte Tage.",
+    "Hinter Glas ruht keine Legende, sondern etwas, das einmal einfach nur durchhalten musste.",
+  ],
+  "eviction-notice": [
+    "Ein amtlich wirkender Raeumungsbescheid wurde unter Glas gepresst. Papier hat selten so wenig Trost ausgestrahlt.",
+    "Die Worte auf dem Blatt wirken kalt genug, um den ganzen Raum mitzunehmen.",
+    "Manche Drohungen brauchen keine Klinge. Dieses Dokument erinnert dich daran.",
+  ],
+  "bus-pass-wallet": [
+    "Ein abgegriffenes Portemonnaie mit Fahrkarte liegt in der Vitrine. Es sieht aus wie der Rest eines ganz normalen Tages.",
+    "Zwischen Kunststoff, Papier und Muenzfach steckt hier mehr Erschoepfung als Romantik.",
+    "Hinter Glas liegt etwas Alltaegliches, das in diesem Raum ploetzlich wie ein verlorenes Leben wirkt.",
+  ],
+  "tactical-vest": [
+    "Eine schwere Schutzweste wurde aufrecht in der Vitrine praesentiert. Der Raum wirkt sofort einsatzbereiter und kaelter.",
+    "Stoff, Gurte und Platten versprechen nicht Sicherheit, sondern nur, dass jemand mit Gegenwehr gerechnet hat.",
+    "Hinter Glas haengt Ausruestung fuer Naechte, in denen man besser nicht zu spaet kommt.",
+  ],
+  "sheriff-star": [
+    "Ein Messingstern liegt auf dunklem Stoff in der Vitrine. Selbst hier wirkt er wie ein Versprechen mit begrenzter Haltbarkeit.",
+    "Das Abzeichen ist klein, aber es bringt sofort das Gefuehl von Ordnung an Orte, die selten darauf Ruecksicht nehmen.",
+    "Hinter Glas ruht Autoritaet in ihrer schlichtesten Form: sichtbar, stolz und vermutlich ueberfordert.",
+  ],
+  "wanted-poster": [
+    "Ein vergilbtes Steckbriefplakat haengt sauber hinter Glas. Das Gesicht darauf wirkt, als waere es nie wirklich verschwunden.",
+    "Papier, Tinte und eine ausgesetzte Belohnung genuegen, um den Raum nach Jagd und Staub aussehen zu lassen.",
+    "Die Vitrine zeigt keine Erinnerung, sondern eine alte offene Rechnung.",
+  ],
+  "silver-buckle": [
+    "Eine reich verzierte Guertelschliesse faengt das Licht ein. Der Raum bekommt dadurch etwas von Staub, Stolz und stiller Drohung.",
+    "Das Metall wirkt dekorativ, aber nicht harmlos. Eitelkeit und Gefahr lagen wohl nie weit auseinander.",
+    "Hinter Glas ruht ein kleines Stueck Auftreten, das in einer anderen Welt schon fuer ein Duell gereicht haette.",
+  ],
+  "enchanted-mirror": [
+    "Ein kleiner Spiegel mit kunstvollem Rahmen wurde hier ausgestellt. Das Glas wirkt, als koenne es mehr zeigen als nur dein Gesicht.",
+    "Die Oberflaeche ist still, aber der Raum fuehlt sich an, als beobachte sie trotzdem etwas.",
+    "Hinter Glas ruht ein Objekt, das eher nach Maerchenregel als nach Physik aussieht.",
   ],
 };
 

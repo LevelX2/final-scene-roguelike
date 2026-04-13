@@ -411,23 +411,39 @@ export function createBoardView(context) {
     state.floatingTexts.forEach((entry) => {
       const text = document.createElement("div");
       text.className = `floating-text ${entry.kind}`;
-      text.textContent = entry.text;
+      if (entry.title) {
+        const title = document.createElement("div");
+        title.className = "floating-text-title";
+        title.textContent = entry.title;
+        text.appendChild(title);
+
+        const body = document.createElement("div");
+        body.className = "floating-text-body";
+        body.textContent = entry.text;
+        text.appendChild(body);
+      } else {
+        text.textContent = entry.text;
+      }
       text.style.left = `${BOARD_PADDING + entry.x * (TILE_SIZE + TILE_GAP) + 5}px`;
       text.style.top = `${BOARD_PADDING + entry.y * (TILE_SIZE + TILE_GAP) - 2}px`;
+      if (entry.duration) {
+        text.style.animationDuration = `${entry.duration}ms`;
+      }
       boardElement.appendChild(text);
     });
   }
 
-  function showFloatingText(x, y, text, kind) {
+  function showFloatingText(x, y, text, kind, options = {}) {
     const state = getState();
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    state.floatingTexts.push({ id, x, y, text, kind });
+    const duration = options.duration ?? 700;
+    state.floatingTexts.push({ id, x, y, text, kind, title: options.title ?? "", duration });
     renderSelf();
     window.setTimeout(() => {
       const nextState = getState();
       nextState.floatingTexts = nextState.floatingTexts.filter((entry) => entry.id !== id);
       renderSelf();
-    }, 700);
+    }, duration);
   }
 
   return {

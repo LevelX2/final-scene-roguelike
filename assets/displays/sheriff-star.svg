@@ -15,12 +15,10 @@
   <rect x="14" y="12" width="36" height="40" rx="2" fill="url(#frame)"/>
   <rect x="18" y="16" width="28" height="32" rx="1" fill="#10151c"/>
 
-  <rect x="22" y="25" width="13" height="10" rx="1" fill="#3d4349" stroke="#1f2327" stroke-width="1"/>
-  <circle cx="28.5" cy="30" r="3" fill="#5f6871" stroke="#9fb0bf" stroke-width="0.8"/>
-  <rect x="35" y="27" width="5" height="6" rx="1" fill="#535c64"/>
-  <rect x="25" y="22" width="5" height="3" fill="#535c64"/>
-  <rect x="31" y="22" width="5" height="3" fill="#535c64"/>
-  <path d="M25 35 L23 41 M33 35 L35 41" stroke="#8a7454" stroke-width="1.4"/>
+  <circle cx="32" cy="30" r="3.5" fill="#b79034"/>
+  <path d="M32 20 L35 27 L43 28 L37 33 L39 41 L32 36 L25 41 L27 33 L21 28 L29 27 Z"
+        fill="#d5b24b" stroke="#81681d" stroke-width="1.1"/>
+  <circle cx="32" cy="30" r="2.2" fill="#f0d98a" stroke="#9f7b1e" stroke-width="0.8"/>
 
   <rect x="24" y="42" width="16" height="4" rx="1" fill="#6b5a45"/>
   <rect x="18" y="16" width="28" height="32" rx="1" fill="url(#glass)" stroke="#d8f3ff" stroke-opacity="0.18" stroke-width="0.8"/>

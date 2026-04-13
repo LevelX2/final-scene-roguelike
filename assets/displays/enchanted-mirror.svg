@@ -15,12 +15,12 @@
   <rect x="14" y="12" width="36" height="40" rx="2" fill="url(#frame)"/>
   <rect x="18" y="16" width="28" height="32" rx="1" fill="#10151c"/>
 
-  <rect x="22" y="25" width="13" height="10" rx="1" fill="#3d4349" stroke="#1f2327" stroke-width="1"/>
-  <circle cx="28.5" cy="30" r="3" fill="#5f6871" stroke="#9fb0bf" stroke-width="0.8"/>
-  <rect x="35" y="27" width="5" height="6" rx="1" fill="#535c64"/>
-  <rect x="25" y="22" width="5" height="3" fill="#535c64"/>
-  <rect x="31" y="22" width="5" height="3" fill="#535c64"/>
-  <path d="M25 35 L23 41 M33 35 L35 41" stroke="#8a7454" stroke-width="1.4"/>
+  <path d="M32 18 C39 18,42 23,42 29 C42 36,37 40,32 42 C27 40,22 36,22 29 C22 23,25 18,32 18 Z"
+        fill="#a98d54" stroke="#70592e" stroke-width="1.2"/>
+  <path d="M32 21 C37 21,39 24,39 29 C39 34,35.5 37.5,32 39 C28.5 37.5,25 34,25 29 C25 24,27 21,32 21 Z"
+        fill="#7da3bb" stroke="#bfe9ff" stroke-width="0.8"/>
+  <path d="M32 42 L35 46 H29 Z" fill="#8a7454"/>
+  <circle cx="29" cy="26" r="2" fill="#ffffff" fill-opacity="0.12"/>
 
   <rect x="24" y="42" width="16" height="4" rx="1" fill="#6b5a45"/>
   <rect x="18" y="16" width="28" height="32" rx="1" fill="url(#glass)" stroke="#d8f3ff" stroke-opacity="0.18" stroke-width="0.8"/>

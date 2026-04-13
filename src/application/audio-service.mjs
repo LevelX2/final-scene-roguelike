@@ -318,31 +318,56 @@ export function createAudioService(context) {
     const now = context.currentTime;
     const master = context.createGain();
     master.gain.setValueAtTime(0.0001, now);
-    master.gain.exponentialRampToValueAtTime(0.065, now + 0.018);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+    master.gain.exponentialRampToValueAtTime(0.07, now + 0.06);
+    master.gain.exponentialRampToValueAtTime(0.032, now + 0.28);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 1.02);
     master.connect(context.destination);
 
-    const shimmer = context.createOscillator();
-    shimmer.type = "triangle";
-    shimmer.frequency.setValueAtTime(720, now);
-    shimmer.frequency.exponentialRampToValueAtTime(540, now + 0.16);
-    shimmer.frequency.exponentialRampToValueAtTime(660, now + 0.36);
-    shimmer.connect(master);
-    shimmer.start(now);
-    shimmer.stop(now + 0.4);
+    const foundation = context.createOscillator();
+    const foundationGain = context.createGain();
+    foundation.type = "sine";
+    foundation.frequency.setValueAtTime(261.63, now);
+    foundation.frequency.exponentialRampToValueAtTime(329.63, now + 0.24);
+    foundation.frequency.exponentialRampToValueAtTime(392.0, now + 0.62);
+    foundationGain.gain.setValueAtTime(0.0001, now);
+    foundationGain.gain.exponentialRampToValueAtTime(0.55, now + 0.09);
+    foundationGain.gain.exponentialRampToValueAtTime(0.12, now + 0.42);
+    foundationGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.02);
+    foundation.connect(foundationGain);
+    foundationGain.connect(master);
+    foundation.start(now);
+    foundation.stop(now + 1.02);
 
-    const accent = context.createOscillator();
-    const accentGain = context.createGain();
-    accent.type = "sine";
-    accent.frequency.setValueAtTime(980, now + 0.01);
-    accent.frequency.exponentialRampToValueAtTime(780, now + 0.13);
-    accentGain.gain.setValueAtTime(0.0001, now);
-    accentGain.gain.exponentialRampToValueAtTime(0.026, now + 0.018);
-    accentGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
-    accent.connect(accentGain);
-    accentGain.connect(context.destination);
-    accent.start(now + 0.01);
-    accent.stop(now + 0.22);
+    const fanfare = context.createOscillator();
+    const fanfareGain = context.createGain();
+    fanfare.type = "triangle";
+    fanfare.frequency.setValueAtTime(392.0, now + 0.025);
+    fanfare.frequency.exponentialRampToValueAtTime(523.25, now + 0.16);
+    fanfare.frequency.exponentialRampToValueAtTime(659.25, now + 0.34);
+    fanfare.frequency.exponentialRampToValueAtTime(587.33, now + 0.82);
+    fanfareGain.gain.setValueAtTime(0.0001, now);
+    fanfareGain.gain.exponentialRampToValueAtTime(0.28, now + 0.08);
+    fanfareGain.gain.exponentialRampToValueAtTime(0.09, now + 0.28);
+    fanfareGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.88);
+    fanfare.connect(fanfareGain);
+    fanfareGain.connect(master);
+    fanfare.start(now + 0.025);
+    fanfare.stop(now + 0.88);
+
+    const shine = context.createOscillator();
+    const shineGain = context.createGain();
+    shine.type = "sine";
+    shine.frequency.setValueAtTime(783.99, now + 0.09);
+    shine.frequency.exponentialRampToValueAtTime(987.77, now + 0.2);
+    shine.frequency.exponentialRampToValueAtTime(783.99, now + 0.48);
+    shineGain.gain.setValueAtTime(0.0001, now);
+    shineGain.gain.exponentialRampToValueAtTime(0.11, now + 0.12);
+    shineGain.gain.exponentialRampToValueAtTime(0.03, now + 0.3);
+    shineGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
+    shine.connect(shineGain);
+    shineGain.connect(master);
+    shine.start(now + 0.09);
+    shine.stop(now + 0.62);
   }
 
   function playStepSound() {

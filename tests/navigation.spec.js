@@ -862,12 +862,16 @@ test("entering a room with showcases logs one random ambience line", async ({ pa
   expect(moveKey).not.toBeNull();
   await page.keyboard.press(moveKey);
 
-  const messages = await page.evaluate(() => window.__TEST_API__.getMessages().map((entry) => entry.text));
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages().map((entry) => ({
+    text: entry.text,
+    tone: entry.tone,
+  })));
   const ambienceLines = [
     "Hinter dem Glas starrt dich eine abgenutzte Hockeymaske an. Der Raum wirkt plötzlich stiller.",
     "Die Maske in der Vitrine sieht harmlos aus, bis man merkt, wie leer der Blick dahinter ist.",
     "Ein kaltes Schaudern zieht durch den Raum. Selbst hinter Glas wirkt diese Maske wie eine Warnung.",
   ];
 
-  expect(messages.some((message) => ambienceLines.includes(message))).toBeTruthy();
+  expect(messages.some((message) => ambienceLines.includes(message.text))).toBeTruthy();
+  expect(messages.some((message) => ambienceLines.includes(message.text) && message.tone === "important")).toBeTruthy();
 });

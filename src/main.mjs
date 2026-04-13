@@ -778,7 +778,17 @@ function maybeTriggerShowcaseAmbience() {
   }
 
   const line = lines[randomInt(0, lines.length - 1)];
-  addMessage(line);
+  addMessage(line, "important");
+  showFloatingText(
+    selectedShowcase.x,
+    selectedShowcase.y,
+    line,
+    "showcase",
+    {
+      title: selectedShowcase.item.source ?? selectedShowcase.item.name,
+      duration: 4800,
+    },
+  );
   playShowcaseAmbienceSound();
   floorState.showcaseAmbienceSeen[roomIndex] = true;
 }

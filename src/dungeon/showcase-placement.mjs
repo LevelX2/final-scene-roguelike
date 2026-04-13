@@ -81,6 +81,7 @@ export function createShowcasePlacementApi(context) {
     stairsUp,
     stairsDown,
     startPosition,
+    studioArchetypeId,
   }) {
     const showcases = [];
     const eligibleRooms = chooseShowcaseRooms(rooms, startRoomIndex, goalRoomIndex);
@@ -96,7 +97,11 @@ export function createShowcasePlacementApi(context) {
       ),
     );
     const shuffledRooms = [...eligibleRooms].sort(() => Math.random() - 0.5);
-    const availableProps = [...propCatalog].sort(() => Math.random() - 0.5);
+    const themedPool = propCatalog.filter((prop) =>
+      prop.archetype === studioArchetypeId || prop.archetype === "global"
+    );
+    const activePropPool = themedPool.length > 0 ? themedPool : propCatalog;
+    const availableProps = [...activePropPool].sort(() => Math.random() - 0.5);
     const usedPropIds = collectUsedShowcasePropIds();
 
     for (const { room, index } of shuffledRooms) {
@@ -148,12 +153,8 @@ export function createShowcasePlacementApi(context) {
         continue;
       }
 
-      if (usedPropIds.size >= propCatalog.length) {
-        usedPropIds.clear();
-      }
-
       const prop = availableProps.find((entry) => !usedPropIds.has(entry.id))
-        ?? propCatalog[randomInt(0, propCatalog.length - 1)];
+        ?? activePropPool[randomInt(0, activePropPool.length - 1)];
       usedPropIds.add(prop.id);
       showcases.push(createShowcase(prop, candidate.x, candidate.y));
       occupied.push({ x: candidate.x, y: candidate.y });

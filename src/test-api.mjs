@@ -8,6 +8,7 @@ export function createTestApi(context) {
     getMainHand,
     getOffHand,
     countPotionsInInventory,
+    countFoodInInventory,
     loadHighscores,
     grantExperience,
     cloneWeapon,
@@ -147,7 +148,7 @@ export function createTestApi(context) {
         return {
           inventoryCount: state.inventory.length,
           potionCount: countPotionsInInventory(),
-          foodCount: state.inventory.filter((item) => item.type === "food").length,
+          foodCount: countFoodInInventory(),
           equippedWeapon: getMainHand(state.player) ? { ...getMainHand(state.player) } : null,
           offHand: getOffHand(state.player) ? { ...getOffHand(state.player) } : null,
           items: state.inventory.map((item) => ({ ...item })),

@@ -16,6 +16,7 @@ import { createItemsApi } from './items.mjs';
 import { createTestApi } from './test-api.mjs';
 import { createAudioService } from './application/audio-service.mjs';
 import { createInputController } from './application/input-controller.mjs';
+import { createInventoryStatsApi } from './application/inventory-stats.mjs';
 import { createSavegameService } from './application/savegame-service.mjs';
 import { createVisibilityService } from './application/visibility-service.mjs';
 import { createModalController } from './application/modal-controller.mjs';
@@ -62,6 +63,13 @@ const hideChoiceModalAction = createDeferredAction("hideChoiceModal");
 const resolvePotionChoiceAction = createDeferredAction("resolvePotionChoice");
 const useInventoryItemAction = createDeferredAction("useInventoryItem");
 const quickUsePotionAction = createDeferredAction("quickUsePotion");
+
+const {
+  countPotionsInInventory,
+  countFoodInInventory,
+} = createInventoryStatsApi({
+  getState: () => state,
+});
 
 function rollPercent(chance) {
   return randomChance() * 100 < chance;
@@ -521,6 +529,7 @@ function assembleGameplayModules() {
     getMainHand,
     getOffHand,
     countPotionsInInventory,
+    countFoodInInventory,
     loadHighscores,
     grantExperience: combatApi.grantExperience,
     cloneWeapon,
@@ -563,7 +572,6 @@ const {
   equipWeapon,
   canEquipOffHand,
   equipOffHand,
-  openChest,
   resolvePotionChoice,
   useInventoryItem,
   quickUsePotion,
@@ -573,14 +581,6 @@ const {
 function addMessage(text, tone = "") {
   state.messages.unshift({ text, tone });
   state.messages = state.messages.slice(0, LOG_LIMIT);
-}
-
-function countPotionsInInventory() {
-  return state.inventory.filter((item) => item.type === "potion").length;
-}
-
-function countFoodInInventory() {
-  return state.inventory.filter((item) => item.type === "food").length;
 }
 
 function refreshNutritionState(previousState = null) {

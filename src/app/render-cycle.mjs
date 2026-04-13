@@ -4,6 +4,8 @@ export function createRenderCycleApi(context) {
     syncTestApi,
     getPlayerCombatSummary,
     getCurrentStudioArchetypeId,
+    getCurrentFloorState,
+    getCombatWeapon,
     updateVisibility,
     renderBoard,
     formatStudioWithArchetype,
@@ -19,6 +21,8 @@ export function createRenderCycleApi(context) {
     topbarFoodElement,
     topbarStatusSummaryElement,
     targetModeHintElement,
+    openTargetModeButton,
+    confirmTargetModeButton,
     xpLabelElement,
     xpFillElement,
     nutritionLabelElement,
@@ -50,9 +54,13 @@ export function createRenderCycleApi(context) {
     toggleStepSoundElement,
     toggleDeathSoundElement,
     toggleVoiceAnnouncementsElement,
+    showcaseAnnouncementModeElement,
     updateSavegameControls,
     collapsibleCards,
     updatePotionChoiceSelection,
+    manhattanDistance,
+    hasLineOfSight,
+    isStraightShot,
   } = context;
 
   function render() {
@@ -82,16 +90,46 @@ export function createRenderCycleApi(context) {
     nutritionStateElement.textContent = getHungerStateLabel(state.player.hungerState);
     nutritionStateElement.className = `nutrition-state ${hungerClass}`;
     topbarFoodCardElement.className = `board-stat-pill ${hungerClass}`;
+
     const statusSummary = activeStatusEffects
       .map((effect) => `${effect.label}${effect.duration > 0 ? ` ${effect.duration}` : ""}`)
       .join(" | ");
     topbarStatusSummaryElement.textContent = statusSummary;
     topbarStatusSummaryElement.classList.toggle("ui-hidden", !statusSummary);
-    const targetHint = state.targeting?.active
-      ? "Zielmodus aktiv: WASD bewegt das Fadenkreuz, Enter schießt, Esc bricht ab."
+
+    const floorState = getCurrentFloorState();
+    const targetingActive = Boolean(state.targeting?.active);
+    const targetingWeapon = targetingActive ? getCombatWeapon?.(state.player) : null;
+    const targetedEnemy = targetingActive
+      ? floorState?.enemies?.find((enemy) => enemy.x === state.targeting.cursorX && enemy.y === state.targeting.cursorY)
+      : null;
+    const targetIsValid = Boolean(
+      targetingActive &&
+      targetedEnemy &&
+      targetingWeapon?.attackMode === "ranged" &&
+      (targetingWeapon?.range ?? 1) > 1 &&
+      manhattanDistance?.(targetedEnemy, state.player) <= (targetingWeapon?.range ?? 1) &&
+      isStraightShot?.(state.player.x, state.player.y, targetedEnemy.x, targetedEnemy.y) &&
+      hasLineOfSight?.(floorState, state.player.x, state.player.y, targetedEnemy.x, targetedEnemy.y)
+    );
+    const targetHint = targetingActive
+      ? targetIsValid
+        ? "Schuss frei"
+        : targetedEnemy
+          ? "Kein Schuss"
+          : "Kein Ziel"
       : "";
-    targetModeHintElement.textContent = targetHint;
-    targetModeHintElement.classList.toggle("ui-hidden", !targetHint);
+    targetModeHintElement.innerHTML = targetingActive
+      ? `<span>Zielmodus</span><strong>${targetHint}</strong>`
+      : `<span>Zielmodus</span><strong>-</strong>`;
+    targetModeHintElement.classList.toggle("ui-hidden", !targetingActive);
+    openTargetModeButton.textContent = targetingActive ? "Zielen beenden" : "Zielen";
+    openTargetModeButton.setAttribute("aria-pressed", String(targetingActive));
+    openTargetModeButton.classList.toggle("targeting-active", targetingActive);
+    confirmTargetModeButton.classList.toggle("ui-hidden", !targetingActive);
+    confirmTargetModeButton.disabled = !targetIsValid;
+    confirmTargetModeButton.textContent = targetIsValid ? "Schießen" : "Kein Schuss";
+
     playerStatusSummaryElement.textContent = statusSummary ? `Status: ${statusSummary}` : "";
     playerStatusSummaryElement.classList.toggle("ui-hidden", !statusSummary);
     renderPlayerSheet();
@@ -124,6 +162,7 @@ export function createRenderCycleApi(context) {
     toggleStepSoundElement.checked = state.options.stepSound;
     toggleDeathSoundElement.checked = state.options.deathSound;
     toggleVoiceAnnouncementsElement.checked = state.options.voiceAnnouncements;
+    showcaseAnnouncementModeElement.value = state.options.showcaseAnnouncementMode ?? "floating-text";
     updateSavegameControls();
     collapsibleCards.forEach((card) => {
       const key = card.dataset.collapsible;

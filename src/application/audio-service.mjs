@@ -553,11 +553,7 @@ export function createAudioService(context) {
     }
   }
 
-  function playStudioAnnouncement(text) {
-    if (!isVoiceAnnouncementEnabled()) {
-      return;
-    }
-
+  function playNarration(text) {
     const message = String(text ?? "").trim();
     if (message.length <= 0) {
       return;
@@ -575,6 +571,14 @@ export function createAudioService(context) {
     })();
   }
 
+  function playStudioAnnouncement(text) {
+    if (!isVoiceAnnouncementEnabled()) {
+      return;
+    }
+
+    playNarration(text);
+  }
+
   return {
     playDeathSound,
     playVictorySound,
@@ -587,6 +591,7 @@ export function createAudioService(context) {
     playLockedDoorSound,
     playShowcaseAmbienceSound,
     playStepSound,
+    playNarration,
     playStudioAnnouncement,
   };
 }

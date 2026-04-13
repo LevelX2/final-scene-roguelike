@@ -117,7 +117,7 @@ export function createInputController(context) {
         return;
       }
 
-      if (matchesShortcut(["escape"], ["Escape"])) {
+      if (matchesShortcut(["escape", "t", "q"], ["Escape", "KeyT", "KeyQ", "KeyF"])) {
         event.preventDefault();
         cancelTargetMode();
         return;

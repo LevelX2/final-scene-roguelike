@@ -7,6 +7,7 @@ export function createUiBindingsApi(context) {
     stairsStayButton,
     openInventoryButton,
     openTargetModeButton,
+    confirmTargetModeButton,
     closeInventoryButton,
     openRunStatsButton,
     closeRunStatsButton,
@@ -31,6 +32,7 @@ export function createUiBindingsApi(context) {
     toggleStepSoundElement,
     toggleDeathSoundElement,
     toggleVoiceAnnouncementsElement,
+    showcaseAnnouncementModeElement,
     startFormElement,
     bindTooltip,
     topbarHpCardElement,
@@ -59,6 +61,8 @@ export function createUiBindingsApi(context) {
     openStartModal,
     applyStartProfile,
     enterTargetMode,
+    cancelTargetMode,
+    confirmTargetAttack,
     bindKeyboardInput,
   } = context;
 
@@ -72,7 +76,14 @@ export function createUiBindingsApi(context) {
 
   function bindModalControls() {
     openInventoryButton.addEventListener("click", () => toggleInventory(true));
-    openTargetModeButton.addEventListener("click", () => enterTargetMode());
+    openTargetModeButton.addEventListener("click", () => {
+      if (getState().targeting?.active) {
+        cancelTargetMode();
+        return;
+      }
+      enterTargetMode();
+    });
+    confirmTargetModeButton.addEventListener("click", () => confirmTargetAttack());
     closeInventoryButton.addEventListener("click", () => toggleInventory(false));
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
@@ -123,6 +134,10 @@ export function createUiBindingsApi(context) {
     });
     toggleVoiceAnnouncementsElement.addEventListener("change", () => {
       getState().options.voiceAnnouncements = toggleVoiceAnnouncementsElement.checked;
+      saveOptions();
+    });
+    showcaseAnnouncementModeElement.addEventListener("change", () => {
+      getState().options.showcaseAnnouncementMode = showcaseAnnouncementModeElement.value;
       saveOptions();
     });
   }

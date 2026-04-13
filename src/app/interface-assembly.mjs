@@ -45,6 +45,7 @@ export function assembleInterfaceModules(context) {
     enterTargetMode,
     cancelTargetMode,
     moveTargetCursor,
+    selectTargetTile,
     confirmTargetAttack,
   } = runtime;
   const {
@@ -143,6 +144,8 @@ export function assembleInterfaceModules(context) {
     countFoodInInventory,
     useInventoryItem,
     renderSelf,
+    selectTargetTile,
+    confirmTargetAttack,
   });
   setShowFloatingText(renderApi.showFloatingText);
 
@@ -197,6 +200,7 @@ export function assembleInterfaceModules(context) {
     enterTargetMode,
     cancelTargetMode,
     moveTargetCursor,
+    selectTargetTile,
     confirmTargetAttack,
   });
 

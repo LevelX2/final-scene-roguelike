@@ -45,7 +45,7 @@ test('state-persistence normalizes transient modal state on load', () => {
     lastScoreRank: null,
     modals: createDefaultModals(false),
     collapsedCards: createDefaultCollapsedCards(),
-    options: { stepSound: true, deathSound: true, voiceAnnouncements: true },
+    options: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
     preferences: createDefaultPreferences(),
     floors: { 1: { studioArchetypeId: 'slasher', grid: [['.']], visible: [[true]], enemies: [] } },
     player: {
@@ -76,7 +76,7 @@ test('state-persistence normalizes transient modal state on load', () => {
     OPTIONS_KEY: 'options',
     SAVEGAME_KEY: 'savegame',
     SAVEGAME_VERSION: 3,
-    DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true },
+    DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
     readStorage: (key) => storage.get(key) ?? null,
     writeStorage: (key, value) => storage.set(key, value),
     removeStorage: (key) => storage.delete(key),
@@ -124,6 +124,7 @@ test('state-persistence normalizes transient modal state on load', () => {
   assert.equal(state.pendingStairChoice, null);
   assert.equal(state.player.name, 'Ripley');
   assert.equal(state.options.voiceAnnouncements, true);
+  assert.equal(state.options.showcaseAnnouncementMode, 'floating-text');
   assert.deepEqual(state.visitedFloors, [1]);
 });
 
@@ -161,7 +162,7 @@ test('state-persistence ranks final scenes by studio, level, kills, then turns',
     OPTIONS_KEY: 'options',
     SAVEGAME_KEY: 'savegame',
     SAVEGAME_VERSION: 3,
-    DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true },
+    DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
     readStorage: (key) => storage.get(key) ?? null,
     writeStorage: (key, value) => storage.set(key, value),
     removeStorage: (key) => storage.delete(key),

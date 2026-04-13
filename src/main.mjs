@@ -1,5 +1,5 @@
 ﻿import { WIDTH, HEIGHT, TILE_SIZE, TILE_GAP, BOARD_PADDING, ROOM_ATTEMPTS, MIN_ROOM_SIZE, MAX_ROOM_SIZE, LOG_LIMIT, HIGHSCORE_KEY, HIGHSCORE_STORAGE_VERSION, HIGHSCORE_VERSION_KEY, VISION_RADIUS, BASE_HIT_CHANCE, MIN_HIT_CHANCE, MAX_HIT_CHANCE, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE, TILE, MONSTER_CATALOG, WEAPON_CATALOG, OFFHAND_CATALOG } from './data.mjs';
-import { startScreenElement, gameHeaderElement, boardElement, gameShellElement, startModalElement, startFormElement, classOptionsElement, heroNameInputElement, saveHeroNameButtonElement, heroIdentityStatusElement, startSavegameStatusElement, landingSavegameStatusElement, messageLogElement, inventoryListElement, playerSheetElement, playerPanelTitleElement, enemySheetElement, highscoreListElement, runStatsSummaryElement, runStatsKillsElement, depthTitleElement, topbarHpCardElement, topbarHpElement, topbarLevelCardElement, topbarLevelElement, topbarDamageCardElement, topbarDamageElement, topbarHitCardElement, topbarHitElement, topbarCritCardElement, topbarCritElement, topbarBlockCardElement, topbarBlockElement, topbarFoodCardElement, topbarFoodElement, topbarStatusSummaryElement, targetModeHintElement, xpLabelElement, xpFillElement, nutritionLabelElement, nutritionFillElement, nutritionStateElement, playerStatusSummaryElement, choiceModalElement, choiceTitleElement, choiceTextElement, choiceDrinkButton, choiceStoreButton, choiceLeaveButton, stairsModalElement, stairsTitleElement, stairsTextElement, stairsConfirmButton, stairsStayButton, inventoryModalElement, runStatsModalElement, startNewGameButton, loadGameFromLandingButtonElement, openHighscoresLandingButton, openHelpLandingButton, openRunStatsButton, closeRunStatsButton, openInventoryButton, openTargetModeButton, closeInventoryButton, saveGameQuickButtonElement, startFreshRunButton, inventoryFilterButtons, optionsModalElement, openOptionsButton, closeOptionsButton, saveGameButtonElement, loadGameButtonElement, savegameStatusElement, helpModalElement, openHelpButton, closeHelpButton, highscoresModalElement, openHighscoresButton, closeHighscoresButton, toggleStepSoundElement, toggleDeathSoundElement, toggleVoiceAnnouncementsElement, deathModalElement, deathSummaryElement, openDeathKillsButton, closeDeathButton, hoverTooltipElement, collapsibleCards } from './dom.mjs';
+import { startScreenElement, gameHeaderElement, boardElement, gameShellElement, startModalElement, startFormElement, classOptionsElement, heroNameInputElement, saveHeroNameButtonElement, heroIdentityStatusElement, startSavegameStatusElement, landingSavegameStatusElement, messageLogElement, inventoryListElement, playerSheetElement, playerPanelTitleElement, enemySheetElement, highscoreListElement, runStatsSummaryElement, runStatsKillsElement, depthTitleElement, topbarHpCardElement, topbarHpElement, topbarLevelCardElement, topbarLevelElement, topbarDamageCardElement, topbarDamageElement, topbarHitCardElement, topbarHitElement, topbarCritCardElement, topbarCritElement, topbarBlockCardElement, topbarBlockElement, topbarFoodCardElement, topbarFoodElement, topbarStatusSummaryElement, targetModeHintElement, xpLabelElement, xpFillElement, nutritionLabelElement, nutritionFillElement, nutritionStateElement, playerStatusSummaryElement, choiceModalElement, choiceTitleElement, choiceTextElement, choiceDrinkButton, choiceStoreButton, choiceLeaveButton, stairsModalElement, stairsTitleElement, stairsTextElement, stairsConfirmButton, stairsStayButton, inventoryModalElement, runStatsModalElement, startNewGameButton, loadGameFromLandingButtonElement, openHighscoresLandingButton, openHelpLandingButton, openRunStatsButton, closeRunStatsButton, openInventoryButton, openTargetModeButton, confirmTargetModeButton, closeInventoryButton, saveGameQuickButtonElement, startFreshRunButton, inventoryFilterButtons, optionsModalElement, openOptionsButton, closeOptionsButton, saveGameButtonElement, loadGameButtonElement, savegameStatusElement, helpModalElement, openHelpButton, closeHelpButton, highscoresModalElement, openHighscoresButton, closeHighscoresButton, toggleStepSoundElement, toggleDeathSoundElement, toggleVoiceAnnouncementsElement, showcaseAnnouncementModeElement, deathModalElement, deathSummaryElement, openDeathKillsButton, closeDeathButton, hoverTooltipElement, collapsibleCards } from './dom.mjs';
 import { DOOR_TYPE, LOCK_COLORS, PROP_CATALOG, DISPLAY_CASE_AMBIENCE } from './data.mjs';
 import { HERO_CLASSES, getHeroClassAssets, getUnlockedMonsterRank, getEnemyCountForFloor, getPotionCountForFloor, shouldSpawnFloorWeapon, shouldSpawnChest, getChestCountForFloor, getLockedDoorCountForFloor, shouldPlaceLockedRoomChest, getLevelUpRewards, NON_ICONIC_MONSTER_WEIGHT_BONUS, ICONIC_MONSTER_WEIGHT_PENALTY, ITEM_RARITY_MODIFIER_COUNTS, getEquipmentRarityWeights } from './balance.mjs';
 import { getNutritionMax, getNutritionStart, clampNutritionValue, getHungerState, getHungerStateLabel, getHungerStateMessage, HUNGER_STATE, NUTRITION_COST_PER_ACTION, DAMAGE_PER_ACTION_WHILE_DYING } from './nutrition.mjs';
@@ -260,6 +260,7 @@ const runtimeContext = createRuntimeContext({
     closeRunStatsButton,
     openInventoryButton,
     openTargetModeButton,
+    confirmTargetModeButton,
     closeInventoryButton,
     saveGameQuickButtonElement,
     startFreshRunButton,
@@ -368,6 +369,8 @@ const {
   cloneWeapon,
   createDungeonLevel,
   updateVisibility,
+  hasLineOfSight,
+  isStraightShot,
   getDoorAt,
   isDoorClosed,
   getDoorColorLabels,
@@ -477,6 +480,7 @@ const {
   resolvePotionChoice,
   useInventoryItem,
   quickUsePotion,
+  selectTargetTile,
   syncTestApi,
 } = runtimeContext.gameplay;
 
@@ -488,6 +492,7 @@ const showcaseAmbienceApi = createShowcaseAmbienceApi({
   addMessage: runtimeSupportApi.addMessage,
   showFloatingText: (...args) => runtimeActionsApi.runtimeBindings.showFloatingText(...args),
   playShowcaseAmbienceSound,
+  playNarration: (text) => runtimeContext.core.playNarration(text),
 });
 runtimeActionsApi.bindShowcaseAmbienceApi(showcaseAmbienceApi);
 
@@ -496,6 +501,8 @@ const renderCycleApi = createRenderCycleApi({
   syncTestApi,
   getPlayerCombatSummary,
   getCurrentStudioArchetypeId: runtimeSupportApi.getCurrentStudioArchetypeId,
+  getCurrentFloorState: runtimeSupportApi.getCurrentFloorState,
+  getCombatWeapon,
   updateVisibility,
   renderBoard,
   formatStudioWithArchetype,
@@ -511,6 +518,8 @@ const renderCycleApi = createRenderCycleApi({
   topbarFoodElement,
   topbarStatusSummaryElement,
   targetModeHintElement,
+  openTargetModeButton,
+  confirmTargetModeButton,
   xpLabelElement,
   xpFillElement,
   nutritionLabelElement,
@@ -542,9 +551,13 @@ const renderCycleApi = createRenderCycleApi({
   toggleStepSoundElement,
   toggleDeathSoundElement,
   toggleVoiceAnnouncementsElement,
+  showcaseAnnouncementModeElement,
   updateSavegameControls,
   collapsibleCards,
   updatePotionChoiceSelection,
+  manhattanDistance,
+  hasLineOfSight,
+  isStraightShot,
 });
 runtimeActionsApi.setRender(renderCycleApi.render);
 
@@ -578,6 +591,7 @@ const { bindAppControls } = createUiBindingsApi({
   stairsStayButton,
   openInventoryButton,
   openTargetModeButton,
+  confirmTargetModeButton,
   closeInventoryButton,
   saveGameQuickButtonElement,
   openRunStatsButton,
@@ -602,6 +616,7 @@ const { bindAppControls } = createUiBindingsApi({
   toggleStepSoundElement,
   toggleDeathSoundElement,
   toggleVoiceAnnouncementsElement,
+  showcaseAnnouncementModeElement,
   startFormElement,
   bindTooltip,
   topbarHpCardElement,
@@ -631,6 +646,8 @@ const { bindAppControls } = createUiBindingsApi({
   openStartModal,
   applyStartProfile,
   enterTargetMode: (...args) => runtimeContext.gameplay.enterTargetMode?.(...args),
+  cancelTargetMode: (...args) => runtimeContext.gameplay.cancelTargetMode?.(...args),
+  confirmTargetAttack: (...args) => runtimeContext.gameplay.confirmTargetAttack?.(...args),
   bindKeyboardInput,
 });
 

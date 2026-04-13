@@ -30,6 +30,7 @@ export function createStateBlueprintApi(context) {
     stepSound: true,
     deathSound: true,
     voiceAnnouncements: true,
+    showcaseAnnouncementMode: "floating-text",
   };
 
   function normalizeHeroName(name) {

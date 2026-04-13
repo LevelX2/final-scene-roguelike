@@ -511,3 +511,44 @@ test("equipment rarity modifiers are applied to generated drops", async ({ page 
   expect(generated.blockValue).toBe(3);
   expect(generated.name).toContain("Preview-Schild");
 });
+
+test("early floors cap top weapon rarities by depth", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const rarities = await page.evaluate(() => {
+    const template = {
+      type: "weapon-template",
+      id: "depth-test-revolver",
+      name: "Tiefentest-Revolver",
+      source: "Tests",
+      archetypeId: "western",
+      weaponRole: "ranged",
+      attackMode: "ranged",
+      range: 6,
+      profileId: "precise_ranged",
+      baseDamage: 3,
+      baseHit: 2,
+      baseCrit: 1,
+      description: "Nur fuer Tests.",
+    };
+
+    function previewRarity(floorNumber) {
+      window.__TEST_API__.setRandomSequence([0.999]);
+      return window.__TEST_API__.previewGeneratedEquipment(template, {
+        floorNumber,
+        dropSourceTag: "monster:test-enemy",
+      }).rarity;
+    }
+
+    return {
+      floor1: previewRarity(1),
+      floor3: previewRarity(3),
+      floor4: previewRarity(4),
+    };
+  });
+
+  expect(rarities.floor1).toBe("uncommon");
+  expect(rarities.floor3).toBe("rare");
+  expect(rarities.floor4).toBe("veryRare");
+});

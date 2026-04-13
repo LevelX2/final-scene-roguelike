@@ -52,6 +52,8 @@ export function createRenderApi(context) {
     countFoodInInventory,
     useInventoryItem,
     renderSelf,
+    selectTargetTile,
+    confirmTargetAttack,
   } = context;
 
   function getDoorColorLabel(color) {
@@ -318,6 +320,8 @@ export function createRenderApi(context) {
     formatRarityLabel,
     getItemModifierSummary,
     renderSelf,
+    selectTargetTile,
+    confirmTargetAttack,
     showTooltip,
     moveTooltip,
     hideTooltip,

@@ -98,9 +98,9 @@ export function getStudioArchetype(archetypeId) {
 export function buildStudioAnnouncementText(floorNumber, archetypeId) {
   const archetype = getStudioArchetype(archetypeId);
   if (!archetype?.entryAnnouncement) {
-    return `Studio ${Math.max(1, floorNumber)}. Sie betreten ein neues Filmstudio.`;
+    return "Sie betreten ein neues Filmstudio.";
   }
-  return `Studio ${Math.max(1, floorNumber)}. ${archetype.entryAnnouncement}`;
+  return archetype.entryAnnouncement;
 }
 
 export function shuffleStudioArchetypeSequence(randomInt) {

@@ -214,17 +214,21 @@ export function createPlayerTurnController(context) {
 
     const floorState = getCurrentFloorState();
     const weapon = getCombatWeapon(state.player);
-    const enemies = (floorState.enemies ?? [])
+    const allVisibleEnemies = (floorState.enemies ?? [])
       .filter((enemy) => {
         const distance = manhattanDistance(enemy, state.player);
         return (
           distance <= (weapon.range ?? 1) &&
-          isStraightShot?.(state.player.x, state.player.y, enemy.x, enemy.y) &&
-          hasLineOfSight?.(floorState, state.player.x, state.player.y, enemy.x, enemy.y)
+          floorState.visible?.[enemy.y]?.[enemy.x]
         );
       })
       .sort((left, right) => manhattanDistance(left, state.player) - manhattanDistance(right, state.player));
-    const initialTarget = enemies[0] ?? { x: state.player.x, y: state.player.y };
+    const enemies = allVisibleEnemies
+      .filter((enemy) =>
+        isStraightShot?.(state.player.x, state.player.y, enemy.x, enemy.y) &&
+        hasLineOfSight?.(floorState, state.player.x, state.player.y, enemy.x, enemy.y)
+      );
+    const initialTarget = enemies[0] ?? allVisibleEnemies[0] ?? { x: state.player.x, y: state.player.y };
 
     state.targeting.active = true;
     state.targeting.cursorX = initialTarget.x;
@@ -232,7 +236,7 @@ export function createPlayerTurnController(context) {
     addMessage(
       enemies.length > 0
         ? 'Zielmodus aktiv: Bewege das Fadenkreuz und bestätige mit Enter.'
-        : 'Zielmodus aktiv: Kein Ziel in gerader Linie und Sichtweite. Richte das Fadenkreuz aus oder brich mit Esc ab.',
+        : 'Zielmodus aktiv: Kein Ziel in gerader Linie und Sichtweite. Richte das Fadenkreuz aus oder brich mit T ab.',
       'important',
     );
     renderSelf();
@@ -256,6 +260,25 @@ export function createPlayerTurnController(context) {
     state.targeting.cursorX = Math.max(0, Math.min(WIDTH - 1, state.targeting.cursorX + dx));
     state.targeting.cursorY = Math.max(0, Math.min(HEIGHT - 1, state.targeting.cursorY + dy));
     renderSelf();
+  }
+
+  function selectTargetTile(x, y, { confirmIfSame = false } = {}) {
+    const state = getState();
+    if (!state.targeting?.active) {
+      return;
+    }
+
+    const clampedX = Math.max(0, Math.min(WIDTH - 1, x));
+    const clampedY = Math.max(0, Math.min(HEIGHT - 1, y));
+    const isSameTile = state.targeting.cursorX === clampedX && state.targeting.cursorY === clampedY;
+
+    state.targeting.cursorX = clampedX;
+    state.targeting.cursorY = clampedY;
+    renderSelf();
+
+    if (confirmIfSame && isSameTile) {
+      confirmTargetAttack();
+    }
   }
 
   function confirmTargetAttack() {
@@ -297,6 +320,7 @@ export function createPlayerTurnController(context) {
     enterTargetMode,
     cancelTargetMode,
     moveTargetCursor,
+    selectTargetTile,
     confirmTargetAttack,
   };
 }

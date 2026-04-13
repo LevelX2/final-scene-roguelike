@@ -35,6 +35,24 @@ export function createStatePersistenceApi(context) {
     renderSelf,
   } = context;
 
+  function normalizeShowcaseAnnouncementMode(value) {
+    return ["off", "floating-text", "voice"].includes(value)
+      ? value
+      : DEFAULT_OPTIONS.showcaseAnnouncementMode;
+  }
+
+  function normalizeOptions(options) {
+    const nextOptions = {
+      ...DEFAULT_OPTIONS,
+      ...(options ?? {}),
+    };
+    nextOptions.stepSound = Boolean(nextOptions.stepSound);
+    nextOptions.deathSound = Boolean(nextOptions.deathSound);
+    nextOptions.voiceAnnouncements = Boolean(nextOptions.voiceAnnouncements);
+    nextOptions.showcaseAnnouncementMode = normalizeShowcaseAnnouncementMode(nextOptions.showcaseAnnouncementMode);
+    return nextOptions;
+  }
+
   function loadHighscores() {
     const savedVersion = readStorage(HIGHSCORE_VERSION_KEY);
     if (savedVersion !== HIGHSCORE_STORAGE_VERSION) {
@@ -53,10 +71,7 @@ export function createStatePersistenceApi(context) {
 
   function loadOptions() {
     try {
-      return {
-        ...DEFAULT_OPTIONS,
-        ...JSON.parse(readStorage(OPTIONS_KEY) ?? "{}"),
-      };
+      return normalizeOptions(JSON.parse(readStorage(OPTIONS_KEY) ?? "{}"));
     } catch {
       return { ...DEFAULT_OPTIONS };
     }
@@ -243,10 +258,10 @@ export function createStatePersistenceApi(context) {
       ...createDefaultCollapsedCards(),
       ...(savedState.collapsedCards ?? {}),
     };
-    normalizedState.options = {
+    normalizedState.options = normalizeOptions({
       ...loadOptions(),
       ...(savedState.options ?? {}),
-    };
+    });
     normalizedState.preferences = {
       ...createDefaultPreferences(),
       ...(savedState.preferences ?? {}),

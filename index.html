@@ -42,6 +42,7 @@
         <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Spielverlauf</button>
         <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
         <button id="openTargetMode" class="mini-btn hero-help-btn" type="button">Zielen</button>
+        <button id="confirmTargetMode" class="mini-btn hero-help-btn ui-hidden" type="button">Schießen</button>
         <button id="saveGameQuick" class="mini-btn hero-help-btn" type="button">Speichern</button>
         <button id="openOptions" class="mini-btn hero-help-btn" type="button">Optionen</button>
         <button id="openHighscores" class="mini-btn hero-help-btn" type="button">Final Scenes</button>
@@ -85,10 +86,13 @@
               <span>Hunger</span>
               <strong id="topbarFood">Normal</strong>
             </div>
+            <div id="targetModeHint" class="board-stat-pill target-mode-pill ui-hidden" aria-live="polite">
+              <span>Ziel</span>
+              <strong>-</strong>
+            </div>
           </div>
         </div>
         <div id="topbarStatusSummary" class="topbar-status-summary ui-hidden" aria-live="polite"></div>
-        <div id="targetModeHint" class="target-mode-hint ui-hidden" aria-live="polite"></div>
         <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
       </section>
 
@@ -214,8 +218,16 @@
           <input id="toggleDeathSound" type="checkbox">
         </label>
         <label class="option-row">
-          <span>Studioansagen (KI-Stimme)</span>
+          <span>Studioansagen vorlesen</span>
           <input id="toggleVoiceAnnouncements" type="checkbox">
+        </label>
+        <label class="option-row">
+          <span>Vitrinenansagen</span>
+          <select id="showcaseAnnouncementMode">
+            <option value="off">Aus</option>
+            <option value="floating-text">Flyover-Text</option>
+            <option value="voice">KI-/Sprachausgabe</option>
+          </select>
         </label>
         <div class="modal-actions">
           <button id="saveGameButton" class="choice-btn accent" type="button">Spiel speichern</button>
@@ -238,7 +250,8 @@
       <div class="help-list">
         <div class="help-row"><span><kbd>WASD</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen</strong></div>
         <div class="help-row"><span><kbd>Leertaste</kbd></span><strong>Warten</strong></div>
-        <div class="help-row"><span><kbd>F</kbd></span><strong>Zielmodus für Fernkampf öffnen</strong></div>
+        <div class="help-row"><span><kbd>F</kbd> oder <kbd>Zielen</kbd></span><strong>Zielmodus für Fernkampf öffnen oder beenden</strong></div>
+        <div class="help-row"><span><kbd>Klick</kbd> oder <kbd>Schießen</kbd></span><strong>Ziel anwählen und auf das grüne Ziel feuern</strong></div>
         <div class="help-row"><span><kbd>H</kbd></span><strong>Schnell Heiltrank trinken</strong></div>
         <div class="help-row"><span><kbd>C</kbd></span><strong>Benachbarte offene Tür schließen</strong></div>
         <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>

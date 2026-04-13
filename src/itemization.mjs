@@ -1,4 +1,5 @@
 import { RARITY_LABELS, WEAPON_MODIFIER_DEFS, SHIELD_MODIFIER_DEFS } from './content/item-modifiers.mjs';
+import { applyRarityCap, getMaxEquipmentRarity } from './balance.mjs';
 import { getStudioCycleIndex } from './studio-theme.mjs';
 import { getDecadePrefix, STANDARD_EFFECT_IDS, HIGH_IMPACT_EFFECT_IDS, getWeaponEffectDefinition, getProcBonusForFloor, getEffectNameParts, getEffectSummary } from './content/catalogs/weapon-effects.mjs';
 import { getFloorScalingBonus, getWeaponProfile } from './content/catalogs/weapon-templates.mjs';
@@ -96,7 +97,8 @@ export function createItemizationApi(context) {
 
   function rollWeaponRarity(dropContext = {}) {
     const sourceProfile = WEAPON_RARITY_WEIGHTS[normalizeDropSource(dropContext.dropSourceTag)] ?? WEAPON_RARITY_WEIGHTS.floor;
-    const entries = Object.entries(sourceProfile).map(([rarity, weight]) => ({ rarity, weight }));
+    const cappedProfile = applyRarityCap(sourceProfile, getMaxEquipmentRarity(dropContext));
+    const entries = Object.entries(cappedProfile).map(([rarity, weight]) => ({ rarity, weight }));
     return weightedPick(entries)?.rarity ?? 'common';
   }
 

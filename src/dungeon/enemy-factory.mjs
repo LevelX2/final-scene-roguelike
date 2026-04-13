@@ -1,3 +1,5 @@
+import { formatMonsterDisplayName } from '../text/combat-phrasing.mjs';
+
 export function createDungeonEnemyFactory(context) {
   const {
     OFFHAND_CATALOG,
@@ -101,35 +103,31 @@ export function createDungeonEnemyFactory(context) {
     }, {});
   }
 
-  function formatMonsterModifierPhrase(modifiers, limit) {
-    const labels = modifiers
-      .map((modifier) => modifier.label)
+  function getMonsterNamePrefixStems(modifiers, limit) {
+    return modifiers
+      .map((modifier) => modifier.adjectiveStem)
       .filter(Boolean)
-      .slice(0, limit)
-      .map((label) => label.charAt(0).toLowerCase() + label.slice(1));
-
-    if (labels.length === 0) {
-      return "";
-    }
-
-    if (labels.length === 1) {
-      return labels[0];
-    }
-
-    return `${labels.slice(0, -1).join(", ")} und ${labels[labels.length - 1]}`;
+      .slice(0, limit);
   }
 
-  function buildMonsterVariantName(baseName, variant, modifiers) {
+  function buildMonsterVariantName(baseName, variant, modifiers, grammar) {
     if (variant.id === 'normal' || modifiers.length === 0) {
       return baseName;
     }
 
-    const modifierPhrase = formatMonsterModifierPhrase(modifiers, variant.id === 'dire' ? 2 : 1);
-    if (!modifierPhrase) {
+    const namePrefixStems = getMonsterNamePrefixStems(modifiers, variant.id === 'dire' ? 2 : 1);
+    if (namePrefixStems.length === 0) {
       return baseName;
     }
 
-    return `${baseName}, ${modifierPhrase}`;
+    return formatMonsterDisplayName({
+      baseName,
+      name: baseName,
+      grammar: {
+        ...(grammar ?? {}),
+        namePrefixStems,
+      },
+    });
   }
 
   function chooseWeightedMonster(availableMonsters, floorNumber, runSeenCounts, floorSeenCounts) {
@@ -181,7 +179,16 @@ export function createDungeonEnemyFactory(context) {
     const variantBonus = getMonsterVariantStatBonus(variantModifiers);
     const maxHp = Math.max(1, Math.round(baseHp * variant.hpMultiplier) + (variantBonus.hpFlat ?? 0));
     const offHand = monster.offHand ? OFFHAND_CATALOG[monster.offHand] : null;
-    const variantName = buildMonsterVariantName(monster.name, variant, variantModifiers);
+    const variantNamePrefixStems = getMonsterNamePrefixStems(variantModifiers, variant.id === 'dire' ? 2 : 1);
+    const runtimeGrammar = monster.grammar
+      ? {
+          ...monster.grammar,
+          namePrefixStems: variantNamePrefixStems,
+        }
+      : variantNamePrefixStems.length > 0
+        ? { namePrefixStems: variantNamePrefixStems }
+        : null;
+    const variantName = buildMonsterVariantName(monster.name, variant, variantModifiers, runtimeGrammar);
     const mobilityAggroBonus = monster.mobility === 'relentless'
       ? 2
       : monster.mobility === 'roaming'
@@ -211,7 +218,7 @@ export function createDungeonEnemyFactory(context) {
       variantTier: variant.id,
       variantLabel: variant.label,
       variantModifiers,
-      grammar: monster.grammar ? { ...monster.grammar } : null,
+      grammar: runtimeGrammar,
       behavior: monster.behavior,
       behaviorLabel: monster.behaviorLabel,
       mobility: monster.mobility,

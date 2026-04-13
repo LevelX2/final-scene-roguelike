@@ -71,6 +71,39 @@ test("stairs confirmation can move the player to the next floor", async ({ page 
   await expect(page.locator("#depthTitle")).toContainText("Studio 2");
 });
 
+test("floor followers use the full inflected monster name in stair messages", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const stairsDown = snapshot.stairsDown;
+    window.__TEST_API__.setupCombatScenario({
+      playerPosition: stairsDown,
+      enemyPosition: { x: stairsDown.x + 1, y: stairsDown.y },
+      enemy: {
+        id: "motel-shlurfer",
+        baseName: "Motel-Schlurfer",
+        name: "Brutaler Motel-Schlurfer",
+        grammar: {
+          articleMode: "indefinite",
+          gender: "masculine",
+          namePrefixStems: ["brutal"],
+        },
+        aggro: true,
+        canChangeFloors: true,
+      },
+    });
+    window.__TEST_API__.promptCurrentStairs();
+  });
+
+  await page.getByRole("button", { name: "Betreten" }).click();
+
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(messages.some((entry) => entry.text.includes("Der brutale Motel-Schlurfer folgt dir über die Treppe."))).toBeTruthy();
+  await expect(page.locator("#messageLog .log-mark-monster").first()).toHaveText("Der brutale Motel-Schlurfer");
+});
+
 test("restart resets the run back to floor one", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -110,14 +143,16 @@ test("spoken studio announcements only play on first entry to a studio", async (
 
   let speechCalls = await page.evaluate(() => window.__speechCalls.map((entry) => entry.text));
   expect(speechCalls).toHaveLength(1);
-  expect(speechCalls[0]).toContain("Studio 1");
+  expect(speechCalls[0]).toContain("Sie betreten");
+  expect(speechCalls[0]).not.toContain("Studio 1");
 
   await openDownstairsPrompt(page);
   await page.getByRole("button", { name: "Betreten" }).click();
 
   speechCalls = await page.evaluate(() => window.__speechCalls.map((entry) => entry.text));
   expect(speechCalls).toHaveLength(2);
-  expect(speechCalls[1]).toContain("Studio 2");
+  expect(speechCalls[1]).toContain("Sie betreten");
+  expect(speechCalls[1]).not.toContain("Studio 2");
 
   await page.evaluate(() => {
     const snapshot = window.__TEST_API__.getSnapshot();
@@ -131,6 +166,65 @@ test("spoken studio announcements only play on first entry to a studio", async (
 
   speechCalls = await page.evaluate(() => window.__speechCalls.map((entry) => entry.text));
   expect(speechCalls).toHaveLength(2);
+});
+
+test("showcase ambience can be spoken instead of shown as flyover text", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.keyboard.press("o");
+  await page.locator("#showcaseAnnouncementMode").selectOption("voice");
+  await page.keyboard.press("Escape");
+
+  const moveKey = await page.evaluate(() => {
+    window.__TEST_API__.setRandomSequence([0]);
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const currentRoomIndex = snapshot.rooms.findIndex((room) =>
+      snapshot.player.x >= room.x &&
+      snapshot.player.x < room.x + room.width &&
+      snapshot.player.y >= room.y &&
+      snapshot.player.y < room.y + room.height
+    );
+    const room = snapshot.rooms[currentRoomIndex];
+    const candidates = [
+      { x: snapshot.player.x + 1, y: snapshot.player.y, key: "ArrowRight" },
+      { x: snapshot.player.x - 1, y: snapshot.player.y, key: "ArrowLeft" },
+      { x: snapshot.player.x, y: snapshot.player.y + 1, key: "ArrowDown" },
+      { x: snapshot.player.x, y: snapshot.player.y - 1, key: "ArrowUp" },
+    ].filter((tile) =>
+      snapshot.grid[tile.y]?.[tile.x] === "." &&
+      tile.x >= room.x &&
+      tile.x < room.x + room.width &&
+      tile.y >= room.y &&
+      tile.y < room.y + room.height
+    );
+
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeShowcase({ x: room.x, y: room.y }, {
+      id: "test-showcase",
+      ambienceId: "jason-mask",
+      name: "Test-Vitrine",
+      source: "Tests",
+      description: "Nur für den Test.",
+    });
+
+    return candidates[0]?.key ?? null;
+  });
+
+  expect(moveKey).not.toBeNull();
+  await page.keyboard.press(moveKey);
+
+  const ambienceLines = [
+    "Hinter dem Glas starrt dich eine abgenutzte Hockeymaske an. Der Raum wirkt plötzlich stiller.",
+    "Die Maske in der Vitrine sieht harmlos aus, bis man merkt, wie leer der Blick dahinter ist.",
+    "Ein kaltes Schaudern zieht durch den Raum. Selbst hinter Glas wirkt diese Maske wie eine Warnung.",
+  ];
+
+  await expect.poll(async () => {
+    const speechCalls = await page.evaluate(() => window.__speechCalls.map((entry) => entry.text));
+    return speechCalls.some((text) => ambienceLines.includes(text));
+  }).toBeTruthy();
+  await expect(page.locator(".floating-text.showcase")).toHaveCount(0);
 });
 
 test("closed doors open automatically when the player walks into them", async ({ page }) => {

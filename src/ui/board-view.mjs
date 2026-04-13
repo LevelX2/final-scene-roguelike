@@ -21,6 +21,8 @@ export function createBoardView(context) {
     formatRarityLabel,
     getItemModifierSummary,
     renderSelf,
+    selectTargetTile,
+    confirmTargetAttack,
     showTooltip,
     moveTooltip,
     hideTooltip,
@@ -415,6 +417,18 @@ export function createBoardView(context) {
         if (state.targeting?.active && state.targeting.cursorX === x && state.targeting.cursorY === y) {
           cell.classList.add('target-cursor');
           cell.classList.add(`target-cursor-${getTargetCursorState(x, y, state, floorState) ?? "invalid"}`);
+        }
+        if (state.targeting?.active) {
+          cell.classList.add("targeting-clickable");
+          cell.addEventListener("click", () => {
+            const cursorState = getTargetCursorState(x, y, state, floorState);
+            const alreadySelected = state.targeting?.cursorX === x && state.targeting?.cursorY === y;
+            if (alreadySelected && cursorState === "valid") {
+              confirmTargetAttack?.();
+              return;
+            }
+            selectTargetTile?.(x, y, { confirmIfSame: false });
+          });
         }
         cell.textContent = tile.glyph ?? "";
         if (tile.overlayImageUrl) {

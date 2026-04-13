@@ -1,4 +1,5 @@
 import { recordKillStat } from '../kill-stats.mjs';
+import { formatMonsterReference } from '../text/combat-phrasing.mjs';
 
 export function createStatusEffectService(context) {
   const {
@@ -18,7 +19,20 @@ export function createStatusEffectService(context) {
   } = context;
 
   function getStatusMessageSubject(target) {
-    return target === getState().player ? "Du bist" : `${target.name} ist`;
+    return target === getState().player
+      ? 'Du bist'
+      : `${formatMonsterReference(target, {
+          article: 'definite',
+          grammaticalCase: 'nominative',
+          capitalize: true,
+        })} ist`;
+  }
+
+  function formatMonsterSourceName(actor, grammaticalCase = 'dative') {
+    return formatMonsterReference(actor, {
+      article: 'definite',
+      grammaticalCase,
+    });
   }
 
   function getStatusEffects(actor) {
@@ -116,7 +130,9 @@ export function createStatusEffectService(context) {
 
       const applied = applyStatusEffect(defender, effect, {
         actorType: attacker === state.player ? 'player' : 'monster',
-        name: attacker?.name ?? attacker?.baseName ?? 'Unbekannt',
+        name: attacker?.type === 'monster'
+          ? formatMonsterSourceName(attacker)
+          : attacker?.name ?? attacker?.baseName ?? 'Unbekannt',
       });
       if (!applied) {
         continue;
@@ -178,9 +194,13 @@ export function createStatusEffectService(context) {
           state.kills += 1;
           state.killStats = recordKillStat(state.killStats, actor);
           if (effect.sourceActorType === 'player') {
-            grantExperience(actor.xpReward, actor.name);
+            grantExperience(actor.xpReward, formatMonsterSourceName(actor, 'accusative'));
           }
-          addMessage(`${actor.name} bricht unter ${getEffectStateLabel?.(effect.type) ?? effect.type} zusammen.`, 'important');
+          addMessage(`${formatMonsterReference(actor, {
+            article: 'definite',
+            grammaticalCase: 'nominative',
+            capitalize: true,
+          })} bricht unter ${getEffectStateLabel?.(effect.type) ?? effect.type} zusammen.`, 'important');
         }
         break;
       }

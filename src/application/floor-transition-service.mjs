@@ -1,3 +1,5 @@
+import { formatMonsterReference } from '../text/combat-phrasing.mjs';
+
 export function createFloorTransitionService(context) {
   const {
     getState,
@@ -26,6 +28,35 @@ export function createFloorTransitionService(context) {
     }
   }
 
+  function isWalkableFollowerTile(floorState, position) {
+    return floorState?.grid?.[position.y]?.[position.x] === '.';
+  }
+
+  function isOccupiedFollowerTile(floorState, position) {
+    const state = getState();
+    return floorState.enemies.some((enemy) => enemy.x === position.x && enemy.y === position.y) ||
+      (state.player.x === position.x && state.player.y === position.y);
+  }
+
+  function findFollowerDestination(destinationFloor, targetStair) {
+    const candidates = [
+      targetStair,
+      { x: targetStair.x + 1, y: targetStair.y },
+      { x: targetStair.x - 1, y: targetStair.y },
+      { x: targetStair.x, y: targetStair.y + 1 },
+      { x: targetStair.x, y: targetStair.y - 1 },
+      { x: targetStair.x + 1, y: targetStair.y + 1 },
+      { x: targetStair.x + 1, y: targetStair.y - 1 },
+      { x: targetStair.x - 1, y: targetStair.y + 1 },
+      { x: targetStair.x - 1, y: targetStair.y - 1 },
+    ];
+
+    return candidates.find((position) =>
+      isWalkableFollowerTile(destinationFloor, position) &&
+      !isOccupiedFollowerTile(destinationFloor, position)
+    ) ?? null;
+  }
+
   function transferFloorFollower(fromFloor, targetFloor, sourceStair, targetStair) {
     const state = getState();
     const sourceFloor = state.floors[fromFloor];
@@ -44,19 +75,26 @@ export function createFloorTransitionService(context) {
       return null;
     }
 
-    const occupied = destinationFloor.enemies.some((enemy) => enemy.x === targetStair.x && enemy.y === targetStair.y) ||
-      (state.player.x === targetStair.x && state.player.y === targetStair.y);
-    if (occupied) {
+    const destination = findFollowerDestination(destinationFloor, targetStair);
+    if (!destination) {
       return null;
     }
 
     sourceFloor.enemies = sourceFloor.enemies.filter((enemy) => enemy !== follower);
-    follower.x = targetStair.x;
-    follower.y = targetStair.y;
-    follower.originX = targetStair.x;
-    follower.originY = targetStair.y;
+    follower.x = destination.x;
+    follower.y = destination.y;
+    follower.originX = destination.x;
+    follower.originY = destination.y;
     destinationFloor.enemies.push(follower);
     return follower;
+  }
+
+  function formatFollowerLabel(follower) {
+    return formatMonsterReference(follower, {
+      article: 'definite',
+      grammaticalCase: 'nominative',
+      capitalize: true,
+    });
   }
 
   function moveToFloor(direction) {
@@ -79,16 +117,16 @@ export function createFloorTransitionService(context) {
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
       const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
-      addMessage(`Du betrittst ${formatStudioLabel(state.floor)}.`, "important");
-      addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), "important");
+      addMessage(`Du betrittst ${formatStudioLabel(state.floor)}.`, 'important');
+      addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), 'important');
       if (isFirstVisit) {
         state.visitedFloors.push(targetFloor);
         const announcement = buildStudioAnnouncement(state.floor, state.floors[targetFloor].studioArchetypeId);
-        addMessage(announcement, "important");
+        addMessage(announcement, 'important');
         playStudioAnnouncement(announcement);
       }
       if (follower) {
-        addMessage(`${follower.name} folgt dir über die Treppe.`, "danger");
+        addMessage(`${formatFollowerLabel(follower)} folgt dir über die Treppe.`, 'danger');
       }
       return true;
     }
@@ -101,10 +139,10 @@ export function createFloorTransitionService(context) {
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
       const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetStair);
-      addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück.`, "important");
-      addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), "important");
+      addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück.`, 'important');
+      addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), 'important');
       if (follower) {
-        addMessage(`${follower.name} setzt dir weiter nach.`, "danger");
+        addMessage(`${formatFollowerLabel(follower)} setzt dir weiter nach.`, 'danger');
       }
       return true;
     }
@@ -119,10 +157,10 @@ export function createFloorTransitionService(context) {
     if (floorState.stairsDown && floorState.stairsDown.x === state.player.x && floorState.stairsDown.y === state.player.y) {
       showStairChoice({
         direction: 1,
-        title: "Übergang",
+        title: 'Übergang',
         text: `Du stehst an einem Übergang. Möchtest du ${formatStudioLabel(state.floor + 1)} betreten oder hier bleiben?`,
-        confirmLabel: "Betreten",
-        stayLabel: "Hier bleiben",
+        confirmLabel: 'Betreten',
+        stayLabel: 'Hier bleiben',
       });
       renderSelf();
       return true;
@@ -131,10 +169,10 @@ export function createFloorTransitionService(context) {
     if (floorState.stairsUp && floorState.stairsUp.x === state.player.x && floorState.stairsUp.y === state.player.y) {
       showStairChoice({
         direction: -1,
-        title: "Übergang",
+        title: 'Übergang',
         text: `Du stehst an einem Übergang. Möchtest du in ${formatStudioLabel(state.floor - 1)} zurückkehren oder hier bleiben?`,
-        confirmLabel: "Zurückkehren",
-        stayLabel: "Hier bleiben",
+        confirmLabel: 'Zurückkehren',
+        stayLabel: 'Hier bleiben',
       });
       renderSelf();
       return true;

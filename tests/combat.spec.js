@@ -83,6 +83,55 @@ test("player attacks can miss and be logged as dodged", async ({ page }) => {
   expect(messages.some((entry) => entry.text.includes("Als Stuntman gehst du sofort in die Szene"))).toBeTruthy();
 });
 
+test("variant monster prefixes are rendered as proper adjectives in miss logs", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { classLabel: "Hauptrolle" });
+
+  await setupCombat(page, {
+    player: {
+      strength: 4,
+      precision: 0,
+      reaction: 3,
+      nerves: 2,
+      weapon: {
+        type: "weapon",
+        id: "test-blade",
+        name: "Testklinge",
+        source: "Tests",
+        damage: 3,
+        hitBonus: 0,
+        critBonus: 0,
+        description: "Nur für Tests.",
+      },
+    },
+    enemy: {
+      id: "motel-shlurfer",
+      baseName: "Motel-Schlurfer",
+      name: "Brutaler Motel-Schlurfer",
+      grammar: {
+        articleMode: "indefinite",
+        gender: "masculine",
+        namePrefixStems: ["brutal"],
+      },
+      hp: 12,
+      maxHp: 12,
+      reaction: 20,
+      nerves: 10,
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0.5, 0.99]));
+  await page.keyboard.press("ArrowRight");
+
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(messages.some((entry) => entry.text.includes("der brutale Motel-Schlurfer entkommt knapp."))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Der brutale Motel-Schlurfer weicht deinem Angriff aus."))).toBeTruthy();
+  const markedNames = await page.locator("#messageLog .log-mark-monster").evaluateAll((nodes) =>
+    nodes.map((node) => node.textContent)
+  );
+  expect(markedNames).toContain("Der brutale Motel-Schlurfer");
+});
+
 test("Hauptrolle gets a boosted opening strike against a fresh enemy", async ({ page }) => {
   await page.goto("/");
   await startRun(page, { classLabel: "Hauptrolle" });
@@ -617,7 +666,7 @@ test("death modal describes who killed the player and with which weapon", async 
     },
   });
 
-  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0]));
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99]));
   await page.keyboard.press(" ");
 
   await expect(page.locator("#deathSummary")).toContainText("ein Kellerkriecher");
@@ -680,6 +729,123 @@ test("enemy attack log uses the inflected weapon phrase", async ({ page }) => {
 
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
   expect(messages.some((entry) => entry.text.includes("mit dem leuchtenden Expeditionsrevolver der Flamme"))).toBeTruthy();
+});
+
+test("combat log inflects monster names for hit xp and kill messages", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    player: {
+      strength: 4,
+      precision: 9,
+      reaction: 3,
+      nerves: 2,
+      weapon: {
+        type: "weapon",
+        id: "test-blade",
+        name: "Testklinge",
+        source: "Tests",
+        damage: 3,
+        hitBonus: 2,
+        critBonus: 0,
+        description: "Nur für Tests.",
+      },
+    },
+    enemy: {
+      id: "besessene-puppe",
+      baseName: "Besessene Puppe",
+      name: "Besessene Puppe",
+      grammar: {
+        articleMode: "indefinite",
+        gender: "feminine",
+        inflectableParts: {
+          adjectiveStem: "besessen",
+          noun: "Puppe",
+        },
+      },
+      hp: 7,
+      maxHp: 7,
+      xpReward: 10,
+      reaction: 1,
+      nerves: 0,
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99, 0]));
+  await page.keyboard.press("ArrowRight");
+
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(messages.some((entry) => entry.text.includes("Du triffst die besessene Puppe für 7 Schaden."))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("+10 XP durch die besessene Puppe."))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Die besessene Puppe ist besiegt."))).toBeTruthy();
+});
+
+test("enemy attack log inflects monster names in the surrounding sentence", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    player: {
+      hp: 20,
+      maxHp: 20,
+      reaction: 0,
+      nerves: 0,
+    },
+    enemy: {
+      id: "besessene-puppe",
+      baseName: "Besessene Puppe",
+      name: "Besessene Puppe",
+      grammar: {
+        articleMode: "indefinite",
+        gender: "feminine",
+        inflectableParts: {
+          adjectiveStem: "besessen",
+          noun: "Puppe",
+        },
+      },
+      hp: 12,
+      maxHp: 12,
+      strength: 6,
+      precision: 9,
+      reaction: 1,
+      nerves: 0,
+      weapon: {
+        type: "weapon",
+        id: "combat-knife",
+        templateId: "combat-knife",
+        baseItemId: "combat-knife",
+        name: "Blendend Kampfmesser des Flimmers",
+        grammar: {
+          gender: "neuter",
+          displayName: "Blendend Kampfmesser des Flimmers",
+          definiteForms: {
+            nominative: "das blendende Kampfmesser des Flimmers",
+            accusative: "das blendende Kampfmesser des Flimmers",
+            dative: "dem blendenden Kampfmesser des Flimmers",
+          },
+        },
+        nameParts: {
+          prefix: "Blendend",
+          baseName: "Kampfmesser",
+          suffix: "des Flimmers",
+          decadeSuffix: null,
+        },
+        source: "Tests",
+        damage: 3,
+        hitBonus: 2,
+        critBonus: 0,
+        description: "Nur für Tests.",
+      },
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99]));
+  await page.keyboard.press(" ");
+
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(messages.some((entry) => entry.text.includes("Die besessene Puppe trifft dich mit dem blendenden Kampfmesser des Flimmers"))).toBeTruthy();
+  await expect(page.locator("#messageLog .log-mark-monster").first()).toHaveText("Die besessene Puppe");
 });
 
 test("a death writes a highscore entry", async ({ page }) => {

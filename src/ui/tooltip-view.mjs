@@ -21,6 +21,31 @@ export function createTooltipView(context) {
       .replaceAll("'", "&#39;");
   }
 
+  function isMonsterPhraseBoundaryCharacter(character) {
+    return !character || /[\s([{"'“„]/u.test(character);
+  }
+
+  function expandMonsterMatch(messageText, start, end) {
+    const prefix = messageText.slice(0, start);
+    const articlePhraseMatch = prefix.match(/((?:der|die|das|den|dem|des|ein|eine|einen|einem|einer)\s+(?:[a-zäöüß][\p{L}-]*\s+){0,2})$/iu);
+    if (articlePhraseMatch) {
+      const expandedStart = start - articlePhraseMatch[1].length;
+      if (isMonsterPhraseBoundaryCharacter(messageText[expandedStart - 1])) {
+        return { start: expandedStart, end };
+      }
+    }
+
+    const capitalizedPhraseMatch = prefix.match(/((?:[A-ZÄÖÜ][\p{L}-]*\s+){1,2})$/u);
+    if (capitalizedPhraseMatch) {
+      const expandedStart = start - capitalizedPhraseMatch[1].length;
+      if (isMonsterPhraseBoundaryCharacter(messageText[expandedStart - 1])) {
+        return { start: expandedStart, end };
+      }
+    }
+
+    return { start, end };
+  }
+
   const messageHighlightTerms = [
     ...monsterNames.map((name) => ({ text: name, kind: "monster" })),
     ...itemNames.map((name) => ({ text: name, kind: "item" })),
@@ -46,16 +71,20 @@ export function createTooltipView(context) {
           break;
         }
 
-        const end = start + needle.length;
-        const overlaps = matches.some((match) => !(end <= match.start || start >= match.end));
+        const expandedMatch = term.kind === "monster"
+          ? expandMonsterMatch(messageText, start, start + needle.length)
+          : { start, end: start + needle.length };
+        const end = expandedMatch.end;
+        const expandedStart = expandedMatch.start;
+        const overlaps = matches.some((match) => !(end <= match.start || expandedStart >= match.end));
         if (!overlaps) {
           matches.push({
-            start,
+            start: expandedStart,
             end,
             kind: term.kind,
           });
         }
-        searchIndex = end;
+        searchIndex = start + needle.length;
       }
     });
 

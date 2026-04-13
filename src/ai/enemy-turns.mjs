@@ -1,4 +1,4 @@
-import { formatWeaponReference } from '../text/combat-phrasing.mjs';
+import { formatMonsterReference, formatWeaponReference } from '../text/combat-phrasing.mjs';
 
 export function createEnemyTurnApi(context) {
   const {
@@ -40,6 +40,18 @@ export function createEnemyTurnApi(context) {
 
   function getHealingProfile(enemy) {
     return enemy.healingProfile ?? "slow";
+  }
+
+  function buildEnemyReference(enemy) {
+    return {
+      subject: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'nominative' }),
+      subjectCapitalized: formatMonsterReference(enemy, {
+        article: 'definite',
+        grammaticalCase: 'nominative',
+        capitalize: true,
+      }),
+      dative: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'dative' }),
+    };
   }
 
   function getEnemyWeaponLabel(weapon) {
@@ -141,7 +153,8 @@ export function createEnemyTurnApi(context) {
     enemy.turnsSinceHit = 0;
     if (floorState.visible?.[enemy.y]?.[enemy.x]) {
       showFloatingText(enemy.x, enemy.y, `+${enemy.hp - previousHp}`, "heal");
-      addMessage(`${enemy.name} erholt sich etwas.`, "important");
+      const enemyReference = buildEnemyReference(enemy);
+      addMessage(`${enemyReference.subjectCapitalized} erholt sich etwas.`, "important");
     }
   }
 
@@ -166,7 +179,8 @@ export function createEnemyTurnApi(context) {
       if (door && !door.isOpen && enemy.canOpenDoors) {
         door.isOpen = true;
         playDoorOpenSound();
-        addMessage(`${enemy.name} öffnet eine Tür.`, "danger");
+        const enemyReference = buildEnemyReference(enemy);
+        addMessage(`${enemyReference.subjectCapitalized} öffnet eine Tür.`, "danger");
       }
       enemy.x = nextX;
       enemy.y = nextY;
@@ -336,8 +350,10 @@ export function createEnemyTurnApi(context) {
       const adjacent = distance === 1;
       const retreating = shouldEnemyRetreat(enemy, state.player, distance);
 
+      const enemyReference = buildEnemyReference(enemy);
+
       if (retreating && !enemy.isRetreating) {
-        addMessage(`${enemy.name} sucht plötzlich Abstand.`, "important");
+        addMessage(`${enemyReference.subjectCapitalized} sucht plötzlich Abstand.`, "important");
       }
       enemy.isRetreating = retreating;
 
@@ -353,7 +369,7 @@ export function createEnemyTurnApi(context) {
         if (!result.hit) {
           showFloatingText(state.player.x, state.player.y, "Dodge", "dodge");
           playDodgeSound();
-          addMessage(`Du weichst dem Angriff von ${enemy.name} aus.`, "important");
+          addMessage(`Du weichst dem Angriff von ${enemyReference.dative} aus.`, "important");
           continue;
         }
 
@@ -379,8 +395,8 @@ export function createEnemyTurnApi(context) {
         }
         addMessage(
           result.critical
-            ? `${enemy.name} landet mit ${weaponLabel} einen kritischen Treffer für ${blockResult.damage} Schaden!`
-            : `${enemy.name} trifft dich mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
+            ? `${enemyReference.subjectCapitalized} landet mit ${weaponLabel} einen kritischen Treffer für ${blockResult.damage} Schaden!`
+            : `${enemyReference.subjectCapitalized} trifft dich mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
           "danger",
         );
         if (state.player.hp <= 0) {
@@ -421,7 +437,7 @@ export function createEnemyTurnApi(context) {
             ...rangedBoardEffect,
           });
           playDodgeSound();
-          addMessage(`Du weichst dem Schuss von ${enemy.name} aus.`, 'important');
+          addMessage(`Du weichst dem Schuss von ${enemyReference.dative} aus.`, 'important');
           continue;
         }
 
@@ -452,8 +468,8 @@ export function createEnemyTurnApi(context) {
         }
         addMessage(
           result.critical
-            ? `${enemy.name} trifft dich aus der Distanz mit ${weaponLabel} kritisch für ${blockResult.damage} Schaden!`
-            : `${enemy.name} trifft dich aus der Distanz mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
+            ? `${enemyReference.subjectCapitalized} trifft dich aus der Distanz mit ${weaponLabel} kritisch für ${blockResult.damage} Schaden!`
+            : `${enemyReference.subjectCapitalized} trifft dich aus der Distanz mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
           'danger',
         );
         if (state.player.hp <= 0) {

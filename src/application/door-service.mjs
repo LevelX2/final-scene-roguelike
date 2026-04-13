@@ -1,3 +1,5 @@
+import { formatMonsterReference } from '../text/combat-phrasing.mjs';
+
 export function createDoorService(context) {
   const {
     DOOR_TYPE,
@@ -23,7 +25,7 @@ export function createDoorService(context) {
     }
 
     return entity === state.player && state.inventory.some((item) =>
-      item.type === "key" &&
+      item.type === 'key' &&
       item.keyColor === door.lockColor &&
       item.keyFloor === state.floor
     );
@@ -36,7 +38,7 @@ export function createDoorService(context) {
     }
 
     const keyIndex = state.inventory.findIndex((item) =>
-      item.type === "key" &&
+      item.type === 'key' &&
       item.keyColor === door.lockColor &&
       item.keyFloor === state.floor
     );
@@ -50,12 +52,12 @@ export function createDoorService(context) {
   }
 
   function getDoorColorLabels(color) {
-    if (color === "green") {
-      return { adjective: "grüne", adjectiveDative: "grüne", key: "grüner" };
+    if (color === 'green') {
+      return { adjective: 'grüne', adjectiveDative: 'grüne', key: 'grüner' };
     }
 
-    if (color === "blue") {
-      return { adjective: "blaue", adjectiveDative: "blauen", key: "blauer" };
+    if (color === 'blue') {
+      return { adjective: 'blaue', adjectiveDative: 'blauen', key: 'blauer' };
     }
 
     return { adjective: color, adjectiveDative: color, key: color };
@@ -73,7 +75,7 @@ export function createDoorService(context) {
     return true;
   }
 
-  function openDoor(door, actor = "player") {
+  function openDoor(door, actor = 'player') {
     if (!door || door.isOpen) {
       return true;
     }
@@ -88,16 +90,23 @@ export function createDoorService(context) {
 
     door.isOpen = true;
     playDoorOpenSound();
-    if (actor === "player") {
+    if (actor === 'player') {
       const colorLabels = getDoorColorLabels(door.lockColor);
       addMessage(
         door.doorType === DOOR_TYPE.LOCKED
           ? `Der ${colorLabels.key} Schlüssel aus Studio ${usedKey.keyFloor} entriegelt die Tür und wird verbraucht.`
-          : "Die Tür schwingt auf.",
-        "important",
+          : 'Die Tür schwingt auf.',
+        'important',
       );
     } else {
-      addMessage(`${actor.name} drückt eine Tür auf.`, "danger");
+      const actorLabel = actor?.type === 'monster'
+        ? formatMonsterReference(actor, {
+            article: 'definite',
+            grammaticalCase: 'nominative',
+            capitalize: true,
+          })
+        : actor?.name ?? 'Jemand';
+      addMessage(`${actorLabel} drückt eine Tür auf.`, 'danger');
     }
 
     if (door.doorType === DOOR_TYPE.LOCKED) {

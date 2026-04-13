@@ -42,6 +42,16 @@ const MONSTER_GRAMMAR = {
   GENERIC_FEMININE: Object.freeze({ articleMode: "indefinite", gender: "feminine" }),
 };
 
+function createInflectableMonsterGrammar(profile, adjectiveStem, noun) {
+  return {
+    ...profile,
+    inflectableParts: {
+      adjectiveStem,
+      noun,
+    },
+  };
+}
+
 export const MONSTER_CATALOG = [
   {
     id: "bates",
@@ -124,7 +134,7 @@ export const MONSTER_CATALOG = [
   {
     id: "maskierter-nachahmer",
     name: "Maskierter Nachahmer",
-    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
+    grammar: createInflectableMonsterGrammar(MONSTER_GRAMMAR.GENERIC_MASCULINE, "maskiert", "Nachahmer"),
     rank: 2,
     behavior: "stalker",
     behaviorLabel: "Verfolger",
@@ -182,7 +192,7 @@ export const MONSTER_CATALOG = [
   {
     id: "besessene-puppe",
     name: "Besessene Puppe",
-    grammar: { ...MONSTER_GRAMMAR.GENERIC_FEMININE },
+    grammar: createInflectableMonsterGrammar(MONSTER_GRAMMAR.GENERIC_FEMININE, "besessen", "Puppe"),
     rank: 3,
     behavior: "wanderer",
     behaviorLabel: "Wirrling",
@@ -240,7 +250,7 @@ export const MONSTER_CATALOG = [
   {
     id: "stummer-maskentraeger",
     name: "Stummer Maskenträger",
-    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
+    grammar: createInflectableMonsterGrammar(MONSTER_GRAMMAR.GENERIC_MASCULINE, "stumm", "Maskenträger"),
     rank: 4,
     behavior: "juggernaut",
     behaviorLabel: "Unerbittlich",
@@ -317,7 +327,7 @@ export const MONSTER_CATALOG = [
   {
     id: "mutierter-hinterwaeldler",
     name: "Mutierter Hinterwäldler",
-    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
+    grammar: createInflectableMonsterGrammar(MONSTER_GRAMMAR.GENERIC_MASCULINE, "mutiert", "Hinterwäldler"),
     rank: 5,
     behavior: "juggernaut",
     behaviorLabel: "Brecher",
@@ -590,7 +600,7 @@ export const MONSTER_CATALOG = [
   {
     id: "dunkler-vollstrecker",
     name: "Dunkler Vollstrecker",
-    grammar: { ...MONSTER_GRAMMAR.GENERIC_MASCULINE },
+    grammar: createInflectableMonsterGrammar(MONSTER_GRAMMAR.GENERIC_MASCULINE, "dunkl", "Vollstrecker"),
     rank: 10,
     behavior: "hunter",
     behaviorLabel: "Vollstrecker",

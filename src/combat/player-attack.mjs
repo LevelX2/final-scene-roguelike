@@ -1,22 +1,22 @@
 import { recordKillStat } from '../kill-stats.mjs';
-import { formatWeaponReference } from '../text/combat-phrasing.mjs';
+import { formatMonsterReference, formatWeaponReference } from '../text/combat-phrasing.mjs';
 
 const OPENING_STRIKE_LOGS = {
   lead: {
-    hit: (enemyName) => `Triff deine Marke gibt dir den perfekten Auftakt gegen ${enemyName}.`,
-    miss: (enemyName) => `Triff deine Marke setzt den ersten Beat, aber ${enemyName} entkommt knapp.`,
+    hit: (enemy) => `Triff deine Marke gibt dir den perfekten Auftakt gegen ${enemy.object}.`,
+    miss: (enemy) => `Triff deine Marke setzt den ersten Beat, aber ${enemy.subject} entkommt knapp.`,
   },
   stuntman: {
-    hit: (enemyName) => `Als Stuntman gehst du sofort entschlossen in die Szene und bringst ${enemyName} unter Druck.`,
-    miss: (enemyName) => `Als Stuntman gehst du sofort in die Szene, aber ${enemyName} entkommt knapp.`,
+    hit: (enemy) => `Als Stuntman gehst du sofort entschlossen in die Szene und bringst ${enemy.object} unter Druck.`,
+    miss: (enemy) => `Als Stuntman gehst du sofort in die Szene, aber ${enemy.subject} entkommt knapp.`,
   },
   director: {
-    hit: (enemyName) => `Mit Szenenblick liest du den ersten Moment richtig und setzt ${enemyName} sofort unter Druck.`,
-    miss: (enemyName) => `Mit Szenenblick erkennst du den Moment, aber ${enemyName} entkommt knapp.`,
+    hit: (enemy) => `Mit Szenenblick liest du den ersten Moment richtig und setzt ${enemy.object} sofort unter Druck.`,
+    miss: (enemy) => `Mit Szenenblick erkennst du den Moment, aber ${enemy.subject} entkommt knapp.`,
   },
   default: {
-    hit: (enemyName) => `Du setzt ${enemyName} vom ersten Moment an unter Druck.`,
-    miss: (enemyName) => `${enemyName} entkommt deinem ersten Ansatz knapp.`,
+    hit: (enemy) => `Du setzt ${enemy.object} vom ersten Moment an unter Druck.`,
+    miss: (enemy) => `${enemy.subjectCapitalized} entkommt deinem ersten Ansatz knapp.`,
   },
 };
 
@@ -43,10 +43,22 @@ export function createPlayerAttackApi(context) {
     renderSelf,
   } = context;
 
-  function getOpeningStrikeMessage(player, enemyName, outcome) {
+  function getOpeningStrikeMessage(player, enemy, outcome) {
     const classId = player?.classId ?? 'default';
     const messages = OPENING_STRIKE_LOGS[classId] ?? OPENING_STRIKE_LOGS.default;
-    return messages[outcome]?.(enemyName) ?? OPENING_STRIKE_LOGS.default[outcome](enemyName);
+    return messages[outcome]?.(enemy) ?? OPENING_STRIKE_LOGS.default[outcome](enemy);
+  }
+
+  function buildEnemyReference(enemy) {
+    return {
+      subject: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'nominative' }),
+      subjectCapitalized: formatMonsterReference(enemy, {
+        article: 'definite',
+        grammaticalCase: 'nominative',
+        capitalize: true,
+      }),
+      object: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'accusative' }),
+    };
   }
 
   function attackEnemy(enemy, options = {}) {
@@ -59,6 +71,7 @@ export function createPlayerAttackApi(context) {
       distance: options.distance ?? 1,
       weapon,
     });
+    const enemyReference = buildEnemyReference(enemy);
     const isRangedAttack = (options.distance ?? 1) > 1 && weapon?.attackMode === 'ranged';
     const rangedBoardEffect = isRangedAttack
       ? {
@@ -72,16 +85,18 @@ export function createPlayerAttackApi(context) {
       : null;
 
     if (!result.hit) {
-      showFloatingText(enemy.x, enemy.y, "Dodge", "dodge", isRangedAttack ? {
-        title: "Schuss vorbei",
-        duration: 900,
-        ...rangedBoardEffect,
-      } : {});
+      showFloatingText(enemy.x, enemy.y, 'Dodge', 'dodge', isRangedAttack
+        ? {
+            title: 'Schuss vorbei',
+            duration: 900,
+            ...rangedBoardEffect,
+          }
+        : {});
       playDodgeSound();
       if (result.usedOpeningStrike) {
-        addMessage(getOpeningStrikeMessage(state.player, enemy.name, 'miss'), "important");
+        addMessage(getOpeningStrikeMessage(state.player, enemyReference, 'miss'), 'important');
       }
-      addMessage(`${enemy.name} weicht deinem Angriff aus.`, "danger");
+      addMessage(`${enemyReference.subjectCapitalized} weicht deinem Angriff aus.`, 'danger');
       renderSelf();
       return;
     }
@@ -96,42 +111,46 @@ export function createPlayerAttackApi(context) {
     });
 
     if (blockResult.damage > 0) {
-      showFloatingText(enemy.x, enemy.y, `-${blockResult.damage}`, result.critical ? "crit" : "dealt", isRangedAttack ? {
-        title: result.critical ? "Krit-Schuss" : "Schuss",
-        duration: 950,
-        ...rangedBoardEffect,
-      } : {});
+      showFloatingText(enemy.x, enemy.y, `-${blockResult.damage}`, result.critical ? 'crit' : 'dealt', isRangedAttack
+        ? {
+            title: result.critical ? 'Krit-Schuss' : 'Schuss',
+            duration: 950,
+            ...rangedBoardEffect,
+          }
+        : {});
       playEnemyHitSound(result.critical);
     } else {
-      showFloatingText(enemy.x, enemy.y, "Block", "heal", isRangedAttack ? {
-        title: "Schuss geblockt",
-        duration: 900,
-        ...rangedBoardEffect,
-      } : {});
+      showFloatingText(enemy.x, enemy.y, 'Block', 'heal', isRangedAttack
+        ? {
+            title: 'Schuss geblockt',
+            duration: 900,
+            ...rangedBoardEffect,
+          }
+        : {});
     }
 
     if (blockResult.blocked) {
-      addMessage(`${enemy.name} faengt ${blockResult.prevented} Schaden mit ${blockResult.item.name} ab.`, "important");
+      addMessage(`${enemyReference.subjectCapitalized} fängt ${blockResult.prevented} Schaden mit ${blockResult.item.name} ab.`, 'important');
       if (blockResult.reflectiveDamage > 0) {
         state.player.hp = Math.max(0, state.player.hp - blockResult.reflectiveDamage);
         state.damageTaken = (state.damageTaken ?? 0) + blockResult.reflectiveDamage;
-        showFloatingText(state.player.x, state.player.y, `-${blockResult.reflectiveDamage}`, "taken");
-        addMessage(`${blockResult.item.name} wirft dir den Treffer brutal zurück.`, "danger");
+        showFloatingText(state.player.x, state.player.y, `-${blockResult.reflectiveDamage}`, 'taken');
+        addMessage(`${blockResult.item.name} wirft dir den Treffer brutal zurück.`, 'danger');
       }
     }
 
-    if (itemHasModifier(weapon, "final") && getWeaponConditionalDamageBonus(state.player, weapon) > 0) {
-      addMessage(`Mit ${formatWeaponReference(weapon, { article: "definite", grammaticalCase: "dative" })} triffst du im letzten Akt härter zu.`, "important");
+    if (itemHasModifier(weapon, 'final') && getWeaponConditionalDamageBonus(state.player, weapon) > 0) {
+      addMessage(`Mit ${formatWeaponReference(weapon, { article: 'definite', grammaticalCase: 'dative' })} triffst du im letzten Akt härter zu.`, 'important');
     }
     if (result.usedOpeningStrike) {
-      addMessage(getOpeningStrikeMessage(state.player, enemy.name, 'hit'), "important");
+      addMessage(getOpeningStrikeMessage(state.player, enemyReference, 'hit'), 'important');
     }
 
     addMessage(
       result.critical
-        ? `Kritischer Treffer gegen ${enemy.name} für ${blockResult.damage} Schaden!`
-        : `Du triffst ${enemy.name} für ${blockResult.damage} Schaden.`,
-      "important",
+        ? `Kritischer Treffer gegen ${enemyReference.object} für ${blockResult.damage} Schaden!`
+        : `Du triffst ${enemyReference.object} für ${blockResult.damage} Schaden.`,
+      'important',
     );
 
     if (enemy.hp <= 0) {
@@ -141,19 +160,19 @@ export function createPlayerAttackApi(context) {
       state.killStats = recordKillStat(state.killStats, enemy);
       if (enemy.lootWeapon && Math.random() < (enemy.weaponDropChance ?? 0.55)) {
         floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
-        addMessage(`${enemy.name} lässt ${formatWeaponReference(enemy.lootWeapon, { article: "definite", grammaticalCase: "accusative" })} fallen.`, "important");
+        addMessage(`${enemyReference.subjectCapitalized} lässt ${formatWeaponReference(enemy.lootWeapon, { article: 'definite', grammaticalCase: 'accusative' })} fallen.`, 'important');
       }
       if (enemy.lootOffHand && Math.random() < (enemy.offHandDropChance ?? 0.45)) {
         floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));
-        addMessage(`${enemy.name} verliert ${enemy.lootOffHand.name}.`, "important");
+        addMessage(`${enemyReference.subjectCapitalized} verliert ${enemy.lootOffHand.name}.`, 'important');
       }
-      if (enemy.lootDrop?.item?.type === "food") {
+      if (enemy.lootDrop?.item?.type === 'food') {
         floorState.foods.push(createFoodPickup(enemy.lootDrop.item, enemy.x, enemy.y));
-        addMessage(`${enemy.name} lässt ${enemy.lootDrop.item.name} fallen.`, "important");
+        addMessage(`${enemyReference.subjectCapitalized} lässt ${enemy.lootDrop.item.name} fallen.`, 'important');
       }
       playVictorySound();
-      grantExperience(enemy.xpReward, enemy.name);
-      addMessage(`${enemy.name} ist besiegt.`, "important");
+      grantExperience(enemy.xpReward, enemyReference.object);
+      addMessage(`${enemyReference.subjectCapitalized} ist besiegt.`, 'important');
     }
   }
 

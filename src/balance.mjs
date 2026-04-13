@@ -59,31 +59,37 @@ export const MONSTER_VARIANT_MODIFIERS = [
   {
     id: "hulking",
     label: "Kolossal",
+    adjectiveStem: "kolossal",
     statChanges: { hpFlat: 4, strength: 1 },
   },
   {
     id: "brutal",
     label: "Brutal",
+    adjectiveStem: "brutal",
     statChanges: { strength: 2 },
   },
   {
     id: "keen",
     label: "Präzise",
+    adjectiveStem: "präzis",
     statChanges: { precision: 2 },
   },
   {
     id: "swift",
     label: "Jagend",
+    adjectiveStem: "jagend",
     statChanges: { reaction: 2, aggroRadius: 1 },
   },
   {
     id: "unyielding",
     label: "Unerbittlich",
+    adjectiveStem: "unerbittlich",
     statChanges: { nerves: 2, hpFlat: 2 },
   },
   {
     id: "cunning",
     label: "Listig",
+    adjectiveStem: "listig",
     statChanges: { intelligence: 2, precision: 1 },
   },
 ];
@@ -99,6 +105,8 @@ export const ITEM_RARITY_MODIFIER_COUNTS = {
   rare: 2,
   veryRare: 3,
 };
+
+const EQUIPMENT_RARITY_ORDER = ["common", "uncommon", "rare", "veryRare"];
 
 export const HERO_CLASS_ALIASES = {
   survivor: "lead",
@@ -313,6 +321,35 @@ export function shouldPlaceLockedRoomChest(roll = Math.random()) {
   return roll < 0.8;
 }
 
+export function getMaxEquipmentRarity(dropContext = {}) {
+  const floorNumber = Math.max(1, dropContext.floorNumber ?? 1);
+
+  if (floorNumber <= 1) {
+    return "uncommon";
+  }
+
+  if (floorNumber <= 3) {
+    return "rare";
+  }
+
+  return "veryRare";
+}
+
+export function applyRarityCap(weights, maxRarity = "veryRare") {
+  const maxIndex = EQUIPMENT_RARITY_ORDER.indexOf(maxRarity);
+  if (maxIndex === -1) {
+    return { ...weights };
+  }
+
+  const cappedWeights = { ...weights };
+  EQUIPMENT_RARITY_ORDER.forEach((rarity, index) => {
+    if (index > maxIndex) {
+      cappedWeights[rarity] = 0;
+    }
+  });
+  return cappedWeights;
+}
+
 export function getEquipmentRarityWeights(dropContext = {}) {
   const weights = { ...ITEM_RARITY_WEIGHTS };
   const floorNumber = dropContext.floorNumber ?? 1;
@@ -369,10 +406,15 @@ export function getEquipmentRarityWeights(dropContext = {}) {
     weights[key] = Math.max(0, weights[key]);
   }
 
-  const total = Object.values(weights).reduce((sum, value) => sum + value, 0);
-  if (total <= 0) {
-    return { ...ITEM_RARITY_WEIGHTS };
+  const cappedWeights = applyRarityCap(weights, getMaxEquipmentRarity(dropContext));
+  for (const key of Object.keys(cappedWeights)) {
+    cappedWeights[key] = Math.max(0, cappedWeights[key]);
   }
 
-  return weights;
+  const total = Object.values(cappedWeights).reduce((sum, value) => sum + value, 0);
+  if (total <= 0) {
+    return applyRarityCap({ ...ITEM_RARITY_WEIGHTS }, getMaxEquipmentRarity(dropContext));
+  }
+
+  return cappedWeights;
 }

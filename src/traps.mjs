@@ -1,4 +1,5 @@
 import { recordKillStat } from './kill-stats.mjs';
+import { formatMonsterReference } from './text/combat-phrasing.mjs';
 
 const TRAP_VARIANTS = {
   floor: [
@@ -121,6 +122,14 @@ export function createTrapsApi(context) {
     showDeathModal,
     playDeathSound,
   } = context;
+
+  function formatMonsterLabel(actor, grammaticalCase, capitalize = false) {
+    return formatMonsterReference(actor, {
+      article: 'definite',
+      grammaticalCase,
+      capitalize,
+    });
+  }
 
   function getTrapAt(x, y, floorState = getCurrentFloorState()) {
     return floorState?.traps?.find((trap) => trap.x === x && trap.y === y) ?? null;
@@ -260,8 +269,8 @@ export function createTrapsApi(context) {
     floorState.enemies = floorState.enemies.filter((enemy) => enemy !== actor);
     state.kills += 1;
     state.killStats = recordKillStat(state.killStats, actor);
-    grantExperience(actor.xpReward ?? 0, actor.name);
-    addMessage(`${actor.name} geht in ${trap.name} zugrunde.`, "important");
+    grantExperience(actor.xpReward ?? 0, formatMonsterLabel(actor, 'accusative'));
+    addMessage(`${formatMonsterLabel(actor, 'nominative', true)} geht in ${trap.name} zugrunde.`, "important");
   }
 
   function applyTrapEffect(trap, actor, { reduced = false, isContinuous = false } = {}) {
@@ -288,7 +297,7 @@ export function createTrapsApi(context) {
       addMessage(
         isPlayer
           ? `${trap.name} trifft dich für ${damage} Schaden.`
-          : `${actor.name} erleidet ${damage} Schaden durch ${trap.name}.`,
+          : `${formatMonsterLabel(actor, 'nominative', true)} erleidet ${damage} Schaden durch ${trap.name}.`,
         "danger",
       );
       if (isPlayer && classMitigation > 0) {
@@ -304,7 +313,7 @@ export function createTrapsApi(context) {
       addMessage(
         isPlayer
           ? `${trap.name} bringt dich kurz aus dem Tritt.`
-          : `${actor.name} wird von ${trap.name} ausgebremst.`,
+          : `${formatMonsterLabel(actor, 'nominative', true)} wird von ${trap.name} ausgebremst.`,
         "important",
       );
     }
@@ -352,7 +361,7 @@ export function createTrapsApi(context) {
         addMessage(
           isPlayer
             ? `Du reagierst rechtzeitig auf ${trap.name}.`
-            : `${actor.name} entgeht ${trap.name}.`,
+            : `${formatMonsterLabel(actor, 'nominative', true)} entgeht ${trap.name}.`,
           "important",
         );
       } else {

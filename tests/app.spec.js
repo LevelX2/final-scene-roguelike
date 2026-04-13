@@ -299,14 +299,17 @@ test("options persist after a page reload", async ({ page }) => {
   const stepSoundToggle = page.locator("#toggleStepSound");
   const deathSoundToggle = page.locator("#toggleDeathSound");
   const voiceAnnouncementsToggle = page.locator("#toggleVoiceAnnouncements");
+  const showcaseAnnouncementMode = page.locator("#showcaseAnnouncementMode");
 
   await page.keyboard.press("o");
   await stepSoundToggle.uncheck();
   await deathSoundToggle.uncheck();
   await voiceAnnouncementsToggle.uncheck();
+  await showcaseAnnouncementMode.selectOption("voice");
   await expect(stepSoundToggle).not.toBeChecked();
   await expect(deathSoundToggle).not.toBeChecked();
   await expect(voiceAnnouncementsToggle).not.toBeChecked();
+  await expect(showcaseAnnouncementMode).toHaveValue("voice");
 
   await page.reload();
   await startRun(page);
@@ -315,6 +318,7 @@ test("options persist after a page reload", async ({ page }) => {
   await expect(page.locator("#toggleStepSound")).not.toBeChecked();
   await expect(page.locator("#toggleDeathSound")).not.toBeChecked();
   await expect(page.locator("#toggleVoiceAnnouncements")).not.toBeChecked();
+  await expect(page.locator("#showcaseAnnouncementMode")).toHaveValue("voice");
 });
 
 test("a manual save can be loaded after a page reload", async ({ page }) => {
@@ -659,7 +663,7 @@ test("ranged weapons enter target mode and mark a valid target", async ({ page }
   await page.evaluate(() => window.__TEST_API__.enterTargetMode());
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
-  await expect(page.locator("#targetModeHint")).toContainText("Zielmodus aktiv");
+  await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
   await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
   await expect(page.locator("#enemySheet")).toContainText("Aktiv markiert");
 });
@@ -695,7 +699,9 @@ test("target mode can also be opened from the header button", async ({ page }) =
   await page.getByRole("button", { name: "Zielen" }).click();
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
-  await expect(page.locator("#targetModeHint")).toContainText("Zielmodus aktiv");
+  await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
+  await expect(page.getByRole("button", { name: "Zielen beenden" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Schießen" })).toBeVisible();
 });
 
 test("target mode shows a clear hint even without a valid straight shot target", async ({ page }) => {
@@ -729,8 +735,90 @@ test("target mode shows a clear hint even without a valid straight shot target",
   await page.evaluate(() => window.__TEST_API__.enterTargetMode());
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
-  await expect(page.locator("#targetModeHint")).toContainText("WASD bewegt das Fadenkreuz");
+  await expect(page.locator("#targetModeHint")).toContainText("Kein Schuss");
   await expect(page.locator("#messageLog")).toContainText("Kein Ziel in gerader Linie und Sichtweite");
+});
+
+test("target mode can be ended again from the header button", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+  });
+
+  await page.getByRole("button", { name: "Zielen" }).click();
+  await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
+
+  await page.getByRole("button", { name: "Zielen beenden" }).click();
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+});
+
+test("the shoot button fires at the currently selected target", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        strength: 4,
+        precision: 5,
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Buttonziel",
+        hp: 30,
+        maxHp: 30,
+        reaction: 1,
+        nerves: 1,
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+    window.__TEST_API__.setRandomSequence([0, 0]);
+  });
+
+  const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+  await page.getByRole("button", { name: "Zielen" }).click();
+  await page.getByRole("button", { name: "Schießen" }).click();
+  const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+
+  expect(after).toBeLessThan(before);
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
 });
 
 test("confirming a ranged target attack damages the enemy and leaves target mode", async ({ page }) => {
@@ -880,8 +968,6 @@ test("diagonal targets stay invalid for ranged attacks", async ({ page }) => {
 
   await page.evaluate(() => {
     window.__TEST_API__.enterTargetMode();
-    window.__TEST_API__.moveTargetCursor(1, 1);
-    window.__TEST_API__.moveTargetCursor(1, 1);
   });
 
   await expect(page.locator(".tile.target-cursor-invalid.enemy")).toHaveCount(1);

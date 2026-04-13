@@ -37,6 +37,27 @@ const DEFINITE_ARTICLES = {
   },
 };
 
+const INDEFINITE_ARTICLES = {
+  [GRAMMATICAL_CASE.NOMINATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'ein',
+    [GRAMMATICAL_GENDER.FEMININE]: 'eine',
+    [GRAMMATICAL_GENDER.NEUTER]: 'ein',
+    [GRAMMATICAL_GENDER.PLURAL]: '',
+  },
+  [GRAMMATICAL_CASE.ACCUSATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'einen',
+    [GRAMMATICAL_GENDER.FEMININE]: 'eine',
+    [GRAMMATICAL_GENDER.NEUTER]: 'ein',
+    [GRAMMATICAL_GENDER.PLURAL]: '',
+  },
+  [GRAMMATICAL_CASE.DATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'einem',
+    [GRAMMATICAL_GENDER.FEMININE]: 'einer',
+    [GRAMMATICAL_GENDER.NEUTER]: 'einem',
+    [GRAMMATICAL_GENDER.PLURAL]: '',
+  },
+};
+
 const DEFINITE_ADJECTIVE_ENDINGS = {
   [GRAMMATICAL_CASE.NOMINATIVE]: {
     [GRAMMATICAL_GENDER.MASCULINE]: 'e',
@@ -54,6 +75,48 @@ const DEFINITE_ADJECTIVE_ENDINGS = {
     [GRAMMATICAL_GENDER.MASCULINE]: 'en',
     [GRAMMATICAL_GENDER.FEMININE]: 'en',
     [GRAMMATICAL_GENDER.NEUTER]: 'en',
+    [GRAMMATICAL_GENDER.PLURAL]: 'en',
+  },
+};
+
+const MIXED_ADJECTIVE_ENDINGS = {
+  [GRAMMATICAL_CASE.NOMINATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'er',
+    [GRAMMATICAL_GENDER.FEMININE]: 'e',
+    [GRAMMATICAL_GENDER.NEUTER]: 'es',
+    [GRAMMATICAL_GENDER.PLURAL]: 'en',
+  },
+  [GRAMMATICAL_CASE.ACCUSATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'en',
+    [GRAMMATICAL_GENDER.FEMININE]: 'e',
+    [GRAMMATICAL_GENDER.NEUTER]: 'es',
+    [GRAMMATICAL_GENDER.PLURAL]: 'en',
+  },
+  [GRAMMATICAL_CASE.DATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'en',
+    [GRAMMATICAL_GENDER.FEMININE]: 'en',
+    [GRAMMATICAL_GENDER.NEUTER]: 'en',
+    [GRAMMATICAL_GENDER.PLURAL]: 'en',
+  },
+};
+
+const STRONG_ADJECTIVE_ENDINGS = {
+  [GRAMMATICAL_CASE.NOMINATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'er',
+    [GRAMMATICAL_GENDER.FEMININE]: 'e',
+    [GRAMMATICAL_GENDER.NEUTER]: 'es',
+    [GRAMMATICAL_GENDER.PLURAL]: 'e',
+  },
+  [GRAMMATICAL_CASE.ACCUSATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'en',
+    [GRAMMATICAL_GENDER.FEMININE]: 'e',
+    [GRAMMATICAL_GENDER.NEUTER]: 'es',
+    [GRAMMATICAL_GENDER.PLURAL]: 'e',
+  },
+  [GRAMMATICAL_CASE.DATIVE]: {
+    [GRAMMATICAL_GENDER.MASCULINE]: 'em',
+    [GRAMMATICAL_GENDER.FEMININE]: 'er',
+    [GRAMMATICAL_GENDER.NEUTER]: 'em',
     [GRAMMATICAL_GENDER.PLURAL]: 'en',
   },
 };
@@ -89,6 +152,11 @@ function pickLabel(entity, fallback = '') {
   return entity?.baseName ?? entity?.name ?? fallback;
 }
 
+function capitalizeFirst(text) {
+  const normalized = String(text ?? '').trim();
+  return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : normalized;
+}
+
 function inferGenderFromName(name, fallback = GRAMMATICAL_GENDER.MASCULINE) {
   const normalized = String(name ?? '').trim().toLowerCase();
   if (!normalized) {
@@ -116,6 +184,21 @@ function normalizeArticleMode(name, articleMode) {
 
 function getIndefiniteArticle(gender) {
   return gender === GRAMMATICAL_GENDER.FEMININE ? 'eine' : 'ein';
+}
+
+function inflectMonsterAdjectiveStem(adjectiveStem, gender, grammaticalCase, article) {
+  const normalized = String(adjectiveStem ?? '').trim();
+  if (!normalized) {
+    return '';
+  }
+
+  const lowered = normalized.charAt(0).toLowerCase() + normalized.slice(1);
+  const endings = article === 'none'
+    ? STRONG_ADJECTIVE_ENDINGS
+    : article === 'indefinite'
+      ? MIXED_ADJECTIVE_ENDINGS
+      : DEFINITE_ADJECTIVE_ENDINGS;
+  return `${lowered}${endings[grammaticalCase]?.[gender] ?? 'e'}`;
 }
 
 function inflectDefiniteAdjective(adjective, gender, grammaticalCase) {
@@ -219,16 +302,70 @@ export function formatWeaponReference(weapon, options = {}) {
 }
 
 export function formatMonsterKillerLabel(enemy) {
+  return formatMonsterReference(enemy, {
+    article: 'indefinite',
+    grammaticalCase: GRAMMATICAL_CASE.NOMINATIVE,
+  });
+}
+
+function formatMonsterNameCore(name, profile, gender, grammaticalCase, article) {
+  const namePrefixStems = Array.isArray(profile?.namePrefixStems)
+    ? profile.namePrefixStems.filter(Boolean)
+    : [];
+  const adjectiveStem = profile?.inflectableParts?.adjectiveStem;
+  const noun = profile?.inflectableParts?.noun;
+  const prefixParts = namePrefixStems.map((stem) =>
+    inflectMonsterAdjectiveStem(stem, gender, grammaticalCase, article)
+  );
+
+  if (!adjectiveStem || !noun) {
+    return [...prefixParts, name].filter(Boolean).join(' ');
+  }
+
+  return [
+    ...prefixParts,
+    inflectMonsterAdjectiveStem(adjectiveStem, gender, grammaticalCase, article),
+    noun,
+  ].filter(Boolean).join(' ');
+}
+
+export function formatMonsterReference(enemy, options = {}) {
   const name = pickLabel(enemy, 'etwas Unbekanntes');
   const profile = enemy?.grammar ?? {};
   const gender = profile.gender ?? inferGenderFromName(name);
   const articleMode = normalizeArticleMode(name, profile.articleMode);
+  const article = options.article ?? (articleMode === ARTICLE_MODE.NONE ? 'none' : 'definite');
+  const grammaticalCase = options.grammaticalCase ?? GRAMMATICAL_CASE.NOMINATIVE;
 
-  if (articleMode === ARTICLE_MODE.NONE) {
-    return name;
+  let reference = name;
+  if (article === 'none') {
+    reference = formatMonsterNameCore(name, profile, gender, grammaticalCase, article);
+  } else if (articleMode !== ARTICLE_MODE.NONE) {
+    const explicitForm = profile?.referenceForms?.[article]?.[grammaticalCase];
+    if (explicitForm) {
+      reference = explicitForm;
+    } else if (article === 'indefinite') {
+      reference = [
+        INDEFINITE_ARTICLES[grammaticalCase]?.[gender] ?? getIndefiniteArticle(gender),
+        formatMonsterNameCore(name, profile, gender, grammaticalCase, article),
+      ].filter(Boolean).join(' ');
+    } else {
+      reference = [
+        DEFINITE_ARTICLES[grammaticalCase]?.[gender],
+        formatMonsterNameCore(name, profile, gender, grammaticalCase, article),
+      ].filter(Boolean).join(' ');
+    }
   }
 
-  return `${getIndefiniteArticle(gender)} ${name}`;
+  return options.capitalize ? capitalizeFirst(reference) : reference;
+}
+
+export function formatMonsterDisplayName(enemy, options = {}) {
+  return formatMonsterReference(enemy, {
+    article: 'none',
+    grammaticalCase: options.grammaticalCase ?? GRAMMATICAL_CASE.NOMINATIVE,
+    capitalize: options.capitalize ?? true,
+  });
 }
 
 export function formatWeaponDativePhrase(weapon) {

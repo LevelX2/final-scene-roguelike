@@ -19,6 +19,7 @@ export function createHudView(context) {
     formatOffHandStats,
     loadHighscores,
     loadLastHighscoreMarker,
+    getHungerStateLabel,
     getHeroClassIconUrl,
     knowsMonster,
   } = context;
@@ -98,34 +99,17 @@ export function createHudView(context) {
 
   function renderPlayerSheet() {
     const state = getState();
-    const playerCardMode = state.collapsedCards?.player ?? 'summary';
     const summaryRows = [
-      createSheetRow('Klasse', state.player.classLabel ?? '-'),
-      createSheetRow('Passive', state.player.classPassiveName ?? '-'),
       createSheetRow('Haupthand', `${formatWeaponDisplayName(getMainHand(state.player))} (${formatWeaponStats(getMainHand(state.player))})`),
-      createSheetRow('Waffenstil', formatWeaponRoleSummary(getMainHand(state.player))),
       createSheetRow('Nebenhand', getOffHand(state.player) ? `${getOffHand(state.player).name} (${formatOffHandStats(getOffHand(state.player))})` : 'Leer'),
       createSheetRow('Status', formatStatusSummary(state.player)),
-      createSheetRow('Schritte', state.turn),
-    ];
-    const fullRows = [
-      ...summaryRows,
-      createSheetRow('Erfahrung', `${state.player.xp} / ${state.player.xpToNext}`),
-      createSheetRow('Stärke', state.player.strength),
-      createSheetRow('Präzision', state.player.precision),
-      createSheetRow('Reaktion', state.player.reaction),
-      createSheetRow('Nerven', state.player.nerves),
-      createSheetRow('Intelligenz', state.player.intelligence),
-      createSheetRow('Ausdauer', state.player.endurance ?? 0),
-      createSheetRow('Sichtbonus', getMainHand(state.player)?.lightBonus ?? 0),
-      createSheetRow('Passiveffekt', state.player.classPassiveDescription ?? '-'),
-      createSheetRow('Nahrung', `${state.player.nutrition}/${state.player.nutritionMax}`),
     ];
 
-    playerSheetElement.innerHTML = (playerCardMode === 'full' ? fullRows : summaryRows).join('');
+    playerSheetElement.innerHTML = summaryRows.join('');
   }
 
   function renderEnemySheet() {
+    const state = getState();
     const target = nearestEnemy();
 
     if (!target) {
@@ -134,9 +118,27 @@ export function createHudView(context) {
     }
 
     const revealed = knowsMonster(target.enemy);
+    const compactMode = (state.options?.enemyPanelMode ?? 'detailed') === 'compact';
     const variantSummary = target.enemy.variantModifiers?.length
       ? target.enemy.variantModifiers.map((modifier) => modifier.label).join(', ')
       : 'Keine';
+    const attackSummary = target.enemy.mainHand
+      ? formatWeaponRoleSummary(target.enemy.mainHand)
+      : 'Unbewaffnet';
+
+    if (compactMode) {
+      enemySheetElement.innerHTML = [
+        createSheetRow('Name', target.enemy.name),
+        createSheetRow('Ziel', target.targeted ? 'Aktiv markiert' : 'Nächster Gegner'),
+        createSheetRow('Leben', `${target.enemy.hp}/${target.enemy.maxHp}`),
+        createSheetRow('Distanz', `${target.distance} Felder`),
+        createSheetRow('Bedrohung', target.enemy.variantLabel ?? 'Normal'),
+        createSheetRow('Angriff', attackSummary),
+        createSheetRow('Status', revealed ? formatStatusSummary(target.enemy) : 'Unbekannt'),
+      ].join('');
+      return;
+    }
+
     enemySheetElement.innerHTML = [
       createSheetRow('Name', target.enemy.name),
       createSheetRow('Ziel', target.targeted ? 'Aktiv markiert' : 'Nächster Gegner'),
@@ -151,7 +153,7 @@ export function createHudView(context) {
             createSheetRow('Regeneration', target.enemy.healingLabel ?? 'Langsam'),
             createSheetRow('Entfernung', `${target.distance} Felder`),
             createSheetRow('Waffe', target.enemy.mainHand ? `${formatWeaponDisplayName(target.enemy.mainHand)} (${formatWeaponStats(target.enemy.mainHand)})` : 'Keine'),
-            createSheetRow('Kampfprofil', formatWeaponRoleSummary(target.enemy.mainHand)),
+            createSheetRow('Kampfprofil', attackSummary),
             createSheetRow('Status', formatStatusSummary(target.enemy)),
             createSheetRow('Leben', `${target.enemy.hp}/${target.enemy.maxHp}`),
             createSheetRow('Tueren', target.enemy.canOpenDoors ? 'Kann oeffnen' : 'Bleibt haengen'),

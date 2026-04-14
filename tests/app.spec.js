@@ -8,6 +8,11 @@ async function sendGameKey(page, key) {
   }, key);
 }
 
+async function loadFirstSaveFromList(page) {
+  await expect(page.locator("#savegamesModal")).toBeVisible();
+  await page.locator("#savegameList .choice-btn", { hasText: "Laden" }).first().click();
+}
+
 test("start screen renders the new title", async ({ page }) => {
   await page.goto("/");
 
@@ -343,8 +348,7 @@ test("a manual save can be loaded after a page reload", async ({ page }) => {
     inventory: window.__TEST_API__.getInventorySnapshot(),
   }));
 
-  await page.getByRole("button", { name: "Optionen" }).click();
-  await page.getByRole("button", { name: "Spiel speichern" }).click();
+  await page.getByRole("button", { name: "Speichern" }).click();
   await expect(page.locator("#savegameStatus")).toContainText("Ripley");
 
   await page.reload();
@@ -352,6 +356,7 @@ test("a manual save can be loaded after a page reload", async ({ page }) => {
   await expect(page.locator("#startScreen")).toBeVisible();
   await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
   await page.locator("#loadGameFromLanding").evaluate((button) => button.click());
+  await loadFirstSaveFromList(page);
   await expect(page.locator("#startModal")).toBeHidden();
 
   const afterReload = await page.evaluate(() => ({
@@ -387,8 +392,9 @@ test("an incompatible save is rejected with a clear message", async ({ page }) =
   await expect(page.locator("#startScreen")).toBeVisible();
   await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
   await page.locator("#loadGameFromLanding").evaluate((button) => button.click());
+  await expect(page.locator("#savegamesModal")).toBeVisible();
   await expect(page.locator("#startScreen")).toBeVisible();
-  await expect(page.locator("#landingSavegameStatus")).toContainText("nicht kompatibel");
+  await expect(page.locator("#savegameStatus")).toContainText("nicht kompatibel");
 });
 
 test("loading a saved game restores gameplay state but keeps transient modals closed", async ({ page }) => {
@@ -410,11 +416,12 @@ test("loading a saved game restores gameplay state but keeps transient modals cl
   await page.keyboard.press("Escape");
   await page.keyboard.press("o");
   await expect(page.locator("#optionsModal")).toBeVisible();
-  await page.getByRole("button", { name: "Spiel speichern" }).click();
+  await page.locator("#saveGameQuick").evaluate((button) => button.click());
   await expect(page.locator("#savegameStatus")).toContainText("Modalcheck");
 
   await page.reload();
   await page.locator("#loadGameFromLanding").evaluate((button) => button.click());
+  await loadFirstSaveFromList(page);
   await expect(page.locator("#startModal")).toBeHidden();
   await expect(page.locator("#inventoryModal")).toBeHidden();
   await expect(page.locator("#optionsModal")).toBeHidden();
@@ -453,12 +460,12 @@ test("loading a legacy ranged weapon save restores target mode support", async (
     });
   });
 
-  await page.getByRole("button", { name: "Optionen" }).click();
-  await page.getByRole("button", { name: "Spiel speichern" }).click();
+  await page.getByRole("button", { name: "Speichern" }).click();
   await expect(page.locator("#savegameStatus")).toContainText("Legacygun");
 
   await page.reload();
   await page.locator("#loadGameFromLanding").evaluate((button) => button.click());
+  await loadFirstSaveFromList(page);
   await expect(page.locator("#startModal")).toBeHidden();
 
   const loadedWeapon = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot().equippedWeapon);
@@ -469,6 +476,22 @@ test("loading a legacy ranged weapon save restores target mode support", async (
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
   await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
+});
+
+test("loaded save slots are consumed and disappear from the load list", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { name: "OneShot" });
+
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.locator("#savegameStatus")).toContainText("OneShot");
+
+  await page.reload();
+  await page.locator("#loadGameFromLanding").click();
+  await loadFirstSaveFromList(page);
+  await expect(page.locator("#startModal")).toBeHidden();
+
+  await page.reload();
+  await expect(page.locator("#loadGameFromLanding")).toBeDisabled();
 });
 
 test("fresh starts allow target mode with a newly equipped expedition revolver", async ({ page }) => {

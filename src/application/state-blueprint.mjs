@@ -31,6 +31,10 @@ export function createStateBlueprintApi(context) {
     deathSound: true,
     voiceAnnouncements: true,
     showcaseAnnouncementMode: "floating-text",
+    uiScale: 1,
+    studioZoom: 1,
+    tooltipScale: 1,
+    enemyPanelMode: "detailed",
   };
 
   function normalizeHeroName(name) {
@@ -123,6 +127,7 @@ export function createStateBlueprintApi(context) {
       inventoryOpen: false,
       runStatsOpen: false,
       optionsOpen: false,
+      savegamesOpen: false,
       helpOpen: false,
       highscoresOpen: false,
       startOpen: openStartModal,
@@ -133,7 +138,7 @@ export function createStateBlueprintApi(context) {
     return {
       player: "summary",
       enemy: false,
-      log: "compact",
+      log: "visible",
     };
   }
 

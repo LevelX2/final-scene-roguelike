@@ -9,6 +9,7 @@ export function createInputController(context) {
     toggleInventory,
     toggleRunStats,
     toggleOptions,
+    toggleSavegames,
     toggleHelp,
     toggleHighscores,
     closeStartModal,
@@ -33,7 +34,13 @@ export function createInputController(context) {
     const code = typeof event.code === "string" ? event.code : "";
     const matchesShortcut = (keys = [], codes = []) => keys.includes(key) || codes.includes(code);
 
-    if (matchesShortcut(["r"], ["KeyR"]) && state.view === "game") {
+    if (matchesShortcut(["r"], ["KeyR"]) && state.view === "game" && state.gameOver) {
+      confirmRestartRun();
+      return;
+    }
+
+    if (matchesShortcut(["r"], ["KeyR"]) && state.view === "game" && event.shiftKey) {
+      event.preventDefault();
       confirmRestartRun();
       return;
     }
@@ -158,17 +165,24 @@ export function createInputController(context) {
       return;
     }
 
+    if (matchesShortcut(["k"], ["KeyK"])) {
+      event.preventDefault();
+      toggleSavegames();
+      return;
+    }
+
     if (matchesShortcut(["?"], ["Slash"])) {
       event.preventDefault();
       toggleHelp();
       return;
     }
 
-    if (state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       if (matchesShortcut(["escape"], ["Escape"])) {
         toggleInventory(false);
         toggleRunStats(false);
         toggleOptions(false);
+        toggleSavegames(false);
         toggleHelp(false);
         toggleHighscores(false);
       }

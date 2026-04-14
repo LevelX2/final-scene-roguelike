@@ -34,7 +34,7 @@ export function createStateApi(context) {
   } = context;
   const HIGHSCORE_LAST_ENTRY_KEY = "dungeon-rogue-highscores-last-entry";
   const SAVEGAME_KEY = "dungeon-rogue-savegame";
-  const SAVEGAME_VERSION = 2;
+  const SAVEGAME_VERSION = 3;
   const storageApi = createBrowserStorageApi();
 
   function readStorage(key) {
@@ -133,16 +133,24 @@ export function createStateApi(context) {
     return persistenceApi.clearSavedGame();
   }
 
+  function deleteSavedGame(entryId) {
+    return persistenceApi.deleteSavedGame(entryId);
+  }
+
   function getSavedGameMetadata() {
     return persistenceApi.getSavedGameMetadata();
   }
 
-  function saveGame() {
-    return persistenceApi.saveGame();
+  function listSavedGames() {
+    return persistenceApi.listSavedGames();
   }
 
-  function loadSavedGame() {
-    return persistenceApi.loadSavedGame();
+  function saveGame(entryId = null) {
+    return persistenceApi.saveGame(entryId);
+  }
+
+  function loadSavedGame(entryId = null) {
+    return persistenceApi.loadSavedGame(entryId);
   }
 
   function loadLastHighscoreMarker() {
@@ -228,8 +236,7 @@ export function createStateApi(context) {
       if (!nextState.visitedFloors.includes(1)) {
         nextState.visitedFloors.push(1);
       }
-      addMessage(`Du betrittst ${formatStudioLabel(1)}.`, "important");
-      addMessage(formatArchetypeLabel(initialArchetypeId), "important");
+      addMessage(`Du betrittst ${formatStudioLabel(1)}. ${formatArchetypeLabel(initialArchetypeId)}`, "important");
       const announcement = buildStudioAnnouncement(1, initialArchetypeId);
       addMessage(announcement, "important");
       playStudioAnnouncement(announcement);
@@ -246,9 +253,11 @@ export function createStateApi(context) {
     saveOptions,
     hasSavedGame,
     getSavedGameMetadata,
+    listSavedGames,
     saveGame,
     loadSavedGame,
     clearSavedGame,
+    deleteSavedGame,
     loadLastHighscoreMarker,
     saveHighscoreIfNeeded,
     createDeathCause,

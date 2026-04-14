@@ -1,5 +1,5 @@
 export const NUTRITION_MAX_BASE = 700;
-export const NUTRITION_START_BASE = 500;
+export const NUTRITION_START_BASE = 501;
 export const ENDURANCE_NUTRITION_BONUS_PER_POINT = 100;
 export const NUTRITION_COST_PER_ACTION = 1;
 export const DAMAGE_PER_ACTION_WHILE_DYING = 1;
@@ -18,6 +18,14 @@ export const HUNGER_THRESHOLDS = {
   hungry: 0.3,
   starving: 0.1,
 };
+
+export const FOOD_SATIETY_ESTIMATES = [
+  { max: 20, label: "Stillt kaum." },
+  { max: 45, label: "Stillt wenig." },
+  { max: 90, label: "Macht ordentlich satt." },
+  { max: 140, label: "Stillt stark." },
+  { max: Number.POSITIVE_INFINITY, label: "Ist eine schwere Mahlzeit." },
+];
 
 export function getNutritionMax(player) {
   return NUTRITION_MAX_BASE + (player.endurance ?? 0) * ENDURANCE_NUTRITION_BONUS_PER_POINT;
@@ -68,4 +76,21 @@ export function getHungerStateMessage(state) {
     [HUNGER_STATE.NORMAL]: "Dein Hunger lässt nach.",
     [HUNGER_STATE.SATED]: "Du bist wieder satt.",
   }[state] ?? null;
+}
+
+export function getFoodSatietyEstimate(amount) {
+  return FOOD_SATIETY_ESTIMATES.find((entry) => amount <= entry.max)?.label ?? "Macht satt.";
+}
+
+export function getFoodOvereatMessage(restoredAmount, attemptedAmount) {
+  const wastedAmount = Math.max(0, attemptedAmount - restoredAmount);
+  if (wastedAmount <= 0) {
+    return null;
+  }
+
+  if (wastedAmount >= attemptedAmount * 0.5) {
+    return "Du warst viel zu voll und hast einen guten Teil davon wieder erbrochen.";
+  }
+
+  return "Du warst schon zu voll und hast einen Teil davon wieder erbrochen.";
 }

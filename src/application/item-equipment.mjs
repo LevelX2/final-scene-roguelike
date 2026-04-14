@@ -1,3 +1,5 @@
+import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
+
 export function createItemEquipmentApi(context) {
   const {
     getState,
@@ -29,7 +31,7 @@ export function createItemEquipmentApi(context) {
       addMessage(`Mit ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "dative" })} sind beide Haende belegt. ${previousOffHand.name} wandert ins Inventar.`);
     }
 
-    addMessage(`Du führst jetzt ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "accusative" })}.`, "important");
+    addMessage(`Du fuehrst jetzt ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "accusative" })}.`, "important");
     if (previousMainHand && previousMainHand.id !== "bare-hands") {
       state.inventory.push(previousMainHand);
     }
@@ -75,7 +77,7 @@ export function createItemEquipmentApi(context) {
     }
 
     if (item.type === "potion") {
-      if (state.player.hp === state.player.maxHp) {
+      if (state.player.hp >= state.player.maxHp) {
         addMessage("Du bist bereits bei voller Gesundheit.");
         renderSelf();
         return;
@@ -109,7 +111,7 @@ export function createItemEquipmentApi(context) {
     }
 
     if (item.type === "key") {
-      addMessage(`${item.name} passt nur zu passenden Farbtüren in Studio ${item.keyFloor ?? "?"} und wird beim Öffnen verbraucht.`, "important");
+      addMessage(`${item.name} passt nur zu passenden Farbtueren in Studio ${item.keyFloor ?? "?"} und wird beim Oeffnen verbraucht.`, "important");
       renderSelf();
       return;
     }
@@ -117,8 +119,12 @@ export function createItemEquipmentApi(context) {
     if (item.type === "food") {
       state.inventory.splice(index, 1);
       state.consumedFoods = (state.consumedFoods ?? 0) + 1;
-      const restored = restoreNutrition(item.nutritionRestore);
-      addMessage(`${item.name} füllt ${restored} Nahrung auf.`, "important");
+      const nutritionResult = restoreNutrition(item.nutritionRestore);
+      addMessage(`${item.name} wirkt so, als ${getFoodSatietyEstimate(item.nutritionRestore).toLowerCase()}`, "important");
+      const overeatMessage = getFoodOvereatMessage(nutritionResult.restoredAmount, item.nutritionRestore);
+      if (overeatMessage) {
+        addMessage(overeatMessage, "important");
+      }
       endTurn();
     }
   }

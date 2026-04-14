@@ -112,7 +112,7 @@ test("restart resets the run back to floor one", async ({ page }) => {
   await page.getByRole("button", { name: "Betreten" }).click();
   await expect(page.locator("#depthTitle")).toContainText("Studio 2");
 
-  await page.keyboard.press("r");
+  await page.keyboard.press("Shift+R");
   await startRun(page);
 
   await expect(page.locator("#depthTitle")).toContainText("Studio 1");
@@ -528,6 +528,42 @@ test("closed doors block visibility into the space behind them", async ({ page }
   expect(snapshot.visible[2][5]).toBeTruthy();
 });
 
+test("open doors render slimmer and shifted out of the doorway", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const metrics = await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 10, y: 10 },
+    });
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeDoor({ x: 3, y: 2 }, { doorType: "normal", isOpen: false });
+    window.__TEST_API__.placeDoor({ x: 4, y: 2 }, { doorType: "normal", isOpen: true });
+
+    const closedDoor = document.querySelector(".tile.door-closed");
+    const openDoor = document.querySelector(".tile.door-open");
+    const closedStyle = getComputedStyle(closedDoor, "::after");
+    const openStyle = getComputedStyle(openDoor, "::after");
+    const openPassage = getComputedStyle(openDoor, "::before");
+
+    return {
+      closedSize: closedStyle.backgroundSize,
+      openSize: openStyle.backgroundSize,
+      openLeft: openStyle.left,
+      openRight: openStyle.right,
+      openPassageContent: openPassage.content,
+    };
+  });
+
+  expect(metrics.closedSize).toBe("30px 30px");
+  expect(metrics.openSize).toBe("18px 28px");
+  expect(metrics.openLeft).toBe("9px");
+  expect(metrics.openRight).toBe("-2px");
+  expect(metrics.openPassageContent).not.toBe("none");
+});
+
 test("walls do not reveal an unentered side room from the adjacent corridor", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -940,6 +976,36 @@ test("showcases block movement like room obstacles", async ({ page }) => {
   expect(snapshot.player.x).toBe(start.x);
   expect(snapshot.player.y).toBe(start.y);
   expect(messages.some((entry) => entry.text.includes("Glasvitrine"))).toBeTruthy();
+});
+
+test("showcase tiles use a larger visual footprint inside the board", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeShowcase({ x: snapshot.player.x + 1, y: snapshot.player.y }, {
+      id: "test-showcase-footprint",
+      name: "Test-Vitrine",
+      source: "Tests",
+      description: "Nur fuer den Test.",
+    });
+  });
+
+  const footprint = await page.locator(".tile.showcase").first().evaluate((node) => {
+    const overlay = getComputedStyle(node, "::after");
+    const frame = getComputedStyle(node, "::before");
+    return {
+      overlaySize: overlay.backgroundSize,
+      overlayInsetTop: overlay.top,
+      frameContent: frame.content,
+    };
+  });
+
+  expect(footprint.overlaySize).toBe("34px 34px");
+  expect(footprint.overlayInsetTop).toBe("-4px");
+  expect(footprint.frameContent).not.toBe("none");
 });
 
 test("entering a room with showcases logs one random ambience line", async ({ page }) => {

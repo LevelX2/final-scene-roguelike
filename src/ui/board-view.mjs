@@ -1,3 +1,5 @@
+import { getFoodSatietyEstimate } from '../nutrition.mjs';
+
 export function createBoardView(context) {
   const {
     WIDTH,
@@ -42,6 +44,48 @@ export function createBoardView(context) {
     getItemRarityClass,
     createRuntimeId,
   } = context;
+
+  function isWallLike(grid, x, y) {
+    if (x < 0 || y < 0 || y >= grid.length || x >= grid[y].length) {
+      return true;
+    }
+
+    return grid[y][x] === TILE.WALL;
+  }
+
+  function getDoorPresentation(door, floorState) {
+    const grid = floorState?.grid ?? [];
+    const wallAbove = isWallLike(grid, door.x, door.y - 1);
+    const wallBelow = isWallLike(grid, door.x, door.y + 1);
+    const wallLeft = isWallLike(grid, door.x - 1, door.y);
+    const wallRight = isWallLike(grid, door.x + 1, door.y);
+
+    let passageAxis = "horizontal";
+    if (wallLeft && wallRight && !(wallAbove && wallBelow)) {
+      passageAxis = "vertical";
+    } else if (!(wallLeft && wallRight) && wallAbove && wallBelow) {
+      passageAxis = "horizontal";
+    } else {
+      const horizontalScore = Number(wallAbove) + Number(wallBelow);
+      const verticalScore = Number(wallLeft) + Number(wallRight);
+      passageAxis = horizontalScore >= verticalScore ? "horizontal" : "vertical";
+    }
+
+    const hinge = passageAxis === "horizontal"
+      ? ((door.x + door.y) % 2 === 0 ? "top" : "bottom")
+      : ((door.x + door.y) % 2 === 0 ? "left" : "right");
+    const iconAssetUrl = door.isOpen
+      ? `./assets/door-open-${hinge}.svg`
+      : `./assets/door-closed-${passageAxis === "horizontal" ? "vertical" : "horizontal"}.svg`;
+
+    return {
+      iconAssetUrl,
+      classes: [
+        `door-passage-${passageAxis}`,
+        `door-hinge-${hinge}`,
+      ],
+    };
+  }
 
   function tileAt(x, y) {
     const state = getState();
@@ -171,7 +215,7 @@ export function createBoardView(context) {
           imageUrl: getFoodIconAssetUrl(foodPickup.item),
           imageClass: "tooltip-art-food",
           lines: [
-            `${foodPickup.item.nutritionRestore} Nahrung`,
+            getFoodSatietyEstimate(foodPickup.item.nutritionRestore),
             foodPickup.item.description,
           ],
         },
@@ -182,13 +226,14 @@ export function createBoardView(context) {
     if (door && (isVisible || isExplored)) {
       const locked = door.doorType === "locked";
       const stateLabel = door.isOpen ? "Offen" : locked ? "Verschlossen" : "Geschlossen";
+      const doorPresentation = getDoorPresentation(door, floorState);
       return {
-        type: `floor studio-${studioArchetypeId} ${door.isOpen ? "door-open" : "door-closed"}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`,
+        type: `floor studio-${studioArchetypeId} ${door.isOpen ? "door-open" : "door-closed"} ${doorPresentation.classes.join(" ")}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`,
         glyph: door.isOpen ? TILE.DOOR_OPEN : TILE.DOOR_CLOSED,
-        overlayImageUrl: getDoorIconAssetUrl(door),
+        overlayImageUrl: doorPresentation.iconAssetUrl,
         tooltip: isVisible ? {
           title: locked ? `${getDoorColorLabel(door.lockColor)} Tür` : "Tür",
-          imageUrl: getDoorIconAssetUrl(door),
+          imageUrl: doorPresentation.iconAssetUrl,
           imageClass: `tooltip-art-door${locked ? ` tooltip-art-door-${door.lockColor}` : ""}`,
           lines: [
             stateLabel,
@@ -330,7 +375,7 @@ export function createBoardView(context) {
           lines: [
             `Vitrine | ${showcase.item.source}`,
             showcase.item.description,
-            "Nur Dekoration, aber sie blockiert das Feld.",
+            "Blockiert Bewegung, Sicht und Schüsse.",
           ],
         } : null,
       };

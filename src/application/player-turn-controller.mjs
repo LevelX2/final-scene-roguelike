@@ -58,7 +58,7 @@ export function createPlayerTurnController(context) {
 
   function tryCloseAdjacentDoor() {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       return;
     }
 
@@ -93,7 +93,7 @@ export function createPlayerTurnController(context) {
 
   function movePlayer(dx, dy) {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       return;
     }
 
@@ -171,7 +171,7 @@ export function createPlayerTurnController(context) {
 
   function handleWait() {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       return;
     }
 
@@ -197,6 +197,8 @@ export function createPlayerTurnController(context) {
       !state.pendingStairChoice &&
       !state.modals.inventoryOpen &&
       !state.modals.runStatsOpen &&
+      !state.modals.optionsOpen &&
+      !state.modals.savegamesOpen &&
       !state.modals.helpOpen &&
       !state.modals.highscoresOpen &&
       weapon?.attackMode === 'ranged' &&

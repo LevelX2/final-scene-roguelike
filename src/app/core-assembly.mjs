@@ -81,9 +81,10 @@ export function assembleCoreModules(context) {
     savegameStatusElement,
     startSavegameStatusElement,
     landingSavegameStatusElement,
-    loadGameButtonElement,
+    savegameListElement,
+    loadGameQuickButtonElement,
     loadGameFromLandingButtonElement,
-    saveGameButtonElement,
+    saveGameQuickButtonElement,
   } = ui;
 
   const itemizationApi = createItemizationApi({
@@ -203,22 +204,26 @@ export function assembleCoreModules(context) {
     getState,
     hasSavedGame: stateApi.hasSavedGame,
     getSavedGameMetadata: stateApi.getSavedGameMetadata,
+    listSavedGames: stateApi.listSavedGames,
     saveGame: stateApi.saveGame,
     loadSavedGame: stateApi.loadSavedGame,
+    deleteSavedGame: stateApi.deleteSavedGame,
     setSavegameStatus: (text) => {
       savegameStatusElement.textContent = text;
       startSavegameStatusElement.textContent = text;
       landingSavegameStatusElement.textContent = text;
     },
     setLoadButtonsDisabled: (disabled) => {
-      loadGameButtonElement.disabled = disabled;
+      loadGameQuickButtonElement.disabled = disabled;
       loadGameFromLandingButtonElement.disabled = disabled;
     },
     setSaveButtonDisabled: (disabled) => {
-      saveGameButtonElement.disabled = disabled;
+      saveGameQuickButtonElement.disabled = disabled;
     },
+    savegameListElement,
     detectNearbyTraps: trapsApi.detectNearbyTraps,
     addMessage,
+    returnToStartScreen: runtime.returnToStartScreen,
     renderSelf,
     focusGameSurface: ui.focusGameSurface,
   });

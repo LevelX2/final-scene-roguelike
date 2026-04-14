@@ -117,8 +117,7 @@ export function createFloorTransitionService(context) {
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
       const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
-      addMessage(`Du betrittst ${formatStudioLabel(state.floor)}.`, 'important');
-      addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), 'important');
+      addMessage(`Du betrittst ${formatStudioLabel(state.floor)}. ${formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId)}`, 'important');
       if (isFirstVisit) {
         state.visitedFloors.push(targetFloor);
         const announcement = buildStudioAnnouncement(state.floor, state.floors[targetFloor].studioArchetypeId);
@@ -139,8 +138,7 @@ export function createFloorTransitionService(context) {
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
       const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetStair);
-      addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück.`, 'important');
-      addMessage(formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId), 'important');
+      addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück. ${formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId)}`, 'important');
       if (follower) {
         addMessage(`${formatFollowerLabel(follower)} setzt dir weiter nach.`, 'danger');
       }

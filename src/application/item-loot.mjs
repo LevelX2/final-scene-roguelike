@@ -155,8 +155,11 @@ export function createItemLootApi(context) {
       }
 
       if (action === "drink") {
-        floorStateApi.drinkPotionFromGround(pending.potionIndex);
-        endTurn();
+        if (floorStateApi.drinkPotionFromGround(pending.potionIndex)) {
+          endTurn();
+        } else {
+          renderSelf();
+        }
         return;
       }
     }

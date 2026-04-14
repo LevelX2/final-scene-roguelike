@@ -37,11 +37,29 @@ export function createStatePersistenceApi(context) {
     updateVisibility,
     renderSelf,
   } = context;
+  const LEGACY_SAVEGAME_VERSION = 2;
+  const SAVEGAME_STORE_VERSION = SAVEGAME_VERSION;
+  const MAX_SAVE_ENTRIES = 24;
 
   function normalizeShowcaseAnnouncementMode(value) {
     return ["off", "floating-text", "voice"].includes(value)
       ? value
       : DEFAULT_OPTIONS.showcaseAnnouncementMode;
+  }
+
+  function normalizeScale(value, fallback, min, max) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return fallback;
+    }
+
+    return Math.min(max, Math.max(min, numeric));
+  }
+
+  function normalizeEnemyPanelMode(value) {
+    return value === "compact" || value === "detailed"
+      ? value
+      : DEFAULT_OPTIONS.enemyPanelMode;
   }
 
   function normalizeOptions(options) {
@@ -53,6 +71,10 @@ export function createStatePersistenceApi(context) {
     nextOptions.deathSound = Boolean(nextOptions.deathSound);
     nextOptions.voiceAnnouncements = Boolean(nextOptions.voiceAnnouncements);
     nextOptions.showcaseAnnouncementMode = normalizeShowcaseAnnouncementMode(nextOptions.showcaseAnnouncementMode);
+    nextOptions.uiScale = normalizeScale(nextOptions.uiScale, DEFAULT_OPTIONS.uiScale, 0.85, 1.3);
+    nextOptions.studioZoom = normalizeScale(nextOptions.studioZoom, DEFAULT_OPTIONS.studioZoom, 0.6, 2.4);
+    nextOptions.tooltipScale = normalizeScale(nextOptions.tooltipScale, DEFAULT_OPTIONS.tooltipScale, 0.85, 1.5);
+    nextOptions.enemyPanelMode = normalizeEnemyPanelMode(nextOptions.enemyPanelMode);
     return nextOptions;
   }
 
@@ -85,30 +107,130 @@ export function createStatePersistenceApi(context) {
     writeStorage(OPTIONS_KEY, JSON.stringify(state.options));
   }
 
+  function createSaveMetadata(entry) {
+    return {
+      id: entry.id ?? null,
+      version: entry.snapshotVersion ?? null,
+      savedAt: entry.savedAt ?? null,
+      heroName: entry.state?.player?.name ?? null,
+      heroClass: entry.state?.player?.classLabel ?? null,
+      floor: entry.state?.floor ?? null,
+      level: entry.state?.player?.level ?? null,
+      turn: entry.state?.turn ?? null,
+    };
+  }
+
+  function normalizeSaveEntry(entry) {
+    if (!entry || typeof entry !== "object" || !entry.state || typeof entry.state !== "object") {
+      return null;
+    }
+
+    return {
+      id: entry.id ?? createTimestampedId("save"),
+      savedAt: Number(entry.savedAt) || Date.now(),
+      snapshotVersion: SAVEGAME_VERSION,
+      state: entry.state,
+    };
+  }
+
+  function readSavegameStore() {
+    const rawSave = readStorage(SAVEGAME_KEY);
+    if (!rawSave) {
+      return {
+        version: SAVEGAME_STORE_VERSION,
+        entries: [],
+        consumedIds: {},
+      };
+    }
+
+    const parsed = JSON.parse(rawSave);
+    if (parsed?.version === SAVEGAME_STORE_VERSION && Array.isArray(parsed.entries)) {
+      return {
+        version: SAVEGAME_STORE_VERSION,
+        entries: parsed.entries
+          .map(normalizeSaveEntry)
+          .filter(Boolean)
+          .sort((left, right) => (right.savedAt ?? 0) - (left.savedAt ?? 0)),
+        consumedIds: parsed.consumedIds && typeof parsed.consumedIds === "object"
+          ? { ...parsed.consumedIds }
+          : {},
+      };
+    }
+
+    if ((parsed?.version === LEGACY_SAVEGAME_VERSION || parsed?.version === SAVEGAME_STORE_VERSION) && parsed?.state) {
+      return {
+        version: SAVEGAME_STORE_VERSION,
+        entries: [{
+          id: createTimestampedId("save"),
+          savedAt: Number(parsed.savedAt) || Date.now(),
+          snapshotVersion: SAVEGAME_VERSION,
+          state: parsed.state,
+        }],
+        consumedIds: {},
+      };
+    }
+
+    throw new Error("incompatible-savegame-store");
+  }
+
+  function writeSavegameStore(store) {
+    return writeStorage(SAVEGAME_KEY, JSON.stringify({
+      version: SAVEGAME_STORE_VERSION,
+      entries: (store.entries ?? []).slice(0, MAX_SAVE_ENTRIES),
+      consumedIds: store.consumedIds ?? {},
+    }));
+  }
+
   function hasSavedGame() {
-    return Boolean(readStorage(SAVEGAME_KEY));
+    try {
+      return readSavegameStore().entries.length > 0;
+    } catch {
+      return Boolean(readStorage(SAVEGAME_KEY));
+    }
   }
 
   function clearSavedGame() {
     removeStorage(SAVEGAME_KEY);
   }
 
-  function getSavedGameMetadata() {
-    const rawSave = readStorage(SAVEGAME_KEY);
-    if (!rawSave) {
-      return null;
+  function deleteSavedGame(targetEntryId) {
+    if (!targetEntryId) {
+      return false;
     }
 
+    const store = readSavegameStore();
+    const nextEntries = (store.entries ?? []).filter((entry) => entry?.id !== targetEntryId);
+    if (nextEntries.length === (store.entries ?? []).length) {
+      return false;
+    }
+
+    if (!nextEntries.length) {
+      removeStorage(SAVEGAME_KEY);
+      return true;
+    }
+
+    if (store.consumedIds && typeof store.consumedIds === "object") {
+      delete store.consumedIds[targetEntryId];
+    }
+    store.entries = nextEntries;
+    return writeSavegameStore(store);
+  }
+
+  function getSavedGameMetadata() {
     try {
-      const parsed = JSON.parse(rawSave);
-      return {
-        version: parsed.version ?? null,
-        savedAt: parsed.savedAt ?? null,
-        heroName: parsed.state?.player?.name ?? null,
-        floor: parsed.state?.floor ?? null,
-      };
+      return readSavegameStore().entries[0]
+        ? createSaveMetadata(readSavegameStore().entries[0])
+        : null;
     } catch {
       return null;
+    }
+  }
+
+  function listSavedGames() {
+    try {
+      return readSavegameStore().entries.map(createSaveMetadata);
+    } catch {
+      return [];
     }
   }
 
@@ -129,6 +251,7 @@ export function createStatePersistenceApi(context) {
         inventoryOpen: false,
         runStatsOpen: false,
         optionsOpen: false,
+        savegamesOpen: false,
         helpOpen: false,
         highscoresOpen: false,
         startOpen: false,
@@ -245,6 +368,27 @@ export function createStatePersistenceApi(context) {
     return { ...item };
   }
 
+  function normalizeLogMessageEntry(entry) {
+    if (typeof entry === "string") {
+      const text = entry.trim();
+      return text ? { text, tone: "" } : null;
+    }
+
+    if (!entry || typeof entry !== "object") {
+      return null;
+    }
+
+    const text = typeof entry.text === "string" ? entry.text.trim() : "";
+    if (!text) {
+      return null;
+    }
+
+    return {
+      text,
+      tone: typeof entry.tone === "string" ? entry.tone : "",
+    };
+  }
+
   function normalizeFloorStateWeapons(floorState) {
     if (!floorState || typeof floorState !== "object") {
       return floorState;
@@ -269,13 +413,23 @@ export function createStatePersistenceApi(context) {
     return floorState;
   }
 
-  function saveGame() {
+  function saveGame(targetEntryId = null) {
     const state = getState();
-    return writeStorage(SAVEGAME_KEY, JSON.stringify({
-      version: SAVEGAME_VERSION,
+    const store = readSavegameStore();
+    const entry = {
+      id: targetEntryId ?? createTimestampedId("save"),
       savedAt: Date.now(),
+      snapshotVersion: SAVEGAME_VERSION,
       state: createSerializableSnapshot(state),
-    }));
+    };
+    store.entries = [
+      entry,
+      ...(store.entries ?? []).filter((saveEntry) => saveEntry?.id !== entry.id),
+    ].sort((left, right) => (right.savedAt ?? 0) - (left.savedAt ?? 0));
+
+    return writeSavegameStore(store)
+      ? { ok: true, entry: createSaveMetadata(entry) }
+      : { ok: false };
   }
 
   function normalizeSavedState(savedState) {
@@ -291,7 +445,9 @@ export function createStatePersistenceApi(context) {
     normalizedState.floor = Math.max(1, Number(savedState.floor) || 1);
     normalizedState.deepestFloor = Math.max(normalizedState.floor, Number(savedState.deepestFloor) || normalizedState.floor);
     normalizedState.turn = Math.max(0, Number(savedState.turn) || 0);
-    normalizedState.messages = Array.isArray(savedState.messages) ? savedState.messages : [];
+    normalizedState.messages = Array.isArray(savedState.messages)
+      ? savedState.messages.map(normalizeLogMessageEntry).filter(Boolean)
+      : [];
     normalizedState.inventory = Array.isArray(savedState.inventory)
       ? savedState.inventory.map(normalizeInventoryItem)
       : [];
@@ -321,6 +477,7 @@ export function createStatePersistenceApi(context) {
       inventoryOpen: false,
       runStatsOpen: false,
       optionsOpen: false,
+      savegamesOpen: false,
       helpOpen: false,
       highscoresOpen: false,
       startOpen: false,
@@ -396,9 +553,20 @@ export function createStatePersistenceApi(context) {
     return normalizedState;
   }
 
-  function loadSavedGame() {
-    const rawSave = readStorage(SAVEGAME_KEY);
-    if (!rawSave) {
+  function loadSavedGame(targetEntryId = null) {
+    let store;
+    try {
+      store = readSavegameStore();
+    } catch {
+      return {
+        ok: false,
+        reason: "incompatible",
+        foundVersion: "unknown",
+        expectedVersion: SAVEGAME_VERSION,
+      };
+    }
+
+    if (!store.entries.length) {
       return {
         ok: false,
         reason: "missing",
@@ -406,17 +574,26 @@ export function createStatePersistenceApi(context) {
     }
 
     try {
-      const parsed = JSON.parse(rawSave);
-      if (parsed?.version !== SAVEGAME_VERSION) {
+      const entry = targetEntryId
+        ? store.entries.find((candidate) => candidate.id === targetEntryId)
+        : store.entries[0];
+      if (!entry) {
         return {
           ok: false,
-          reason: "incompatible",
-          foundVersion: parsed?.version ?? null,
-          expectedVersion: SAVEGAME_VERSION,
+          reason: "missing",
         };
       }
 
-      const normalizedState = normalizeSavedState(parsed.state);
+      if (store.consumedIds?.[entry.id]) {
+        store.entries = store.entries.filter((candidate) => candidate.id !== entry.id);
+        writeSavegameStore(store);
+        return {
+          ok: false,
+          reason: "consumed",
+        };
+      }
+
+      const normalizedState = normalizeSavedState(entry.state);
       if (!normalizedState) {
         return {
           ok: false,
@@ -427,10 +604,19 @@ export function createStatePersistenceApi(context) {
       setState(normalizedState);
       updateVisibility();
       renderSelf();
+      store.entries = store.entries.filter((candidate) => candidate.id !== entry.id);
+      store.consumedIds = {
+        ...(store.consumedIds ?? {}),
+        [entry.id]: {
+          loadedAt: Date.now(),
+        },
+      };
+      writeSavegameStore(store);
       return {
         ok: true,
         state: normalizedState,
-        savedAt: parsed.savedAt ?? null,
+        savedAt: entry.savedAt ?? null,
+        metadata: createSaveMetadata(entry),
       };
     } catch {
       return {
@@ -497,7 +683,9 @@ export function createStatePersistenceApi(context) {
     saveOptions,
     hasSavedGame,
     clearSavedGame,
+    deleteSavedGame,
     getSavedGameMetadata,
+    listSavedGames,
     saveGame,
     loadSavedGame,
     loadLastHighscoreMarker,

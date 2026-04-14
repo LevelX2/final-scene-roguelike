@@ -1,4 +1,5 @@
 import { formatStudioOrigin } from '../studio-theme.mjs';
+import { getFoodSatietyEstimate } from '../nutrition.mjs';
 
 export function createInventoryView(context) {
   const {
@@ -251,7 +252,7 @@ export function createInventoryView(context) {
           : item.type === "key"
             ? item.description
             : item.type === "food"
-              ? `${item.nutritionRestore} Nahrung | ${item.description}`
+              ? `${getFoodSatietyEstimate(item.nutritionRestore)} | ${item.description}`
               : item.description;
 
       const wrapper = document.createElement("div");

@@ -167,6 +167,7 @@ export function createRenderApi(context) {
     formatOffHandStats,
     loadHighscores,
     loadLastHighscoreMarker,
+    getHungerStateLabel,
     getHeroClassIconUrl,
     knowsMonster,
   });

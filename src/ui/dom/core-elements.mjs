@@ -1,5 +1,8 @@
 export const startScreenElement = document.getElementById("startScreen");
 export const gameHeaderElement = document.getElementById("gameHeader");
+export const appLayoutElement = document.getElementById("appLayout");
+export const boardViewportElement = document.getElementById("boardViewport");
+export const boardScalerElement = document.getElementById("boardScaler");
 export const boardElement = document.getElementById("board");
 export const gameShellElement = document.getElementById("gameShell");
 export const startModalElement = document.getElementById("startModal");
@@ -7,6 +10,7 @@ export const startFormElement = document.getElementById("startForm");
 export const classOptionsElement = document.getElementById("classOptions");
 export const heroNameInputElement = document.getElementById("heroNameInput");
 export const saveHeroNameButtonElement = document.getElementById("saveHeroName");
+export const cancelStartModalButtonElement = document.getElementById("cancelStartModal");
 export const heroIdentityStatusElement = document.getElementById("heroIdentityStatus");
 export const startSavegameStatusElement = document.getElementById("startSavegameStatus");
 export const landingSavegameStatusElement = document.getElementById("landingSavegameStatus");

@@ -8,16 +8,25 @@ export function createUiBindingsApi(context) {
     openInventoryButton,
     openTargetModeButton,
     confirmTargetModeButton,
+    zoomOutBoardButtonElement,
+    zoomResetBoardButtonElement,
+    zoomInBoardButtonElement,
     closeInventoryButton,
     openRunStatsButton,
     closeRunStatsButton,
     saveGameQuickButtonElement,
+    loadGameQuickButtonElement,
     openOptionsButton,
     closeOptionsButton,
+    closeSavegamesButtonElement,
     openHighscoresButton,
     closeHighscoresButton,
     openHelpButton,
     closeHelpButton,
+    helpOverviewTabButtonElement,
+    helpControlsTabButtonElement,
+    showControlsHelpButtonElement,
+    showOverviewHelpButtonElement,
     openDeathKillsButton,
     closeDeathButton,
     startNewGameButton,
@@ -27,12 +36,16 @@ export function createUiBindingsApi(context) {
     startFreshRunButton,
     inventoryFilterButtons,
     collapsibleCards,
-    saveGameButtonElement,
-    loadGameButtonElement,
+    cancelStartModalButtonElement,
+    uiScaleRangeElement,
+    studioZoomRangeElement,
+    tooltipScaleRangeElement,
     toggleStepSoundElement,
     toggleDeathSoundElement,
     toggleVoiceAnnouncementsElement,
     showcaseAnnouncementModeElement,
+    enemyPanelModeElement,
+    toggleEnemyPanelModeButtonElement,
     startFormElement,
     bindTooltip,
     topbarHpCardElement,
@@ -47,6 +60,7 @@ export function createUiBindingsApi(context) {
     toggleInventory,
     toggleRunStats,
     toggleOptions,
+    toggleSavegames,
     toggleHelp,
     toggleHighscores,
     restartRun,
@@ -54,17 +68,38 @@ export function createUiBindingsApi(context) {
     openRunStatsFromDeath,
     toggleCardCollapse,
     setInventoryFilter,
+    setUiScale,
+    setStudioZoom,
+    adjustStudioZoom,
+    resetStudioZoom,
+    setTooltipScale,
+    setEnemyPanelMode,
+    toggleEnemyPanelMode,
     saveCurrentGame,
-    loadCurrentGame,
     getState,
     saveOptions,
     openStartModal,
+    closeStartModal,
     applyStartProfile,
     enterTargetMode,
     cancelTargetMode,
     confirmTargetAttack,
     bindKeyboardInput,
+    helpOverviewPanelElement,
+    helpControlsPanelElement,
   } = context;
+
+  function showHelpSection(section = "overview") {
+    const showOverview = section !== "controls";
+    helpOverviewPanelElement?.classList.toggle("ui-hidden", !showOverview);
+    helpControlsPanelElement?.classList.toggle("ui-hidden", showOverview);
+    helpOverviewPanelElement?.setAttribute("aria-hidden", String(!showOverview));
+    helpControlsPanelElement?.setAttribute("aria-hidden", String(showOverview));
+    helpOverviewTabButtonElement?.classList.toggle("active", showOverview);
+    helpControlsTabButtonElement?.classList.toggle("active", !showOverview);
+    helpOverviewTabButtonElement?.setAttribute("aria-selected", String(showOverview));
+    helpControlsTabButtonElement?.setAttribute("aria-selected", String(!showOverview));
+  }
 
   function bindChoiceControls() {
     choiceDrinkButton.addEventListener("click", () => resolveChoiceBySlot(0));
@@ -75,6 +110,7 @@ export function createUiBindingsApi(context) {
   }
 
   function bindModalControls() {
+    const openSavegames = () => toggleSavegames(true);
     openInventoryButton.addEventListener("click", () => toggleInventory(true));
     openTargetModeButton.addEventListener("click", () => {
       if (getState().targeting?.active) {
@@ -87,15 +123,40 @@ export function createUiBindingsApi(context) {
     closeInventoryButton.addEventListener("click", () => toggleInventory(false));
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
-    saveGameQuickButtonElement.addEventListener("click", () => saveCurrentGame());
+    saveGameQuickButtonElement.addEventListener("click", openSavegames);
+    loadGameQuickButtonElement.addEventListener("click", openSavegames);
     openOptionsButton.addEventListener("click", () => toggleOptions(true));
     closeOptionsButton.addEventListener("click", () => toggleOptions(false));
+    closeSavegamesButtonElement.addEventListener("click", () => toggleSavegames(false));
     openHighscoresButton.addEventListener("click", () => toggleHighscores(true));
     closeHighscoresButton.addEventListener("click", () => toggleHighscores(false));
-    openHelpButton.addEventListener("click", () => toggleHelp(true));
+    openHelpButton.addEventListener("click", () => {
+      showHelpSection("overview");
+      toggleHelp(true);
+    });
     closeHelpButton.addEventListener("click", () => toggleHelp(false));
+    helpOverviewTabButtonElement?.addEventListener("click", () => showHelpSection("overview"));
+    helpControlsTabButtonElement?.addEventListener("click", () => showHelpSection("controls"));
+    showControlsHelpButtonElement?.addEventListener("click", () => showHelpSection("controls"));
+    showOverviewHelpButtonElement?.addEventListener("click", () => showHelpSection("overview"));
     openDeathKillsButton.addEventListener("click", () => openRunStatsFromDeath());
     closeDeathButton.addEventListener("click", () => leaveToStartScreen());
+    zoomOutBoardButtonElement.addEventListener("click", () => {
+      adjustStudioZoom(-10);
+      saveOptions();
+    });
+    zoomResetBoardButtonElement.addEventListener("click", () => {
+      resetStudioZoom();
+      saveOptions();
+    });
+    zoomInBoardButtonElement.addEventListener("click", () => {
+      adjustStudioZoom(10);
+      saveOptions();
+    });
+    toggleEnemyPanelModeButtonElement.addEventListener("click", () => {
+      toggleEnemyPanelMode();
+      saveOptions();
+    });
   }
 
   function bindInventoryControls() {
@@ -122,8 +183,22 @@ export function createUiBindingsApi(context) {
   }
 
   function bindOptionControls() {
-    saveGameButtonElement.addEventListener("click", () => saveCurrentGame());
-    loadGameButtonElement.addEventListener("click", () => loadCurrentGame());
+    uiScaleRangeElement.addEventListener("input", () => {
+      setUiScale(uiScaleRangeElement.value);
+      saveOptions();
+    });
+    studioZoomRangeElement.addEventListener("input", () => {
+      setStudioZoom(studioZoomRangeElement.value);
+      saveOptions();
+    });
+    tooltipScaleRangeElement.addEventListener("input", () => {
+      setTooltipScale(tooltipScaleRangeElement.value);
+      saveOptions();
+    });
+    enemyPanelModeElement.addEventListener("change", () => {
+      setEnemyPanelMode(enemyPanelModeElement.value);
+      saveOptions();
+    });
     toggleStepSoundElement.addEventListener("change", () => {
       getState().options.stepSound = toggleStepSoundElement.checked;
       saveOptions();
@@ -144,9 +219,13 @@ export function createUiBindingsApi(context) {
 
   function bindStartControls() {
     startNewGameButton.addEventListener("click", () => openStartModal());
-    loadGameFromLandingButtonElement.addEventListener("click", () => loadCurrentGame());
+    loadGameFromLandingButtonElement.addEventListener("click", () => toggleSavegames(true));
     openHighscoresLandingButton.addEventListener("click", () => toggleHighscores(true));
-    openHelpLandingButton.addEventListener("click", () => toggleHelp(true));
+    openHelpLandingButton.addEventListener("click", () => {
+      showHelpSection("overview");
+      toggleHelp(true);
+    });
+    cancelStartModalButtonElement.addEventListener("click", () => closeStartModal());
     startFormElement.addEventListener("submit", (event) => {
       event.preventDefault();
       applyStartProfile();
@@ -154,6 +233,7 @@ export function createUiBindingsApi(context) {
   }
 
   function bindAppControls(documentTarget = window) {
+    showHelpSection("overview");
     bindChoiceControls();
     bindModalControls();
     bindInventoryControls();
@@ -173,5 +253,6 @@ export function createUiBindingsApi(context) {
     bindOptionControls,
     bindStartControls,
     bindAppControls,
+    showHelpSection,
   };
 }

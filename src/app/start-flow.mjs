@@ -5,7 +5,6 @@ export function createStartFlowApi(context) {
     classOptionsElement,
     heroNameInputElement,
     saveHeroNameButtonElement,
-    heroIdentityStatusElement,
     loadHeroName,
     loadHeroClassId,
     saveHeroName,
@@ -16,13 +15,8 @@ export function createStartFlowApi(context) {
     focusGameSurface,
   } = context;
 
-  let heroIdentityStatusTimeout;
-  const DEFAULT_START_STATUS = "Wird für dieses und das nächste Spiel gemerkt.";
-
   function resetStartIdentityFeedback() {
     saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
-    heroIdentityStatusElement.textContent = DEFAULT_START_STATUS;
-    heroIdentityStatusElement.classList.remove("success");
   }
 
   function renderClassOptions(selectedClassId) {
@@ -40,7 +34,10 @@ export function createStartFlowApi(context) {
           <strong class="class-option-title">${heroClass.label}</strong>
           <span class="class-option-tagline">${heroClass.tagline}</span>
           <div class="class-option-passive">
-            <span class="class-option-passive-label">Spezialfähigkeit: ${heroClass.passiveName}</span>
+            <div class="class-option-passive-heading">
+              <span class="class-option-passive-label">Spezialfähigkeit</span>
+              <strong class="class-option-passive-name">${heroClass.passiveName}</strong>
+            </div>
             <span class="class-option-passive-copy">${heroClass.passiveSummary}</span>
           </div>
         </div>
@@ -163,17 +160,9 @@ export function createStartFlowApi(context) {
     const nextName = saveHeroName(heroNameInputElement.value);
     const nextClassId = saveHeroClassId(selectedClass);
 
-    saveHeroNameButtonElement.textContent = "Gespeichert";
-    heroIdentityStatusElement.textContent = `${nextName} startet als ${HERO_CLASSES[nextClassId].label}.`;
-    heroIdentityStatusElement.classList.add("success");
-    window.clearTimeout(heroIdentityStatusTimeout);
-    heroIdentityStatusTimeout = window.setTimeout(() => {
-      resetStartIdentityFeedback();
-    }, 1400);
-
     initializeGame(
       { heroName: nextName, heroClassId: nextClassId },
-      { openStartModal: false, clearSavedGame: true, reuseExistingFloor: true, view: "game" },
+      { openStartModal: false, clearSavedGame: false, reuseExistingFloor: true, view: "game" },
     );
     window.setTimeout(() => focusGameSurface?.(), 0);
   }

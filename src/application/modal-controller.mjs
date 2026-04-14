@@ -5,7 +5,6 @@ export function createModalController(context) {
     CHOICE_ACTIONS,
     STAIR_ACTIONS,
     getState,
-    clearSavedGame,
     createSheetRow,
     updateSavegameControls,
     returnToStartScreen,
@@ -39,6 +38,7 @@ export function createModalController(context) {
     toggleInventory(false);
     toggleRunStats(false);
     toggleOptions(false);
+    toggleSavegames(false);
     toggleHelp(false);
     toggleHighscores(false);
   }
@@ -47,7 +47,6 @@ export function createModalController(context) {
     const state = getState();
     const currentFloor = state.floors?.[state.floor];
     const deathCopyElement = deathModalElement.querySelector(".modal-copy");
-    clearSavedGame();
     const deathLead = `Die Hauptrolle ${state.player.name} ${state.deathCause ?? "verschwand im letzten Akt aus dem Bild."}`;
     deathSummaryElement.innerHTML = [
       `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
@@ -81,6 +80,9 @@ export function createModalController(context) {
   function toggleRunStats(forceOpen) {
     const state = getState();
     state.modals.runStatsOpen = forceOpen ?? !state.modals.runStatsOpen;
+    if (state.modals.runStatsOpen) {
+      state.modals.savegamesOpen = false;
+    }
     if (!state.modals.runStatsOpen && state.gameOver && deathModalElement.classList.contains("hidden")) {
       setDeathModalVisibility(true);
     }
@@ -90,18 +92,40 @@ export function createModalController(context) {
   function toggleOptions(forceOpen) {
     const state = getState();
     state.modals.optionsOpen = forceOpen ?? !state.modals.optionsOpen;
+    if (state.modals.optionsOpen) {
+      state.modals.savegamesOpen = false;
+    }
+    renderSelf();
+  }
+
+  function toggleSavegames(forceOpen) {
+    const state = getState();
+    state.modals.savegamesOpen = forceOpen ?? !state.modals.savegamesOpen;
+    if (state.modals.savegamesOpen) {
+      state.modals.inventoryOpen = false;
+      state.modals.runStatsOpen = false;
+      state.modals.optionsOpen = false;
+      state.modals.helpOpen = false;
+      state.modals.highscoresOpen = false;
+    }
     renderSelf();
   }
 
   function toggleHelp(forceOpen) {
     const state = getState();
     state.modals.helpOpen = forceOpen ?? !state.modals.helpOpen;
+    if (state.modals.helpOpen) {
+      state.modals.savegamesOpen = false;
+    }
     renderSelf();
   }
 
   function toggleHighscores(forceOpen) {
     const state = getState();
     state.modals.highscoresOpen = forceOpen ?? !state.modals.highscoresOpen;
+    if (state.modals.highscoresOpen) {
+      state.modals.savegamesOpen = false;
+    }
     renderSelf();
   }
 
@@ -249,7 +273,7 @@ export function createModalController(context) {
     hideStairChoice();
     closeTransientModals();
     hideDeathModal();
-    returnToStartScreen({ openStartModal: true, clearSavedGame: true });
+    returnToStartScreen({ openStartModal: true, clearSavedGame: false });
   }
 
   function confirmRestartRun() {
@@ -288,6 +312,7 @@ export function createModalController(context) {
     toggleInventory,
     toggleRunStats,
     toggleOptions,
+    toggleSavegames,
     toggleHelp,
     toggleHighscores,
   };

@@ -1,3 +1,5 @@
+import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
+
 export function createItemFloorStateApi(context) {
   const {
     getState,
@@ -120,11 +122,17 @@ export function createItemFloorStateApi(context) {
 
   function drinkPotionFromGround(index) {
     const state = getState();
+    if (state.player.hp >= state.player.maxHp) {
+      addMessage("Du bist bereits bei voller Gesundheit.");
+      return false;
+    }
+
     removePotionAt(index);
     state.safeRestTurns = 0;
     state.consumedPotions = (state.consumedPotions ?? 0) + 1;
     healPlayer(8);
-    addMessage("Du trinkst den Heiltrank sofort und fühlst dich besser.", "important");
+    addMessage("Du trinkst den Heiltrank sofort und fuehlst dich besser.", "important");
+    return true;
   }
 
   function eatFoodFromGround(index) {
@@ -137,8 +145,12 @@ export function createItemFloorStateApi(context) {
     removeFoodAt(index);
     state.safeRestTurns = 0;
     state.consumedFoods = (state.consumedFoods ?? 0) + 1;
-    const restored = restoreNutrition(pickup.item.nutritionRestore);
-    addMessage(`${pickup.item.name} füllt ${restored} Nahrung auf.`, "important");
+    const nutritionResult = restoreNutrition(pickup.item.nutritionRestore);
+    addMessage(`${pickup.item.name} wirkt so, als ${getFoodSatietyEstimate(pickup.item.nutritionRestore).toLowerCase()}`, "important");
+    const overeatMessage = getFoodOvereatMessage(nutritionResult.restoredAmount, pickup.item.nutritionRestore);
+    if (overeatMessage) {
+      addMessage(overeatMessage, "important");
+    }
   }
 
   function spawnChestContentAtPlayer(content, containerName = 'Requisitenkiste') {

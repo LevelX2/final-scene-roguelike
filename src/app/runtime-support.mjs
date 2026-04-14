@@ -56,8 +56,13 @@ export function createRuntimeSupportApi(context) {
     const previous = state.player.nutrition ?? getNutritionStart(state.player);
     const previousState = state.player.hungerState;
     state.player.nutrition = previous + amount;
-    refreshNutritionState(previousState);
-    return Math.max(0, state.player.nutrition - previous);
+    const nextState = refreshNutritionState(previousState);
+    const restoredAmount = Math.max(0, state.player.nutrition - previous);
+    return {
+      restoredAmount,
+      wastedAmount: Math.max(0, amount - restoredAmount),
+      nextState,
+    };
   }
 
   function noteMonsterEncounter(enemy) {

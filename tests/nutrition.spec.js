@@ -4,14 +4,14 @@ const { setupFoodAtPlayerStep, startRun } = require("./helpers");
 
 test("nutrition starts with the class endurance bonus applied", async ({ page }) => {
   await page.goto("/");
-  await startRun(page, { classLabel: "Regisseur" });
+  await startRun(page);
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
 
-  expect(snapshot.player.nutritionMax).toBe(1000);
-  expect(snapshot.player.nutrition).toBe(800);
-  await expect(page.locator("#nutritionLabel")).toHaveText("800 / 1000");
-  await expect(page.locator("#nutritionState")).toHaveText("Satt");
+  expect(snapshot.player.nutritionMax).toBe(900);
+  expect(snapshot.player.nutrition).toBe(701);
+  await expect(page.locator("#nutritionLabel")).toHaveCount(0);
+  await expect(page.locator("#nutritionState")).toHaveText("Normal");
 });
 
 test("food can be eaten from the ground and is clamped to the nutrition maximum", async ({ page }) => {
@@ -47,11 +47,13 @@ test("food can be eaten from the ground and is clamped to the nutrition maximum"
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
   const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
 
   expect(snapshot.player.nutrition).toBe(899);
   expect(snapshot.player.nutritionMax).toBe(900);
   expect(inventory.foodCount).toBe(0);
-  await expect(page.locator("#nutritionLabel")).toHaveText("899 / 900");
+  expect(messages.some((entry) => entry.text.includes("wieder erbrochen"))).toBeTruthy();
+  await expect(page.locator("#nutritionState")).toHaveText("Satt");
 });
 
 test("food modal defaults reliably to the first eat action", async ({ page }) => {
@@ -83,6 +85,8 @@ test("food modal defaults reliably to the first eat action", async ({ page }) =>
 
   await page.keyboard.press("ArrowRight");
   await expect(page.locator("#choiceModal")).toBeVisible();
+  await expect(page.locator("#choiceText")).toContainText("Stillt wenig.");
+  await expect(page.locator("#choiceText")).not.toContainText("30");
   await page.keyboard.press("Enter");
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
@@ -177,5 +181,5 @@ test("stored food can be used from the inventory and updates the nutrition hud",
 
   expect(snapshot.player.nutrition).toBe(648);
   expect(inventory.foodCount).toBe(0);
-  await expect(page.locator("#nutritionLabel")).toHaveText("648 / 900");
+  await expect(page.locator("#nutritionState")).toHaveText("Normal");
 });

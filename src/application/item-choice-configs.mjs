@@ -1,3 +1,5 @@
+import { getFoodSatietyEstimate } from '../nutrition.mjs';
+
 export function createItemChoiceConfigs(context) {
   const {
     getState,
@@ -28,7 +30,7 @@ export function createItemChoiceConfigs(context) {
       foodIndex,
       selectedAction: state.preferences.foodAction,
       title: `${food.name} gefunden`,
-      text: `${food.nutritionRestore} Nahrung. Möchtest du sofort essen, einpacken oder es liegen lassen?`,
+      text: `${getFoodSatietyEstimate(food.nutritionRestore)} Möchtest du sofort essen, einpacken oder es liegen lassen?`,
       labels: ["Jetzt essen", "Ins Inventar", "Liegen lassen"],
     };
   }

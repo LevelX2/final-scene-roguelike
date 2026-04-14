@@ -25,7 +25,8 @@ export function createVisibilityService(context) {
       return true;
     }
 
-    return isDoorClosed(getDoorAt(x, y, floorState));
+    const showcaseBlocksTile = (floorState.showcases ?? []).some((showcase) => showcase.x === x && showcase.y === y);
+    return showcaseBlocksTile || isDoorClosed(getDoorAt(x, y, floorState));
   }
 
   function isStraightShot(fromX, fromY, toX, toY) {
@@ -33,45 +34,52 @@ export function createVisibilityService(context) {
   }
 
   function hasLineOfSight(floorState, fromX, fromY, toX, toY) {
-    const startX = fromX + 0.5;
-    const startY = fromY + 0.5;
-    const endX = toX + 0.5;
-    const endY = toY + 0.5;
-    const deltaX = endX - startX;
-    const deltaY = endY - startY;
-    const steps = Math.max(Math.abs(deltaX), Math.abs(deltaY)) * 2;
+    if (fromX === toX && fromY === toY) {
+      return true;
+    }
 
-    let previousCellX = fromX;
-    let previousCellY = fromY;
+    const deltaX = toX - fromX;
+    const deltaY = toY - fromY;
+    const stepX = Math.sign(deltaX);
+    const stepY = Math.sign(deltaY);
+    const distanceX = Math.abs(deltaX);
+    const distanceY = Math.abs(deltaY);
 
-    for (let step = 1; step <= steps; step += 1) {
-      const progress = step / steps;
-      const sampleX = Math.floor(startX + deltaX * progress);
-      const sampleY = Math.floor(startY + deltaY * progress);
+    let currentX = fromX;
+    let currentY = fromY;
+    let traversedX = 0;
+    let traversedY = 0;
 
-      if (sampleX === previousCellX && sampleY === previousCellY) {
-        continue;
-      }
+    while (traversedX < distanceX || traversedY < distanceY) {
+      const decision = (1 + 2 * traversedX) * distanceY - (1 + 2 * traversedY) * distanceX;
 
-      if (sampleX !== previousCellX && sampleY !== previousCellY) {
+      if (decision === 0) {
         if (
-          isOpaqueTile(floorState, previousCellX, sampleY) &&
-          isOpaqueTile(floorState, sampleX, previousCellY)
+          isOpaqueTile(floorState, currentX + stepX, currentY) &&
+          isOpaqueTile(floorState, currentX, currentY + stepY)
         ) {
           return false;
         }
+
+        currentX += stepX;
+        currentY += stepY;
+        traversedX += 1;
+        traversedY += 1;
+      } else if (decision < 0) {
+        currentX += stepX;
+        traversedX += 1;
+      } else {
+        currentY += stepY;
+        traversedY += 1;
       }
 
-      if (sampleX === toX && sampleY === toY) {
+      if (currentX === toX && currentY === toY) {
         return true;
       }
 
-      if (isOpaqueTile(floorState, sampleX, sampleY)) {
+      if (isOpaqueTile(floorState, currentX, currentY)) {
         return false;
       }
-
-      previousCellX = sampleX;
-      previousCellY = sampleY;
     }
 
     return true;

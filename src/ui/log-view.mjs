@@ -7,16 +7,20 @@ export function createLogView(context) {
 
   function renderLog() {
     const state = getState();
-    const logMode = state.collapsedCards?.log ?? "compact";
-    const visibleMessages = logMode === "full"
-      ? state.messages
-      : state.messages.slice(0, 3);
-
     messageLogElement.innerHTML = "";
-    visibleMessages.forEach((message) => {
+    (Array.isArray(state.messages) ? state.messages : []).forEach((message) => {
+      const text = typeof message === "string"
+        ? message
+        : typeof message?.text === "string"
+          ? message.text
+          : "";
+      if (!text) {
+        return;
+      }
+
       const entry = document.createElement("div");
-      entry.className = `log-entry ${message.tone}`.trim();
-      entry.innerHTML = formatLogMessage(message.text);
+      entry.className = `log-entry ${typeof message?.tone === "string" ? message.tone : ""}`.trim();
+      entry.innerHTML = formatLogMessage(text);
       messageLogElement.appendChild(entry);
     });
   }

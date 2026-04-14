@@ -111,6 +111,46 @@ test("stored potions can be used from the inventory", async ({ page }) => {
   expect(inventory.potionCount).toBe(0);
 });
 
+test("potions cannot be consumed from the loot modal at full health", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.setupCombatScenario({
+      player: {
+        hp: 20,
+        maxHp: 20,
+        strength: 4,
+        precision: 3,
+        reaction: 3,
+        nerves: 2,
+      },
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 6, y: 6 },
+      enemy: {
+        hp: 1,
+        maxHp: 1,
+      },
+    });
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placePotion({ x: 3, y: 2 });
+  });
+
+  await page.keyboard.press("ArrowRight");
+  await page.getByRole("button", { name: "Direkt trinken" }).click();
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
+
+  expect(snapshot.player.hp).toBe(20);
+  expect(messages.some((entry) => entry.text.includes("bereits bei voller Gesundheit"))).toBeTruthy();
+
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#choiceModal")).toBeVisible();
+});
+
 test("inventory items render with an icon", async ({ page }) => {
   await page.goto("/");
   await startRun(page);

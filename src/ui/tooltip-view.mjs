@@ -242,10 +242,31 @@ export function createTooltipView(context) {
   }
 
   function moveTooltip(event) {
+    if (!event || hoverTooltipElement.classList.contains("hidden")) {
+      return;
+    }
+
     const offsetX = 16;
     const offsetY = 16;
-    hoverTooltipElement.style.left = `${event.clientX + offsetX}px`;
-    hoverTooltipElement.style.top = `${event.clientY + offsetY}px`;
+    const viewportPadding = 12;
+    let left = event.clientX + offsetX;
+    let top = event.clientY + offsetY;
+
+    hoverTooltipElement.style.left = `${left}px`;
+    hoverTooltipElement.style.top = `${top}px`;
+
+    const rect = hoverTooltipElement.getBoundingClientRect();
+    if (top + rect.height > window.innerHeight - viewportPadding) {
+      top = event.clientY - rect.height - offsetY;
+    }
+    if (left + rect.width > window.innerWidth - viewportPadding) {
+      left = window.innerWidth - rect.width - viewportPadding;
+    }
+
+    left = Math.max(viewportPadding, left);
+    top = Math.max(viewportPadding, top);
+    hoverTooltipElement.style.left = `${left}px`;
+    hoverTooltipElement.style.top = `${top}px`;
   }
 
   function hideTooltip() {

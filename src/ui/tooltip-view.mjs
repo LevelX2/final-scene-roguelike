@@ -9,6 +9,7 @@ export function createTooltipView(context) {
     getMainHand,
     getOffHand,
     getCombatWeapon,
+    getActorStatusDisplay = () => [],
     clamp,
   } = context;
 
@@ -147,13 +148,30 @@ export function createTooltipView(context) {
     const state = getState();
     const weapon = getCombatWeapon(state.player);
     const offHand = getOffHand(state.player);
+    const precisionPenalty = (state.player.statusEffects ?? [])
+      .filter((effect) => effect.type === "precision_malus")
+      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
+    const reactionPenalty = (state.player.statusEffects ?? [])
+      .filter((effect) => effect.type === "reaction_malus")
+      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
+    const activeStatusEffects = getActorStatusDisplay(state.player)
+      .map((effect) => `${effect.label} ${effect.duration}`)
+      .join(", ");
     const baseDamage = Math.max(1, state.player.strength + weapon.damage);
-    const hitValue = state.player.precision * 2 + weapon.hitBonus;
-    const critChance = clamp(state.player.precision + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
+    const hitValue = (state.player.precision - precisionPenalty) * 2 + weapon.hitBonus;
+    const critChance = clamp(state.player.precision - precisionPenalty + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
     const blockBase = offHand?.subtype === "shield" ? offHand.blockChance : 0;
     const blockChance = offHand?.subtype === "shield"
-      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0), 5, 75)
+      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0) - reactionPenalty, 5, 75)
       : 0;
+    const weaponStyle = weapon.attackMode === "ranged" && (weapon.range ?? 1) > 1
+      ? `Fernkampf ${weapon.range}`
+      : "Nahkampf";
+    const weaponStyleDetail = [
+      `Waffenprofil ${weaponStyle}`,
+      (weapon.meleePenaltyHit ?? 0) < 0 ? `Nahkampfmalus ${weapon.meleePenaltyHit}` : null,
+      (weapon.lightBonus ?? 0) > 0 ? `Lichtbonus +${weapon.lightBonus}` : null,
+    ].filter(Boolean).join(" | ");
 
     return {
       hp: {
@@ -174,33 +192,39 @@ export function createTooltipView(context) {
         title: "Basisschaden",
         lines: [
           `Stärke ${state.player.strength} + Waffenschaden ${weapon.damage}`,
+          weaponStyleDetail,
           `Ergibt aktuell ${baseDamage} Schaden pro Treffer vor Krits.`,
-        ],
+        ].filter(Boolean),
       },
       hit: {
         title: "Trefferwert",
         lines: [
-          `Präzision ${state.player.precision} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
+          `Präzision ${state.player.precision}${precisionPenalty > 0 ? ` - Statusmalus ${precisionPenalty}` : ""} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
+          (weapon.meleePenaltyHit ?? 0) < 0 ? `Im Nahkampf fällt zusätzlich ${Math.abs(weapon.meleePenaltyHit)} Treffer an.` : null,
+          activeStatusEffects ? `Aktive Effekte: ${activeStatusEffects}` : null,
           `Ergibt aktuell Trefferwert ${hitValue}.`,
-        ],
+        ].filter(Boolean),
       },
       crit: {
         title: "Krit-Chance",
         lines: [
-          `Präzision ${state.player.precision} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
+          `Präzision ${state.player.precision}${precisionPenalty > 0 ? ` - Statusmalus ${precisionPenalty}` : ""} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
+          (weapon.lightBonus ?? 0) > 0 ? `Diese Waffe erhöht zugleich deine Sichtweite um ${weapon.lightBonus}.` : null,
           `Ergibt aktuell ${critChance}% Krit-Chance.`,
-        ],
+        ].filter(Boolean),
       },
       block: {
         title: "Blockchance",
         lines: offHand?.subtype === "shield"
           ? [
-              `Schild ${offHand.blockChance}% + Nerven ${state.player.nerves}${(state.player.shieldBlockBonus ?? 0) ? ` + Klassenbonus ${state.player.shieldBlockBonus}` : ""}`,
+              `Schild ${offHand.blockChance}% + Nerven ${state.player.nerves}${(state.player.shieldBlockBonus ?? 0) ? ` + Klassenbonus ${state.player.shieldBlockBonus}` : ""}${reactionPenalty > 0 ? ` - Reaktionsmalus ${reactionPenalty}` : ""}`,
               `Ergibt aktuell ${blockChance}% Blockchance mit ${offHand.blockValue} Blockwert.`,
             ]
           : [
               "Kein Schild in der Nebenhand.",
-              "Mit Schild würdest du hier deine Blockchance sehen.",
+              reactionPenalty > 0
+                ? `Aktiver Reaktionsmalus ${reactionPenalty} wirkt derzeit auf Ausweichen und Blocken.`
+                : "Mit Schild würdest du hier deine Blockchance sehen.",
             ],
       },
     };

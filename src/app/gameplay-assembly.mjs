@@ -31,6 +31,7 @@ export function assembleGameplayModules(context) {
     getState,
     getCurrentFloorState,
     clamp,
+    randomChance,
     rollPercent,
     renderSelf,
     noteMonsterEncounter,
@@ -129,6 +130,7 @@ export function assembleGameplayModules(context) {
     showDeathModal,
     playDeathSound,
     grantExperience: (...args) => combatApi?.grantExperience?.(...args),
+    randomChance,
   });
 
   combatApi = createCombatApi({
@@ -138,6 +140,7 @@ export function assembleGameplayModules(context) {
     MIN_CRIT_CHANCE,
     MAX_CRIT_CHANCE,
     clamp,
+    randomChance,
     rollPercent,
     getState,
     getCombatWeapon,
@@ -187,6 +190,7 @@ export function assembleGameplayModules(context) {
     showDeathModal,
     noteMonsterEncounter,
     handleActorEnterTile,
+    randomChance,
     hasLineOfSight: core.hasLineOfSight,
     isStraightShot: core.isStraightShot,
     canActorMove: statusEffectService.canActorMove,

@@ -1,10 +1,12 @@
 import { formatMonsterDisplayName } from '../text/combat-phrasing.mjs';
+import { weightedPick, weightedPickFromMap } from '../utils/random-tools.mjs';
 
 export function createDungeonEnemyFactory(context) {
   const {
-    OFFHAND_CATALOG,
     cloneOffHandItem,
     createMonsterWeapon,
+    createMonsterShield,
+    randomChance = Math.random,
     randomInt,
     getEnemyScaleForFloor,
     ENEMY_HP_PER_SCALE,
@@ -50,32 +52,9 @@ export function createDungeonEnemyFactory(context) {
     };
   }
 
-  function weightedPick(entries, weightKey = 'weight') {
-    const totalWeight = entries.reduce((sum, entry) => sum + (entry[weightKey] ?? 0), 0);
-    if (totalWeight <= 0) {
-      return entries[entries.length - 1] ?? null;
-    }
-
-    let roll = Math.random() * totalWeight;
-    for (const entry of entries) {
-      roll -= entry[weightKey] ?? 0;
-      if (roll <= 0) {
-        return entry;
-      }
-    }
-
-    return entries[entries.length - 1] ?? null;
-  }
-
-  function weightedPickFromMap(weights) {
-    return weightedPick(
-      Object.entries(weights).map(([value, weight]) => ({ value, weight })),
-    );
-  }
-
   function rollMonsterVariant(floorNumber) {
     const weights = getMonsterVariantWeights(floorNumber);
-    const tierId = weightedPickFromMap(weights)?.value ?? 'normal';
+    const tierId = weightedPickFromMap(weights, randomChance)?.value ?? 'normal';
     return MONSTER_VARIANT_TIERS[tierId] ?? MONSTER_VARIANT_TIERS.normal;
   }
 
@@ -145,16 +124,7 @@ export function createDungeonEnemyFactory(context) {
       return { monster, weight };
     });
 
-    const totalWeight = weighted.reduce((sum, entry) => sum + entry.weight, 0);
-    let roll = Math.random() * totalWeight;
-    for (const entry of weighted) {
-      roll -= entry.weight;
-      if (roll <= 0) {
-        return entry.monster;
-      }
-    }
-
-    return weighted[weighted.length - 1].monster;
+    return weightedPick(weighted, randomChance)?.monster ?? weighted[weighted.length - 1].monster;
   }
 
   function getWeaponDropChance(monster, variant) {
@@ -178,7 +148,6 @@ export function createDungeonEnemyFactory(context) {
     const baseAggroRadius = monster.aggroRadius + Math.min(ENEMY_AGGRO_RADIUS_CAP, Math.floor(scale / 3));
     const variantBonus = getMonsterVariantStatBonus(variantModifiers);
     const maxHp = Math.max(1, Math.round(baseHp * variant.hpMultiplier) + (variantBonus.hpFlat ?? 0));
-    const offHand = monster.offHand ? OFFHAND_CATALOG[monster.offHand] : null;
     const variantNamePrefixStems = getMonsterNamePrefixStems(variantModifiers, variant.id === 'dire' ? 2 : 1);
     const runtimeGrammar = monster.grammar
       ? {
@@ -204,6 +173,15 @@ export function createDungeonEnemyFactory(context) {
       forceRarity: iconicMonsterIds.has(monster.id) && variant.id === 'dire'
         ? 'veryRare'
         : iconicMonsterIds.has(monster.id) && variant.id === 'elite'
+          ? 'rare'
+          : null,
+    });
+    const generatedOffHand = createMonsterShield(monster, floor, {
+      dropSourceTag,
+      sourceArchetypeId: options.sourceArchetypeId ?? null,
+      forceRarity: variant.id === 'dire'
+        ? 'veryRare'
+        : variant.id === 'elite'
           ? 'rare'
           : null,
     });
@@ -237,9 +215,9 @@ export function createDungeonEnemyFactory(context) {
       statusEffects: [],
       canChangeFloors: Boolean(monster.canChangeFloors),
       mainHand: generatedWeapon ? cloneWeaponItem(generatedWeapon) : null,
-      offHand: offHand ? cloneOffHandItem(offHand) : null,
+      offHand: generatedOffHand ? cloneOffHandItem(generatedOffHand) : null,
       lootWeapon: generatedWeapon ? cloneWeaponItem(generatedWeapon) : null,
-      lootOffHand: offHand ? cloneOffHandItem(offHand) : null,
+      lootOffHand: generatedOffHand ? cloneOffHandItem(generatedOffHand) : null,
       weaponDropChance: getWeaponDropChance(monster, variant),
       offHandDropChance: variant.id === 'dire' ? 0.18 : variant.id === 'elite' ? 0.12 : 0.06,
       xpReward: Math.round((monster.xpReward + scale * ENEMY_XP_PER_SCALE) * variant.xpMultiplier),

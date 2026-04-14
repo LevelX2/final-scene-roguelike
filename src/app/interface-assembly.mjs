@@ -1,3 +1,5 @@
+import { renderEquipmentCompareHtml } from '../ui/item-choice-view.mjs';
+
 export function assembleInterfaceModules(context) {
   const { factories, config, runtime, ui, equipment, core, presentation } = context;
   const {
@@ -47,6 +49,7 @@ export function assembleInterfaceModules(context) {
     moveTargetCursor,
     selectTargetTile,
     confirmTargetAttack,
+    createRuntimeId,
   } = runtime;
   const {
     getMainHand,
@@ -146,6 +149,7 @@ export function assembleInterfaceModules(context) {
     renderSelf,
     selectTargetTile,
     confirmTargetAttack,
+    createRuntimeId,
   });
   setShowFloatingText(renderApi.showFloatingText);
 
@@ -162,6 +166,7 @@ export function assembleInterfaceModules(context) {
     moveToFloor,
     endTurn,
     resolvePotionChoice,
+    renderEquipmentCompareHtml,
     choiceModalElement,
     choiceTitleElement,
     choiceTextElement,

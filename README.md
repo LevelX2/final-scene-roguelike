@@ -17,13 +17,13 @@ Dieses Repository enthält ein lauffähiges Einzelspieler-Browserspiel ohne Fram
 Wenn du neu in das Projekt kommst, ist die wichtigste Orientierung:
 
 - Aktiver Runtime-Pfad: `src/main.mjs`
-- Aktive Hilfsmodule: `src/*_v2.mjs` plus fachliche Module wie `dungeon.mjs`, `combat.mjs`, `ai.mjs`, `items.mjs`
+- Aktive Architektur: `src/app/`, `src/application/`, `src/ui/`, `src/content/` plus fachliche Module wie `dungeon.mjs`, `combat.mjs`, `ai.mjs`, `items.mjs`
 - Browser-Einstieg: `index.html`
 - Build-Artefakt: `dist/game.bundle.js`
 - E2E-Tests: `tests/*.spec.js`
 - Legacy-Referenzen: `src/legacy/main.mjs`, `src/legacy/dom.mjs`, `src/legacy/render.mjs`, `src/legacy/state.mjs`
 
-Die Dateien ohne `_v2` sind nicht der aktive Pfad. Sie liegen noch als Referenz im Repository und sollten nicht versehentlich als Quelle der Wahrheit behandelt werden.
+Die Legacy-Dateien liegen getrennt unter `src/legacy/`. Der aktive Produktivpfad läuft über `src/main.mjs` und die darunter verdrahteten Module.
 
 ## Projektstatus
 
@@ -77,7 +77,13 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 - `styles.css`
   Gesamtes visuelles Styling der App.
 - `src/main.mjs`
-  Orchestriert die Anwendung. Hier laufen Initialisierung, Event-Handling, Zusammensetzen der APIs und große Teile der Spiellogik zusammen.
+  Schlanker Composition Root der Anwendung. Hier werden vor allem `app-config`, `app-ui`, Factories, Assemblies und der aktive Runtime-Kontext zusammengesetzt.
+- `src/app/`
+  Bootstrap, Assemblies, `app-config`, `app-ui`, Factory-Sammlung, Render-Zyklus, Startflow, UI-Preferences und Runtime-Helfer.
+- `src/application/`
+  Application-Services für Savegame, Input, Floor-Wechsel, Item-Flows, Audio und UI-Bindings.
+- `src/ui/`
+  Board-, HUD-, Inventory-, Tooltip- und Log-Views sowie DOM-nahe UI-Helfer.
 
 ### Fachmodule
 
@@ -155,7 +161,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 ## Hinweise für neue Threads oder Workspaces
 
 - Lies zuerst diese README und danach [docs/project-overview.md](docs/project-overview.md).
-- Arbeite standardmäßig gegen `src/main.mjs`, `src/dom.mjs`, `src/render.mjs` und `src/state.mjs`, nicht gegen die Legacy-Dateien.
+- Arbeite standardmäßig gegen den aktiven Pfad aus `src/main.mjs`, `src/app/`, `src/application/`, `src/ui/` und den jeweiligen Fachmodulen, nicht gegen `src/legacy/`.
 - Nach Änderungen am Runtime-Code immer mindestens `npm run build` ausführen.
 - Bei Spiellogik oder UI-Verhalten möglichst `npm run test:e2e` mitlaufen lassen.
 - Wenn etwas im Browser nicht sichtbar wird, ist oft schlicht das Bundle in `dist/` nicht neu gebaut worden.
@@ -163,8 +169,8 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 
 ## Bekannte strukturelle Realitäten
 
-- Die Codebasis ist modular, aber einige Kernmodule sind groß geworden, vor allem `main.mjs`, `dungeon.mjs`, `data.mjs` und `render.mjs`.
-- Es existiert bewusst noch eine Legacy-Linie parallel zur aktiven `_v2`-Linie.
+- Die Codebasis ist inzwischen klar in `app`, `application`, `ui`, `content` und fachliche Kernmodule geschnitten, aber `main.mjs` und `dungeon.mjs` bleiben wichtige Verdrahtungs- bzw. Kompositionspunkte.
+- Es existiert bewusst noch eine isolierte Legacy-Linie unter `src/legacy/`.
 - Es gibt bereits gute E2E-Abdeckung, aber nur leichtes Build-/Syntax-Tooling. Linting, Formatting und CI sind naheliegende nächste Ausbaustufen.
 
 ## Weiterführende Doku

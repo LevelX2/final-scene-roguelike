@@ -1,4 +1,5 @@
 import { getWeaponTemplate } from './content/catalogs/weapon-templates.mjs';
+import { getShieldTemplate } from './content/catalogs/shields.mjs';
 import { buildWeaponGrammar, formatWeaponDisplayName as formatWeaponDisplayNameText, formatWeaponReference as formatWeaponReferenceText } from './text/combat-phrasing.mjs';
 
 export function createBareHandsWeapon() {
@@ -51,9 +52,20 @@ export function cloneOffHandItem(item) {
     return null;
   }
 
+  const templateId = item.baseItemId ?? item.id ?? null;
+  const template = templateId ? getShieldTemplate(templateId) : null;
+
   return {
+    ...(template ?? {}),
     ...item,
     type: item.type ?? 'offhand',
+    itemType: item.itemType ?? 'shield',
+    subtype: item.subtype ?? 'shield',
+    baseItemId: item.baseItemId ?? template?.id ?? item.id ?? null,
+    archetypeId: item.archetypeId ?? template?.archetypeId ?? null,
+    iconAssetId: item.iconAssetId ?? template?.iconAssetId ?? item.id ?? item.icon ?? null,
+    blockChance: item.blockChance ?? template?.blockChance ?? 0,
+    blockValue: item.blockValue ?? template?.blockValue ?? 0,
     modifiers: item.modifiers ? item.modifiers.map((modifier) => ({
       ...modifier,
       allowedItemTypes: [...(modifier.allowedItemTypes ?? [])],
@@ -72,7 +84,7 @@ export function getMainHand(entity) {
 }
 
 export function getOffHand(entity) {
-  return entity.offHand ?? null;
+  return entity?.offHand ? cloneOffHandItem(entity.offHand) : null;
 }
 
 export function getCombatWeapon(entity) {

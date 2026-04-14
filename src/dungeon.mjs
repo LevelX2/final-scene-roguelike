@@ -14,7 +14,6 @@ import {
   MONSTER_VARIANT_MODIFIERS,
   getMonsterVariantWeights,
   getEnemyScaleForFloor,
-  shouldSpawnFloorShield,
 } from './balance.mjs';
 import { createDungeonEquipmentRolls } from './dungeon/equipment-rolls.mjs';
 import { createDungeonEnemyFactory } from './dungeon/enemy-factory.mjs';
@@ -23,7 +22,9 @@ import { createShowcasePlacementApi } from './dungeon/showcase-placement.mjs';
 import { createDungeonSpatialApi } from './dungeon/spatial-helpers.mjs';
 import { getArchetypeForFloor } from './studio-theme.mjs';
 import { createWeaponGenerationService } from './application/weapon-generation-service.mjs';
+import { createShieldGenerationService } from './application/shield-generation-service.mjs';
 import { getContainerConfigForArchetype } from './content/catalogs/studio-archetypes.mjs';
+import { shuffleList, weightedPick } from './utils/random-tools.mjs';
 
 export function createDungeonApi(context) {
   const {
@@ -34,7 +35,6 @@ export function createDungeonApi(context) {
     MAX_ROOM_SIZE,
     TILE,
     MONSTER_CATALOG,
-    OFFHAND_CATALOG,
     PROP_CATALOG: propCatalog = PROP_CATALOG,
     DOOR_TYPE,
     LOCK_COLORS,
@@ -42,8 +42,10 @@ export function createDungeonApi(context) {
     rollFoodBudget,
     splitFoodBudget,
     rollMonsterPlannedDrop,
+    shouldSpawnFloorShield,
     getLockedDoorCountForFloor,
     buildTrapsForFloor,
+    randomChance = Math.random,
     randomInt,
     createGrid,
     carveRoom,
@@ -71,25 +73,26 @@ export function createDungeonApi(context) {
   } = pickupFactory;
 
   const equipmentRolls = createDungeonEquipmentRolls({
-    OFFHAND_CATALOG,
-    cloneWeapon,
-    cloneOffHandItem,
-    generateEquipmentItem,
     getState,
+    randomChance,
     createLootWeapon: (...args) => weaponGenerationService.createLootWeapon(...args),
+    createLootShield: (...args) => shieldGenerationService.createLootShield(...args),
   });
 
   const {
-    weightedPick,
-    buildAvailableWeaponsForFloor,
     chooseWeightedWeapon,
-    buildAvailableShieldsForFloor,
     chooseWeightedShield,
     rollChestContent,
   } = equipmentRolls;
 
   const weaponGenerationService = createWeaponGenerationService({
+    randomChance,
     randomInt,
+    generateEquipmentItem,
+    getState,
+  });
+  const shieldGenerationService = createShieldGenerationService({
+    randomChance,
     generateEquipmentItem,
     getState,
   });
@@ -98,9 +101,10 @@ export function createDungeonApi(context) {
     createEnemy,
     chooseWeightedMonster,
   } = createDungeonEnemyFactory({
-    OFFHAND_CATALOG,
     cloneOffHandItem,
     createMonsterWeapon: (...args) => weaponGenerationService.createMonsterWeapon(...args),
+    createMonsterShield: (...args) => shieldGenerationService.createMonsterShield(...args),
+    randomChance,
     randomInt,
     getEnemyScaleForFloor,
     ENEMY_HP_PER_SCALE,
@@ -143,6 +147,7 @@ export function createDungeonApi(context) {
 
   const showcasePlacementApi = createShowcasePlacementApi({
     propCatalog,
+    randomChance,
     randomInt,
     createShowcase,
     collectUsedShowcasePropIds,
@@ -158,8 +163,12 @@ export function createDungeonApi(context) {
     placeShowcases,
   } = showcasePlacementApi;
 
+  function pickWeightedValue(entries) {
+    return weightedPick(entries, randomChance)?.value ?? null;
+  }
+
   function rollLayoutProfile() {
-    return weightedPick([
+    return pickWeightedValue([
       {
         weight: 4,
         value: {
@@ -197,7 +206,7 @@ export function createDungeonApi(context) {
   }
 
   function createRoomTemplate(profile) {
-    const archetype = weightedPick([
+    const archetype = pickWeightedValue([
       { weight: profile.roomWeights.hub, value: "hub" },
       { weight: profile.roomWeights.side, value: "side" },
       { weight: profile.roomWeights.hallH, value: "hallH" },
@@ -341,9 +350,9 @@ export function createDungeonApi(context) {
   function buildConnectionPath(start, end, profile) {
     const path = [];
     const horizontalFirst = Math.abs(end.x - start.x) >= Math.abs(end.y - start.y)
-      ? Math.random() < 0.7
-      : Math.random() < 0.35;
-    const useKink = Math.random() < profile.kinkChance && Math.abs(end.x - start.x) > 4 && Math.abs(end.y - start.y) > 4;
+      ? randomChance() < 0.7
+      : randomChance() < 0.35;
+    const useKink = randomChance() < profile.kinkChance && Math.abs(end.x - start.x) > 4 && Math.abs(end.y - start.y) > 4;
 
     if (!useKink) {
       if (horizontalFirst) {
@@ -626,7 +635,7 @@ export function createDungeonApi(context) {
       return [];
     }
 
-    const shuffledCandidates = [...eligibleCandidates].sort(() => Math.random() - 0.5);
+    const shuffledCandidates = shuffleList(eligibleCandidates, randomChance);
     const selectedDoors = [];
     const usedRoomIds = new Set();
 
@@ -719,7 +728,7 @@ export function createDungeonApi(context) {
             Math.max(2, HEIGHT - template.height - 3),
           ),
         };
-      } else if (Math.random() < layoutProfile.clusterChance) {
+      } else if (randomChance() < layoutProfile.clusterChance) {
         const anchorRoom = rooms[randomInt(0, rooms.length - 1)];
         room = tryPlaceRoomNearAnchor(template, anchorRoom);
       } else {
@@ -844,13 +853,6 @@ export function createDungeonApi(context) {
     const potionCount = context.getPotionCountForFloor(floorNumber);
     const unlockedMonsterRank = context.getUnlockedMonsterRank(floorNumber, MONSTER_CATALOG);
       const availableMonsters = MONSTER_CATALOG.filter((monster) => monster.rank <= unlockedMonsterRank);
-      const availableWeapons = buildAvailableWeaponsForFloor(floorNumber, unlockedMonsterRank);
-      const availableShields = buildAvailableShieldsForFloor(floorNumber);
-      const bonusChestWeapons = buildAvailableWeaponsForFloor(
-        floorNumber + 1,
-        context.getUnlockedMonsterRank(floorNumber + 1, MONSTER_CATALOG),
-      );
-      const bonusChestShields = buildAvailableShieldsForFloor(floorNumber + 1);
     const floorSeenCounts = {};
       const state = getState();
       const foodBudget = splitFoodBudget(rollFoodBudget(randomInt).totalBudget);
@@ -886,10 +888,10 @@ export function createDungeonApi(context) {
           1,
           Math.min(
             candidateConnections.length,
-            Math.floor(candidateConnections.length * (0.22 + Math.random() * 0.18)),
+            Math.floor(candidateConnections.length * (0.22 + randomChance() * 0.18)),
           ),
         );
-      const shuffledCandidates = [...candidateConnections].sort(() => Math.random() - 0.5);
+      const shuffledCandidates = shuffleList(candidateConnections, randomChance);
 
       for (const connection of shuffledCandidates.slice(0, doorTargetCount)) {
         doors.push(connection.door);
@@ -955,9 +957,10 @@ export function createDungeonApi(context) {
       if (context.shouldSpawnFloorWeapon(floorNumber)) {
         const weaponCount = weaponGenerationService.getFloorWeaponSpawnCount(floorNumber);
         for (let index = 0; index < weaponCount; index += 1) {
-          const weapon = chooseWeightedWeapon(availableWeapons, state?.player, {
+          const weapon = chooseWeightedWeapon(state?.player, {
             floorNumber,
             dropSourceTag: 'floor-weapon',
+            preferredArchetypeId: studioArchetypeId,
             runArchetypeSequence: options.runArchetypeSequence ?? state?.runArchetypeSequence ?? [],
           });
           if (!weapon) {
@@ -969,13 +972,15 @@ export function createDungeonApi(context) {
       }
 
       if (shouldSpawnFloorShield(floorNumber)) {
-        const shield = chooseWeightedShield(availableShields, state?.player);
+        const shield = chooseWeightedShield(state?.player, {
+          floorNumber,
+          dropSourceTag: "floor-shield",
+          preferredArchetypeId: studioArchetypeId,
+          runArchetypeSequence: options.runArchetypeSequence ?? state?.runArchetypeSequence ?? [],
+        });
         if (shield) {
           const pos = nextFloorPosition();
-          offHands.push(createOffHandPickup(generateEquipmentItem(shield, {
-            floorNumber,
-            dropSourceTag: "floor-shield",
-          }), pos.x, pos.y));
+          offHands.push(createOffHandPickup(shield, pos.x, pos.y));
         }
       }
 
@@ -985,8 +990,9 @@ export function createDungeonApi(context) {
           const pos = nextFloorPosition();
           const containerConfig = getContainerConfigForArchetype(studioArchetypeId);
           chests.push(createChestPickup(
-            rollChestContent(floorNumber, availableWeapons, availableShields, {
+            rollChestContent(floorNumber, state?.player, {
               dropSourceTag: 'chest',
+              preferredArchetypeId: studioArchetypeId,
               runArchetypeSequence: options.runArchetypeSequence ?? state?.runArchetypeSequence ?? [],
             }),
             pos.x,
@@ -1041,8 +1047,9 @@ export function createDungeonApi(context) {
           const chestPosition = lockedRoomTiles[randomInt(0, lockedRoomTiles.length - 1)];
           const containerConfig = getContainerConfigForArchetype(studioArchetypeId);
           chests.push(createChestPickup(
-            rollChestContent(floorNumber + 1, bonusChestWeapons, bonusChestShields, {
+            rollChestContent(floorNumber + 1, state?.player, {
               dropSourceTag: 'locked-room-chest',
+              preferredArchetypeId: studioArchetypeId,
               boostSpecial: true,
               runArchetypeSequence: options.runArchetypeSequence ?? state?.runArchetypeSequence ?? [],
             }),

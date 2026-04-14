@@ -28,6 +28,7 @@ export function createEnemyTurnApi(context) {
     noteMonsterEncounter,
     handleActorEnterTile,
     manhattanDistance,
+    randomChance = Math.random,
   } = context;
 
   function getMobility(enemy) {
@@ -318,7 +319,11 @@ export function createEnemyTurnApi(context) {
       { x: -1, y: 0 },
       { x: 0, y: 1 },
       { x: 0, y: -1 },
-    ].sort(() => Math.random() - 0.5);
+    ];
+    for (let index = steps.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(randomChance() * (index + 1));
+      [steps[index], steps[swapIndex]] = [steps[swapIndex], steps[index]];
+    }
 
     for (const step of steps) {
       if (moveEnemyToStep(enemy, step, floorState)) {
@@ -513,22 +518,22 @@ export function createEnemyTurnApi(context) {
       }
 
       if (enemy.behavior === "dormant") {
-        if (distance <= enemy.aggroRadius && Math.random() < 0.55) {
+        if (distance <= enemy.aggroRadius && randomChance() < 0.55) {
           enemy.aggro = true;
         }
         if (enemy.aggro) {
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (Math.random() < 0.28) {
+        } else if (randomChance() < 0.28) {
           wander(enemy, floorState);
         }
         continue;
       }
 
       if (enemy.behavior === "wanderer") {
-        if (distance <= enemy.aggroRadius + (mobility === "roaming" ? 1 : 0) && Math.random() < 0.68) {
+        if (distance <= enemy.aggroRadius + (mobility === "roaming" ? 1 : 0) && randomChance() < 0.68) {
           enemy.aggro = true;
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (enemy.aggro && Math.random() < 0.78) {
+        } else if (enemy.aggro && randomChance() < 0.78) {
           chaseTarget(enemy, playerPosition, floorState);
         } else {
           wander(enemy, floorState);
@@ -540,7 +545,7 @@ export function createEnemyTurnApi(context) {
         if (distance <= enemy.aggroRadius + 1) {
           enemy.aggro = true;
         }
-        if (enemy.aggro && Math.random() < 0.8) {
+        if (enemy.aggro && randomChance() < 0.8) {
           chaseTarget(enemy, playerPosition, floorState);
         } else {
           wander(enemy, floorState);
@@ -554,7 +559,7 @@ export function createEnemyTurnApi(context) {
         }
         if (enemy.aggro || distance <= enemy.aggroRadius) {
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (Math.random() < 0.25) {
+        } else if (randomChance() < 0.25) {
           chaseTarget(enemy, { x: enemy.originX, y: enemy.originY }, floorState);
         }
         continue;
@@ -566,7 +571,7 @@ export function createEnemyTurnApi(context) {
         }
         if (enemy.aggro) {
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (Math.random() < 0.15) {
+        } else if (randomChance() < 0.15) {
           wander(enemy, floorState);
         }
         continue;
@@ -574,7 +579,7 @@ export function createEnemyTurnApi(context) {
 
       if (distance <= enemy.aggroRadius) {
         chaseTarget(enemy, playerPosition, floorState);
-      } else if (Math.random() < 0.25) {
+      } else if (randomChance() < 0.25) {
         wander(enemy, floorState);
       }
     }

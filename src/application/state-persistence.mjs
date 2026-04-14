@@ -1,5 +1,7 @@
+import { getShieldTemplate } from '../content/catalogs/shields.mjs';
 import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
 import { normalizeKillStats } from '../kill-stats.mjs';
+import { createTimestampedId } from '../utils/id-tools.mjs';
 
 export function createStatePersistenceApi(context) {
   const {
@@ -25,6 +27,7 @@ export function createStatePersistenceApi(context) {
     resolveHeroClassId,
     HERO_CLASSES,
     randomInt,
+    createHighscoreMarker = () => createTimestampedId('run'),
     createRunArchetypeSequence,
     getArchetypeForFloor,
     xpForNextLevel,
@@ -181,6 +184,67 @@ export function createStatePersistenceApi(context) {
     };
   }
 
+  function resolveOffHandTemplateForItem(item) {
+    if (!item || typeof item !== "object") {
+      return null;
+    }
+
+    const templateId = item.templateId ?? item.baseItemId ?? item.id ?? null;
+    return templateId ? getShieldTemplate(templateId) : null;
+  }
+
+  function normalizeOffHandItem(item) {
+    if (!item || typeof item !== "object") {
+      return item ?? null;
+    }
+
+    const template = resolveOffHandTemplateForItem(item);
+    return {
+      ...item,
+      type: "offhand",
+      itemType: "shield",
+      subtype: "shield",
+      templateId: item.templateId ?? template?.id ?? item.id ?? null,
+      baseItemId: item.baseItemId ?? template?.id ?? item.id ?? null,
+      archetypeId: item.archetypeId ?? template?.archetypeId ?? null,
+      iconAssetId: item.iconAssetId ?? template?.iconAssetId ?? template?.id ?? item.baseItemId ?? item.id ?? null,
+      blockChance: item.blockChance ?? template?.blockChance ?? 0,
+      blockValue: item.blockValue ?? template?.blockValue ?? 0,
+      statMods: { ...(item.statMods ?? template?.statMods ?? {}) },
+      modifiers: Array.isArray(item.modifiers)
+        ? item.modifiers.map((modifier) => ({ ...modifier }))
+        : [],
+      modifierIds: Array.isArray(item.modifierIds) ? [...item.modifierIds] : [],
+    };
+  }
+
+  function normalizeOffHandPickup(entry) {
+    if (!entry || typeof entry !== "object") {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      item: normalizeOffHandItem(entry.item),
+    };
+  }
+
+  function normalizeInventoryItem(item) {
+    if (!item || typeof item !== "object") {
+      return item;
+    }
+
+    if (item.type === "weapon" || item.itemType === "weapon") {
+      return normalizeWeaponItem(item);
+    }
+
+    if (item.type === "offhand" || item.itemType === "shield" || item.subtype === "shield") {
+      return normalizeOffHandItem(item);
+    }
+
+    return { ...item };
+  }
+
   function normalizeFloorStateWeapons(floorState) {
     if (!floorState || typeof floorState !== "object") {
       return floorState;
@@ -189,12 +253,17 @@ export function createStatePersistenceApi(context) {
     floorState.weapons = Array.isArray(floorState.weapons)
       ? floorState.weapons.map(normalizeWeaponPickup)
       : [];
+    floorState.offHands = Array.isArray(floorState.offHands)
+      ? floorState.offHands.map(normalizeOffHandPickup)
+      : [];
     floorState.enemies = Array.isArray(floorState.enemies)
       ? floorState.enemies.map((enemy) => ({
           ...enemy,
           mainHand: normalizeWeaponItem(enemy.mainHand),
           weapon: normalizeWeaponItem(enemy.weapon),
           lootWeapon: normalizeWeaponItem(enemy.lootWeapon),
+          offHand: normalizeOffHandItem(enemy.offHand),
+          lootOffHand: normalizeOffHandItem(enemy.lootOffHand),
         }))
       : [];
     return floorState;
@@ -223,7 +292,9 @@ export function createStatePersistenceApi(context) {
     normalizedState.deepestFloor = Math.max(normalizedState.floor, Number(savedState.deepestFloor) || normalizedState.floor);
     normalizedState.turn = Math.max(0, Number(savedState.turn) || 0);
     normalizedState.messages = Array.isArray(savedState.messages) ? savedState.messages : [];
-    normalizedState.inventory = Array.isArray(savedState.inventory) ? savedState.inventory : [];
+    normalizedState.inventory = Array.isArray(savedState.inventory)
+      ? savedState.inventory.map(normalizeInventoryItem)
+      : [];
     normalizedState.gameOver = false;
     normalizedState.safeRestTurns = Math.max(0, Number(savedState.safeRestTurns) || 0);
     normalizedState.pendingChoice = null;
@@ -302,7 +373,7 @@ export function createStatePersistenceApi(context) {
       shieldBlockBonus: HERO_CLASSES[heroClassId]?.shieldBlockBonus ?? 0,
     };
     normalizedState.player.mainHand = normalizeWeaponItem(savedState.player?.mainHand ?? normalizedState.player.mainHand);
-    normalizedState.player.offHand = savedState.player?.offHand ?? normalizedState.player.offHand;
+    normalizedState.player.offHand = normalizeOffHandItem(savedState.player?.offHand ?? normalizedState.player.offHand);
     normalizedState.player.statusEffects = Array.isArray(savedState.player?.statusEffects)
       ? savedState.player.statusEffects
       : [];
@@ -381,7 +452,7 @@ export function createStatePersistenceApi(context) {
 
     const scores = loadHighscores();
     const entry = {
-      marker: `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      marker: createHighscoreMarker(),
       heroName: state.player.name,
       heroClassId: state.player.classId,
       heroClass: state.player.classLabel,

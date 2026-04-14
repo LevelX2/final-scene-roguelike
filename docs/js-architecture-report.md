@@ -4,9 +4,11 @@
 
 Dieses Dokument bewertet die aktuelle Struktur der JavaScript-Module und beschreibt ein Zielbild, das fuer deutlich mehr Features, mehr Tests und geringere Aenderungskosten ausgelegt ist. Es werden bewusst keine Produktivdateien geaendert; der Fokus liegt auf einer belastbaren, schrittweise umsetzbaren Architektur.
 
+Hinweis zum Stand: Teile dieses Zielbilds wurden inzwischen umgesetzt. Der aktive Runtime-Pfad ist heute bereits in `src/app/`, `src/application/`, `src/ui/` und `src/content/` aufgeteilt; `data.mjs`, `dom.mjs`, `render.mjs` und `state.mjs` sind keine grossen Monolithen mehr, sondern vor allem Fassaden oder Assemblies. `main.mjs` ist inzwischen deutlich mehr Composition Root als Sammeldatei, weil `app-config`, `app-ui` und die Factory-Sammlung ausgelagert wurden. Die verbleibenden Hauptthemen sind heute eher die Komposition in `dungeon.mjs`, weitere Entlastung von `data.mjs` und eine saubere Zentralisierung gemeinsamer Querschnittslogik.
+
 ## Kurzfazit
 
-Die Codebasis ist bereits in mehrere Module getrennt, aber die eigentliche Steuerung liegt noch zu stark in wenigen grossen Dateien. Besonders `src/main.mjs`, `src/data.mjs` und `src/dungeon.mjs` sind aktuell zentrale Engpaesse. Fuer ein wachsendes Projekt ist das groesste Risiko nicht fehlende Funktionalitaet, sondern dass neue Features immer wieder an denselben "God Modules" andocken und dadurch Kopplung, Seiteneffekte und Testaufwand schnell steigen.
+Die Codebasis ist heute bereits deutlich weiter modularisiert als in frueheren Projektphasen, aber die eigentliche Steuerung liegt noch zu stark in wenigen Verdrahtungs- und Kompositionsmodulen. Besonders `src/main.mjs` und `src/dungeon.mjs` bleiben zentrale Engpaesse. Fuer ein wachsendes Projekt ist das groesste Risiko nicht fehlende Funktionalitaet, sondern dass neue Features immer wieder an denselben Knoten andocken und dadurch Kopplung, Seiteneffekte und Testaufwand wieder steigen.
 
 Das beste naechste Design ist kein kompletter Rewrite, sondern eine modulare Zielstruktur mit:
 
@@ -14,13 +16,13 @@ Das beste naechste Design ist kein kompletter Rewrite, sondern eine modulare Zie
 - einer zentralen Game-Engine bzw. Orchestrierung
 - klar getrennten Domainen fuer `player`, `combat`, `dungeon`, `items`, `progression`, `traps`, `savegame`
 - einer strikten Trennung zwischen `domain`, `application`, `ui` und `infrastructure`
-- einem einzigen aktiven Runtime-Pfad ohne `*_v2`-Parallelwelt
+- einem einzigen aktiven Runtime-Pfad ohne historische Parallelwelt im Produktivpfad
 
 ## Beobachtungen im Ist-Zustand
 
-### 1. `main.mjs` ist zu gross und traegt zu viele Verantwortungen
+### 1. `main.mjs` bleibt relevant, ist aber nicht mehr der alte Sammelknoten
 
-`src/main.mjs` ist mit rund 67 KB die dominante Datei und vereint derzeit unter anderem:
+`src/main.mjs` ist weiterhin ein wichtiger Verdrahtungspunkt, aber nicht mehr derselbe Sammelknoten wie in frueheren Projektphasen. Ein Teil der frueheren Last wurde bereits in `src/app/app-config.mjs`, `src/app/app-ui.mjs` und `src/app/app-factories.mjs` verschoben. Verblieben sind unter anderem:
 
 - Bootstrapping und Initialisierung
 - globale Zustandskoordination

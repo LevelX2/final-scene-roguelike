@@ -1,3 +1,5 @@
+import { getItemRarityClass, getOffHandIconAssetUrl, getWeaponIconAssetUrl } from './item-asset-helpers.mjs';
+
 export function createRenderAssetHelpers(context) {
   const { getHeroClassAssets } = context;
 
@@ -15,30 +17,6 @@ export function createRenderAssetHelpers(context) {
     }
 
     return `./assets/food-${item.icon}.svg`;
-  }
-
-  function getWeaponIconAssetUrl(item) {
-    if (!item || item.type !== "weapon" || !item.id) {
-      return null;
-    }
-
-    return `./assets/weapons/${item.id}.svg`;
-  }
-
-  function getOffHandIconAssetUrl(item) {
-    if (!item || item.type !== "offhand") {
-      return null;
-    }
-
-    if (item.id) {
-      return `./assets/shields/${item.id}.svg`;
-    }
-
-    if (item.icon) {
-      return `./assets/shields/${item.icon}.svg`;
-    }
-
-    return null;
   }
 
   function getPotionIconAssetUrl(item) {
@@ -118,10 +96,6 @@ export function createRenderAssetHelpers(context) {
       getOffHandIconAssetUrl(item) ||
       getPotionIconAssetUrl(item) ||
       getKeyIconAssetUrl(item);
-  }
-
-  function getItemRarityClass(item) {
-    return `rarity-${item?.rarity ?? "common"}`;
   }
 
   return {

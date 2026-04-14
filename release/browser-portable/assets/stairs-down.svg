@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <radialGradient id="pit-shadow" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#1b1710"/>
+      <stop offset="0.58" stop-color="#0f0c08"/>
+      <stop offset="1" stop-color="#050403"/>
+    </radialGradient>
+    <linearGradient id="pit-rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2e6be"/>
+      <stop offset="1" stop-color="#a28a58"/>
+    </linearGradient>
+    <linearGradient id="pit-step-top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8ddb4"/>
+      <stop offset="1" stop-color="#cab982"/>
+    </linearGradient>
+    <linearGradient id="pit-step-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8f7850"/>
+      <stop offset="1" stop-color="#665235"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="16" cy="16.8" rx="11.2" ry="9.4" fill="url(#pit-rim)"/>
+  <ellipse cx="16" cy="17.3" rx="9.6" ry="7.9" fill="url(#pit-shadow)"/>
+  <path d="M9 11.8h9.6v2.5H9z" fill="url(#pit-step-top)"/>
+  <path d="M9 14.3h9.6v2.1H9z" fill="url(#pit-step-face)"/>
+  <path d="M11.1 16.1h7.2v2.3h-7.2z" fill="url(#pit-step-top)"/>
+  <path d="M11.1 18.4h7.2v2H11.1z" fill="url(#pit-step-face)"/>
+  <path d="M12.9 20h5.1v2h-5.1z" fill="url(#pit-step-top)"/>
+  <path d="M12.9 22h5.1v1.8h-5.1z" fill="url(#pit-step-face)"/>
+  <ellipse cx="16" cy="16.8" rx="11.2" ry="9.4" fill="none" stroke="#fff2c4" stroke-opacity=".22"/>
+  <path d="M9 11.8h9.6M11.1 16.1h7.2M12.9 20h5.1" stroke="#fff6d6" stroke-opacity=".2"/>
+</svg>

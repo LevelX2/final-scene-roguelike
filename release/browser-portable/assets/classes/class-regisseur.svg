@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Regisseur class icon</title>
+  <path d="M16 8H48L56 16V48L48 56H16L8 48V16L16 8Z" fill="#1F232B" stroke="#4CB0C7" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M15 15H49L45 24H11L15 15Z" fill="#4CB0C7" stroke="#121418" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M18 17L14 22M28 17L24 22M38 17L34 22M48 17L44 22" stroke="#121418" stroke-width="2" stroke-linecap="round"/>
+  <rect x="14" y="24" width="36" height="22" rx="4" fill="#2C3641" stroke="#121418" stroke-width="2"/>
+  <path d="M19 35C23.5 28.5 29 26 32 26C35 26 40.5 28.5 45 35C40.5 41.5 35 44 32 44C29 44 23.5 41.5 19 35Z" fill="#4CB0C7" stroke="#121418" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="32" cy="35" r="5" fill="#121418"/>
+  <circle cx="34" cy="33" r="1.5" fill="#D9F7FF"/>
+  <path d="M18 49H46" stroke="#4CB0C7" stroke-width="3" stroke-linecap="round"/>
+</svg>

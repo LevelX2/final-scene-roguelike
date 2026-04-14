@@ -30,7 +30,7 @@ export function createItemsApi(context) {
     renderSelf,
   } = context;
 
-  const { buildEquipmentCompareHtml } = createItemUiHelpers({
+  const { buildEquipmentCompareModel } = createItemUiHelpers({
     formatRarityLabel,
     formatWeaponDisplayName,
     getItemModifierSummary,
@@ -72,7 +72,7 @@ export function createItemsApi(context) {
     healPlayer,
     restoreNutrition,
     renderSelf,
-    buildEquipmentCompareHtml,
+    buildEquipmentCompareModel,
     equipWeapon: equipmentApi.equipWeapon,
     equipOffHand: equipmentApi.equipOffHand,
   });

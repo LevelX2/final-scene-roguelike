@@ -24,7 +24,7 @@ export function createItemLootApi(context) {
     healPlayer,
     restoreNutrition,
     renderSelf,
-    buildEquipmentCompareHtml,
+    buildEquipmentCompareModel,
     equipWeapon,
     equipOffHand,
   } = context;
@@ -50,7 +50,7 @@ export function createItemLootApi(context) {
     formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
-    buildEquipmentCompareHtml,
+    buildEquipmentCompareModel,
   });
 
   const chestService = createItemChestService({

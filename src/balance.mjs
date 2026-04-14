@@ -1,3 +1,5 @@
+import { defaultRandomChance } from './utils/random-tools.mjs';
+
 export const ROOM_ATTEMPTS = 84;
 export const MIN_ROOM_SIZE = 4;
 export const MAX_ROOM_SIZE = 9;
@@ -265,11 +267,11 @@ export function getPotionCountForFloor(floorNumber) {
   return 2 + Math.floor(floorNumber / 2);
 }
 
-export function shouldSpawnFloorWeapon(floorNumber, roll = Math.random()) {
+export function shouldSpawnFloorWeapon(floorNumber, roll = defaultRandomChance()) {
   return floorNumber >= 2 && roll < FLOOR_WEAPON_SPAWN_CHANCE;
 }
 
-export function shouldSpawnFloorShield(floorNumber, roll = Math.random()) {
+export function shouldSpawnFloorShield(floorNumber, roll = defaultRandomChance()) {
   if (floorNumber === 2) {
     return roll < 0.35;
   }
@@ -277,15 +279,15 @@ export function shouldSpawnFloorShield(floorNumber, roll = Math.random()) {
   return floorNumber >= 5 && roll < 0.08;
 }
 
-export function shouldSpawnChest(floorNumber, roll = Math.random()) {
+export function shouldSpawnChest(floorNumber, roll = defaultRandomChance()) {
   return roll < Math.min(0.55, 0.2 + floorNumber * 0.06);
 }
 
-export function getChestCountForFloor(floorNumber, roll = Math.random()) {
+export function getChestCountForFloor(floorNumber, roll = defaultRandomChance()) {
   return floorNumber >= 4 && roll < 0.35 ? 2 : 1;
 }
 
-export function getLockedDoorCountForFloor(floorNumber, roll = Math.random()) {
+export function getLockedDoorCountForFloor(floorNumber, roll = defaultRandomChance()) {
   if (floorNumber < 3) {
     return 0;
   }
@@ -317,7 +319,7 @@ export function getLockedDoorCountForFloor(floorNumber, roll = Math.random()) {
   return roll < 0.8 ? 1 : 0;
 }
 
-export function shouldPlaceLockedRoomChest(roll = Math.random()) {
+export function shouldPlaceLockedRoomChest(roll = defaultRandomChance()) {
   return roll < 0.8;
 }
 

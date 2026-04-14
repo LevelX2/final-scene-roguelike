@@ -6,24 +6,15 @@ import {
   FOOD_SPAWN_WEIGHTS,
   MONSTER_DROP_DEFS,
 } from '../content/food-balance.mjs';
+import { weightedPick } from '../utils/random-tools.mjs';
 
-function chooseWeighted(entries, randomValue = Math.random()) {
-  const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0);
-  let roll = randomValue * totalWeight;
+export function createFoodLootPipeline(context = {}) {
+  const {
+    randomChance = Math.random,
+  } = context;
 
-  for (const entry of entries) {
-    roll -= entry.weight;
-    if (roll <= 0) {
-      return entry;
-    }
-  }
-
-  return entries[entries.length - 1];
-}
-
-export function createFoodLootPipeline() {
   function rollFoodBudget(randomInt) {
-    const supplyClass = chooseWeighted(FOOD_SUPPLY_CLASSES);
+    const supplyClass = weightedPick(FOOD_SUPPLY_CLASSES, randomChance);
     return {
       supplyClass: supplyClass.id,
       totalBudget: Math.round(randomInt(supplyClass.min, supplyClass.max) * GLOBAL_FOOD_FACTOR),
@@ -43,7 +34,7 @@ export function createFoodLootPipeline() {
     let remaining = budget;
 
     while (remaining > 0) {
-      const choice = chooseWeighted(FOOD_SPAWN_WEIGHTS);
+      const choice = weightedPick(FOOD_SPAWN_WEIGHTS, randomChance);
       const item = cloneItemDef(choice.itemId);
       if (!item) {
         break;
@@ -64,11 +55,11 @@ export function createFoodLootPipeline() {
       return null;
     }
 
-    if (Math.random() > monsterDrop.dropChance) {
+    if (randomChance() > monsterDrop.dropChance) {
       return null;
     }
 
-    const choice = chooseWeighted(monsterDrop.dropTable);
+    const choice = weightedPick(monsterDrop.dropTable, randomChance);
     const item = cloneItemDef(choice.itemId);
     if (!item) {
       return null;

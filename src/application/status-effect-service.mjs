@@ -16,6 +16,7 @@ export function createStatusEffectService(context) {
     showDeathModal,
     playDeathSound,
     grantExperience,
+    randomChance = Math.random,
   } = context;
 
   function getStatusMessageSubject(target) {
@@ -124,7 +125,7 @@ export function createStatusEffectService(context) {
         continue;
       }
 
-      if (Math.random() * 100 > (effect.procChance ?? 0)) {
+      if (randomChance() * 100 > (effect.procChance ?? 0)) {
         continue;
       }
 

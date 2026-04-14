@@ -30,6 +30,7 @@ export function createStateApi(context) {
     playStudioAnnouncement,
     renderSelf,
     randomInt,
+    createRuntimeId,
   } = context;
   const HIGHSCORE_LAST_ENTRY_KEY = "dungeon-rogue-highscores-last-entry";
   const SAVEGAME_KEY = "dungeon-rogue-savegame";
@@ -101,6 +102,7 @@ export function createStateApi(context) {
     resolveHeroClassId,
     HERO_CLASSES,
     randomInt,
+    createHighscoreMarker: () => createRuntimeId('run'),
     createRunArchetypeSequence,
     getArchetypeForFloor,
     xpForNextLevel,

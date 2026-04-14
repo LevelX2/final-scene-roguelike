@@ -430,6 +430,7 @@ export function createItemizationApi(context) {
   }
 
   function generateShieldItem(baseItem, dropContext = {}) {
+    const floorNumber = Math.max(1, dropContext.floorNumber ?? 1);
     const rarity = dropContext.forceRarity ?? rollRarity(dropContext);
     const modifiers = dropContext.forceModifiers
       ? dropContext.forceModifiers
@@ -439,13 +440,14 @@ export function createItemizationApi(context) {
       : rollModifiers(baseItem, rarity);
 
     const computedItem = applyShieldStatChanges(baseItem, modifiers);
-    const decadeSuffix = getDecadePrefix(getStudioCycleIndex(dropContext.floorNumber ?? 1));
+    const decadeSuffix = getDecadePrefix(getStudioCycleIndex(floorNumber));
     const displayName = modifiers.length > 0
       ? appendDecadeSuffix(`${modifiers.slice(0, 2).map((modifier) => modifier.affix).join(' ')} ${baseItem.name}`.trim(), decadeSuffix)
       : appendDecadeSuffix(baseItem.name, decadeSuffix);
 
     return {
       ...computedItem,
+      templateId: baseItem.id,
       baseItemId: baseItem.id,
       rarity,
       rarityLabel: formatRarityLabel(rarity),
@@ -454,6 +456,8 @@ export function createItemizationApi(context) {
       displayName,
       name: displayName,
       dropSourceTag: dropContext.dropSourceTag ?? null,
+      sourceArchetypeId: dropContext.sourceArchetypeId ?? baseItem.archetypeId ?? null,
+      floorNumber,
       description: modifiers.length > 0
         ? `${modifiers.map((modifier) => modifier.summary).join(' | ')}. ${baseItem.description}`
         : baseItem.description,

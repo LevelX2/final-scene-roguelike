@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+
+<defs>
+  <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#7a6648"/>
+    <stop offset="1" stop-color="#4a3b2a"/>
+  </linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#bfe9ff" stop-opacity="0.28"/>
+    <stop offset="1" stop-color="#e8f8ff" stop-opacity="0.08"/>
+  </linearGradient>
+</defs>
+  <rect x="16" y="50" width="32" height="8" rx="2" fill="#584736"/>
+  <rect x="18" y="52" width="28" height="4" rx="1" fill="#76614a"/>
+  <rect x="14" y="12" width="36" height="40" rx="2" fill="url(#frame)"/>
+  <rect x="18" y="16" width="28" height="32" rx="1" fill="#10151c"/>
+
+  <path d="M32 18 C39 18,42 23,42 29 C42 36,37 40,32 42 C27 40,22 36,22 29 C22 23,25 18,32 18 Z"
+        fill="#a98d54" stroke="#70592e" stroke-width="1.2"/>
+  <path d="M32 21 C37 21,39 24,39 29 C39 34,35.5 37.5,32 39 C28.5 37.5,25 34,25 29 C25 24,27 21,32 21 Z"
+        fill="#7da3bb" stroke="#bfe9ff" stroke-width="0.8"/>
+  <path d="M32 42 L35 46 H29 Z" fill="#8a7454"/>
+  <circle cx="29" cy="26" r="2" fill="#ffffff" fill-opacity="0.12"/>
+
+  <rect x="24" y="42" width="16" height="4" rx="1" fill="#6b5a45"/>
+  <rect x="18" y="16" width="28" height="32" rx="1" fill="url(#glass)" stroke="#d8f3ff" stroke-opacity="0.18" stroke-width="0.8"/>
+  <path d="M21 18 L27 18 L21 34 Z" fill="#ffffff" fill-opacity="0.13"/>
+  <path d="M29 18 L32 18 L22 44 L19 44 Z" fill="#ffffff" fill-opacity="0.06"/>
+</svg>

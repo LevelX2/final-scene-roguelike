@@ -621,7 +621,8 @@ test("player death opens the death modal", async ({ page }) => {
   await page.keyboard.press(" ");
 
   await expect(page.locator("#deathModal")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Du bist gefallen" })).toBeVisible();
+  await expect(page.locator("#deathModal .modal-eyebrow")).toContainText("Abspann");
+  await expect(page.locator("#deathModal h2")).toContainText("Das war der letzte Take");
 });
 
 test("death modal describes who killed the player and with which weapon", async ({ page }) => {

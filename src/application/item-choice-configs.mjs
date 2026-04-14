@@ -6,7 +6,7 @@ export function createItemChoiceConfigs(context) {
     formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
-    buildEquipmentCompareHtml,
+    buildEquipmentCompareModel,
   } = context;
 
   function buildPotionChoiceConfig(potionIndex) {
@@ -41,7 +41,7 @@ export function createItemChoiceConfigs(context) {
       weaponIndex,
       selectedAction: "equip",
       title: `${formatWeaponDisplayName(weapon)} gefunden`,
-      htmlText: buildEquipmentCompareHtml(weapon, currentWeapon?.id === "bare-hands" ? null : currentWeapon, "Waffe", formatWeaponStats),
+      comparison: buildEquipmentCompareModel(weapon, currentWeapon?.id === "bare-hands" ? null : currentWeapon, "Waffe", formatWeaponStats),
       labels: ["Ausrüsten", "Ins Inventar", "Liegen lassen"],
     };
   }
@@ -54,7 +54,7 @@ export function createItemChoiceConfigs(context) {
       offHandIndex,
       selectedAction: "equip",
       title: `${item.name} gefunden`,
-      htmlText: buildEquipmentCompareHtml(item, currentOffHand, "Schild", formatOffHandStats),
+      comparison: buildEquipmentCompareModel(item, currentOffHand, "Schild", formatOffHandStats),
       labels: ["Ausrüsten", "Ins Inventar", "Liegen lassen"],
     };
   }

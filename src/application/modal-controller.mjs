@@ -14,6 +14,7 @@ export function createModalController(context) {
     moveToFloor,
     endTurn,
     resolvePotionChoice,
+    renderEquipmentCompareHtml,
     choiceModalElement,
     choiceTitleElement,
     choiceTextElement,
@@ -59,7 +60,7 @@ export function createModalController(context) {
       createSheetRow("Gegner besiegt", state.kills),
       createSheetRow("Schritte", state.turn),
       createSheetRow("Platz in den Final Scenes", rank ? `#${rank}` : "Außer Wertung"),
-    ].join("").replace("AuÃŸer Wertung", "Außer Wertung");
+    ].join("");
     if (deathCopyElement) {
       deathCopyElement.textContent = "Den vollständigen Spielverlauf kannst du separat ansehen. Dieses Ende-Fenster bleibt bewusst kompakt.";
     }
@@ -115,7 +116,9 @@ export function createModalController(context) {
       selectedAction,
     };
     choiceTitleElement.textContent = config.title;
-    if (config.htmlText) {
+    if (config.comparison) {
+      choiceTextElement.innerHTML = renderEquipmentCompareHtml(config.comparison);
+    } else if (config.htmlText) {
       choiceTextElement.innerHTML = config.htmlText;
     } else {
       choiceTextElement.textContent = config.text;

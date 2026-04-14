@@ -41,6 +41,7 @@ export function createPlayerAttackApi(context) {
     noteMonsterEncounter,
     addMessage,
     renderSelf,
+    randomChance = Math.random,
   } = context;
 
   function getOpeningStrikeMessage(player, enemy, outcome) {
@@ -158,11 +159,11 @@ export function createPlayerAttackApi(context) {
       floorState.enemies = floorState.enemies.filter((entry) => entry !== enemy);
       state.kills += 1;
       state.killStats = recordKillStat(state.killStats, enemy);
-      if (enemy.lootWeapon && Math.random() < (enemy.weaponDropChance ?? 0.55)) {
+      if (enemy.lootWeapon && randomChance() < (enemy.weaponDropChance ?? 0.55)) {
         floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
         addMessage(`${enemyReference.subjectCapitalized} lässt ${formatWeaponReference(enemy.lootWeapon, { article: 'definite', grammaticalCase: 'accusative' })} fallen.`, 'important');
       }
-      if (enemy.lootOffHand && Math.random() < (enemy.offHandDropChance ?? 0.45)) {
+      if (enemy.lootOffHand && randomChance() < (enemy.offHandDropChance ?? 0.45)) {
         floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));
         addMessage(`${enemyReference.subjectCapitalized} verliert ${enemy.lootOffHand.name}.`, 'important');
       }

@@ -40,6 +40,7 @@ export function createBoardView(context) {
     getDoorIconAssetUrl,
     getTrapIconAssetUrl,
     getItemRarityClass,
+    createRuntimeId,
   } = context;
 
   function tileAt(x, y) {
@@ -529,7 +530,7 @@ export function createBoardView(context) {
 
   function showFloatingText(x, y, text, kind, options = {}) {
     const state = getState();
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const id = createRuntimeId('floating-text');
     const duration = options.duration ?? 700;
     state.floatingTexts.push({ id, x, y, text, kind, title: options.title ?? "", duration });
     if (options.boardEffect) {

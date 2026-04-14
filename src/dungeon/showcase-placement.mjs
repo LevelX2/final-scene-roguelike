@@ -1,6 +1,7 @@
 export function createShowcasePlacementApi(context) {
   const {
     propCatalog,
+    randomChance = Math.random,
     randomInt,
     createShowcase,
     collectUsedShowcasePropIds,
@@ -63,7 +64,7 @@ export function createShowcasePlacementApi(context) {
         candidates.push({
           x,
           y,
-          score: walkableNeighbors.length * 3 + edgeBias - distanceToRoomCenter * 0.15 + Math.random() * 0.75,
+          score: walkableNeighbors.length * 3 + edgeBias - distanceToRoomCenter * 0.15 + randomChance() * 0.75,
         });
       }
     }
@@ -93,15 +94,23 @@ export function createShowcasePlacementApi(context) {
       2,
       Math.min(
         10,
-        Math.round(eligibleRooms.length * (0.35 + Math.random() * 0.18)),
+        Math.round(eligibleRooms.length * (0.35 + randomChance() * 0.18)),
       ),
     );
-    const shuffledRooms = [...eligibleRooms].sort(() => Math.random() - 0.5);
+    const shuffledRooms = [...eligibleRooms];
+    for (let index = shuffledRooms.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(randomChance() * (index + 1));
+      [shuffledRooms[index], shuffledRooms[swapIndex]] = [shuffledRooms[swapIndex], shuffledRooms[index]];
+    }
     const themedPool = propCatalog.filter((prop) =>
       prop.archetype === studioArchetypeId || prop.archetype === "global"
     );
     const activePropPool = themedPool.length > 0 ? themedPool : propCatalog;
-    const availableProps = [...activePropPool].sort(() => Math.random() - 0.5);
+    const availableProps = [...activePropPool];
+    for (let index = availableProps.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(randomChance() * (index + 1));
+      [availableProps[index], availableProps[swapIndex]] = [availableProps[swapIndex], availableProps[index]];
+    }
     const fallbackUniqueProps = propCatalog.filter((prop) => !activePropPool.some((entry) => entry.id === prop.id));
     const usedPropIds = collectUsedShowcasePropIds();
 

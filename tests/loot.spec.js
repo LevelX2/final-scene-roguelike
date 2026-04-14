@@ -330,7 +330,7 @@ test("weapons can be equipped directly from the loot modal", async ({ page }) =>
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
 
   expect(inventory.equippedWeapon.name).toBe("Testsaebel");
-  expect(messages.some((entry) => entry.text.includes("Du führst jetzt Testsaebel"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Du führst jetzt den Testsaebel."))).toBeTruthy();
 });
 
 test("weapon loot modal compares against the currently equipped weapon and shows rarity", async ({ page }) => {

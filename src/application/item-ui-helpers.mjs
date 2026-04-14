@@ -7,42 +7,6 @@ export function createItemUiHelpers(context) {
     getItemModifierSummary = () => 'Keine Modifikatoren',
   } = context;
 
-  function getRarityClass(item) {
-    return `rarity-${item?.rarity ?? "common"}`;
-  }
-
-  function getItemIconUrl(item) {
-    if (!item) {
-      return null;
-    }
-
-    if (item.type === "weapon" && item.id) {
-      return `./assets/weapons/${item.id}.svg`;
-    }
-
-    if (item.type === "offhand") {
-      if (item.id) {
-        return `./assets/shields/${item.id}.svg`;
-      }
-
-      if (item.icon) {
-        return `./assets/shields/${item.icon}.svg`;
-      }
-    }
-
-    return null;
-  }
-
-  function buildCompareIconHtml(item) {
-    const iconUrl = getItemIconUrl(item);
-    const rarityClass = getRarityClass(item);
-    if (!iconUrl) {
-      return `<div class="choice-compare-icon ${rarityClass} is-empty" aria-hidden="true"></div>`;
-    }
-
-    return `<div class="choice-compare-icon ${rarityClass}" style="background-image: url('${iconUrl}')"></div>`;
-  }
-
   function getItemOriginLabel(item) {
     if (!Number.isFinite(item?.floorNumber)) {
       return null;
@@ -51,40 +15,45 @@ export function createItemUiHelpers(context) {
     return formatStudioOrigin(item.floorNumber);
   }
 
-  function buildEquipmentCompareHtml(foundItem, equippedItem, typeLabel, statsFormatter) {
-    const foundRarity = formatRarityLabel(foundItem.rarity ?? "common");
-    const equippedRarity = equippedItem ? formatRarityLabel(equippedItem.rarity ?? "common") : null;
-    const foundOrigin = getItemOriginLabel(foundItem);
-    const equippedOrigin = getItemOriginLabel(equippedItem);
-    const foundMods = `Mods: ${getItemModifierSummary(foundItem)}`;
-    const equippedMods = equippedItem
-      ? `Mods: ${getItemModifierSummary(equippedItem)}`
-      : "Hier landet die neue Ausrüstung direkt.";
+  function buildComparisonCard(item, typeLabel, statsFormatter, fallbackLabel = null) {
+    if (!item) {
+      return {
+        item: null,
+        label: fallbackLabel ?? "Leer",
+        rarityLabel: "Nichts ausgerüstet",
+        statsText: "Kein Gegenstand.",
+        detailText: "Hier landet die neue Ausrüstung direkt.",
+      };
+    }
 
-    return `
-      <div class="choice-compare">
-        <div class="choice-compare-card ${getRarityClass(foundItem)}">
-          <p class="choice-compare-label">Gefundenes ${typeLabel}</p>
-          ${buildCompareIconHtml(foundItem)}
-          <p class="choice-compare-name">${typeLabel === "Waffe" ? formatWeaponDisplayName(foundItem) : foundItem.name}</p>
-          <p class="choice-rarity ${getRarityClass(foundItem)}">${foundRarity}</p>
-          <p class="choice-compare-stats">${statsFormatter(foundItem)}</p>
-          <p class="choice-compare-detail">${[foundOrigin, foundMods].filter(Boolean).join(" | ")}</p>
-        </div>
-        <div class="choice-compare-card ${equippedItem ? getRarityClass(equippedItem) : "rarity-common"}">
-          <p class="choice-compare-label">Derzeit getragen</p>
-          ${equippedItem ? buildCompareIconHtml(equippedItem) : '<div class="choice-compare-icon rarity-common is-empty" aria-hidden="true"></div>'}
-          <p class="choice-compare-name">${equippedItem ? (typeLabel === "Waffe" ? formatWeaponDisplayName(equippedItem) : equippedItem.name) : "Leer"}</p>
-          <p class="choice-rarity ${equippedItem ? getRarityClass(equippedItem) : "rarity-common"}">${equippedRarity ?? "Nichts ausgerüstet"}</p>
-          <p class="choice-compare-stats">${equippedItem ? statsFormatter(equippedItem) : "Kein Gegenstand."}</p>
-          <p class="choice-compare-detail">${equippedItem ? [equippedOrigin, equippedMods].filter(Boolean).join(" | ") : equippedMods}</p>
-        </div>
-      </div>
-      <p class="choice-compare-note">Möchtest du direkt ausrüsten, ins Inventar legen oder den Fund liegen lassen?</p>
-    `;
+    return {
+      item,
+      label: typeLabel === "Waffe" ? formatWeaponDisplayName(item) : item.name,
+      rarityLabel: formatRarityLabel(item.rarity ?? "common"),
+      statsText: statsFormatter(item),
+      detailText: [
+        getItemOriginLabel(item),
+        `Mods: ${getItemModifierSummary(item)}`,
+      ].filter(Boolean).join(" | "),
+    };
+  }
+
+  function buildEquipmentCompareModel(foundItem, equippedItem, typeLabel, statsFormatter) {
+    return {
+      typeLabel,
+      note: "Möchtest du direkt ausrüsten, ins Inventar legen oder den Fund liegen lassen?",
+      found: {
+        title: `Gefundenes ${typeLabel}`,
+        ...buildComparisonCard(foundItem, typeLabel, statsFormatter),
+      },
+      equipped: {
+        title: "Derzeit getragen",
+        ...buildComparisonCard(equippedItem, typeLabel, statsFormatter, "Leer"),
+      },
+    };
   }
 
   return {
-    buildEquipmentCompareHtml,
+    buildEquipmentCompareModel,
   };
 }

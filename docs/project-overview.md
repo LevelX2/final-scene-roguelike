@@ -20,8 +20,8 @@ Technisch ist das Projekt eine kleine bis mittlere Vanilla-JS-App ohne Frontend-
 
 Der wichtigste Kontext für neue Mitarbeit:
 
-- Aktiv ist die `_v2`-Linie
-- Legacy ist die nicht-`_v2`-Linie
+- Aktiv ist der modulare Pfad über `src/main.mjs`, `src/app/`, `src/application/`, `src/ui/` und die Fachmodule.
+- Legacy liegt isoliert unter `src/legacy/`.
 
 Aktive Dateien:
 
@@ -37,24 +37,23 @@ Legacy-Dateien:
 - `src/legacy/render.mjs`
 - `src/legacy/state.mjs`
 
-Die Legacy-Dateien sind noch im Repository, aber nicht der produktive Einstieg. Wer Änderungen implementiert, sollte zuerst prüfen, ob er versehentlich im alten Pfad gelandet ist.
+Die Legacy-Dateien sind noch im Repository, aber nicht der produktive Einstieg. Wer Änderungen implementiert, sollte zuerst prüfen, ob er versehentlich in `src/legacy/` gelandet ist.
 
 ## Runtime-Architektur
 
 ### 1. Einstieg und Zusammensetzen der App
 
-`src/main.mjs` ist die Orchestrierungsdatei. Dort werden:
+`src/main.mjs` ist heute vor allem der Composition Root. Dort werden:
 
-- Datenkataloge importiert
-- die verschiedenen APIs erzeugt
-- der globale Laufzustand verwaltet
-- Event-Handler registriert
-- Bewegungs-, Kampf- und Interaktionsflüsse zusammengeführt
+- `app-config`, `app-ui` und die Factory-Sammlung zusammengesetzt
+- die verschiedenen Assemblies verdrahtet
+- der globale Laufzustand und Runtime-Kontext verbunden
+- der Bootstrap ausgelöst
 
 Praktisch bedeutet das:
 
-- Wenn eine Änderung mehrere Systeme berührt, landet ein Teil davon oft in `main.mjs`.
-- Wenn eine Änderung fachlich klar abgegrenzt ist, sollte sie eher im jeweiligen Fachmodul stattfinden.
+- Wenn eine Änderung mehrere Systeme berührt, landet meist nur noch die Verdrahtung in `main.mjs` oder einem kleinen `src/app/*`-Baustein.
+- Wenn eine Änderung fachlich klar abgegrenzt ist, sollte sie im jeweiligen Fachmodul, Service oder View stattfinden.
 
 ### 2. Daten und Balancing
 
@@ -107,7 +106,9 @@ Wichtige Verantwortlichkeiten:
 
 ### 4. State und Persistenz
 
-`src/state.mjs` kapselt:
+`src/state.mjs` kapselt die State-Fassade. Die eigentliche Arbeit liegt heute in `application/state-blueprint.mjs`, `application/state-persistence.mjs` und `application/browser-storage.mjs`.
+
+Die State-Schicht kümmert sich um:
 
 - Frischstart eines Laufs
 - Spielerprofil
@@ -124,9 +125,11 @@ Persistiert wird lokal im Browser. Wichtig:
 
 ### 5. Rendering und DOM
 
-`src/dom.mjs` ist eine reine DOM-Binding-Datei. Dort werden HTML-Elemente anhand ihrer IDs selektiert und exportiert.
+`src/dom.mjs` ist eine reine DOM-Binding-Fassade. Die eigentlichen Elementgruppen liegen in `src/ui/dom/*.mjs`.
 
-`src/render.mjs` rendert:
+`src/render.mjs` ist die Render-Fassade. Die eigentlichen Views liegen in `src/ui/`.
+
+Gerendert werden unter anderem:
 
 - das Board
 - HUD/Topbar
@@ -137,7 +140,7 @@ Persistiert wird lokal im Browser. Wichtig:
 - Inventarlisten
 - Tooltips
 
-Wenn sich eine Änderung nur auf Darstellung oder DOM-Ausgabe bezieht, ist `render.mjs` meist die richtige Stelle.
+Wenn sich eine Änderung nur auf Darstellung oder DOM-Ausgabe bezieht, ist meist eine Datei unter `src/ui/` oder `src/ui/dom/` die richtige Stelle.
 
 ## Build- und Laufmodell
 
@@ -181,7 +184,7 @@ Ein wichtiger Sonderfall ist `src/test-api.mjs`:
 
 Wenn du neu an dem Projekt arbeitest, sind diese Regeln hilfreich:
 
-1. Prüfe zuerst, ob du im aktiven `_v2`-Pfad bist.
+1. Prüfe zuerst, ob du im aktiven Pfad oder versehentlich in `src/legacy/` bist.
 2. Trenne möglichst zwischen Inhaltsdaten, Balancing, Fachlogik und Rendering.
 3. Nach jeder Runtime-Änderung `npm run build` ausführen.
 4. Bei relevanten Änderungen `npm run test:e2e` laufen lassen.
@@ -245,7 +248,7 @@ Darstellung:
 ## Aktuelle Schwächen
 
 - Einige Kernmodule sind sehr groß
-- Legacy- und Aktivpfad leben parallel im selben `src`-Verzeichnis
+- Legacy- und Aktivpfad liegen zwar im selben Repository, aber die Legacy-Linie ist inzwischen sauber unter `src/legacy/` isoliert
 - Kein Linter, Formatter oder CI im Repository
 - `check:js` ist nützlich, aber kein vollständiger Qualitätsersatz
 

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Final Scene</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="layout">
+    <section id="startScreen" class="start-screen panel">
+      <div class="start-screen-backdrop" aria-hidden="true">
+        <div class="start-screen-art"></div>
+      </div>
+      <div class="start-screen-content">
+        <div class="start-screen-copy">
+          <p class="eyebrow">Kämpfe dich durch ein sterbendes Filmarchiv</p>
+          <h1 class="sr-only">The Final Scene</h1>
+          <p class="start-screen-lede">
+            Durchquere verfluchte Studiokomplexe, wähle deinen Platz im Filmbusiness und entscheide selbst,
+            ob du einen neuen Dreh beginnst, einen Spielstand wieder aufnimmst oder erst im Final-Scenes-Archiv
+            nachsiehst, wer es am tiefsten geschafft hat.
+          </p>
+        </div>
+        <div class="start-screen-menu">
+          <button id="startNewGame" class="choice-btn accent start-screen-btn" type="button">Neues Spiel beginnen</button>
+          <button id="loadGameFromLanding" class="choice-btn start-screen-btn" type="button">Spiel laden</button>
+          <button id="openHighscoresLanding" class="choice-btn start-screen-btn" type="button">Final Scenes ansehen</button>
+          <button id="openHelpLanding" class="choice-btn ghost start-screen-btn" type="button">Hilfe ansehen</button>
+          <p id="landingSavegameStatus" class="hero-identity-note">Kein Spielstand gefunden.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameHeader" class="panel hero ui-hidden">
+      <div class="hero-title-block">
+        <p class="eyebrow">Kämpfe dich durch ein sterbendes Filmarchiv</p>
+        <h1>The Final Scene</h1>
+      </div>
+      <div class="hero-actions">
+        <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Neues Spiel beginnen</button>
+        <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Spielverlauf</button>
+        <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
+        <button id="openTargetMode" class="mini-btn hero-help-btn" type="button">Zielen</button>
+        <button id="confirmTargetMode" class="mini-btn hero-help-btn ui-hidden" type="button">Schießen</button>
+        <button id="saveGameQuick" class="mini-btn hero-help-btn" type="button">Speichern</button>
+        <button id="openOptions" class="mini-btn hero-help-btn" type="button">Optionen</button>
+        <button id="openHighscores" class="mini-btn hero-help-btn" type="button">Final Scenes</button>
+        <button id="openHelp" class="mini-btn hero-help-btn" type="button">Hilfe</button>
+      </div>
+    </section>
+
+    <section id="gameShell" class="game-shell prestart-hidden">
+      <section class="panel board-panel">
+        <div class="board-topbar">
+          <div>
+            <p class="board-label">Aktuelles Studio</p>
+            <h2 id="depthTitle">Studio 1 - Slasher</h2>
+          </div>
+          <div class="board-stats" aria-label="Kompakte Heldenwerte">
+            <div id="topbarHpCard" class="board-stat-pill">
+              <span>HP</span>
+              <strong id="topbarHp">20/20</strong>
+            </div>
+            <div id="topbarLevelCard" class="board-stat-pill">
+              <span>Lvl</span>
+              <strong id="topbarLevel">1</strong>
+            </div>
+            <div id="topbarDamageCard" class="board-stat-pill">
+              <span>Dmg</span>
+              <strong id="topbarDamage">5</strong>
+            </div>
+            <div id="topbarHitCard" class="board-stat-pill">
+              <span>Treffer</span>
+              <strong id="topbarHit">6</strong>
+            </div>
+            <div id="topbarCritCard" class="board-stat-pill">
+              <span>Krit</span>
+              <strong id="topbarCrit">3%</strong>
+            </div>
+            <div id="topbarBlockCard" class="board-stat-pill">
+              <span>Block</span>
+              <strong id="topbarBlock">0%</strong>
+            </div>
+            <div id="topbarFoodCard" class="board-stat-pill">
+              <span>Hunger</span>
+              <strong id="topbarFood">Normal</strong>
+            </div>
+            <div id="targetModeHint" class="board-stat-pill target-mode-pill ui-hidden" aria-live="polite">
+              <span>Ziel</span>
+              <strong>-</strong>
+            </div>
+          </div>
+        </div>
+        <div id="topbarStatusSummary" class="topbar-status-summary ui-hidden" aria-live="polite"></div>
+        <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
+      </section>
+
+      <aside class="sidebar-column">
+        <section class="panel sidebar-card" data-collapsible="player">
+          <div class="inventory-inline-head card-head">
+            <h2 id="playerPanelTitle">Held</h2>
+            <div class="card-head-actions">
+              <button class="mini-btn collapse-btn" type="button" data-target="player">Alle Werte</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="xp-panel">
+              <div class="xp-head">
+                <span>Erfahrung</span>
+                <strong id="xpLabel">0 / 0 XP</strong>
+              </div>
+              <div class="xp-bar">
+                <div id="xpFill" class="xp-fill"></div>
+              </div>
+            </div>
+            <div class="nutrition-panel">
+              <div class="xp-head">
+                <span>Nahrung</span>
+                <strong id="nutritionLabel">1600 / 2000</strong>
+              </div>
+              <div class="xp-bar nutrition-bar">
+                <div id="nutritionFill" class="xp-fill nutrition-fill"></div>
+              </div>
+              <p id="nutritionState" class="nutrition-state state-normal">Normal</p>
+              <div id="playerStatusSummary" class="player-status-summary ui-hidden" aria-live="polite"></div>
+            </div>
+            <div id="playerSheet" class="sheet"></div>
+          </div>
+        </section>
+
+        <section class="panel sidebar-card" data-collapsible="enemy">
+          <div class="inventory-inline-head card-head">
+            <h2>Gegner im Blick</h2>
+            <button class="mini-btn collapse-btn" type="button" data-target="enemy">Einklappen</button>
+          </div>
+          <div class="card-body">
+            <div id="enemySheet" class="sheet"></div>
+          </div>
+        </section>
+
+        <section class="panel sidebar-card log-card" data-collapsible="log">
+          <div class="inventory-inline-head card-head">
+            <h2>Log</h2>
+            <button class="mini-btn collapse-btn" type="button" data-target="log">Einklappen</button>
+          </div>
+          <div class="card-body">
+            <div id="messageLog" class="log" aria-live="polite"></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div id="choiceModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <p class="modal-eyebrow">Fundstück</p>
+      <h2 id="choiceTitle">Heiltrank gefunden</h2>
+      <p id="choiceText" class="modal-copy"></p>
+      <div class="modal-actions">
+        <button id="choiceDrink" class="choice-btn accent" type="button">Direkt trinken</button>
+        <button id="choiceStore" class="choice-btn" type="button">Ins Inventar</button>
+        <button id="choiceLeave" class="choice-btn ghost" type="button">Liegen lassen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="stairsModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <p class="modal-eyebrow">Treppenaufgang</p>
+      <h2 id="stairsTitle">Treppenfeld betreten</h2>
+      <p id="stairsText" class="modal-copy"></p>
+      <div class="modal-actions">
+        <button id="stairsConfirm" class="choice-btn accent" type="button">Studio wechseln</button>
+        <button id="stairsStay" class="choice-btn ghost" type="button">Hier bleiben</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="inventoryModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Ausrüstung</p>
+          <h2>Inventar</h2>
+        </div>
+        <button id="closeInventory" class="mini-btn" type="button">Schließen</button>
+      </div>
+      <p class="modal-copy">Hier verwaltest du alle eingesammelten Gegenstände.</p>
+      <div id="inventoryFilterBar" class="inventory-filter-bar" aria-label="Inventarfilter">
+        <button class="mini-btn inventory-filter-btn active" type="button" data-filter="all">Alle</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="weapon">Waffen</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="offhand">Schilde</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="potion">Tränke</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="food">Essen</button>
+        <button class="mini-btn inventory-filter-btn" type="button" data-filter="key">Schlüssel</button>
+      </div>
+      <div id="inventoryList" class="inventory-list modal-list"></div>
+    </div>
+  </div>
+
+  <div id="optionsModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Einstellungen</p>
+          <h2>Optionen</h2>
+        </div>
+        <button id="closeOptions" class="mini-btn" type="button">Schließen</button>
+      </div>
+      <div class="options-list">
+        <label class="option-row">
+          <span>Schrittgeräsche</span>
+          <input id="toggleStepSound" type="checkbox">
+        </label>
+        <label class="option-row">
+          <span>Todesgeräusch</span>
+          <input id="toggleDeathSound" type="checkbox">
+        </label>
+        <label class="option-row">
+          <span>Studioansagen vorlesen</span>
+          <input id="toggleVoiceAnnouncements" type="checkbox">
+        </label>
+        <label class="option-row">
+          <span>Vitrinenansagen</span>
+          <select id="showcaseAnnouncementMode">
+            <option value="off">Aus</option>
+            <option value="floating-text">Flyover-Text</option>
+            <option value="voice">KI-/Sprachausgabe</option>
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button id="saveGameButton" class="choice-btn accent" type="button">Spiel speichern</button>
+          <button id="loadGameButton" class="choice-btn" type="button">Spielstand laden</button>
+        </div>
+        <p id="savegameStatus" class="modal-copy">Kein Spielstand gefunden.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Steuerung</p>
+          <h2>Hilfe</h2>
+        </div>
+        <button id="closeHelp" class="mini-btn" type="button">Schließen</button>
+      </div>
+      <div class="help-list">
+        <div class="help-row"><span><kbd>WASD</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen</strong></div>
+        <div class="help-row"><span><kbd>Leertaste</kbd></span><strong>Warten</strong></div>
+        <div class="help-row"><span><kbd>F</kbd> oder <kbd>Zielen</kbd></span><strong>Zielmodus für Fernkampf öffnen oder beenden</strong></div>
+        <div class="help-row"><span><kbd>Klick</kbd> oder <kbd>Schießen</kbd></span><strong>Ziel anwählen und auf das grüne Ziel feuern</strong></div>
+        <div class="help-row"><span><kbd>H</kbd></span><strong>Schnell Heiltrank trinken</strong></div>
+        <div class="help-row"><span><kbd>C</kbd></span><strong>Benachbarte offene Tür schließen</strong></div>
+        <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>
+        <div class="help-row"><span><kbd>O</kbd></span><strong>Optionen anzeigen</strong></div>
+        <div class="help-row"><span><kbd>R</kbd></span><strong>Spiel neu starten</strong></div>
+        <div class="help-row"><span><kbd>Enter</kbd></span><strong>Fund-, Treppen- oder Zielwahl bestätigen</strong></div>
+        <div class="help-row"><span><kbd>Esc</kbd></span><strong>Offene Fenster schließen</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="highscoresModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel scroll-modal-card">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Archiv</p>
+          <h2>Final Scenes Bestenliste</h2>
+        </div>
+        <button id="closeHighscores" class="mini-btn" type="button">Schließen</button>
+      </div>
+      <p class="modal-copy">Hier findest du die stärksten und tiefsten Läufe samt ihren letzten Abgängen.</p>
+      <div id="highscoreList" class="sheet modal-list modal-scroll-section"></div>
+    </div>
+  </div>
+
+  <div id="runStatsModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel scroll-modal-card run-stats-modal-card">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">Aktueller Fortschritt</p>
+          <h2>Spielverlauf</h2>
+        </div>
+        <button id="closeRunStats" class="mini-btn" type="button">Schließen</button>
+      </div>
+      <p class="modal-copy">Hier siehst du, wie weit dein Spiel bereits fortgeschritten ist und was du schon bezwungen oder verbraucht hast.</p>
+      <div class="run-stats-content modal-scroll-section">
+        <div id="runStatsSummary" class="sheet run-stats-summary"></div>
+        <div class="modal-subsection run-stats-subsection">
+          <h3>Besiegte Gegnertypen</h3>
+          <div id="runStatsKills" class="sheet"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="deathModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel">
+      <p class="modal-eyebrow">Abspann</p>
+      <h2>Das war der letzte Take</h2>
+      <div id="deathSummary" class="sheet"></div>
+      <p class="modal-copy">Den vollständigen Spielverlauf kannst du dir separat ansehen, damit dieses Ende-Fenster kompakt bleibt.</p>
+      <div class="modal-actions death-actions">
+        <div class="death-details-action">
+          <button id="openDeathKills" class="choice-btn" type="button">Spielverlauf</button>
+          <button id="closeDeath" class="choice-btn" type="button">Zum Startbildschirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="startModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel start-modal-card">
+      <p class="modal-eyebrow">Casting</p>
+      <h2>Neue Hauptrolle besetzen</h2>
+      <p class="modal-copy">Wähle Namen und Klasse für deinen Helden. Diese Auswahl wird für dein nächstes Spiel gemerkt.</p>
+      <form id="startForm" class="start-form">
+        <label class="hero-identity-label" for="heroNameInput">Heldenname</label>
+        <input id="heroNameInput" class="hero-name-input" type="text" maxlength="24" placeholder="Final Girl">
+        <div>
+          <p class="hero-identity-label">Klasse</p>
+          <div id="classOptions" class="class-options" role="radiogroup" aria-label="Heldenklasse"></div>
+        </div>
+        <p id="heroIdentityStatus" class="hero-identity-note">Wird für dieses und das nächste Spiel gemerkt.</p>
+        <div class="modal-actions">
+          <button id="saveHeroName" class="choice-btn accent" type="submit">Betrete den Studiokomplex</button>
+        </div>
+        <p id="startSavegameStatus" class="hero-identity-note">Kein Spielstand gefunden.</p>
+      </form>
+    </div>
+  </div>
+
+  <div id="hoverTooltip" class="hover-tooltip hidden" aria-hidden="true"></div>
+
+  <script defer src="./dist/game.bundle.js"></script>
+</body>
+</html>

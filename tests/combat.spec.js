@@ -320,6 +320,88 @@ test("monster details are hidden until the first fight", async ({ page }) => {
   await expect(page.locator("#enemySheet")).toContainText("Kennt jeden dunklen Winkel des Archivs.");
 });
 
+test("enemy sheet shows the atmospheric temperament hint before the first fight", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    clearGrid: true,
+    player: {
+      strength: 4,
+      precision: 9,
+    },
+    enemy: {
+      name: "Archivschrecken",
+      description: "Ein schattenhafter Schrecken aus staubigen Filmregalen.",
+      temperament: "patrol",
+      temperamentHint: "Zieht Bahnen, als folge es einem laengst einstudierten Ablauf.",
+      special: "Kennt jeden dunklen Winkel des Archivs.",
+      hp: 12,
+      maxHp: 12,
+      reaction: 1,
+      nerves: 0,
+    },
+  });
+
+  await expect(page.locator("#enemySheet")).toContainText("Auftreten");
+  await expect(page.locator("#enemySheet")).toContainText("Zieht Bahnen, als folge es einem laengst einstudierten Ablauf.");
+});
+
+test("stalker enemies actively pursue once roaming aggro has latched", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    clearGrid: true,
+    playerPosition: { x: 2, y: 2 },
+    enemyPosition: { x: 5, y: 2 },
+    enemy: {
+      behavior: "stalker",
+      behaviorLabel: "Verfolger",
+      temperament: "stoic",
+      aggro: false,
+      aggroRadius: 2,
+      hp: 12,
+      maxHp: 12,
+      canOpenDoors: true,
+    },
+  });
+
+  await page.keyboard.press(" ");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.enemies[0].aggro).toBeTruthy();
+  expect(snapshot.enemies[0].x).toBe(4);
+  expect(snapshot.enemies[0].y).toBe(2);
+});
+
+test("patrol temperament gives calm hunters a real idle destination", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    clearGrid: true,
+    playerPosition: { x: 2, y: 2 },
+    enemyPosition: { x: 10, y: 10 },
+    enemy: {
+      behavior: "hunter",
+      behaviorLabel: "Jager",
+      temperament: "patrol",
+      aggro: false,
+      aggroRadius: 1,
+      hp: 12,
+      maxHp: 12,
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0]));
+  await page.keyboard.press(" ");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.enemies[0].x === 10 && snapshot.enemies[0].y === 10).toBeFalsy();
+  expect(snapshot.enemies[0].idleTarget).not.toBeNull();
+});
+
 test("enemies path around a simple wall instead of freezing in front of it", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -500,7 +582,7 @@ test("intelligent wounded enemies can retreat instead of attacking", async ({ pa
   expect(snapshot.player.hp).toBe(24);
   expect(snapshot.enemies[0].x).toBe(5);
   expect(snapshot.enemies[0].isRetreating).toBeTruthy();
-  expect(messages.some((entry) => entry.text.includes("sucht plötzlich Abstand"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("sucht ploetzlich Abstand"))).toBeTruthy();
 });
 
 test("enemies regenerate slowly over time when they stay out of direct melee", async ({ page }) => {

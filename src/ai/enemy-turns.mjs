@@ -18,6 +18,8 @@ const IDLE_PLAN_AGE_LIMITS = Object.freeze({
 const RECENT_ROOM_LIMIT = 4;
 const RECENT_DOOR_LIMIT = 5;
 const RECENT_AGGRO_POSITION_LIMIT = 6;
+const RECENT_MOVE_POSITION_LIMIT = 6;
+const DOOR_ACTION_HEARING_RANGE = 10;
 
 export function createEnemyTurnApi(context) {
   const {
@@ -161,6 +163,9 @@ export function createEnemyTurnApi(context) {
     enemy.idlePlanAge = Number.isFinite(enemy.idlePlanAge) ? enemy.idlePlanAge : 0;
     enemy.recentRoomHistory = Array.isArray(enemy.recentRoomHistory) ? [...enemy.recentRoomHistory] : [];
     enemy.recentDoorHistory = Array.isArray(enemy.recentDoorHistory) ? [...enemy.recentDoorHistory] : [];
+    enemy.recentMovePositions = Array.isArray(enemy.recentMovePositions)
+      ? enemy.recentMovePositions.map((position) => ({ ...position }))
+      : [];
     enemy.recentAggroPositions = Array.isArray(enemy.recentAggroPositions)
       ? enemy.recentAggroPositions.map((position) => ({ ...position }))
       : [];
@@ -183,6 +188,12 @@ export function createEnemyTurnApi(context) {
       enemy.recentDoorHistory = pushRecentEntry(enemy.recentDoorHistory, doorKey, RECENT_DOOR_LIMIT);
     }
 
+    enemy.recentMovePositions = pushRecentPosition(
+      enemy.recentMovePositions,
+      enemy,
+      RECENT_MOVE_POSITION_LIMIT,
+    );
+
     if (enemy.idleTarget && isSamePosition(enemy, enemy.idleTarget)) {
       clearIdleTarget(enemy);
     }
@@ -190,6 +201,14 @@ export function createEnemyTurnApi(context) {
 
   function rememberAggroPosition(enemy) {
     enemy.recentAggroPositions = pushRecentPosition(enemy.recentAggroPositions, enemy, RECENT_AGGRO_POSITION_LIMIT);
+  }
+
+  function canPlayerPerceiveDoorAction(floorState, player, x, y) {
+    if (floorState.visible?.[y]?.[x]) {
+      return true;
+    }
+
+    return manhattanDistance(player, { x, y }) <= DOOR_ACTION_HEARING_RANGE;
   }
 
   function shouldEnemyRetreat(enemy, player, distanceToPlayer = manhattanDistance(enemy, player)) {
@@ -331,10 +350,13 @@ export function createEnemyTurnApi(context) {
     }
 
     if (door && !door.isOpen && enemy.canOpenDoors) {
+      const playerCanPerceiveDoor = canPlayerPerceiveDoorAction(floorState, state.player, nextX, nextY);
       door.isOpen = true;
-      playDoorOpenSound();
-      const enemyReference = buildCombatEnemyReference(enemy);
-      addMessage(`${enemyReference.subjectCapitalized} oeffnet eine Tuer.`, 'danger');
+      if (playerCanPerceiveDoor) {
+        playDoorOpenSound();
+        const enemyReference = buildCombatEnemyReference(enemy);
+        addMessage(`${enemyReference.subjectCapitalized} oeffnet eine Tuer.`, 'danger');
+      }
     }
 
     enemy.x = nextX;
@@ -734,9 +756,12 @@ export function createEnemyTurnApi(context) {
   function scoreMovementCandidate(enemy, candidate, mode) {
     const temperament = getTemperament(enemy);
     const idleTargetType = enemy.idleTargetType ?? null;
+    const recentMovePositions = enemy.recentMovePositions ?? [];
+    const immediateBacktrack = recentMovePositions[recentMovePositions.length - 2] ?? null;
     let score = candidate.progress * 4;
 
-    score += candidate.matchesPath ? 3 : 0;
+    // When BFS found a real route, trust that detour strongly enough to avoid corner ping-pong.
+    score += candidate.matchesPath ? (mode === 'idle' ? 12 : 10) : 0;
     score += candidate.opensDoor ? 0.5 : 0;
     score -= candidate.recentAggroPenalty;
     score -= candidate.step.x === 0 && candidate.step.y === 0 ? 4 : 0;
@@ -746,6 +771,8 @@ export function createEnemyTurnApi(context) {
       score += idleTargetType === 'door' && candidate.opensDoor ? 2 : 0;
       score += idleTargetType === 'corridor' && candidate.isCorridor ? 1.5 : 0;
       score += idleTargetType === 'room' && candidate.changesRoom ? 1.5 : 0;
+      score -= recentMovePositions.some((position) => isSamePosition(position, candidate.nextPosition)) ? 2 : 0;
+      score -= immediateBacktrack && isSamePosition(immediateBacktrack, candidate.nextPosition) ? 4 : 0;
     }
 
     switch (temperament) {
@@ -779,14 +806,19 @@ export function createEnemyTurnApi(context) {
   function moveTowardTarget(enemy, target, floorState, mode = 'aggro') {
     const pathStep = findPathStep(enemy, target, floorState);
     const temperament = getTemperament(enemy);
-    const scoredCandidates = buildMovementCandidates(enemy, floorState, target, pathStep, mode)
+    const movementCandidates = buildMovementCandidates(enemy, floorState, target, pathStep, mode);
+    const directPathCandidate = pathStep && temperament !== 'erratic'
+      ? movementCandidates.find((candidate) => candidate.matchesPath)
+      : null;
+    const scoredCandidates = movementCandidates
       .map((candidate) => ({
         entry: candidate,
         score: scoreMovementCandidate(enemy, candidate, mode),
         distance: candidate.nextDistance,
       }));
 
-    const selectedCandidate = selectScoredEntry(scoredCandidates, temperament, mode === 'idle' ? 2.25 : 1.5);
+    const selectedCandidate = directPathCandidate
+      ?? selectScoredEntry(scoredCandidates, temperament, mode === 'idle' ? 2.25 : 1.5);
     if (!selectedCandidate) {
       return false;
     }

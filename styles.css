@@ -2564,15 +2564,15 @@ kbd {
 }
 
 .log-mark-damage-to-player {
-  color: #ffb5ab;
-  background: rgba(210, 76, 58, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(210, 76, 58, 0.3);
+  color: #ffd2bf;
+  background: rgba(182, 92, 48, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(182, 92, 48, 0.3);
 }
 
 .log-mark-damage-to-enemy {
-  color: #d7f2ba;
-  background: rgba(94, 158, 74, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(94, 158, 74, 0.3);
+  color: #ffb6b0;
+  background: rgba(174, 42, 42, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(174, 42, 42, 0.34);
 }
 
 .log-mark-heal-player,

@@ -140,6 +140,7 @@ export function assembleInterfaceModules(context) {
     runStatsSummaryElement,
     runStatsKillsElement,
     hoverTooltipElement,
+    monsters: MONSTER_CATALOG,
     monsterNames: MONSTER_CATALOG.map((monster) => monster.name),
     itemNames: [
       "Heiltrank",

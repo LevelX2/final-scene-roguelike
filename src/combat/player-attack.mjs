@@ -1,5 +1,6 @@
 import { recordKillStat } from '../kill-stats.mjs';
-import { formatMonsterReference, formatWeaponDativePhrase, formatWeaponReference } from '../text/combat-phrasing.mjs';
+import { buildCombatEnemyReference, formatPlayerAttackLog } from '../text/combat-log.mjs';
+import { formatWeaponDativePhrase, formatWeaponReference } from '../text/combat-phrasing.mjs';
 
 const OPENING_STRIKE_LOGS = {
   lead: {
@@ -50,18 +51,6 @@ export function createPlayerAttackApi(context) {
     return messages[outcome]?.(enemy) ?? OPENING_STRIKE_LOGS.default[outcome](enemy);
   }
 
-  function buildEnemyReference(enemy) {
-    return {
-      subject: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'nominative' }),
-      subjectCapitalized: formatMonsterReference(enemy, {
-        article: 'definite',
-        grammaticalCase: 'nominative',
-        capitalize: true,
-      }),
-      object: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'accusative' }),
-    };
-  }
-
   function attackEnemy(enemy, options = {}) {
     const state = getState();
     state.safeRestTurns = 0;
@@ -72,7 +61,7 @@ export function createPlayerAttackApi(context) {
       distance: options.distance ?? 1,
       weapon,
     });
-    const enemyReference = buildEnemyReference(enemy);
+    const enemyReference = buildCombatEnemyReference(enemy);
     const isRangedAttack = (options.distance ?? 1) > 1 && weapon?.attackMode === 'ranged';
     const weaponPhrase = formatWeaponDativePhrase(weapon);
     const rangedBoardEffect = isRangedAttack
@@ -148,9 +137,12 @@ export function createPlayerAttackApi(context) {
       addMessage(getOpeningStrikeMessage(state.player, enemyReference, 'hit'), 'important');
     }
 
-    const attackMessage = result.critical
-      ? `Kritischer Treffer gegen ${enemyReference.object} mit ${weaponPhrase} fuer ${blockResult.damage} Schaden!`
-      : `Du triffst ${enemyReference.object} mit ${weaponPhrase} fuer ${blockResult.damage} Schaden.`;
+    const attackMessage = formatPlayerAttackLog({
+      enemyReference,
+      weaponPhrase,
+      damage: blockResult.damage,
+      critical: result.critical,
+    });
     addMessage(attackMessage, 'important');
 
     if (enemy.hp <= 0) {

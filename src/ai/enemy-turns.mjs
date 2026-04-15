@@ -1,4 +1,5 @@
-import { formatMonsterReference, formatWeaponReference } from '../text/combat-phrasing.mjs';
+import { buildCombatEnemyReference, formatEnemyAttackLog } from '../text/combat-log.mjs';
+import { formatWeaponReference } from '../text/combat-phrasing.mjs';
 
 export function createEnemyTurnApi(context) {
   const {
@@ -41,18 +42,6 @@ export function createEnemyTurnApi(context) {
 
   function getHealingProfile(enemy) {
     return enemy.healingProfile ?? "slow";
-  }
-
-  function buildEnemyReference(enemy) {
-    return {
-      subject: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'nominative' }),
-      subjectCapitalized: formatMonsterReference(enemy, {
-        article: 'definite',
-        grammaticalCase: 'nominative',
-        capitalize: true,
-      }),
-      dative: formatMonsterReference(enemy, { article: 'definite', grammaticalCase: 'dative' }),
-    };
   }
 
   function getEnemyWeaponLabel(weapon) {
@@ -154,7 +143,7 @@ export function createEnemyTurnApi(context) {
     enemy.turnsSinceHit = 0;
     if (floorState.visible?.[enemy.y]?.[enemy.x]) {
       showFloatingText(enemy.x, enemy.y, `+${enemy.hp - previousHp}`, "heal");
-      const enemyReference = buildEnemyReference(enemy);
+      const enemyReference = buildCombatEnemyReference(enemy);
       addMessage(`${enemyReference.subjectCapitalized} erholt sich etwas.`, "important");
     }
   }
@@ -180,7 +169,7 @@ export function createEnemyTurnApi(context) {
       if (door && !door.isOpen && enemy.canOpenDoors) {
         door.isOpen = true;
         playDoorOpenSound();
-        const enemyReference = buildEnemyReference(enemy);
+        const enemyReference = buildCombatEnemyReference(enemy);
         addMessage(`${enemyReference.subjectCapitalized} öffnet eine Tür.`, "danger");
       }
       enemy.x = nextX;
@@ -355,7 +344,7 @@ export function createEnemyTurnApi(context) {
       const adjacent = distance === 1;
       const retreating = shouldEnemyRetreat(enemy, state.player, distance);
 
-      const enemyReference = buildEnemyReference(enemy);
+      const enemyReference = buildCombatEnemyReference(enemy);
 
       if (retreating && !enemy.isRetreating) {
         addMessage(`${enemyReference.subjectCapitalized} sucht plötzlich Abstand.`, "important");
@@ -398,12 +387,12 @@ export function createEnemyTurnApi(context) {
         if (blockResult.blocked) {
           addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden für dich ab.`, "important");
         }
-        addMessage(
-          result.critical
-            ? `${enemyReference.subjectCapitalized} landet mit ${weaponLabel} einen kritischen Treffer für ${blockResult.damage} Schaden!`
-            : `${enemyReference.subjectCapitalized} trifft dich mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
-          "danger",
-        );
+        addMessage(formatEnemyAttackLog({
+          enemyReference,
+          weaponLabel,
+          damage: blockResult.damage,
+          critical: result.critical,
+        }), "danger");
         if (state.player.hp <= 0) {
           state.player.hp = 0;
           state.gameOver = true;
@@ -471,12 +460,13 @@ export function createEnemyTurnApi(context) {
             ...rangedBoardEffect,
           });
         }
-        addMessage(
-          result.critical
-            ? `${enemyReference.subjectCapitalized} trifft dich aus der Distanz mit ${weaponLabel} kritisch für ${blockResult.damage} Schaden!`
-            : `${enemyReference.subjectCapitalized} trifft dich aus der Distanz mit ${weaponLabel} für ${blockResult.damage} Schaden.`,
-          'danger',
-        );
+        addMessage(formatEnemyAttackLog({
+          enemyReference,
+          weaponLabel,
+          damage: blockResult.damage,
+          critical: result.critical,
+          ranged: true,
+        }), 'danger');
         if (state.player.hp <= 0) {
           state.player.hp = 0;
           state.gameOver = true;

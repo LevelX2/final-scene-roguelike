@@ -1,8 +1,11 @@
+import { collectLogHighlights, createLogHighlightTerms } from '../text/combat-log.mjs';
+
 export function createTooltipView(context) {
   const {
     MIN_CRIT_CHANCE,
     MAX_CRIT_CHANCE,
     hoverTooltipElement,
+    monsters = [],
     monsterNames = [],
     itemNames = [],
     getState,
@@ -22,78 +25,18 @@ export function createTooltipView(context) {
       .replaceAll("'", "&#39;");
   }
 
-  function isMonsterPhraseBoundaryCharacter(character) {
-    return !character || /[\s([{"'“„]/u.test(character);
-  }
-
-  function expandMonsterMatch(messageText, start, end) {
-    const prefix = messageText.slice(0, start);
-    const articlePhraseMatch = prefix.match(/((?:der|die|das|den|dem|des|ein|eine|einen|einem|einer)\s+(?:[a-zäöüß][\p{L}-]*\s+){0,2})$/iu);
-    if (articlePhraseMatch) {
-      const expandedStart = start - articlePhraseMatch[1].length;
-      if (isMonsterPhraseBoundaryCharacter(messageText[expandedStart - 1])) {
-        return { start: expandedStart, end };
-      }
-    }
-
-    const capitalizedPhraseMatch = prefix.match(/((?:[A-ZÄÖÜ][\p{L}-]*\s+){1,2})$/u);
-    if (capitalizedPhraseMatch) {
-      const expandedStart = start - capitalizedPhraseMatch[1].length;
-      if (isMonsterPhraseBoundaryCharacter(messageText[expandedStart - 1])) {
-        return { start: expandedStart, end };
-      }
-    }
-
-    return { start, end };
-  }
-
-  const messageHighlightTerms = [
-    ...monsterNames.map((name) => ({ text: name, kind: "monster" })),
-    ...itemNames.map((name) => ({ text: name, kind: "item" })),
-  ]
-    .filter((entry) => entry.text)
-    .sort((left, right) => right.text.length - left.text.length);
+  const messageHighlightTerms = createLogHighlightTerms({
+    monsters,
+    monsterNames,
+    itemNames,
+  });
 
   function formatLogMessage(messageText) {
-    if (!messageHighlightTerms.length) {
-      return escapeHtml(messageText);
-    }
-
-    const lowerText = messageText.toLowerCase();
-    const matches = [];
-
-    messageHighlightTerms.forEach((term) => {
-      const needle = term.text.toLowerCase();
-      let searchIndex = 0;
-
-      while (searchIndex < lowerText.length) {
-        const start = lowerText.indexOf(needle, searchIndex);
-        if (start === -1) {
-          break;
-        }
-
-        const expandedMatch = term.kind === "monster"
-          ? expandMonsterMatch(messageText, start, start + needle.length)
-          : { start, end: start + needle.length };
-        const end = expandedMatch.end;
-        const expandedStart = expandedMatch.start;
-        const overlaps = matches.some((match) => !(end <= match.start || expandedStart >= match.end));
-        if (!overlaps) {
-          matches.push({
-            start: expandedStart,
-            end,
-            kind: term.kind,
-          });
-        }
-        searchIndex = start + needle.length;
-      }
-    });
-
+    const matches = collectLogHighlights(messageText, messageHighlightTerms);
     if (!matches.length) {
       return escapeHtml(messageText);
     }
 
-    matches.sort((left, right) => left.start - right.start);
     let html = "";
     let cursor = 0;
 
@@ -101,7 +44,7 @@ export function createTooltipView(context) {
       if (cursor < match.start) {
         html += escapeHtml(messageText.slice(cursor, match.start));
       }
-      html += `<span class="log-mark log-mark-${match.kind}">${escapeHtml(messageText.slice(match.start, match.end))}</span>`;
+      html += `<span class="${match.className}">${escapeHtml(messageText.slice(match.start, match.end))}</span>`;
       cursor = match.end;
     });
 

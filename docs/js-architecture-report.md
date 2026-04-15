@@ -59,11 +59,11 @@ Funktional ist das praktisch die gesamte statische Weltdefinition in einer Datei
 - spaetere Datenmigration in JSON/Content-Dateien
 - Ownership pro Domane
 
-### 4. `dungeon.mjs` vermischt Generator, Spawning und Entitaetsfabriken
+### 4. `dungeon.mjs` vermischt Studio-Generator, Spawning und Entitaetsfabriken
 
 `src/dungeon.mjs` ist ebenfalls sehr gross und kombiniert mehrere Ebenen:
 
-- Dungeon-Layout / Floor-Erzeugung
+- Studio-Layout / Studio-Erzeugung im Studiokomplex
 - Gegnererzeugung und Skalierung
 - Drop-/Loot-Integration
 - Tueren, Schluessel, Showcase-Objekte
@@ -102,7 +102,7 @@ Wenn das Projekt viele neue Funktionen bekommen soll, sind die groessten Risiken
 - neue Features werden immer wieder in `main.mjs` eingebaut
 - Feature-Code wird zugleich UI-Code, State-Mutation und Regelwerk enthalten
 - Content-Wachstum landet weiter in `data.mjs`
-- Erweiterungen im Dungeon-System erzeugen Querabhaengigkeiten zu Loot, Gegnern und Balance
+- Erweiterungen im Studiokomplex-System erzeugen Querabhaengigkeiten zu Loot, Gegnern und Balance
 - Testabdeckung wird schwerer, weil Fachlogik nicht isoliert genug ansprechbar ist
 
 ## Empfohlenes Zielbild
@@ -274,7 +274,7 @@ Hier liegt die eigentliche Spiellogik:
 - Hunger/Nahrung
 - Loot- und Item-Regeln
 - Gegnerverhalten
-- Dungeon-Erzeugung
+- Studio-Erzeugung
 - Fallenverhalten
 
 Diese Schicht sollte browserarm oder browserfrei sein. Das verbessert Testbarkeit massiv.
@@ -326,7 +326,7 @@ Diese Schritte bringen viel Nutzen bei relativ wenig Risiko:
 
 - Kampfregeln aus `combat.mjs` und Teilen von `main.mjs` zusammenziehen
 - Inventar-/Equip-Regeln aus `items.mjs` von UI entkoppeln
-- Dungeon-Erzeugung in Fabriken und Generatoren aufteilen
+- Studio-Erzeugung in Fabriken und Generatoren aufteilen
 - Trap- und Door-Logik als eigenstaendige Services stabilisieren
 
 ### Phase 3: UI entkoppeln
@@ -358,7 +358,7 @@ Das ist fuer ein wachsendes Spiel meist der beste Kompromiss aus Klarheit, Testb
 - kein kompletter Rewrite auf einmal
 - keine weitere dauerhafte Pflege von Alt- und Neu-Pfad parallel
 - keine neuen Sammeldateien wie `game-utils.mjs` oder `game-data.mjs`
-- keine Vermischung von HTML-Erzeugung mit Inventar-, Kampf- oder Dungeon-Regeln
+- keine Vermischung von HTML-Erzeugung mit Inventar-, Kampf- oder Studiokomplex-Regeln
 - keine "globale Kontextobjekt"-Ausweitung ohne klare Schnittstellen pro Schicht
 
 ## Priorisierte Empfehlung

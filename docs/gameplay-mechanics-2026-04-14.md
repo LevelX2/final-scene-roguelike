@@ -17,6 +17,11 @@ Es beschreibt bewusst nicht die technische Umsetzung. Die Zielgruppe ist eine KI
 
 Dokumentiert werden nur Mechaniken, die den Spielablauf direkt beeinflussen. Reine Darstellungs- oder Komfortdetails sind nur dann enthalten, wenn sie spielrelevante Informationen sichtbar machen oder Regelzustände transportieren.
 
+Begriffe in diesem Dokument:
+
+- `Dungeon` meint den gesamten Studiokomplex eines Runs.
+- `Studio` meint die einzelne bespielte Einheit; ältere Begriffe wie `Level` oder `Ebene` sind dafür hier nicht mehr der Standard.
+
 ## Kurzbild des Spiels
 
 `The Final Scene` ist ein rundenbasiertes Rogue-like. Ein Run besteht aus:
@@ -87,13 +92,13 @@ Eine Runde wird unter anderem verbraucht durch:
 - Warten
 - Tür schließen
 - Essen, Tränke nutzen, Ausrüstung ausrüsten
-- Treppenwechsel nach Bestätigung
+- Studio-Wechsel nach Bestätigung
 
 Wichtig:
 
-- Das Betreten eines Treppenfelds kostet noch keine Runde.
-- Erst die bestätigte Entscheidung zum Ebenenwechsel löst eine Runde aus.
-- Beim bestätigten Treppenwechsel werden Gegnerzüge übersprungen, aber Nahrungskosten, Status-Effekte, Dauergefahren und sichere Regeneration laufen trotzdem.
+- Das Betreten eines Übergangsfelds kostet noch keine Runde.
+- Erst die bestätigte Entscheidung zum Studio-Wechsel löst eine Runde aus.
+- Beim bestätigten Studio-Wechsel werden Gegnerzüge übersprungen, aber Nahrungskosten, Status-Effekte, Dauergefahren und sichere Regeneration laufen trotzdem.
 
 ## Nahrung und Hunger
 
@@ -194,7 +199,7 @@ Sobald ein sichtbares Bodentile vorliegt, werden angrenzende Wände und Wand-Eck
 
 Ein Gegnertyp wird erst nach der ersten echten Kampfszene als „bekannt“ markiert. Bis dahin zeigt das Spiel weniger Detailinformationen. Das ist keine reine UI-Entscheidung, sondern Teil des Informationsmodells.
 
-## Dungeon- und Studio-Struktur
+## Struktur von Studiokomplex und Studios
 
 ### Studiofolge im Run
 
@@ -210,32 +215,83 @@ Folgen:
 - beim Zurückkehren in ein bereits besuchtes Studio bleibt dessen Archetyp stabil
 - nach 10 Studios beginnt die Sequenz wieder von vorn
 
-### Allgemeiner Ebenenaufbau
+### Studio-Topologie und Übergänge
 
-Jede Ebene ist ein prozedural erzeugtes Netzwerk aus:
+Zusätzlich zur Archetypenfolge verwaltet jeder Run eine Studio-Topologie. Jedes Studio ist ein Knoten in einem 3D-Gitter mit Position `x/y/z` und kennt:
 
-- Räumen
-- Verbindungen/Korridoren
+- die Richtung, aus der man das Studio betritt
+- die Richtung, in die es weitergeht
+- den Übergangsstil dieses Ein- oder Ausgangs
+
+Aktuelle Richtungen:
+
+- `left`
+- `right`
+- `front`
+- `back`
+- `up`
+- `down`
+
+Aktuelle Übergangsstile:
+
+- horizontale Richtungen verwenden `passage`
+- vertikale Richtungen verwenden zufällig `stairs` oder `lift`
+
+Folgen:
+
+- Ein- und Ausgang eines Studios werden nicht mehr losgelöst gewürfelt, sondern aus dem Topologie-Knoten abgeleitet
+- vertikale Studio-Wechsel können als Treppe oder Lift im Studio auftauchen
+- Übergangs-Hinweise werden beim Erzeugen benachbarter Studios synchronisiert, damit Anschlusspositionen über Studio-Grenzen konsistent bleiben
+
+### Allgemeiner Studioaufbau
+
+Jedes Studio nutzt aktuell primär das Layout `branch`. Der Generator baut dabei ein prozedural erzeugtes Netzwerk aus:
+
+- einem 2 bis 3 Felder breiten Hauptkorridor
+- Ankerpunkten für Ein- und Ausgang
+- Räumen und Seitenarmen
+- offenen Nebenverbindungen zwischen passenden Nebenräumen
 - Türen
-- Treppen
+- Durchgängen, Treppen oder Liften
 - Gegnern
 - Loot
 - Showcases
 - Fallen
 
+Typischer Ablauf:
+
+- Zuerst entsteht ein horizontal dominanter Hauptkorridor innerhalb einer zufälligen Bounding Box.
+- Danach werden Ein- und Ausgang an diesem Backbone verankert.
+- Horizontale Übergänge bevorzugen Rand-/Eingangsräume; vertikale Übergänge sitzen in kurzen Nischen neben dem Korridor.
+- Anschließend setzt der Generator zuerst offene Connector-Räume, dann Themenräume und danach weitere Connectoren oder zusätzliche Seitenschleifen.
+
+Aktuelle Raumrollen:
+
+- `entry_room`: äußerer Ein-/Ausgangsraum am Kartenrand
+- `connector_room`: offener Zwischenraum ohne Tür, der weitere Äste tragen kann
+- Themenräume: `weapon_room`, `aggro_room`, `calm_room`, `canteen`, `props_room`, `costume_room`, `hazard_room`, `showcase_room`
+
+Zusätzliche Strukturregeln:
+
+- der Generator versucht mindestens `3` Themenräume; die Zielzahl steigt mit der Länge des Hauptkorridors bis maximal `8`
+- `showcase_room` ist exklusiv für Vitrinen vorgesehen
+- zusätzliche Schleifen verbinden nur geeignete Nebenräume oder Connector-Räume, nicht aber Ein-/Ausgangsräume oder bereits überlagerte Locked-Räume
+- falls das branch-Layout nach `120` Versuchen kein gültiges Studio liefert, wird ein einfacherer `branch_fallback` gebaut, damit die Studio-Erzeugung nicht abbricht
+
 Strukturelle Regeln:
 
 - Spieler und Gegner teilen keinen Starttile
+- Startposition und tatsächliche Übergangsposition können auseinanderfallen, wenn ein Ein-/Ausgangsraum oder eine Nische zwischen Korridor und Übergang liegt
 - Showcases blockieren Bewegung
 - Showcases liegen nicht auf Türen oder Treppen
 - Showcases dürfen keine zuvor erreichbaren Flächen abtrennen
 - verschlossene Räume werden so gebaut, dass kein alternativer Eingang offen bleibt
-- verschlossene Türen erscheinen nur, wenn ein passender Schlüssel auf derselben Ebene erreichbar ist
+- verschlossene Türen erscheinen nur, wenn ein passender Schlüssel im selben Studio erreichbar ist
 
-### Ebenenzahlen und Spawnmengen
+### Spawnmengen pro Studio
 
-- Gegner pro Ebene: `min(15, floor == 1 ? 5 : 5 + ceil(floor * 1.05))`
-- Heiltränke pro Ebene: `2 + floor(floor / 2)`
+- Gegner pro Studio: `min(15, floor == 1 ? 5 : 5 + ceil(floor * 1.05))`
+- Heiltränke pro Studio: `2 + floor(floor / 2)`
 
 ### Waffen-, Schild- und Chest-Spawns
 
@@ -318,6 +374,7 @@ Zusatzregeln:
 
 - maximal `3` verschlossene Türen pro Studio
 - genau `1` Schlüssel pro verschlossener Tür
+- Locked-Bonus-Räume werden nur auf isolierten Seitenarmen mit genau einer Tür angelegt; Entry-, Connector- und Showcase-Räume sind davon ausgenommen
 - Schlüssel bleiben im Inventar, wenn sie aus einem anderen Studio stammen, funktionieren dort aber nicht
 
 ## Showcases
@@ -327,9 +384,12 @@ Showcases sind feste Hindernisse mit leichter Systemwirkung.
 Konkrete Regeln:
 
 - sie blockieren Bewegung
-- sie werden nur auf Bodentiles platziert
+- sie werden nur im `showcase_room` auf freien Bodentiles platziert
 - sie schneiden keine erreichbaren Flächen ab
+- sie reservieren ihre benachbarten Triggerfelder so, dass mehrere Vitrinen sich nicht gegenseitig entwerten
 - sie können thematische Raumtexte auslösen
+- pro Vitrinenraum werden höchstens `3` Showcases platziert
+- archetypspezifische Props werden vor globalen Props bevorzugt
 - direkte Nachbarschaft zu ihnen verbessert die sichere Regeneration um `+0.5` Fortschritt pro geeigneter Aktion
 
 ## Heiltränke
@@ -362,7 +422,7 @@ Aktuelle Nahrungswerte:
 
 ### Welt-Nahrungsbudget
 
-Jede Ebene würfelt eine Versorgungsklasse und skaliert deren Budget mit dem Faktor `0.35`.
+Jedes Studio würfelt eine Versorgungsklasse und skaliert deren Budget mit dem Faktor `0.35`.
 
 Versorgungsklassen:
 

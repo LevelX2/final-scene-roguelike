@@ -6,7 +6,12 @@ Diese Datei beschreibt den aktuellen spielerischen Stand von `The Final Scene`. 
 
 ## Grundidee
 
-`The Final Scene` ist ein rundenbasiertes Browser-Rogue-like mit Horrorfilm-Setting. Der Spieler erkundet prozedural erzeugte Dungeon-Ebenen, sammelt Ausrüstung und Verbrauchsgüter, verwaltet Hunger und Gesundheit, bekämpft Gegner mit unterschiedlichen Verhaltensmustern und versucht, möglichst tief zu kommen und einen guten Highscore zu erreichen.
+`The Final Scene` ist ein rundenbasiertes Browser-Rogue-like mit Horrorfilm-Setting. Der Spieler erkundet prozedural erzeugte Studios innerhalb eines Studiokomplexes, sammelt Ausrüstung und Verbrauchsgüter, verwaltet Hunger und Gesundheit, bekämpft Gegner mit unterschiedlichen Verhaltensmustern und versucht, möglichst tief zu kommen und einen guten Highscore zu erreichen.
+
+Begriffe in diesem Dokument:
+
+- `Dungeon` meint den gesamten Studiokomplex eines Runs.
+- `Studio` meint die einzelne bespielte Einheit; ältere Begriffe wie `Level` oder `Ebene` sind dafür hier nicht mehr der Standard.
 
 Ein Lauf ist riskenbasiert:
 
@@ -54,11 +59,11 @@ Jede Klasse besitzt im aktuellen Stand genau eine kleine Passive, die auf besteh
 Der normale Spielfluss ist:
 
 1. Lauf starten
-2. Dungeon-Ebene erkunden
+2. Studio erkunden
 3. Gegner bekämpfen oder umgehen
 4. Loot, Nahrung, Waffen, Schilde und Schlüssel einsammeln
 5. Ressourcenverbrauch gegen Fortschritt abwägen
-6. Treppe erreichen und nächste Ebene betreten
+6. Übergang erreichen und nächstes Studio betreten
 7. Wiederholen, bis der Spieler stirbt
 
 Daraus ergeben sich die wichtigsten Spannungsachsen:
@@ -66,7 +71,7 @@ Daraus ergeben sich die wichtigsten Spannungsachsen:
 - Lebenspunkte vs. Risiko
 - Hunger vs. Tempo
 - Inventarwert vs. Sofortnutzung
-- Tiefer gehen vs. vorher noch Ebene absichern
+- Tiefer gehen vs. vorher noch Studio absichern
 
 ## Runden und Eingaben
 
@@ -90,9 +95,9 @@ Warten ist kein neutraler Zustand:
 - es kann Gegneraktionen auslösen
 - es kann situationsabhängige Heilung beschleunigen
 
-## Dungeon-Struktur
+## Struktur von Studiokomplex und Studios
 
-Jede Ebene wird prozedural erzeugt und besteht aus:
+Jedes Studio wird prozedural erzeugt und besteht aus:
 
 - Räumen
 - Korridoren
@@ -113,13 +118,13 @@ Wichtige Strukturregeln:
 Es gibt mindestens:
 
 - eine Abwärtstreppe für den Fortschritt
-- auf tieferen Ebenen je nach Kontext auch Aufwärtstreppen bzw. Rückkehrpunkte im Floorsystem
+- in tieferen Studios je nach Kontext auch Aufwärtstreppen bzw. Rückkehrpunkte im Floorsystem
 
-Das Wechseln einer Ebene erfolgt nicht sofort, sondern über ein Bestätigungs-Modal.
+Das Wechseln eines Studios erfolgt nicht sofort, sondern über ein Bestätigungs-Modal.
 
 ## Sicht und Informationsmodell
 
-Der Dungeon ist kein vollständig offenes Informationssystem. Sichtbarkeit spielt eine Rolle:
+Der Studiokomplex ist kein vollständig offenes Informationssystem. Sichtbarkeit spielt eine Rolle:
 
 - Räume und Korridore werden erst beim Erkunden sichtbar
 - Geschlossene Türen blockieren Sicht
@@ -141,11 +146,11 @@ Die Gegner stammen aus einem Horrorfilm-inspirierten Katalog. Jeder Gegnertyp be
 - Türverhalten
 - Spezialbeschreibung
 
-Die Freischaltung stärkerer Gegner ist an die erreichte Ebene gekoppelt.
+Die Freischaltung stärkerer Gegner ist an die erreichte Studiotiefe gekoppelt.
 
 Zusätzlich kann ein Gegner über Varianten und Skalierung verschärft werden:
 
-- höhere Stats auf tieferen Ebenen
+- höhere Stats in tieferen Studios
 - Variantentypen wie `elite` oder `dire`
 - zusätzliche Modifikatoren
 
@@ -161,7 +166,7 @@ Gegner verhalten sich nicht alle gleich. Relevante Achsen sind:
 
 Beobachtbare Verhaltenslogiken im aktuellen Stand:
 
-- lokale Gegner verfolgen nicht grenzenlos über die ganze Ebene
+- lokale Gegner verfolgen nicht grenzenlos über das ganze Studio
 - relentless Gegner können dauerhaft jagen
 - manche Gegner können Türen öffnen, andere bleiben an geschlossenen Türen hängen
 - Gegner können um Hindernisse herumlaufen statt stumpf zu blockieren
@@ -347,14 +352,14 @@ Das erlaubt Mikro-Entscheidungen im Raumkampf und bei Flucht-/Kontrollsituatione
 
 ## Schlüssel und verschlossene Türen
 
-Schlüssel sind farbcodiert und an die aktuelle Ebene gebunden.
+Schlüssel sind farbcodiert und an das aktuelle Studio gebunden.
 
 Logik:
 
 - ein passender Schlüssel kann eine verschlossene Tür beim Kontakt öffnen
 - die Tür wird danach zu einer normalen offenen Tür
 - der Schlüssel wird verbraucht
-- ein Schlüssel von einer anderen Ebene bleibt zwar im Inventar, öffnet die Tür aber nicht
+- ein Schlüssel aus einem anderen Studio bleibt zwar im Inventar, öffnet die Tür aber nicht
 
 Das verhindert triviales Horten über mehrere Floors und hält verschlossene Räume als lokale Belohnungsstruktur relevant.
 
@@ -431,7 +436,7 @@ Damit ist Fortschritt nicht rein itembasiert. Ein guter Lauf skaliert über:
 
 Während und nach dem Lauf werden verschiedene Werte verfolgt, darunter:
 
-- aktuelle und tiefste Ebene
+- aktuelles und tiefstes Studio
 - Kills
 - Schaden ausgeteilt / erhalten
 - XP
@@ -501,11 +506,11 @@ Die aktuelle Spielmechanik kombiniert vier Hauptachsen:
 - taktische Nahkampfentscheidungen
 - Ressourcendruck über HP, Nahrung und Inventar
 - räumliche Kontrolle über Türen, Schlüssel, Fallen und Sicht
-- Run-Fortschritt über tiefer werdende Ebenen, XP und stärkeres Equipment
+- Run-Fortschritt über tiefere Studios, XP und stärkeres Equipment
 
 Der Charakter des Spiels ist damit momentan weniger ein klassischer reiner Brawler und mehr ein System-Rogue-like mit Fokus auf:
 
 - Positionierung
 - Risikoabwägung
 - kontrollierten Power-Spikes durch Loot
-- stetigem Druck durch Hunger und Dungeon-Fortschritt
+- stetigem Druck durch Hunger und Fortschritt im Studiokomplex

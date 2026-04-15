@@ -2,13 +2,18 @@
 
 Fight Through a Dying Movieverse
 
-Browserbasiertes Rogue-like mit Horrorfilm-Thema, zufällig generierten Dungeon-Ebenen, zustandsbasiertem Kampf, Loot, Hunger-System, Save/Load und einer recht großen Playwright-E2E-Suite.
+Browserbasiertes Rogue-like mit Horrorfilm-Thema, einem prozedural erzeugten Studiokomplex aus einzelnen Studios, zustandsbasiertem Kampf, Loot, Hunger-System, Save/Load und einer recht großen Playwright-E2E-Suite.
 
 ## Projektregeln
 
 - Sichtbare deutsche UI-Texte verwenden echte Umlaute und ß.
 - ASCII-Schreibweisen wie `ae`, `oe` oder `ue` sind nur für technische Bezeichner, IDs und Dateinamen gedacht.
 - Archetypen werden in der UI als klare Einzelbegriffe angezeigt, nicht als mehrteilige Designbeschreibung.
+
+## Begriffe
+
+- `Dungeon` meint in der Doku den gesamten Studiokomplex eines Runs.
+- `Studio` meint die einzelne bespielte Einheit; ältere Formulierungen wie `Level` oder `Ebene` sind dafür nicht mehr die bevorzugten Begriffe.
 
 ## Kurzüberblick
 
@@ -92,7 +97,9 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 - `src/balance.mjs`
   Balancing-Konstanten und Progressions-/Spawn-Regeln.
 - `src/dungeon.mjs`
-  Levelgenerierung, Türen, Schlüsselräume, Chests, Gegner- und Item-Platzierung.
+  Kompositionsschicht für die Erzeugung der Studios im Studiokomplex: branch-basiertes Layout, Studio-Anker, Türen/Schlüsselräume, Chests, Gegner- und Item-Platzierung. Das konkrete Layout sitzt heute vor allem in `src/dungeon/branch-layout.mjs`.
+- `src/studio-topology.mjs`
+  3D-Studio-Topologie eines Runs: Nachbarschaften zwischen Studios, Ein-/Ausgangsrichtungen sowie Übergangsstile wie Durchgang, Treppe oder Lift.
 - `src/combat.mjs`
   Treffer, Krits, Blocken, Schaden, Tod und kampfbezogene Hilfslogik.
 - `src/ai.mjs`
@@ -139,7 +146,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 ## Spielmechaniken in Kürze
 
 - Rundenbasiertes Bewegen per Tastatur
-- Zufällig generierte Ebenen mit Räumen, Gängen, Türen, Treppen und Sonderobjekten
+- Zufällig generierte branch-basierte Studios mit Hauptkorridor, Themenräumen, Connector-Räumen, Studio-Ankern, Türen und Sonderobjekten
 - Gegner mit unterschiedlichen Verhaltensprofilen
 - Waffen, Schilde, Nahrung, Heiltränke, Schlüssel und Truhen
 - Hunger-/Nutrition-System mit negativen Folgen bei Vernachlässigung

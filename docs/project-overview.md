@@ -6,7 +6,12 @@ Diese Datei ist die Einstiegshilfe für neue Threads, neue Workspaces und späte
 
 ## Was das Projekt ist
 
-`The Final Scene` ist ein browserbasiertes Rogue-like mit Horrorfilm-Setting. Der Spieler bewegt sich rundenbasiert durch zufällig generierte Ebenen, sammelt Loot, verwaltet Hunger und Ausrüstung, bekämpft Gegner mit unterschiedlichen Verhaltensprofilen und versucht, möglichst tiefe Läufe für die lokale Highscore-Liste zu erreichen.
+`The Final Scene` ist ein browserbasiertes Rogue-like mit Horrorfilm-Setting. Der Spieler bewegt sich rundenbasiert durch zufällig generierte Studios innerhalb eines Studiokomplexes, sammelt Loot, verwaltet Hunger und Ausrüstung, bekämpft Gegner mit unterschiedlichen Verhaltensprofilen und versucht, möglichst tiefe Läufe für die lokale Highscore-Liste zu erreichen.
+
+Begriffe in dieser Doku:
+
+- `Dungeon` meint den gesamten Studiokomplex eines Runs.
+- `Studio` meint die einzelne bespielte Einheit; ältere Begriffe wie `Level` oder `Ebene` sind dafür hier nicht mehr der Standard.
 
 Technisch ist das Projekt eine kleine bis mittlere Vanilla-JS-App ohne Frontend-Framework:
 
@@ -72,7 +77,7 @@ Praktisch bedeutet das:
 - Sichtweite
 - Treffer- und Krit-Grenzen
 - Spawnwahrscheinlichkeiten
-- Skalierung über Dungeon-Tiefe
+- Skalierung über Studiotiefe
 - Klassenwerte und Level-Up-Regeln
 
 Faustregel:
@@ -80,17 +85,25 @@ Faustregel:
 - Inhaltsdefinitionen und Katalogeinträge nach `data.mjs`
 - Tuning und Spawn-/Progressionslogik nach `balance.mjs`
 
-### 3. Dungeon und Spiellogik
+### 3. Studiokomplex und Spiellogik
 
-`src/dungeon.mjs` erzeugt Ebenen und verteilt Inhalte:
+`src/dungeon.mjs` ist heute vor allem die Kompositionsschicht für die Studio-Erzeugung innerhalb des Studiokomplexes. Das Modul verdrahtet die Layout-, Spawn- und Pickup-Bausteine. Das eigentliche Layout entsteht primär in `src/dungeon/branch-layout.mjs`, während `src/studio-topology.mjs` die Nachbarschaft und Übergangsrichtung zwischen Studios vorgibt.
 
-- Raum- und Ganglayout
-- Treppen
-- Türen und Schlüsseltüren
-- Gegner
-- Chests
-- Boden-Loot
-- Showcases/Props
+Der aktuelle Generator baut Studios typischerweise so auf:
+
+- ein 2 bis 3 Felder breiter Hauptkorridor als branch-basierter Backbone
+- Entry-/Exit-Anker aus der Run-Studio-Topologie mit Richtung und Übergangsstil
+- offene Connector-Räume als erste Verzweigungen
+- Themenräume wie Waffen-, Aggro-, ruhige, Kantinen-, Requisiten-, Kostüm-, Gefahren- und Vitrinenräume
+- zusätzliche Seitenarme und optionale Schleifen zwischen Nebenräumen
+- darübergelegt: Schlüsselräume, Locked-Bonus-Räume, Showcases, Gegner, Loot, Tränke, Nahrung und Fallen
+
+Wichtige aktuelle Details:
+
+- horizontale Studio-Übergänge bevorzugen Rand-/Eingangsräume; vertikale Übergänge nutzen kurze Nischen und können als Treppe oder Lift auftauchen
+- Connector-Räume sind offene Zwischenräume, die weitere Äste tragen können
+- Locked-Bonus-Räume werden nur auf isolierten Seitenarmen mit genau einer Tür angelegt; der passende Schlüssel liegt erreichbar im selben Studio in einem anderen Raum
+- wenn das branch-basierte Layout nach mehreren Versuchen nicht sauber gebaut werden kann, fällt der Generator auf ein einfacheres `branch_fallback` zurück, damit die Studio-Erzeugung nicht abbricht
 
 Zusammen mit `src/traps.mjs`, `src/items.mjs`, `src/combat.mjs` und `src/ai.mjs` bildet das den Kern des Spiels.
 
@@ -200,9 +213,11 @@ Spawnraten, Klassenwerte, Progression:
 
 - `src/balance.mjs`
 
-Levelgenerierung oder Schlüssel-/Tür-Logik:
+Studiogenerierung oder Schlüssel-/Tür-Logik:
 
 - `src/dungeon.mjs`
+- `src/dungeon/branch-layout.mjs`
+- `src/studio-topology.mjs`
 
 Kampfregeln:
 

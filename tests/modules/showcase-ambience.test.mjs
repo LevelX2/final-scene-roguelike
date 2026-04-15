@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createShowcaseAmbienceApi } from '../../src/app/showcase-ambience.mjs';
 
-test('showcase ambience fires once per room and emits floating text metadata', () => {
+test('showcase ambience fires once per showcase and emits floating text metadata', () => {
   const state = {
     player: { x: 4, y: 4 },
     floor: 1,
@@ -14,6 +14,7 @@ test('showcase ambience fires once per room and emits floating text metadata', (
       x: 5,
       y: 4,
       item: {
+        id: 'test-prop',
         ambienceId: 'test-prop',
         source: 'Maske',
         name: 'Verfluchte Maske',
@@ -45,6 +46,7 @@ test('showcase ambience fires once per room and emits floating text metadata', (
   assert.equal(messages[0].tone, 'important');
   assert.equal(ambiencePlays, 1);
   assert.equal(floorState.showcaseAmbienceSeen[0], true);
+  assert.equal(floorState.showcaseAmbienceSeen['test-prop'], true);
   assert.deepEqual(floatingTexts[0].slice(0, 4), [5, 4, 'Ein kalter Schauder läuft dir über den Rücken.', 'showcase']);
   assert.equal(floatingTexts[0][4].title, 'Maske');
 });
@@ -61,6 +63,7 @@ test('showcase ambience can narrate the line instead of showing flyover text', (
       x: 5,
       y: 4,
       item: {
+        id: 'test-prop',
         ambienceId: 'test-prop',
         source: 'Maske',
         name: 'Verfluchte Maske',
@@ -94,4 +97,5 @@ test('showcase ambience can narrate the line instead of showing flyover text', (
   assert.equal(floatingTextCount, 0);
   assert.equal(ambiencePlays, 0);
   assert.equal(floorState.showcaseAmbienceSeen[0], true);
+  assert.equal(floorState.showcaseAmbienceSeen['test-prop'], true);
 });

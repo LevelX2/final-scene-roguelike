@@ -46,6 +46,10 @@ export function createSavegameService(context) {
         : "Kein Spielstand gefunden.";
     }
 
+    if (latestEntry.compatible === false) {
+      return "Mindestens ein Spielstand ist nicht kompatibel und kann nur geloescht werden.";
+    }
+
     const heroName = latestEntry.heroName ?? "Unbekannt";
     const floor = latestEntry.floor ? formatStudioLabel(latestEntry.floor) : "unbekanntem Studio";
     return entries.length > 1
@@ -104,12 +108,22 @@ export function createSavegameService(context) {
     entries.forEach((entry, index) => {
       const item = document.createElement("div");
       item.className = "savegame-item";
+      const compatible = entry.compatible !== false;
       const floorLabel = entry.floor ? formatStudioLabel(entry.floor) : "Unbekanntes Studio";
+      const tagLabel = compatible
+        ? (index === 0 ? "Neuester Slot" : "Save-Slot")
+        : "Nicht kompatibel";
+      const headline = compatible
+        ? `${entry.heroName ?? "Unbekannt"} | ${floorLabel}`
+        : `${entry.heroName ?? "Unbekannt"} | nicht kompatibel`;
+      const detailLine = compatible
+        ? `${entry.heroClass ?? "Unbekannter Beruf"} | Level ${entry.level ?? "?"} | Zug ${entry.turn ?? "?"}`
+        : `Version ${entry.version ?? "?"} | Dieser Spielstand kann nicht geladen werden.`;
       item.innerHTML = `
         <div class="savegame-meta">
-          <span class="savegame-tag">${index === 0 ? "Neuester Slot" : "Save-Slot"}</span>
-          <strong>${entry.heroName ?? "Unbekannt"} | ${floorLabel}</strong>
-          <span>${entry.heroClass ?? "Unbekannter Beruf"} | Level ${entry.level ?? "?"} | Zug ${entry.turn ?? "?"}</span>
+          <span class="savegame-tag">${tagLabel}</span>
+          <strong>${headline}</strong>
+          <span>${detailLine}</span>
           <span>${formatSavegameTimestamp(entry.savedAt)}</span>
         </div>
         <div class="savegame-actions"></div>
@@ -117,14 +131,16 @@ export function createSavegameService(context) {
 
       const actions = item.querySelector(".savegame-actions");
 
-      const loadButton = document.createElement("button");
-      loadButton.className = "choice-btn accent";
-      loadButton.type = "button";
-      loadButton.textContent = "Laden";
-      loadButton.addEventListener("click", () => loadCurrentGame(entry.id));
-      actions?.appendChild(loadButton);
+      if (entry.canLoad !== false) {
+        const loadButton = document.createElement("button");
+        loadButton.className = "choice-btn accent";
+        loadButton.type = "button";
+        loadButton.textContent = "Laden";
+        loadButton.addEventListener("click", () => loadCurrentGame(entry.id));
+        actions?.appendChild(loadButton);
+      }
 
-      if (canSave) {
+      if (canSave && entry.canOverwrite !== false) {
         const saveButton = document.createElement("button");
         saveButton.className = "choice-btn";
         saveButton.type = "button";
@@ -133,12 +149,14 @@ export function createSavegameService(context) {
         actions?.appendChild(saveButton);
       }
 
-      const deleteButton = document.createElement("button");
-      deleteButton.className = "choice-btn ghost";
-      deleteButton.type = "button";
-      deleteButton.textContent = "L\u00f6schen";
-      deleteButton.addEventListener("click", () => removeSavegame(entry.id));
-      actions?.appendChild(deleteButton);
+      if (entry.canDelete !== false) {
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "choice-btn ghost";
+        deleteButton.type = "button";
+        deleteButton.textContent = "L\u00f6schen";
+        deleteButton.addEventListener("click", () => removeSavegame(entry.id));
+        actions?.appendChild(deleteButton);
+      }
 
       savegameListElement.appendChild(item);
     });

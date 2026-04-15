@@ -1,3 +1,5 @@
+import { evaluateTargetSelection, getTargetHintLabel, getVisibleTargetSelections, isTargetModeWeapon } from './targeting-service.mjs';
+
 export function createPlayerTurnController(context) {
   const {
     WIDTH,
@@ -201,8 +203,7 @@ export function createPlayerTurnController(context) {
       !state.modals.savegamesOpen &&
       !state.modals.helpOpen &&
       !state.modals.highscoresOpen &&
-      weapon?.attackMode === 'ranged' &&
-      (weapon?.range ?? 1) > 1,
+      isTargetModeWeapon(weapon),
     );
   }
 
@@ -216,29 +217,23 @@ export function createPlayerTurnController(context) {
 
     const floorState = getCurrentFloorState();
     const weapon = getCombatWeapon(state.player);
-    const allVisibleEnemies = (floorState.enemies ?? [])
-      .filter((enemy) => {
-        const distance = manhattanDistance(enemy, state.player);
-        return (
-          distance <= (weapon.range ?? 1) &&
-          floorState.visible?.[enemy.y]?.[enemy.x]
-        );
-      })
-      .sort((left, right) => manhattanDistance(left, state.player) - manhattanDistance(right, state.player));
-    const enemies = allVisibleEnemies
-      .filter((enemy) =>
-        isStraightShot?.(state.player.x, state.player.y, enemy.x, enemy.y) &&
-        hasLineOfSight?.(floorState, state.player.x, state.player.y, enemy.x, enemy.y)
-      );
-    const initialTarget = enemies[0] ?? allVisibleEnemies[0] ?? { x: state.player.x, y: state.player.y };
+    const { allVisibleTargets, validTargets } = getVisibleTargetSelections({
+      state,
+      floorState,
+      weapon,
+      manhattanDistance,
+      isStraightShot,
+      hasLineOfSight,
+    });
+    const initialTarget = validTargets[0]?.enemy ?? allVisibleTargets[0]?.enemy ?? { x: state.player.x, y: state.player.y };
 
     state.targeting.active = true;
     state.targeting.cursorX = initialTarget.x;
     state.targeting.cursorY = initialTarget.y;
     addMessage(
-      enemies.length > 0
+      validTargets.length > 0
         ? 'Zielmodus aktiv: Bewege das Fadenkreuz und bestätige mit Enter.'
-        : 'Zielmodus aktiv: Kein Ziel in gerader Linie und Sichtweite. Richte das Fadenkreuz aus oder brich mit T ab.',
+        : `Zielmodus aktiv: ${getTargetHintLabel(validTargets[0] ?? allVisibleTargets[0] ?? null)}. Richte das Fadenkreuz aus oder brich mit T ab.`,
       'important',
     );
     renderSelf();
@@ -291,26 +286,31 @@ export function createPlayerTurnController(context) {
 
     const floorState = getCurrentFloorState();
     const weapon = getCombatWeapon(state.player);
-    const enemy = floorState.enemies.find((entry) => entry.x === state.targeting.cursorX && entry.y === state.targeting.cursorY);
-    if (!enemy) {
+    const targetSelection = evaluateTargetSelection({
+      state,
+      floorState,
+      weapon,
+      x: state.targeting.cursorX,
+      y: state.targeting.cursorY,
+      manhattanDistance,
+      isStraightShot,
+      hasLineOfSight,
+    });
+
+    if (!targetSelection.enemy) {
       addMessage('Dort steht kein Ziel.');
       renderSelf();
       return;
     }
 
-    const distance = manhattanDistance(enemy, state.player);
-    if (
-      distance > (weapon.range ?? 1) ||
-      !isStraightShot?.(state.player.x, state.player.y, enemy.x, enemy.y) ||
-      !hasLineOfSight?.(floorState, state.player.x, state.player.y, enemy.x, enemy.y)
-    ) {
+    if (!targetSelection.valid) {
       addMessage('Dieses Ziel liegt nicht sauber in gerader Linie, Reichweite oder Sichtlinie.', 'danger');
       renderSelf();
       return;
     }
 
     state.targeting.active = false;
-    attackEnemy(enemy, { distance });
+    attackEnemy(targetSelection.enemy, { distance: targetSelection.distance });
     endTurn({ actionType: 'other' });
   }
 

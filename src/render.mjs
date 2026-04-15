@@ -189,6 +189,7 @@ export function createRenderApi(context) {
     getState,
     getCurrentFloorState,
     getMainHand,
+    getCombatWeapon,
     getOffHand,
     formatWeaponDisplayName,
     formatWeaponReference,

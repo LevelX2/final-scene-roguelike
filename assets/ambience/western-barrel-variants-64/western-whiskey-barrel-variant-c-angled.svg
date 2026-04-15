@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+  <rect width="64" height="64" fill="none"/>
+  <defs>
+    <linearGradient id="woodC" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#9c6a40"/>
+      <stop offset="60%" stop-color="#714626"/>
+      <stop offset="100%" stop-color="#533019"/>
+    </linearGradient>
+    <linearGradient id="metalC" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#7e8086"/>
+      <stop offset="100%" stop-color="#41444a"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(4 2) rotate(-12 28 30)">
+    <ellipse cx="28" cy="16" rx="15" ry="6" fill="#b37847" stroke="#4d2d18" stroke-width="1.6"/>
+    <path d="M13 16
+             C14 28, 16 44, 28 49
+             C40 44, 42 28, 43 16
+             C38 19, 18 19, 13 16 Z"
+          fill="url(#woodC)" stroke="#4d2d18" stroke-width="1.6"/>
+    <ellipse cx="28" cy="49" rx="14" ry="5.5" fill="#57321a" stroke="#351e10" stroke-width="1.6"/>
+    <rect x="14" y="22" width="28" height="4" rx="1.5" fill="url(#metalC)" stroke="#2b2d31" stroke-width="1"/>
+    <rect x="12" y="33" width="32" height="4" rx="1.5" fill="url(#metalC)" stroke="#2b2d31" stroke-width="1"/>
+    <rect x="14" y="43" width="28" height="4" rx="1.5" fill="url(#metalC)" stroke="#2b2d31" stroke-width="1"/>
+    <path d="M20 18 L20 46 M28 17 L28 48 M36 18 L36 46" stroke="#5a341c" stroke-width="1.2"/>
+    <path d="M18 29 C23 31, 33 31, 38 29" fill="none" stroke="#4a2b17" stroke-width="1.1"/>
+    <ellipse cx="23" cy="14" rx="5.5" ry="2.2" fill="#dba572" opacity="0.48"/>
+  </g>
+  <ellipse cx="16" cy="54" rx="9" ry="2.5" fill="#000" opacity="0.10"/>
+</svg>

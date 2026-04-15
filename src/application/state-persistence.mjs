@@ -29,6 +29,12 @@ export function createStatePersistenceApi(context) {
     randomInt,
     createHighscoreMarker = () => createTimestampedId('run'),
     createRunArchetypeSequence,
+    createRunStudioTopology = (randomInt, minimumFloor = 10) => ({
+      nodes: { 1: { floorNumber: 1, position: { x: 0, y: 0, z: 0 }, entryDirection: "front", entryTransitionStyle: "passage", exitDirection: null, exitTransitionStyle: null } },
+      occupied: { "0,0,0": 1 },
+      generatedToFloor: Math.max(1, Number(minimumFloor) || 1),
+    }),
+    ensureRunStudioTopology = (topology) => topology,
     getArchetypeForFloor,
     xpForNextLevel,
     getNutritionMax,
@@ -37,9 +43,9 @@ export function createStatePersistenceApi(context) {
     updateVisibility,
     renderSelf,
   } = context;
-  const LEGACY_SAVEGAME_VERSION = 2;
   const SAVEGAME_STORE_VERSION = SAVEGAME_VERSION;
   const MAX_SAVE_ENTRIES = 24;
+  const INCOMPATIBLE_SAVE_ENTRY_ID = "__incompatible_savegame_store__";
 
   function normalizeShowcaseAnnouncementMode(value) {
     return ["off", "floating-text", "voice"].includes(value)
@@ -111,12 +117,45 @@ export function createStatePersistenceApi(context) {
     return {
       id: entry.id ?? null,
       version: entry.snapshotVersion ?? null,
+      compatible: true,
+      canLoad: true,
+      canOverwrite: true,
+      canDelete: true,
       savedAt: entry.savedAt ?? null,
       heroName: entry.state?.player?.name ?? null,
       heroClass: entry.state?.player?.classLabel ?? null,
       floor: entry.state?.floor ?? null,
       level: entry.state?.player?.level ?? null,
       turn: entry.state?.turn ?? null,
+    };
+  }
+
+  function createIncompatibleSaveMetadata() {
+    const rawSave = readStorage(SAVEGAME_KEY);
+    if (!rawSave) {
+      return null;
+    }
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(rawSave);
+    } catch {
+      parsed = null;
+    }
+
+    return {
+      id: INCOMPATIBLE_SAVE_ENTRY_ID,
+      version: parsed?.version ?? null,
+      compatible: false,
+      canLoad: false,
+      canOverwrite: false,
+      canDelete: true,
+      savedAt: parsed?.savedAt ?? null,
+      heroName: parsed?.state?.player?.name ?? "Unbekannt",
+      heroClass: parsed?.state?.player?.classLabel ?? null,
+      floor: parsed?.state?.floor ?? null,
+      level: parsed?.state?.player?.level ?? null,
+      turn: parsed?.state?.turn ?? null,
     };
   }
 
@@ -157,19 +196,6 @@ export function createStatePersistenceApi(context) {
       };
     }
 
-    if ((parsed?.version === LEGACY_SAVEGAME_VERSION || parsed?.version === SAVEGAME_STORE_VERSION) && parsed?.state) {
-      return {
-        version: SAVEGAME_STORE_VERSION,
-        entries: [{
-          id: createTimestampedId("save"),
-          savedAt: Number(parsed.savedAt) || Date.now(),
-          snapshotVersion: SAVEGAME_VERSION,
-          state: parsed.state,
-        }],
-        consumedIds: {},
-      };
-    }
-
     throw new Error("incompatible-savegame-store");
   }
 
@@ -198,6 +224,14 @@ export function createStatePersistenceApi(context) {
       return false;
     }
 
+    if (targetEntryId === INCOMPATIBLE_SAVE_ENTRY_ID) {
+      if (!readStorage(SAVEGAME_KEY)) {
+        return false;
+      }
+      removeStorage(SAVEGAME_KEY);
+      return true;
+    }
+
     const store = readSavegameStore();
     const nextEntries = (store.entries ?? []).filter((entry) => entry?.id !== targetEntryId);
     if (nextEntries.length === (store.entries ?? []).length) {
@@ -222,7 +256,7 @@ export function createStatePersistenceApi(context) {
         ? createSaveMetadata(readSavegameStore().entries[0])
         : null;
     } catch {
-      return null;
+      return createIncompatibleSaveMetadata();
     }
   }
 
@@ -230,7 +264,8 @@ export function createStatePersistenceApi(context) {
     try {
       return readSavegameStore().entries.map(createSaveMetadata);
     } catch {
-      return [];
+      const incompatibleEntry = createIncompatibleSaveMetadata();
+      return incompatibleEntry ? [incompatibleEntry] : [];
     }
   }
 
@@ -471,6 +506,13 @@ export function createStatePersistenceApi(context) {
     normalizedState.runArchetypeSequence = Array.isArray(savedState.runArchetypeSequence) && savedState.runArchetypeSequence.length > 0
       ? savedState.runArchetypeSequence
       : createRunArchetypeSequence(randomInt);
+    normalizedState.runStudioTopology = ensureRunStudioTopology(
+      savedState.runStudioTopology
+        ? savedState.runStudioTopology
+        : createRunStudioTopology(randomInt, Math.max(10, normalizedState.deepestFloor)),
+      Math.max(10, normalizedState.deepestFloor),
+      randomInt,
+    );
     normalizedState.modals = {
       ...createDefaultModals(false),
       ...(savedState.modals ?? {}),

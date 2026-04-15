@@ -32,6 +32,7 @@ export function assembleGameplayModules(context) {
     getCurrentFloorState,
     clamp,
     randomChance,
+    randomInt,
     rollPercent,
     renderSelf,
     noteMonsterEncounter,
@@ -56,6 +57,12 @@ export function assembleGameplayModules(context) {
     setTryCloseAdjacentDoor,
     setMovePlayer,
     setHandleWait,
+    setDebugRevealOrAdvanceStudio,
+    setEnterTargetMode,
+    setCancelTargetMode,
+    setMoveTargetCursor,
+    setSelectTargetTile,
+    setConfirmTargetAttack,
     countPotionsInInventory,
     countFoodInInventory,
   } = runtime;
@@ -231,6 +238,7 @@ export function assembleGameplayModules(context) {
     getState,
     getCurrentFloorState,
     createDungeonLevel,
+    randomInt,
     detectNearbyTraps,
     maybeTriggerShowcaseAmbience,
     manhattanDistance: aiApi.manhattanDistance,
@@ -317,6 +325,12 @@ export function assembleGameplayModules(context) {
   setTryCloseAdjacentDoor(playerTurnController.tryCloseAdjacentDoor);
   setMovePlayer(playerTurnController.movePlayer);
   setHandleWait(playerTurnController.handleWait);
+  setDebugRevealOrAdvanceStudio(floorTransitionService.debugRevealOrAdvanceStudio);
+  setEnterTargetMode(playerTurnController.enterTargetMode);
+  setCancelTargetMode(playerTurnController.cancelTargetMode);
+  setMoveTargetCursor(playerTurnController.moveTargetCursor);
+  setSelectTargetTile(playerTurnController.selectTargetTile);
+  setConfirmTargetAttack(playerTurnController.confirmTargetAttack);
 
   return {
     ...combatApi,

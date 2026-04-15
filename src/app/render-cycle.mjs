@@ -1,3 +1,5 @@
+import { evaluateTargetSelection, getTargetHintLabel } from '../application/targeting-service.mjs';
+
 export function createRenderCycleApi(context) {
   const {
     getState,
@@ -282,25 +284,20 @@ export function createRenderCycleApi(context) {
     const floorState = getCurrentFloorState();
     const targetingActive = Boolean(state.targeting?.active);
     const targetingWeapon = targetingActive ? getCombatWeapon?.(state.player) : null;
-    const targetedEnemy = targetingActive
-      ? floorState?.enemies?.find((enemy) => enemy.x === state.targeting.cursorX && enemy.y === state.targeting.cursorY)
+    const targetSelection = targetingActive
+      ? evaluateTargetSelection({
+          state,
+          floorState,
+          weapon: targetingWeapon,
+          x: state.targeting.cursorX,
+          y: state.targeting.cursorY,
+          manhattanDistance,
+          isStraightShot,
+          hasLineOfSight,
+        })
       : null;
-    const targetIsValid = Boolean(
-      targetingActive &&
-      targetedEnemy &&
-      targetingWeapon?.attackMode === "ranged" &&
-      (targetingWeapon?.range ?? 1) > 1 &&
-      manhattanDistance?.(targetedEnemy, state.player) <= (targetingWeapon?.range ?? 1) &&
-      isStraightShot?.(state.player.x, state.player.y, targetedEnemy.x, targetedEnemy.y) &&
-      hasLineOfSight?.(floorState, state.player.x, state.player.y, targetedEnemy.x, targetedEnemy.y)
-    );
-    const targetHint = targetingActive
-      ? targetIsValid
-        ? "Schuss frei"
-        : targetedEnemy
-          ? "Kein Schuss"
-          : "Kein Ziel"
-      : "";
+    const targetIsValid = Boolean(targetSelection?.valid);
+    const targetHint = targetingActive ? getTargetHintLabel(targetSelection) : "";
     targetModeHintElement.innerHTML = targetingActive
       ? `<span>Zielmodus</span><strong>${targetHint}</strong>`
       : `<span>Zielmodus</span><strong>-</strong>`;

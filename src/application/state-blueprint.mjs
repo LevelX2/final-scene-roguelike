@@ -17,13 +17,14 @@ export function createStateBlueprintApi(context) {
     getNutritionStart,
     getHungerState,
     createRunArchetypeSequence,
+    createRunStudioTopology = () => ({ nodes: { 1: { floorNumber: 1, position: { x: 0, y: 0, z: 0 }, entryDirection: "front", entryTransitionStyle: "passage", exitDirection: null, exitTransitionStyle: null } }, occupied: { "0,0,0": 1 }, generatedToFloor: 1 }),
     randomInt,
   } = context;
 
   const STARTING_WEAPON_POOLS = {
-    lead: ["relic-dagger", "rune-sword", "service-pistol", "expedition-revolver"],
+    lead: ["relic-dagger", "rune-sword"],
     stuntman: ["combat-knife", "woodcutter-axe", "breach-axe", "bowie-knife"],
-    director: ["pocket-revolver", "cane-blade", "electro-scalpel", "serum-launcher"],
+    director: ["cane-blade", "electro-scalpel"],
   };
 
   const DEFAULT_OPTIONS = {
@@ -187,6 +188,7 @@ export function createStateBlueprintApi(context) {
       visitedFloors: [],
       lastScoreRank: null,
       runArchetypeSequence: createRunArchetypeSequence(randomInt),
+      runStudioTopology: createRunStudioTopology(randomInt, 10),
       modals: createDefaultModals(openStartModal),
       collapsedCards: createDefaultCollapsedCards(),
       options: { ...initialOptions },

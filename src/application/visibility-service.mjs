@@ -91,6 +91,11 @@ export function createVisibilityService(context) {
     if (!floorState) {
       return;
     }
+    if (floorState.debugReveal) {
+      floorState.visible = createMaskGrid(true);
+      floorState.explored = createMaskGrid(true);
+      return;
+    }
     const visionRadius = VISION_RADIUS + (getEquippedLightBonus?.(state.player) ?? 0);
 
     floorState.visible = createMaskGrid(false);

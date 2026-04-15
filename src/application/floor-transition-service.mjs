@@ -1,10 +1,12 @@
 import { formatMonsterReference } from '../text/combat-phrasing.mjs';
+import { ensureRunStudioTopology, getStudioTopologyNode } from '../studio-topology.mjs';
 
 export function createFloorTransitionService(context) {
   const {
     getState,
     getCurrentFloorState,
     createDungeonLevel,
+    randomInt,
     detectNearbyTraps,
     maybeTriggerShowcaseAmbience,
     manhattanDistance,
@@ -18,13 +20,54 @@ export function createFloorTransitionService(context) {
     renderSelf,
   } = context;
 
+  function cloneHint(position) {
+    return position ? { x: position.x, y: position.y } : null;
+  }
+
+  function syncTopologyAnchorHints(topology, floorNumber, floorState) {
+    if (!topology?.nodes || !floorState) {
+      return;
+    }
+
+    const node = topology.nodes[floorNumber];
+    if (node) {
+      node.entryTransitionHint = cloneHint(floorState.entryAnchor?.transitionPosition ?? floorState.stairsUp);
+      node.exitTransitionHint = cloneHint(floorState.exitAnchor?.transitionPosition ?? floorState.stairsDown);
+    }
+
+    const previousNode = topology.nodes[floorNumber - 1];
+    if (previousNode && !previousNode.exitTransitionHint && floorState.entryAnchor?.transitionPosition) {
+      previousNode.exitTransitionHint = cloneHint(floorState.entryAnchor.transitionPosition);
+    }
+
+    const nextNode = topology.nodes[floorNumber + 1];
+    if (nextNode && floorState.exitAnchor?.transitionPosition) {
+      nextNode.entryTransitionHint = cloneHint(floorState.exitAnchor.transitionPosition);
+    }
+  }
+
+  function getAnchorInteractionPosition(anchor, fallback) {
+    return anchor?.transitionPosition ?? anchor?.position ?? fallback ?? null;
+  }
+
+  function getAnchorSpawnPosition(anchor, fallback) {
+    return anchor?.position ?? fallback ?? null;
+  }
+
   function ensureFloorExists(floorNumber) {
     const state = getState();
+    state.runStudioTopology = ensureRunStudioTopology(
+      state.runStudioTopology,
+      floorNumber + 1,
+      randomInt,
+    );
     if (!state.floors[floorNumber]) {
       state.floors[floorNumber] = createDungeonLevel(floorNumber, {
         studioArchetypeId: getArchetypeForFloor(state.runArchetypeSequence, floorNumber),
         runArchetypeSequence: state.runArchetypeSequence,
+        studioTopologyNode: getStudioTopologyNode(state.runStudioTopology, floorNumber),
       });
+      syncTopologyAnchorHints(state.runStudioTopology, floorNumber, state.floors[floorNumber]);
     }
   }
 
@@ -102,21 +145,24 @@ export function createFloorTransitionService(context) {
     const currentFloorState = getCurrentFloorState();
     const targetFloor = state.floor + direction;
     state.safeRestTurns = 0;
-    const sourceStair = direction > 0 ? currentFloorState.stairsDown : currentFloorState.stairsUp;
+    const sourceStair = direction > 0
+      ? getAnchorInteractionPosition(currentFloorState.exitAnchor, currentFloorState.stairsDown)
+      : getAnchorInteractionPosition(currentFloorState.entryAnchor, currentFloorState.stairsUp);
     const isFirstVisit = !state.visitedFloors.includes(targetFloor);
 
     if (direction > 0) {
       ensureFloorExists(targetFloor);
       state.floor = targetFloor;
       state.deepestFloor = Math.max(state.deepestFloor, state.floor);
-      const targetStair = state.floors[targetFloor].stairsUp
-        ? state.floors[targetFloor].stairsUp
-        : state.floors[targetFloor].startPosition;
-      state.player.x = targetStair.x;
-      state.player.y = targetStair.y;
+      const targetInteraction = getAnchorInteractionPosition(state.floors[targetFloor].entryAnchor, state.floors[targetFloor].stairsUp)
+        ?? state.floors[targetFloor].startPosition;
+      const targetSpawn = getAnchorSpawnPosition(state.floors[targetFloor].entryAnchor, state.floors[targetFloor].startPosition)
+        ?? targetInteraction;
+      state.player.x = targetSpawn.x;
+      state.player.y = targetSpawn.y;
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
-      const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetStair);
+      const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetInteraction);
       addMessage(`Du betrittst ${formatStudioLabel(state.floor)}. ${formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId)}`, 'important');
       if (isFirstVisit) {
         state.visitedFloors.push(targetFloor);
@@ -130,14 +176,15 @@ export function createFloorTransitionService(context) {
       return true;
     }
 
-    if (direction < 0 && currentFloorState.stairsUp && state.floor > 1) {
+    if (direction < 0 && (currentFloorState.entryAnchor?.position ?? currentFloorState.stairsUp) && state.floor > 1) {
       state.floor = targetFloor;
-      const targetStair = state.floors[targetFloor].stairsDown;
-      state.player.x = targetStair.x;
-      state.player.y = targetStair.y;
+      const targetInteraction = getAnchorInteractionPosition(state.floors[targetFloor].exitAnchor, state.floors[targetFloor].stairsDown);
+      const targetSpawn = getAnchorSpawnPosition(state.floors[targetFloor].exitAnchor, targetInteraction);
+      state.player.x = targetSpawn.x;
+      state.player.y = targetSpawn.y;
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
-      const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetStair);
+      const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetInteraction);
       addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück. ${formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId)}`, 'important');
       if (follower) {
         addMessage(`${formatFollowerLabel(follower)} setzt dir weiter nach.`, 'danger');
@@ -151,8 +198,10 @@ export function createFloorTransitionService(context) {
   function tryUseStairs() {
     const state = getState();
     const floorState = getCurrentFloorState();
+    const exitPosition = getAnchorInteractionPosition(floorState.exitAnchor, floorState.stairsDown);
+    const entryPosition = getAnchorInteractionPosition(floorState.entryAnchor, floorState.stairsUp);
 
-    if (floorState.stairsDown && floorState.stairsDown.x === state.player.x && floorState.stairsDown.y === state.player.y) {
+    if (exitPosition && exitPosition.x === state.player.x && exitPosition.y === state.player.y) {
       showStairChoice({
         direction: 1,
         title: 'Übergang',
@@ -164,7 +213,7 @@ export function createFloorTransitionService(context) {
       return true;
     }
 
-    if (floorState.stairsUp && floorState.stairsUp.x === state.player.x && floorState.stairsUp.y === state.player.y) {
+    if (entryPosition && state.floor > 1 && entryPosition.x === state.player.x && entryPosition.y === state.player.y) {
       showStairChoice({
         direction: -1,
         title: 'Übergang',
@@ -179,10 +228,34 @@ export function createFloorTransitionService(context) {
     return false;
   }
 
+  function debugRevealOrAdvanceStudio() {
+    const state = getState();
+    const floorState = getCurrentFloorState();
+    if (!floorState) {
+      return false;
+    }
+
+    if (!floorState.debugReveal) {
+      floorState.debugReveal = true;
+      renderSelf();
+      return true;
+    }
+
+    ensureFloorExists(state.floor + 1);
+    moveToFloor(1);
+    const nextFloorState = getCurrentFloorState();
+    if (nextFloorState) {
+      nextFloorState.debugReveal = true;
+    }
+    renderSelf();
+    return true;
+  }
+
   return {
     ensureFloorExists,
     transferFloorFollower,
     moveToFloor,
     tryUseStairs,
+    debugRevealOrAdvanceStudio,
   };
 }

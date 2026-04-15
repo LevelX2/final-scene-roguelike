@@ -95,7 +95,7 @@ test('showcase-placement only picks archetype-matching or global display cases',
   assert.ok(showcases.every((showcase) => showcase.item.archetype !== 'slasher'));
 });
 
-test('showcase-placement falls back to other unused props before repeating themed ones', () => {
+test('showcase-placement repeats archetype or global props before it ever picks a foreign archetype', () => {
   const propCatalog = [
     { id: 'western-prop', archetype: 'western', name: 'Western', source: 'Test', description: 'Western.' },
     { id: 'global-prop', archetype: 'global', name: 'Global', source: 'Test', description: 'Global.' },
@@ -135,5 +135,7 @@ test('showcase-placement falls back to other unused props before repeating theme
   });
 
   assert.ok(showcases.length > 0);
-  assert.ok(showcases.some((showcase) => showcase.item.id === 'slasher-prop'));
+  assert.ok(showcases.every((showcase) =>
+    showcase.item.id === 'western-prop' || showcase.item.id === 'global-prop'
+  ));
 });

@@ -40,6 +40,7 @@ export const toggleVoiceAnnouncementsElement = document.getElementById("toggleVo
 export const showcaseAnnouncementModeElement = document.getElementById("showcaseAnnouncementMode");
 export const enemyPanelModeElement = document.getElementById("enemyPanelMode");
 export const toggleEnemyPanelModeButtonElement = document.getElementById("toggleEnemyPanelMode");
+export const viewDeathStudioButton = document.getElementById("viewDeathStudio");
 export const openDeathKillsButton = document.getElementById("openDeathKills");
 export const closeDeathButton = document.getElementById("closeDeath");
 export const collapsibleCards = Array.from(document.querySelectorAll("[data-collapsible]"));

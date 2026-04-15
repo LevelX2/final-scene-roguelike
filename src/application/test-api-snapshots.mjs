@@ -36,6 +36,28 @@ export function createTestApiSnapshots(context) {
       },
       stairsDown: floorState.stairsDown ? { ...floorState.stairsDown } : null,
       stairsUp: floorState.stairsUp ? { ...floorState.stairsUp } : null,
+      entryAnchor: floorState.entryAnchor ? {
+        ...floorState.entryAnchor,
+        position: { ...floorState.entryAnchor.position },
+        transitionPosition: floorState.entryAnchor.transitionPosition ? { ...floorState.entryAnchor.transitionPosition } : null,
+        corridorPosition: floorState.entryAnchor.corridorPosition ? { ...floorState.entryAnchor.corridorPosition } : null,
+      } : null,
+      exitAnchor: floorState.exitAnchor ? {
+        ...floorState.exitAnchor,
+        position: { ...floorState.exitAnchor.position },
+        transitionPosition: floorState.exitAnchor.transitionPosition ? { ...floorState.exitAnchor.transitionPosition } : null,
+        corridorPosition: floorState.exitAnchor.corridorPosition ? { ...floorState.exitAnchor.corridorPosition } : null,
+      } : null,
+      layoutId: floorState.layoutId ?? null,
+      layoutFailureReason: floorState.layoutFailureReason ?? null,
+      corridorWidth: floorState.corridorWidth ?? null,
+      gangBoundingBox: floorState.gangBoundingBox ? { ...floorState.gangBoundingBox } : null,
+      topologyNode: floorState.topologyNode
+        ? {
+          ...floorState.topologyNode,
+          position: floorState.topologyNode.position ? { ...floorState.topologyNode.position } : null,
+        }
+        : null,
       grid: floorState.grid.map((row) => [...row]),
       rooms: (floorState.rooms ?? []).map((room) => ({ ...room })),
       visible: floorState.visible?.map((row) => [...row]) ?? [],

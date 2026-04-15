@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+  <rect width="64" height="64" fill="none"/>
+  <defs>
+    <linearGradient id="woodD" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#8c5b35"/>
+      <stop offset="100%" stop-color="#4c2c18"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="15" rx="14" ry="6" fill="#a76f42" stroke="#432613" stroke-width="1.6"/>
+  <path d="M18 15
+           C19 25, 22 45, 32 50
+           C42 45, 45 25, 46 15
+           C40 17.5, 24 17.5, 18 15 Z"
+        fill="url(#woodD)" stroke="#432613" stroke-width="1.6"/>
+  <ellipse cx="32" cy="50" rx="13" ry="5.5" fill="#452615" stroke="#2f190d" stroke-width="1.6"/>
+  <path d="M20 18 L22 47 M26 17 L27 49 M31 16 L31 50 M36 17 L35 49 M42 18 L40 47" stroke="#6a4123" stroke-width="1.4"/>
+  <rect x="18" y="21" width="28" height="3.5" rx="1" fill="#63666c"/>
+  <rect x="16" y="32" width="32" height="3.5" rx="1" fill="#63666c"/>
+  <rect x="18" y="42.5" width="28" height="3.5" rx="1" fill="#63666c"/>
+  <path d="M23 24 l2 3 l-1 5 l2 3 l-1 5 l2 3" fill="none" stroke="#3d2313" stroke-width="0.9"/>
+  <path d="M32 23 l1 4 l-1 4 l1 4 l-1 4 l1 4" fill="none" stroke="#3d2313" stroke-width="0.9"/>
+  <path d="M40 24 l-2 3 l1 5 l-2 3 l1 5 l-2 3" fill="none" stroke="#3d2313" stroke-width="0.9"/>
+  <ellipse cx="27" cy="13" rx="4.5" ry="2" fill="#d39b66" opacity="0.38"/>
+  <circle cx="44" cy="27" r="1.2" fill="#332016" opacity="0.5"/>
+</svg>

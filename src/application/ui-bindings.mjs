@@ -46,6 +46,7 @@ export function createUiBindingsApi(context) {
     showcaseAnnouncementModeElement,
     enemyPanelModeElement,
     toggleEnemyPanelModeButtonElement,
+    viewDeathStudioButton,
     startFormElement,
     bindTooltip,
     topbarHpCardElement,
@@ -66,6 +67,7 @@ export function createUiBindingsApi(context) {
     restartRun,
     leaveToStartScreen,
     openRunStatsFromDeath,
+    hideDeathModal,
     toggleCardCollapse,
     setInventoryFilter,
     setUiScale,
@@ -123,7 +125,7 @@ export function createUiBindingsApi(context) {
     closeInventoryButton.addEventListener("click", () => toggleInventory(false));
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
-    saveGameQuickButtonElement.addEventListener("click", openSavegames);
+    saveGameQuickButtonElement.addEventListener("click", () => saveCurrentGame());
     loadGameQuickButtonElement.addEventListener("click", openSavegames);
     openOptionsButton.addEventListener("click", () => toggleOptions(true));
     closeOptionsButton.addEventListener("click", () => toggleOptions(false));
@@ -139,6 +141,7 @@ export function createUiBindingsApi(context) {
     helpControlsTabButtonElement?.addEventListener("click", () => showHelpSection("controls"));
     showControlsHelpButtonElement?.addEventListener("click", () => showHelpSection("controls"));
     showOverviewHelpButtonElement?.addEventListener("click", () => showHelpSection("overview"));
+    viewDeathStudioButton.addEventListener("click", () => hideDeathModal());
     openDeathKillsButton.addEventListener("click", () => openRunStatsFromDeath());
     closeDeathButton.addEventListener("click", () => leaveToStartScreen());
     zoomOutBoardButtonElement.addEventListener("click", () => {

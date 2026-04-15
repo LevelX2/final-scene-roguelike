@@ -15,6 +15,7 @@ export function createInputController(context) {
     closeStartModal,
     movePlayer,
     handleWait,
+    debugRevealOrAdvanceStudio,
     tryCloseAdjacentDoor,
     quickUsePotion,
     enterTargetMode,
@@ -124,7 +125,7 @@ export function createInputController(context) {
         return;
       }
 
-      if (matchesShortcut(["escape", "t", "q"], ["Escape", "KeyT", "KeyQ", "KeyF"])) {
+      if (matchesShortcut(["escape", "t", "q"], ["Escape", "KeyT", "KeyQ"])) {
         event.preventDefault();
         cancelTargetMode();
         return;
@@ -150,6 +151,12 @@ export function createInputController(context) {
     if (matchesShortcut(["i"], ["KeyI"])) {
       event.preventDefault();
       toggleInventory();
+      return;
+    }
+
+    if (matchesShortcut([], ["F8"])) {
+      event.preventDefault();
+      debugRevealOrAdvanceStudio?.();
       return;
     }
 

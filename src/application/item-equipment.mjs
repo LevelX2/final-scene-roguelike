@@ -31,7 +31,7 @@ export function createItemEquipmentApi(context) {
       addMessage(`Mit ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "dative" })} sind beide Haende belegt. ${previousOffHand.name} wandert ins Inventar.`);
     }
 
-    addMessage(`Du fuehrst jetzt ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "accusative" })}.`, "important");
+    addMessage(`Du f\u00fchrst jetzt ${formatWeaponReference(nextWeapon, { article: "definite", grammaticalCase: "accusative" })}.`, "important");
     if (previousMainHand && previousMainHand.id !== "bare-hands") {
       state.inventory.push(previousMainHand);
     }

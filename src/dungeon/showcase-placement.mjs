@@ -11,6 +11,30 @@ export function createShowcasePlacementApi(context) {
     isPositionInsideRoom,
   } = context;
 
+  function buildShowcasePropPool(studioArchetypeId, usedPropIds) {
+    const archetypeSpecific = propCatalog.filter((prop) => prop.archetype === studioArchetypeId);
+    const globalProps = propCatalog.filter((prop) => prop.archetype === 'global');
+    const pools = [
+      archetypeSpecific.filter((prop) => !usedPropIds.has(prop.id)),
+      globalProps.filter((prop) => !usedPropIds.has(prop.id)),
+      archetypeSpecific,
+      globalProps,
+    ];
+    const ordered = [];
+
+    pools.forEach((pool, poolIndex) => {
+      for (const prop of pool) {
+        const alreadySelected = ordered.some((entry) => entry.id === prop.id);
+        if (alreadySelected && poolIndex < 2) {
+          continue;
+        }
+        ordered.push(prop);
+      }
+    });
+
+    return ordered;
+  }
+
   function chooseShowcaseRooms(rooms, startRoomIndex, goalRoomIndex) {
     return rooms
       .map((room, index) => ({ room, index }))
@@ -102,17 +126,8 @@ export function createShowcasePlacementApi(context) {
       const swapIndex = Math.floor(randomChance() * (index + 1));
       [shuffledRooms[index], shuffledRooms[swapIndex]] = [shuffledRooms[swapIndex], shuffledRooms[index]];
     }
-    const themedPool = propCatalog.filter((prop) =>
-      prop.archetype === studioArchetypeId || prop.archetype === "global"
-    );
-    const activePropPool = themedPool.length > 0 ? themedPool : propCatalog;
-    const availableProps = [...activePropPool];
-    for (let index = availableProps.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(randomChance() * (index + 1));
-      [availableProps[index], availableProps[swapIndex]] = [availableProps[swapIndex], availableProps[index]];
-    }
-    const fallbackUniqueProps = propCatalog.filter((prop) => !activePropPool.some((entry) => entry.id === prop.id));
     const usedPropIds = collectUsedShowcasePropIds();
+    const propPool = buildShowcasePropPool(studioArchetypeId, usedPropIds);
 
     for (const { room, index } of shuffledRooms) {
       if (showcases.length >= desiredCount) {
@@ -163,9 +178,11 @@ export function createShowcasePlacementApi(context) {
         continue;
       }
 
-      const prop = availableProps.find((entry) => !usedPropIds.has(entry.id))
-        ?? fallbackUniqueProps.find((entry) => !usedPropIds.has(entry.id))
-        ?? activePropPool[randomInt(0, activePropPool.length - 1)];
+      const prop = propPool.find((entry) => !usedPropIds.has(entry.id))
+        ?? propPool[randomInt(0, Math.max(0, propPool.length - 1))];
+      if (!prop) {
+        continue;
+      }
       usedPropIds.add(prop.id);
       showcases.push(createShowcase(prop, candidate.x, candidate.y));
       occupied.push({ x: candidate.x, y: candidate.y });

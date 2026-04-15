@@ -4,6 +4,7 @@ import { createStateBlueprintApi } from './application/state-blueprint.mjs';
 import { createStatePersistenceApi } from './application/state-persistence.mjs';
 import { getNutritionMax, getNutritionStart, getHungerState } from './nutrition.mjs';
 import { createRunArchetypeSequence, getArchetypeForFloor } from './studio-theme.mjs';
+import { createRunStudioTopology, ensureRunStudioTopology, getStudioTopologyNode } from './studio-topology.mjs';
 import { formatMonsterKillerLabel, formatWeaponDativePhrase } from './text/combat-phrasing.mjs';
 
 export function createStateApi(context) {
@@ -34,7 +35,7 @@ export function createStateApi(context) {
   } = context;
   const HIGHSCORE_LAST_ENTRY_KEY = "dungeon-rogue-highscores-last-entry";
   const SAVEGAME_KEY = "dungeon-rogue-savegame";
-  const SAVEGAME_VERSION = 3;
+  const SAVEGAME_VERSION = 4;
   const storageApi = createBrowserStorageApi();
 
   function readStorage(key) {
@@ -76,6 +77,7 @@ export function createStateApi(context) {
     getNutritionStart,
     getHungerState,
     createRunArchetypeSequence,
+    createRunStudioTopology,
     randomInt,
   });
 
@@ -104,6 +106,8 @@ export function createStateApi(context) {
     randomInt,
     createHighscoreMarker: () => createRuntimeId('run'),
     createRunArchetypeSequence,
+    createRunStudioTopology,
+    ensureRunStudioTopology,
     getArchetypeForFloor,
     xpForNextLevel,
     getNutritionMax,
@@ -212,16 +216,39 @@ export function createStateApi(context) {
     nextState.player.hungerState = getHungerState(nextState.player);
 
     if (reusableInitialStudio) {
+      const topologySource = currentState.runStudioTopology
+        ? JSON.parse(JSON.stringify(currentState.runStudioTopology))
+        : nextState.runStudioTopology;
       nextState.runArchetypeSequence = [...(currentState.runArchetypeSequence ?? nextState.runArchetypeSequence)];
+      nextState.runStudioTopology = ensureRunStudioTopology(
+        topologySource,
+        10,
+        randomInt,
+      );
       nextState.floors[1] = currentState.floors[1];
       nextState.player.x = currentState.player.x;
       nextState.player.y = currentState.player.y;
     } else {
+      ensureRunStudioTopology(nextState.runStudioTopology, 10, randomInt);
       nextState.floors[1] = createDungeonLevel(1, {
         stairsUp: null,
         studioArchetypeId: getArchetypeForFloor(nextState.runArchetypeSequence, 1),
         runArchetypeSequence: nextState.runArchetypeSequence,
+        studioTopologyNode: getStudioTopologyNode(nextState.runStudioTopology, 1),
       });
+      const topologyNode = nextState.runStudioTopology?.nodes?.[1];
+      if (topologyNode) {
+        topologyNode.entryTransitionHint = nextState.floors[1].entryAnchor?.transitionPosition
+          ? { ...nextState.floors[1].entryAnchor.transitionPosition }
+          : null;
+        topologyNode.exitTransitionHint = nextState.floors[1].exitAnchor?.transitionPosition
+          ? { ...nextState.floors[1].exitAnchor.transitionPosition }
+          : null;
+      }
+      const nextTopologyNode = nextState.runStudioTopology?.nodes?.[2];
+      if (nextTopologyNode && nextState.floors[1].exitAnchor?.transitionPosition) {
+        nextTopologyNode.entryTransitionHint = { ...nextState.floors[1].exitAnchor.transitionPosition };
+      }
       nextState.player.x = nextState.floors[1].startPosition.x;
       nextState.player.y = nextState.floors[1].startPosition.y;
     }

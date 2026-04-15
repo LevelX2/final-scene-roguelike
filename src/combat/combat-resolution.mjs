@@ -53,8 +53,10 @@ export function createCombatResolutionApi(context) {
     const state = getState();
     const weapon = options.weapon ?? getCombatWeapon(attacker);
     const distance = Math.max(1, options.distance ?? 1);
+    const floorNumber = Math.max(1, state?.floor ?? 1);
     const isPlayerAttack = attacker === state.player && defender?.type === "monster";
     const usesOpeningStrike = isPlayerAttack && !defender.openingStrikeSpent;
+    const isRangedAttack = weapon.attackMode === 'ranged' && distance > 1;
     const meleePenalty = weapon.attackMode === 'ranged' && distance <= 1
       ? weapon.meleePenaltyHit ?? 0
       : 0;
@@ -84,8 +86,16 @@ export function createCombatResolutionApi(context) {
     );
     const critical = rollPercent(critChance);
     const conditionalDamage = getWeaponConditionalDamageBonus(attacker, weapon);
-    const baseDamage = Math.max(1, attacker.strength + weapon.damage + conditionalDamage);
-    const damage = critical ? Math.floor(baseDamage * 1.5) : baseDamage;
+    const rangedDamagePenalty = isRangedAttack
+      ? floorNumber <= 2
+        ? 2
+        : floorNumber <= 4
+          ? 1
+          : 0
+      : 0;
+    const baseDamage = Math.max(1, attacker.strength + weapon.damage + conditionalDamage - rangedDamagePenalty);
+    const critMultiplier = isRangedAttack ? 1.35 : 1.5;
+    const damage = critical ? Math.max(baseDamage + 1, Math.floor(baseDamage * critMultiplier)) : baseDamage;
 
     return {
       hit: true,

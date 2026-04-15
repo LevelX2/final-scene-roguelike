@@ -1,3 +1,4 @@
+import { evaluateTargetSelection } from '../application/targeting-service.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 
 export function createBoardView(context) {
@@ -12,6 +13,7 @@ export function createBoardView(context) {
     getState,
     getCurrentFloorState,
     getMainHand,
+    getCombatWeapon,
     getOffHand,
     formatWeaponDisplayName,
     formatWeaponReference,
@@ -83,6 +85,40 @@ export function createBoardView(context) {
       classes: [
         `door-passage-${passageAxis}`,
         `door-hinge-${hinge}`,
+      ],
+    };
+  }
+
+  function getAnchorPresentation(anchor, isEntry) {
+    const direction = anchor?.direction ?? (isEntry ? "front" : "right");
+    const style = anchor?.transitionStyle ?? "passage";
+
+    if (style === "lift" || style === "stairs") {
+      const upward = direction === "up";
+      return {
+        iconAssetUrl: upward ? "./assets/stairs-up.svg" : "./assets/stairs-down.svg",
+        imageClass: upward ? "tooltip-art-stairs tooltip-art-stairs-up" : "tooltip-art-stairs tooltip-art-stairs-down",
+        lines: [
+          style === "lift"
+            ? upward ? "Ein Lift fuehrt nach oben." : "Ein Lift fuehrt nach unten oder aus dem Studio heraus."
+            : upward ? "Eine Treppe fuehrt nach oben." : "Eine Treppe fuehrt nach unten oder aus dem Studio heraus.",
+        ],
+      };
+    }
+
+    const iconAssetUrl = direction === "left"
+      ? "./assets/door-open-left.svg"
+      : direction === "right"
+        ? "./assets/door-open-right.svg"
+        : direction === "front"
+          ? "./assets/door-open-top.svg"
+          : "./assets/door-open-bottom.svg";
+
+    return {
+      iconAssetUrl,
+      imageClass: "tooltip-art-door",
+      lines: [
+        isEntry ? "Der Zugang zu diesem Studio." : "Der Ausgang zum naechsten Studio.",
       ],
     };
   }
@@ -382,37 +418,35 @@ export function createBoardView(context) {
     }
 
     if (floorState.stairsDown && floorState.stairsDown.x === x && floorState.stairsDown.y === y) {
+      const anchorPresentation = getAnchorPresentation(floorState.exitAnchor, false);
       return {
         type: isVisible
           ? `floor studio-${studioArchetypeId} stairs-down`
           : `floor memory studio-${studioArchetypeId} stairs-down memory`,
         glyph: TILE.STAIRS_DOWN,
-        overlayImageUrl: "./assets/stairs-down.svg",
+        overlayImageUrl: anchorPresentation.iconAssetUrl,
         tooltip: isVisible ? {
-          title: "Übergang",
-          imageUrl: "./assets/stairs-down.svg",
-          imageClass: "tooltip-art-stairs tooltip-art-stairs-down",
-          lines: [
-            "Führt dich tiefer in den Studiokomplex.",
-          ],
+          title: floorState.exitAnchor?.label ?? "Ausgang",
+          imageUrl: anchorPresentation.iconAssetUrl,
+          imageClass: anchorPresentation.imageClass,
+          lines: anchorPresentation.lines,
         } : null,
       };
     }
 
     if (floorState.stairsUp && floorState.stairsUp.x === x && floorState.stairsUp.y === y) {
+      const anchorPresentation = getAnchorPresentation(floorState.entryAnchor, true);
       return {
         type: isVisible
           ? `floor studio-${studioArchetypeId} stairs-up`
           : `floor memory studio-${studioArchetypeId} stairs-up memory`,
         glyph: TILE.STAIRS_UP,
-        overlayImageUrl: "./assets/stairs-up.svg",
+        overlayImageUrl: anchorPresentation.iconAssetUrl,
         tooltip: isVisible ? {
-          title: "Rückweg",
-          imageUrl: "./assets/stairs-up.svg",
-          imageClass: "tooltip-art-stairs tooltip-art-stairs-up",
-          lines: [
-            "Bringt dich in ein früheres Studio zurück.",
-          ],
+          title: floorState.entryAnchor?.label ?? "Eingang",
+          imageUrl: anchorPresentation.iconAssetUrl,
+          imageClass: anchorPresentation.imageClass,
+          lines: anchorPresentation.lines,
         } : null,
       };
     }
@@ -434,17 +468,22 @@ export function createBoardView(context) {
       return null;
     }
 
-    const weapon = getMainHand(state.player);
-    const enemy = floorState.enemies.find((entry) => entry.x === x && entry.y === y);
-    if (!enemy || weapon.attackMode !== "ranged" || (weapon.range ?? 1) <= 1) {
+    const targetSelection = evaluateTargetSelection({
+      state,
+      floorState,
+      weapon: getCombatWeapon?.(state.player) ?? getMainHand(state.player),
+      x,
+      y,
+      manhattanDistance: (enemy, player) => Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y),
+      isStraightShot,
+      hasLineOfSight,
+    });
+
+    if (!targetSelection.enemy) {
       return "invalid";
     }
 
-    const distance = Math.abs(enemy.x - state.player.x) + Math.abs(enemy.y - state.player.y);
-    const hasRange = distance <= (weapon.range ?? 1);
-    const hasAlignment = Boolean(isStraightShot?.(state.player.x, state.player.y, enemy.x, enemy.y));
-    const hasSight = Boolean(hasLineOfSight?.(floorState, state.player.x, state.player.y, enemy.x, enemy.y));
-    return hasRange && hasAlignment && hasSight ? "valid" : "invalid";
+    return targetSelection.valid ? "valid" : "invalid";
   }
 
   function renderBoard() {

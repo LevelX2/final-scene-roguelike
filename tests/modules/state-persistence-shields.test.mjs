@@ -84,7 +84,7 @@ function createPersistenceHarness() {
     HIGHSCORE_LAST_ENTRY_KEY: 'highscores-last',
     OPTIONS_KEY: 'options',
     SAVEGAME_KEY: 'savegame',
-    SAVEGAME_VERSION: 3,
+    SAVEGAME_VERSION: 4,
     DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
     readStorage: (key) => storage.get(key) ?? null,
     writeStorage: (key, value) => storage.set(key, value),
@@ -123,61 +123,66 @@ test('state-persistence normalisiert Schilde in Inventar, Boden-Pickups und Gegn
   const { storage, getState, persistence } = createPersistenceHarness();
 
   storage.set('savegame', JSON.stringify({
-    version: 3,
-    savedAt: 123,
-    state: {
-      floor: 1,
-      deepestFloor: 1,
-      inventory: [
-        {
-          type: 'offhand',
-          id: 'satellite-dish-guard',
-          name: 'Satellitenschuessel-Schild',
-          rarity: 'uncommon',
+    version: 4,
+    entries: [{
+      id: 'save-1',
+      savedAt: 123,
+      snapshotVersion: 4,
+      state: {
+        floor: 1,
+        deepestFloor: 1,
+        inventory: [
+          {
+            type: 'offhand',
+            id: 'satellite-dish-guard',
+            name: 'Satellitenschuessel-Schild',
+            rarity: 'uncommon',
+          },
+        ],
+        player: {
+          name: 'Ripley',
+          classId: 'lead',
+          offHand: {
+            id: 'clapperboard-shield',
+            name: 'Klappenbrett-Schild',
+            blockChance: 16,
+            blockValue: 2,
+          },
         },
-      ],
-      player: {
-        name: 'Ripley',
-        classId: 'lead',
-        offHand: {
-          id: 'clapperboard-shield',
-          name: 'Klappenbrett-Schild',
-          blockChance: 16,
-          blockValue: 2,
+        floors: {
+          1: {
+            floorNumber: 1,
+            studioArchetypeId: 'slasher',
+            grid: [['.']],
+            visible: [[true]],
+            offHands: [
+              {
+                x: 2,
+                y: 3,
+                item: {
+                  id: 'stuntman-bracer',
+                  name: 'Stuntman-Bracer',
+                },
+              },
+            ],
+            enemies: [
+              {
+                id: 'test-enemy',
+                offHand: {
+                  id: 'neon-diner-tray',
+                  name: 'Neon-Diner-Tablett',
+                },
+                lootOffHand: {
+                  id: 'worksite-bracer',
+                  name: 'Arbeitsschutz-Armschild',
+                },
+              },
+            ],
+          },
         },
       },
-      floors: {
-        1: {
-          floorNumber: 1,
-          studioArchetypeId: 'slasher',
-          grid: [['.']],
-          visible: [[true]],
-          offHands: [
-            {
-              x: 2,
-              y: 3,
-              item: {
-                id: 'stuntman-bracer',
-                name: 'Stuntman-Bracer',
-              },
-            },
-          ],
-          enemies: [
-            {
-              id: 'test-enemy',
-              offHand: {
-                id: 'neon-diner-tray',
-                name: 'Neon-Diner-Tablett',
-              },
-              lootOffHand: {
-                id: 'worksite-bracer',
-                name: 'Arbeitsschutz-Armschild',
-              },
-            },
-          ],
-        },
-      },
-    },
+    }],
+    consumedIds: {},
   }));
 
   const result = persistence.loadSavedGame();

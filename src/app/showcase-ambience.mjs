@@ -23,41 +23,41 @@ export function createShowcaseAmbienceApi(context) {
 
   function getRoomIndexAtPosition(position, floorState = getCurrentFloorState()) {
     return floorState?.rooms?.findIndex((room) =>
-      position.x >= room.x &&
-      position.x < room.x + room.width &&
-      position.y >= room.y &&
-      position.y < room.y + room.height
+      Array.isArray(room.floorTiles)
+        ? room.floorTiles.some((tile) => tile.x === position.x && tile.y === position.y)
+        : (
+          position.x >= room.x &&
+          position.x < room.x + room.width &&
+          position.y >= room.y &&
+          position.y < room.y + room.height
+        )
     ) ?? -1;
   }
 
   function maybeTriggerShowcaseAmbience() {
     const state = getState();
     const floorState = getCurrentFloorState();
-    if (!floorState?.rooms?.length || !floorState?.showcases?.length) {
+    if (!floorState?.showcases?.length) {
       return;
     }
 
     floorState.showcaseAmbienceSeen = floorState.showcaseAmbienceSeen ?? {};
-    const roomIndex = getRoomIndexAtPosition(state.player, floorState);
-    if (roomIndex < 0 || floorState.showcaseAmbienceSeen[roomIndex]) {
+    const adjacentShowcaseIndex = floorState.showcases.findIndex((showcase) => {
+      const distance = Math.abs(showcase.x - state.player.x) + Math.abs(showcase.y - state.player.y);
+      const showcaseKey = showcase.item?.id ?? `${showcase.x},${showcase.y}`;
+      return distance === 1 && !floorState.showcaseAmbienceSeen[showcaseKey];
+    });
+    const adjacentShowcase = adjacentShowcaseIndex >= 0 ? floorState.showcases[adjacentShowcaseIndex] : null;
+
+    if (!adjacentShowcase) {
       return;
     }
 
-    const room = floorState.rooms[roomIndex];
-    const showcasesInRoom = floorState.showcases.filter((showcase) =>
-      showcase.x >= room.x &&
-      showcase.x < room.x + room.width &&
-      showcase.y >= room.y &&
-      showcase.y < room.y + room.height
-    );
-    if (!showcasesInRoom.length) {
-      return;
-    }
-
-    const selectedShowcase = showcasesInRoom[randomInt(0, showcasesInRoom.length - 1)];
-    const lines = DISPLAY_CASE_AMBIENCE[selectedShowcase.item.ambienceId] ?? [];
+    const showcaseKey = adjacentShowcase.item?.id ?? `${adjacentShowcase.x},${adjacentShowcase.y}`;
+    const lines = DISPLAY_CASE_AMBIENCE[adjacentShowcase.item.ambienceId] ?? [];
     if (!lines.length) {
-      floorState.showcaseAmbienceSeen[roomIndex] = true;
+      floorState.showcaseAmbienceSeen[showcaseKey] = true;
+      floorState.showcaseAmbienceSeen[adjacentShowcaseIndex] = true;
       return;
     }
 
@@ -68,12 +68,12 @@ export function createShowcaseAmbienceApi(context) {
     }
     if (announcementMode === "floating-text") {
       showFloatingText(
-        selectedShowcase.x,
-        selectedShowcase.y,
+        adjacentShowcase.x,
+        adjacentShowcase.y,
         line,
         "showcase",
         {
-          title: selectedShowcase.item.source ?? selectedShowcase.item.name,
+          title: adjacentShowcase.item.source ?? adjacentShowcase.item.name,
           duration: 4800,
         },
       );
@@ -81,7 +81,8 @@ export function createShowcaseAmbienceApi(context) {
     } else if (announcementMode === "voice") {
       playNarration?.(line);
     }
-    floorState.showcaseAmbienceSeen[roomIndex] = true;
+    floorState.showcaseAmbienceSeen[showcaseKey] = true;
+    floorState.showcaseAmbienceSeen[adjacentShowcaseIndex] = true;
   }
 
   return {

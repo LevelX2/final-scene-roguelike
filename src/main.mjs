@@ -445,6 +445,7 @@ const { bindAppControls } = createUiBindingsApi({
   showcaseAnnouncementModeElement: appUi.showcaseAnnouncementModeElement,
   enemyPanelModeElement: appUi.enemyPanelModeElement,
   toggleEnemyPanelModeButtonElement: appUi.toggleEnemyPanelModeButtonElement,
+  viewDeathStudioButton: appUi.viewDeathStudioButton,
   startFormElement: appUi.startFormElement,
   bindTooltip,
   topbarHpCardElement: appUi.topbarHpCardElement,

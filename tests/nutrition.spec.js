@@ -11,7 +11,7 @@ test("nutrition starts with the class endurance bonus applied", async ({ page })
   expect(snapshot.player.nutritionMax).toBe(900);
   expect(snapshot.player.nutrition).toBe(701);
   await expect(page.locator("#nutritionLabel")).toHaveCount(0);
-  await expect(page.locator("#nutritionState")).toHaveText("Normal");
+  await expect(page.locator("#topbarFood")).toHaveText("Normal");
 });
 
 test("food can be eaten from the ground and is clamped to the nutrition maximum", async ({ page }) => {
@@ -53,7 +53,7 @@ test("food can be eaten from the ground and is clamped to the nutrition maximum"
   expect(snapshot.player.nutritionMax).toBe(900);
   expect(inventory.foodCount).toBe(0);
   expect(messages.some((entry) => entry.text.includes("wieder erbrochen"))).toBeTruthy();
-  await expect(page.locator("#nutritionState")).toHaveText("Satt");
+  await expect(page.locator("#topbarFood")).toHaveText("Satt");
 });
 
 test("food modal defaults reliably to the first eat action", async ({ page }) => {
@@ -126,7 +126,7 @@ test("waiting consumes nutrition and dying hunger deals damage after the action"
   expect(snapshot.player.hungerState).toBe("STARVING");
   expect(snapshot.player.hp).toBe(12);
   expect(messages.some((entry) => entry.text.includes("Du bist ausgehungert."))).toBeTruthy();
-  await expect(page.locator("#nutritionState")).toHaveText("Ausgehungert");
+  await expect(page.locator("#topbarFood")).toHaveText("Ausgehungert");
 
   await page.keyboard.press(" ");
 
@@ -181,5 +181,5 @@ test("stored food can be used from the inventory and updates the nutrition hud",
 
   expect(snapshot.player.nutrition).toBe(648);
   expect(inventory.foodCount).toBe(0);
-  await expect(page.locator("#nutritionState")).toHaveText("Normal");
+  await expect(page.locator("#topbarFood")).toHaveText("Normal");
 });

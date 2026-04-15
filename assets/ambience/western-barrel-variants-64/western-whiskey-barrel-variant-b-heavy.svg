@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+  <rect width="64" height="64" fill="none"/>
+  <defs>
+    <linearGradient id="woodB" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#8d5b33"/>
+      <stop offset="50%" stop-color="#6d4325"/>
+      <stop offset="100%" stop-color="#4d2d17"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="14" rx="17" ry="7" fill="#a46d3f" stroke="#482a15" stroke-width="2"/>
+  <path d="M15 14
+           C16 26, 18 47, 32 52
+           C46 47, 48 26, 49 14
+           C43 19, 21 19, 15 14 Z"
+        fill="url(#woodB)" stroke="#482a15" stroke-width="2"/>
+  <ellipse cx="32" cy="52" rx="16" ry="6" fill="#472816" stroke="#2f1a0e" stroke-width="2"/>
+  <rect x="16" y="19" width="32" height="5" rx="2" fill="#53565d"/>
+  <rect x="14" y="31" width="36" height="5" rx="2" fill="#53565d"/>
+  <rect x="16" y="43" width="32" height="5" rx="2" fill="#53565d"/>
+  <path d="M22 17 L22 49 M28 15 L28 51 M36 15 L36 51 M42 17 L42 49" stroke="#5a351d" stroke-width="1.5"/>
+  <path d="M20 25 C25 28, 39 28, 44 25" fill="none" stroke="#59341d" stroke-width="1.2"/>
+  <path d="M20 38 C25 41, 39 41, 44 38" fill="none" stroke="#59341d" stroke-width="1.2"/>
+  <ellipse cx="26" cy="12.5" rx="6.5" ry="2.5" fill="#d39a67" opacity="0.45"/>
+  <ellipse cx="39" cy="47" rx="4" ry="1.6" fill="#2c170d" opacity="0.4"/>
+</svg>

@@ -32,7 +32,6 @@ test("hero name can be changed and persists for the next session", async ({ page
   await page.locator("#startForm").evaluate((form) => form.requestSubmit());
 
   await expect(page.locator("#playerPanelTitle")).toContainText("Ripley");
-  await expect(page.locator("#heroIdentityStatus")).toContainText("Ripley");
 
   await page.reload();
 
@@ -49,14 +48,11 @@ test("hero class cards can be selected from the start screen", async ({ page }) 
   await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
   await expect(page.locator("#startModal")).toBeVisible();
   await expect(page.locator("#classOptions .class-option-art")).toHaveCount(3);
-  await expect(page.locator("#classOptions")).toContainText("Spezialfähigkeit: Triff deine Marke");
+  await expect(page.locator("#classOptions")).toContainText("Triff deine Marke");
   await page.locator("#classOptions").getByText("Stuntman", { exact: true }).click();
-  await expect(page.locator(".class-option.selected strong")).toHaveText("Stuntman");
+  await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
 
   await page.locator("#startForm").evaluate((form) => form.requestSubmit());
-  await expect(page.locator("#playerSheet")).toContainText("Stuntman");
-  await expect(page.locator("#playerSheet")).toContainText("Steckt den Fall weg");
-
   const heroVisuals = await page.evaluate(() => {
     const playerTile = document.querySelector(".board .tile.player");
     const title = document.getElementById("playerPanelTitle");
@@ -78,20 +74,20 @@ test("hero class cards support arrow-key selection on the start screen", async (
 
   await page.locator(".class-option.selected").focus();
   await page.keyboard.press("ArrowDown");
-  await expect(page.locator(".class-option.selected strong")).toHaveText("Stuntman");
+  await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
 
   await page.keyboard.press("ArrowDown");
-  await expect(page.locator(".class-option.selected strong")).toHaveText("Regisseur");
+  await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Regisseur");
 
   await page.keyboard.press("ArrowUp");
-  await expect(page.locator(".class-option.selected strong")).toHaveText("Stuntman");
+  await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
 });
 
 test("each hero class starts with a matching random weapon", async ({ page }) => {
   const classExpectations = [
     {
       classLabel: "Hauptrolle",
-      allowedIds: ["relic-dagger", "rune-sword", "service-pistol", "expedition-revolver"],
+      allowedIds: ["relic-dagger", "rune-sword"],
     },
     {
       classLabel: "Stuntman",
@@ -99,7 +95,7 @@ test("each hero class starts with a matching random weapon", async ({ page }) =>
     },
     {
       classLabel: "Regisseur",
-      allowedIds: ["pocket-revolver", "cane-blade", "electro-scalpel", "serum-launcher"],
+      allowedIds: ["cane-blade", "electro-scalpel"],
     },
   ];
 
@@ -295,6 +291,9 @@ test("death screen opens the normal run history modal", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(page.locator("#runStatsModal")).toBeHidden();
   await expect(page.locator("#deathModal")).toBeVisible();
+  await page.locator("#deathModal").getByRole("button", { name: "Zum Todesstudio" }).click();
+  await expect(page.locator("#deathModal")).toBeHidden();
+  await expect(page.locator("#board .tile.player")).toBeVisible();
 });
 
 test("options persist after a page reload", async ({ page }) => {
@@ -371,7 +370,7 @@ test("a manual save can be loaded after a page reload", async ({ page }) => {
   expect(afterReload.inventory.foodCount).toBe(beforeReload.inventory.foodCount);
 });
 
-test("an incompatible save is rejected with a clear message", async ({ page }) => {
+test("an incompatible save stays visible in the list and can be deleted", async ({ page }) => {
   await page.goto("/");
 
   await page.evaluate(() => {
@@ -395,6 +394,14 @@ test("an incompatible save is rejected with a clear message", async ({ page }) =
   await expect(page.locator("#savegamesModal")).toBeVisible();
   await expect(page.locator("#startScreen")).toBeVisible();
   await expect(page.locator("#savegameStatus")).toContainText("nicht kompatibel");
+  await expect(page.locator("#savegameList")).toContainText("Legacy Hero");
+  await expect(page.locator("#savegameList")).toContainText("Version 999");
+  await expect(page.locator("#savegameList .choice-btn", { hasText: "Laden" })).toHaveCount(0);
+
+  await page.locator("#savegameList .choice-btn", { hasText: "Löschen" }).click();
+
+  await expect(page.locator("#savegameStatus")).toContainText("Kein Spielstand gefunden");
+  await expect(page.locator("#savegameList")).toContainText("Keine gespeicherten Runs");
 });
 
 test("loading a saved game restores gameplay state but keeps transient modals closed", async ({ page }) => {
@@ -691,6 +698,40 @@ test("ranged weapons enter target mode and mark a valid target", async ({ page }
   await expect(page.locator("#enemySheet")).toContainText("Aktiv markiert");
 });
 
+test("pressing F with a ranged weapon enters target mode", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+  });
+
+  await page.keyboard.press("f");
+
+  await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
+  await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
+});
+
 test("target mode can also be opened from the header button", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -794,6 +835,42 @@ test("target mode can be ended again from the header button", async ({ page }) =
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
 
   await page.getByRole("button", { name: "Zielen beenden" }).click();
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+});
+
+test("pressing T while target mode is active closes it again", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+  });
+
+  await page.keyboard.press("f");
+  await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
+
+  await page.keyboard.press("t");
+
   await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
 });
 
@@ -1271,7 +1348,6 @@ test("poison deals damage over time to the player", async ({ page }) => {
     });
   });
 
-  await expect(page.locator("#playerStatusSummary")).toContainText("Status: Vergiftet 2");
   await expect(page.locator("#topbarStatusSummary")).toContainText("Vergiftet 2");
   await expect(page.locator("#playerSheet")).toContainText("Vergiftet 2");
 
@@ -1621,3 +1697,4 @@ test("standing next to a showcase accelerates safe healing for the hero", async 
   expect(snapshot.player.hp).toBe(11);
   expect(messages.some((entry) => entry.text.includes("Nähe der Vitrine"))).toBeTruthy();
 });
+

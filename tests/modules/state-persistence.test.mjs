@@ -75,7 +75,7 @@ test('state-persistence normalizes transient modal state on load', () => {
     HIGHSCORE_LAST_ENTRY_KEY: 'highscores-last',
     OPTIONS_KEY: 'options',
     SAVEGAME_KEY: 'savegame',
-    SAVEGAME_VERSION: 3,
+    SAVEGAME_VERSION: 4,
     DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
     readStorage: (key) => storage.get(key) ?? null,
     writeStorage: (key, value) => storage.set(key, value),
@@ -102,17 +102,22 @@ test('state-persistence normalizes transient modal state on load', () => {
   });
 
   storage.set('savegame', JSON.stringify({
-    version: 3,
-    savedAt: 123,
-    state: {
-      floor: 1,
-      deepestFloor: 1,
-      modals: { inventoryOpen: true, optionsOpen: true },
-      pendingChoice: { type: 'potion' },
-      pendingStairChoice: { direction: 1 },
-      player: { name: 'Ripley', classId: 'lead', level: 2, hp: 7, maxHp: 12, xpToNext: 25, nutrition: 50 },
-      floors: { 1: { studioArchetypeId: 'slasher', grid: [['.']], visible: [[true]], enemies: [] } },
-    },
+    version: 4,
+    entries: [{
+      id: 'save-1',
+      savedAt: 123,
+      snapshotVersion: 4,
+      state: {
+        floor: 1,
+        deepestFloor: 1,
+        modals: { inventoryOpen: true, optionsOpen: true },
+        pendingChoice: { type: 'potion' },
+        pendingStairChoice: { direction: 1 },
+        player: { name: 'Ripley', classId: 'lead', level: 2, hp: 7, maxHp: 12, xpToNext: 25, nutrition: 50 },
+        floors: { 1: { studioArchetypeId: 'slasher', grid: [['.']], visible: [[true]], enemies: [] } },
+      },
+    }],
+    consumedIds: {},
   }));
 
   const result = persistence.loadSavedGame();
@@ -161,7 +166,7 @@ test('state-persistence ranks final scenes by studio, level, kills, then turns',
     HIGHSCORE_LAST_ENTRY_KEY: 'highscores-last',
     OPTIONS_KEY: 'options',
     SAVEGAME_KEY: 'savegame',
-    SAVEGAME_VERSION: 3,
+    SAVEGAME_VERSION: 4,
     DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
     readStorage: (key) => storage.get(key) ?? null,
     writeStorage: (key, value) => storage.set(key, value),

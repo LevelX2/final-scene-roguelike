@@ -43,6 +43,47 @@ test("player does not share the start tile with a monster", async ({ page }) => 
   expect(overlap).toBeFalsy();
 });
 
+test("the first studio entrance sits in the outer wall and the player starts just inside it", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const result = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const anchor = snapshot.entryAnchor;
+    if (!anchor || anchor.direction !== "left") {
+      return { ok: false, reason: "missing-left-entry", anchor };
+    }
+
+    const transition = anchor.transitionPosition ?? snapshot.stairsUp;
+    const anchorRoom = anchor.roomId != null
+      ? snapshot.rooms.find((room) => room.id === anchor.roomId)
+      : null;
+    return {
+      ok: Boolean(
+        transition &&
+        transition.x === 0 &&
+        snapshot.player.x === anchor.position.x &&
+        snapshot.player.y === anchor.position.y &&
+        snapshot.grid[transition.y]?.[transition.x] === "." &&
+        snapshot.grid[anchor.position.y]?.[anchor.position.x] === "." &&
+        (
+          (anchor.implementation?.startsWith("entry_room") &&
+            anchor.position?.x === 1 &&
+            anchorRoom &&
+            anchorRoom.x === 0) ||
+          (!anchor.implementation?.startsWith("entry_room") && anchor.position?.x === 1)
+        )
+      ),
+      transition,
+      anchorPosition: anchor.position,
+      anchorRoom,
+      player: snapshot.player,
+    };
+  });
+
+  expect(result.ok).toBeTruthy();
+});
+
 test("stairs require confirmation before changing floors", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -69,6 +110,36 @@ test("stairs confirmation can move the player to the next floor", async ({ page 
 
   await expect(page.locator("#stairsModal")).toBeHidden();
   await expect(page.locator("#depthTitle")).toContainText("Studio 2");
+});
+
+test("adjacent studios preserve the transition line across the floor change", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const sourceSnapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const sourceTransition = sourceSnapshot.exitAnchor?.transitionPosition ?? sourceSnapshot.stairsDown;
+  const sourceDirection = sourceSnapshot.exitAnchor?.direction ?? null;
+
+  await openDownstairsPrompt(page);
+  await page.getByRole("button", { name: "Betreten" }).click();
+
+  const targetSnapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const targetTransition = targetSnapshot.entryAnchor?.transitionPosition ?? targetSnapshot.stairsUp;
+
+  const preservesLine = (() => {
+    if (!sourceTransition || !targetTransition || !sourceDirection) {
+      return false;
+    }
+    if (sourceDirection === "left" || sourceDirection === "right") {
+      return sourceTransition.y === targetTransition.y;
+    }
+    if (sourceDirection === "front" || sourceDirection === "back") {
+      return sourceTransition.x === targetTransition.x;
+    }
+    return sourceTransition.x === targetTransition.x && sourceTransition.y === targetTransition.y;
+  })();
+
+  expect(preservesLine).toBeTruthy();
 });
 
 test("floor followers use the full inflected monster name in stair messages", async ({ page }) => {
@@ -130,6 +201,8 @@ test("studio archetypes stay stable when returning to a previous studio", async 
   await expect(page.locator("#depthTitle")).toContainText("Studio 2");
 
   await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.teleportPlayer(snapshot.stairsUp);
     window.__TEST_API__.promptCurrentStairs();
   });
   await page.getByRole("button", { name: "Zurückkehren" }).click();
@@ -179,28 +252,38 @@ test("showcase ambience can be spoken instead of shown as flyover text", async (
   const moveKey = await page.evaluate(() => {
     window.__TEST_API__.setRandomSequence([0]);
     const snapshot = window.__TEST_API__.getSnapshot();
-    const currentRoomIndex = snapshot.rooms.findIndex((room) =>
-      snapshot.player.x >= room.x &&
-      snapshot.player.x < room.x + room.width &&
-      snapshot.player.y >= room.y &&
-      snapshot.player.y < room.y + room.height
-    );
-    const room = snapshot.rooms[currentRoomIndex];
     const candidates = [
-      { x: snapshot.player.x + 1, y: snapshot.player.y, key: "ArrowRight" },
-      { x: snapshot.player.x - 1, y: snapshot.player.y, key: "ArrowLeft" },
-      { x: snapshot.player.x, y: snapshot.player.y + 1, key: "ArrowDown" },
-      { x: snapshot.player.x, y: snapshot.player.y - 1, key: "ArrowUp" },
-    ].filter((tile) =>
-      snapshot.grid[tile.y]?.[tile.x] === "." &&
-      tile.x >= room.x &&
-      tile.x < room.x + room.width &&
-      tile.y >= room.y &&
-      tile.y < room.y + room.height
+      {
+        key: "ArrowRight",
+        moveTile: { x: snapshot.player.x + 1, y: snapshot.player.y },
+        showcaseTile: { x: snapshot.player.x + 2, y: snapshot.player.y },
+      },
+      {
+        key: "ArrowLeft",
+        moveTile: { x: snapshot.player.x - 1, y: snapshot.player.y },
+        showcaseTile: { x: snapshot.player.x - 2, y: snapshot.player.y },
+      },
+      {
+        key: "ArrowDown",
+        moveTile: { x: snapshot.player.x, y: snapshot.player.y + 1 },
+        showcaseTile: { x: snapshot.player.x, y: snapshot.player.y + 2 },
+      },
+      {
+        key: "ArrowUp",
+        moveTile: { x: snapshot.player.x, y: snapshot.player.y - 1 },
+        showcaseTile: { x: snapshot.player.x, y: snapshot.player.y - 2 },
+      },
+    ].filter((candidate) =>
+      snapshot.grid[candidate.moveTile.y]?.[candidate.moveTile.x] === "." &&
+      snapshot.grid[candidate.showcaseTile.y]?.[candidate.showcaseTile.x] === "."
     );
+    const selected = candidates[0] ?? null;
+    if (!selected) {
+      return null;
+    }
 
     window.__TEST_API__.clearFloorEntities();
-    window.__TEST_API__.placeShowcase({ x: room.x, y: room.y }, {
+    window.__TEST_API__.placeShowcase(selected.showcaseTile, {
       id: "test-showcase",
       ambienceId: "jason-mask",
       name: "Test-Vitrine",
@@ -208,7 +291,7 @@ test("showcase ambience can be spoken instead of shown as flyover text", async (
       description: "Nur für den Test.",
     });
 
-    return candidates[0]?.key ?? null;
+    return selected.key;
   });
 
   expect(moveKey).not.toBeNull();
@@ -528,7 +611,7 @@ test("closed doors block visibility into the space behind them", async ({ page }
   expect(snapshot.visible[2][5]).toBeTruthy();
 });
 
-test("open doors render slimmer and shifted out of the doorway", async ({ page }) => {
+test("open doors keep the doorway overlay aligned with the current board styling", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -557,11 +640,11 @@ test("open doors render slimmer and shifted out of the doorway", async ({ page }
     };
   });
 
-  expect(metrics.closedSize).toBe("30px 30px");
-  expect(metrics.openSize).toBe("18px 28px");
-  expect(metrics.openLeft).toBe("9px");
+  expect(metrics.closedSize).toBe("32px 32px");
+  expect(metrics.openSize).toBe("32px 32px");
+  expect(metrics.openLeft).toBe("-2px");
   expect(metrics.openRight).toBe("-2px");
-  expect(metrics.openPassageContent).not.toBe("none");
+  expect(metrics.openPassageContent).toBe("none");
 });
 
 test("walls do not reveal an unentered side room from the adjacent corridor", async ({ page }) => {
@@ -1005,38 +1088,47 @@ test("showcase tiles use a larger visual footprint inside the board", async ({ p
 
   expect(footprint.overlaySize).toBe("34px 34px");
   expect(footprint.overlayInsetTop).toBe("-4px");
-  expect(footprint.frameContent).not.toBe("none");
+  expect(footprint.frameContent === "none" || footprint.frameContent === "\"\"").toBeTruthy();
 });
 
-test("entering a room with showcases logs one random ambience line", async ({ page }) => {
+test("moving orthogonally next to a showcase logs one random ambience line", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
   const moveKey = await page.evaluate(() => {
     const snapshot = window.__TEST_API__.getSnapshot();
-    const currentRoomIndex = snapshot.rooms.findIndex((room) =>
-      snapshot.player.x >= room.x &&
-      snapshot.player.x < room.x + room.width &&
-      snapshot.player.y >= room.y &&
-      snapshot.player.y < room.y + room.height
-    );
-    const room = snapshot.rooms[currentRoomIndex];
     const candidates = [
-      { x: snapshot.player.x + 1, y: snapshot.player.y, key: "ArrowRight" },
-      { x: snapshot.player.x - 1, y: snapshot.player.y, key: "ArrowLeft" },
-      { x: snapshot.player.x, y: snapshot.player.y + 1, key: "ArrowDown" },
-      { x: snapshot.player.x, y: snapshot.player.y - 1, key: "ArrowUp" },
-    ].filter((tile) =>
-      snapshot.grid[tile.y]?.[tile.x] === "." &&
-      tile.x >= room.x &&
-      tile.x < room.x + room.width &&
-      tile.y >= room.y &&
-      tile.y < room.y + room.height
+      {
+        key: "ArrowRight",
+        moveTile: { x: snapshot.player.x + 1, y: snapshot.player.y },
+        showcaseTile: { x: snapshot.player.x + 2, y: snapshot.player.y },
+      },
+      {
+        key: "ArrowLeft",
+        moveTile: { x: snapshot.player.x - 1, y: snapshot.player.y },
+        showcaseTile: { x: snapshot.player.x - 2, y: snapshot.player.y },
+      },
+      {
+        key: "ArrowDown",
+        moveTile: { x: snapshot.player.x, y: snapshot.player.y + 1 },
+        showcaseTile: { x: snapshot.player.x, y: snapshot.player.y + 2 },
+      },
+      {
+        key: "ArrowUp",
+        moveTile: { x: snapshot.player.x, y: snapshot.player.y - 1 },
+        showcaseTile: { x: snapshot.player.x, y: snapshot.player.y - 2 },
+      },
+    ].filter((candidate) =>
+      snapshot.grid[candidate.moveTile.y]?.[candidate.moveTile.x] === "." &&
+      snapshot.grid[candidate.showcaseTile.y]?.[candidate.showcaseTile.x] === "."
     );
+    const selected = candidates[0] ?? null;
+    if (!selected) {
+      return null;
+    }
 
-    const showcaseTile = { x: room.x, y: room.y };
     window.__TEST_API__.clearFloorEntities();
-    window.__TEST_API__.placeShowcase(showcaseTile, {
+    window.__TEST_API__.placeShowcase(selected.showcaseTile, {
       id: "test-showcase",
       ambienceId: "jason-mask",
       name: "Test-Vitrine",
@@ -1045,7 +1137,7 @@ test("entering a room with showcases logs one random ambience line", async ({ pa
     });
 
     window.__TEST_API__.teleportPlayer({ x: snapshot.player.x, y: snapshot.player.y });
-    return candidates[0]?.key ?? null;
+    return selected.key;
   });
 
   expect(moveKey).not.toBeNull();

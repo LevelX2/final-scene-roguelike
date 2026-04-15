@@ -22,9 +22,29 @@ export function createWeaponGenerationService(context) {
 
     const entries = templates.map((template) => ({
       template,
-      weight: options.boostSpecial && template.weaponRole === 'special'
-        ? Math.max(template.weight ?? 10, 22)
-        : template.weight ?? 10,
+      weight: (() => {
+        let weight = options.boostSpecial && template.weaponRole === 'special'
+          ? Math.max(template.weight ?? 10, 22)
+          : template.weight ?? 10;
+
+        const isRangedTemplate = template.attackMode === 'ranged' && (template.range ?? 1) > 1;
+        const floorNumber = Math.max(1, options.floorNumber ?? 1);
+        if (isRangedTemplate) {
+          if (options.sourceType === 'monster') {
+            if (floorNumber <= 2) {
+              weight *= 0.12;
+            } else if (floorNumber <= 4) {
+              weight *= 0.35;
+            }
+          } else if (floorNumber <= 2) {
+            weight *= 0.35;
+          } else if (floorNumber <= 4) {
+            weight *= 0.65;
+          }
+        }
+
+        return Math.max(0.1, weight);
+      })(),
     }));
     return pickWeightedEntry(entries)?.template ?? null;
   }
@@ -40,7 +60,11 @@ export function createWeaponGenerationService(context) {
     } = options;
 
     const archetypeId = rollLootArchetype(floorNumber, dropSourceTag, preferredArchetypeId, runArchetypeSequence);
-    const template = chooseTemplateForArchetype(archetypeId, { boostSpecial });
+    const template = chooseTemplateForArchetype(archetypeId, {
+      boostSpecial,
+      floorNumber,
+      sourceType: normalizeSourceType(dropSourceTag),
+    });
 
     if (!template) {
       return null;

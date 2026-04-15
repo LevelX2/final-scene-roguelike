@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+  <rect width="64" height="64" fill="none"/>
+  <defs>
+    <linearGradient id="woodA" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#9b663a"/>
+      <stop offset="55%" stop-color="#7b4d2b"/>
+      <stop offset="100%" stop-color="#5f381e"/>
+    </linearGradient>
+    <linearGradient id="metalA" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#808288"/>
+      <stop offset="100%" stop-color="#474a50"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="15" rx="15" ry="6" fill="#b77a46" stroke="#4b2d18" stroke-width="1.5"/>
+  <path d="M17 15
+           C18 26, 20 44, 32 48
+           C44 44, 46 26, 47 15
+           C42 18, 22 18, 17 15 Z"
+        fill="url(#woodA)" stroke="#4b2d18" stroke-width="1.5"/>
+  <ellipse cx="32" cy="48" rx="14" ry="5.5" fill="#5a341c" stroke="#3b2313" stroke-width="1.5"/>
+  <path d="M21 19 C26 21, 38 21, 43 19" fill="none" stroke="#3b2313" stroke-width="1"/>
+  <path d="M19 30 C25 34, 39 34, 45 30" fill="none" stroke="#3b2313" stroke-width="1"/>
+  <path d="M21 40 C26 43, 38 43, 43 40" fill="none" stroke="#3b2313" stroke-width="1"/>
+  <rect x="18" y="20" width="28" height="4" rx="1.5" fill="url(#metalA)" stroke="#2d2f33" stroke-width="1"/>
+  <rect x="16" y="31" width="32" height="4" rx="1.5" fill="url(#metalA)" stroke="#2d2f33" stroke-width="1"/>
+  <rect x="18" y="41" width="28" height="4" rx="1.5" fill="url(#metalA)" stroke="#2d2f33" stroke-width="1"/>
+  <path d="M24 17 L24 45 M32 16 L32 47 M40 17 L40 45" stroke="#5a341c" stroke-width="1.2"/>
+  <ellipse cx="27" cy="13" rx="5" ry="2" fill="#d69a63" opacity="0.55"/>
+</svg>

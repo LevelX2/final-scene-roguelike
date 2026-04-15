@@ -14,10 +14,16 @@ export function createUiPreferencesApi(context) {
       const currentMode = state.collapsedCards.player ?? "summary";
       state.collapsedCards.player = currentMode === "summary"
         ? "hidden"
-        : "summary";
+        : currentMode === "hidden"
+          ? "full"
+          : "summary";
     } else if (key === "log") {
-      const logIsHidden = state.collapsedCards.log === "hidden" || state.collapsedCards.log === true;
-      state.collapsedCards.log = logIsHidden ? "visible" : "hidden";
+      const currentMode = state.collapsedCards.log ?? "full";
+      state.collapsedCards.log = currentMode === "full" || currentMode === "visible"
+        ? "hidden"
+        : currentMode === "hidden"
+          ? "compact"
+          : "full";
     } else {
       state.collapsedCards[key] = !state.collapsedCards[key];
     }

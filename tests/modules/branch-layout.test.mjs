@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBranchLayoutGenerator } from '../../src/dungeon/branch-layout.mjs';
+import { buildAvailableMonsterPool, createBranchLayoutGenerator } from '../../src/dungeon/branch-layout.mjs';
 
 function computeReachableTilesWithBlockedPositions(grid, startPosition, doors, blockedPositions = []) {
   const blocked = new Set(blockedPositions.map((position) => `${position.x},${position.y}`));
@@ -55,7 +55,7 @@ function createGeneratorHarness(options = {}) {
     TILE,
     DOOR_TYPE: { NORMAL: 'normal', LOCKED: 'locked' },
     LOCK_COLORS: ['red', 'blue', 'green'],
-    MONSTER_CATALOG: [],
+    MONSTER_CATALOG: options.MONSTER_CATALOG ?? [],
     propCatalog: [
       { id: 'slasher-prop', archetype: 'slasher', name: 'Slasher-Prop', source: 'Test', description: 'Test.' },
       { id: 'global-prop', archetype: 'global', name: 'Global-Prop', source: 'Test', description: 'Test.' },
@@ -64,8 +64,8 @@ function createGeneratorHarness(options = {}) {
     randomInt: options.randomInt ?? ((min, max) => Math.floor((min + max) / 2)),
     createGrid: () => Array.from({ length: 36 }, () => Array(50).fill(TILE.WALL)),
     getState: () => ({ player: null }),
-    createEnemy: () => null,
-    chooseWeightedMonster: () => null,
+    createEnemy: options.createEnemy ?? (() => null),
+    chooseWeightedMonster: options.chooseWeightedMonster ?? (() => null),
     createWeaponPickup: (item, x, y) => ({ item, x, y }),
     createOffHandPickup: (item, x, y) => ({ item, x, y }),
     createChestPickup: (content, x, y) => ({ content, x, y }),
@@ -98,6 +98,33 @@ function createGeneratorHarness(options = {}) {
 
   return { generator };
 }
+
+test('branch layout prefers phase-one standard monsters of the active studio archetype', () => {
+  const available = buildAvailableMonsterPool(
+    [
+      {
+        id: 'fantasy-standard',
+        archetypeId: 'fantasy',
+        spawnGroup: 'standard',
+        rank: 1,
+      },
+      {
+        id: 'slasher-standard',
+        archetypeId: 'slasher',
+        spawnGroup: 'standard',
+        rank: 1,
+      },
+      {
+        id: 'legacy-fallback',
+        rank: 1,
+      },
+    ],
+    1,
+    'slasher',
+  );
+
+  assert.deepEqual(available.map((monster) => monster.id), ['slasher-standard']);
+});
 
 test('branch layout keeps the main corridor bounding box horizontally dominant', () => {
   const { generator } = createGeneratorHarness();

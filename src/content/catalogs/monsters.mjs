@@ -4,6 +4,8 @@
   RELENTLESS: "relentless",
 };
 
+import { PHASE_ONE_STANDARD_MONSTERS } from "./monster-phase-one.mjs";
+
 export const MONSTER_MOBILITY_LABELS = {
   [MONSTER_MOBILITY.LOCAL]: "Reviertreu",
   [MONSTER_MOBILITY.ROAMING]: "Mobil",
@@ -695,4 +697,6 @@ export const MONSTER_CATALOG = [
     special: "Rückt stoisch vor und lässt sich kaum abschütteln.",
   },
 ];
+
+MONSTER_CATALOG.push(...PHASE_ONE_STANDARD_MONSTERS);
 

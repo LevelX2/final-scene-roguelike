@@ -244,6 +244,16 @@ function clonePosition(position) {
   return { x: position.x, y: position.y };
 }
 
+export function buildAvailableMonsterPool(monsterCatalog, unlockedMonsterRank, studioArchetypeId) {
+  const unlockedMonsters = monsterCatalog.filter((monster) => monster.rank <= unlockedMonsterRank);
+  const archetypeMonsters = unlockedMonsters.filter((monster) =>
+    monster.spawnGroup === "standard" &&
+    monster.archetypeId === studioArchetypeId
+  );
+
+  return archetypeMonsters.length > 0 ? archetypeMonsters : unlockedMonsters;
+}
+
 function parseKey(key) {
   const [x, y] = key.split(",").map((entry) => Number(entry));
   return { x, y };
@@ -2316,7 +2326,11 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
   const foodBudget = state.splitFoodBudget(state.rollFoodBudget(state.randomInt).totalBudget);
   const floorSeenCounts = {};
   const unlockedMonsterRank = state.getUnlockedMonsterRank(floorNumber, state.MONSTER_CATALOG);
-  const availableMonsters = state.MONSTER_CATALOG.filter((monster) => monster.rank <= unlockedMonsterRank);
+  const availableMonsters = buildAvailableMonsterPool(
+    state.MONSTER_CATALOG,
+    unlockedMonsterRank,
+    studioArchetypeId,
+  );
 
   for (let index = 0; index < state.getEnemyCountForFloor(floorNumber); index += 1) {
     const room = chooseWeightedRoom(state, "enemyFactor", { excludeLockedBonus: true });

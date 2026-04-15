@@ -20,12 +20,20 @@ export function createWeaponGenerationService(context) {
       return null;
     }
 
+    const preferredWeaponRoles = Array.isArray(options.preferredWeaponRoles)
+      ? options.preferredWeaponRoles.filter(Boolean)
+      : [];
+
     const entries = templates.map((template) => ({
       template,
       weight: (() => {
         let weight = options.boostSpecial && template.weaponRole === 'special'
           ? Math.max(template.weight ?? 10, 22)
           : template.weight ?? 10;
+
+        if (preferredWeaponRoles.length > 0) {
+          weight *= preferredWeaponRoles.includes(template.weaponRole) ? 4.2 : 0.28;
+        }
 
         const isRangedTemplate = template.attackMode === 'ranged' && (template.range ?? 1) > 1;
         const floorNumber = Math.max(1, options.floorNumber ?? 1);
@@ -54,6 +62,7 @@ export function createWeaponGenerationService(context) {
       floorNumber,
       dropSourceTag = 'floor-weapon',
       preferredArchetypeId = null,
+      preferredWeaponRoles = null,
       boostSpecial = false,
       forceRarity = null,
       runArchetypeSequence = null,
@@ -63,6 +72,7 @@ export function createWeaponGenerationService(context) {
     const template = chooseTemplateForArchetype(archetypeId, {
       boostSpecial,
       floorNumber,
+      preferredWeaponRoles,
       sourceType: normalizeSourceType(dropSourceTag),
     });
 
@@ -101,6 +111,7 @@ export function createWeaponGenerationService(context) {
       boostSpecial: Boolean(options.boostSpecial),
       forceRarity: preferredRarity,
       runArchetypeSequence,
+      preferredWeaponRoles: monster.preferredWeaponRoles ?? null,
     });
   }
 

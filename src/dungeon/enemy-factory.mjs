@@ -119,17 +119,38 @@ export function createDungeonEnemyFactory(context) {
     });
   }
 
+  function getMonsterRankBandWeight(floorNumber, monsterRank) {
+    const unlockedRank = floorNumber === 1 ? 1 : floorNumber + 1;
+    const rankDistance = Math.max(0, unlockedRank - Math.max(1, monsterRank ?? 1));
+
+    if (rankDistance === 0) {
+      return 0.72;
+    }
+    if (rankDistance === 1) {
+      return 1;
+    }
+    if (rankDistance === 2) {
+      return 0.82;
+    }
+    if (rankDistance === 3) {
+      return 0.58;
+    }
+    return 0.34;
+  }
+
   function chooseWeightedMonster(availableMonsters, floorNumber, runSeenCounts, floorSeenCounts) {
     const weighted = availableMonsters.map((monster) => {
       const runSeen = runSeenCounts[monster.id] ?? 0;
       const floorSeen = floorSeenCounts[monster.id] ?? 0;
       const recencyBonus = Math.max(0, (monster.rank - 1) / Math.max(1, floorNumber + 1));
+      const rankBandWeight = getMonsterRankBandWeight(floorNumber, monster.rank);
+      const spawnWeight = Math.max(0.25, monster.spawnWeight ?? 1);
       const iconWeight = iconicMonsterIds.has(monster.id)
         ? ICONIC_MONSTER_WEIGHT_PENALTY
         : NON_ICONIC_MONSTER_WEIGHT_BONUS;
       const weight = Math.max(
         0.2,
-        (1.2 + recencyBonus * 1.4 - runSeen * 0.18 - floorSeen * 0.4) * iconWeight,
+        (1.2 + recencyBonus * 1.4 - runSeen * 0.18 - floorSeen * 0.4) * iconWeight * rankBandWeight * spawnWeight,
       );
       return { monster, weight };
     });
@@ -226,6 +247,9 @@ export function createDungeonEnemyFactory(context) {
       ...position,
       type: 'monster',
       id: monster.id,
+      archetypeId: monster.archetypeId ?? null,
+      spawnGroup: monster.spawnGroup ?? null,
+      spawnWeight: monster.spawnWeight ?? 1,
       baseName: monster.name,
       name: variantName,
       rank: monster.rank,

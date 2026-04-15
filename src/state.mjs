@@ -60,6 +60,7 @@ export function createStateApi(context) {
     createDefaultModals,
     createDefaultCollapsedCards,
     createDefaultPreferences,
+    createStartingInventory,
     createFreshState,
   } = createStateBlueprintApi({
     HERO_NAME_KEY,
@@ -214,6 +215,9 @@ export function createStateApi(context) {
     nextState.player.nutritionMax = getNutritionMax(nextState.player);
     nextState.player.nutrition = getNutritionStart(nextState.player);
     nextState.player.hungerState = getHungerState(nextState.player);
+    if (nextView === "game") {
+      nextState.inventory = createStartingInventory(heroClassId);
+    }
 
     if (reusableInitialStudio) {
       const topologySource = currentState.runStudioTopology

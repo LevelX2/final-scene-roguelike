@@ -2352,7 +2352,10 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
     const room = chooseWeightedRoom(state, "itemFactor", { excludeLockedBonus: true });
     const tile = room ? chooseFreeRoomTile(state, room, { reserveOnly: true }) : null;
     if (tile) {
-      state.potions.push(tile);
+      const potion = state.cloneItemDef?.("healing-potion");
+      if (potion) {
+        state.potions.push(state.createPotionPickup(potion, tile.x, tile.y));
+      }
     }
   }
 

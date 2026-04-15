@@ -39,6 +39,7 @@ export function createRenderCycleApi(context) {
     renderInventory,
     renderHighscores,
     renderRunStats,
+    renderStudioTopology,
     renderLog,
     boardElement,
     boardViewportElement,
@@ -47,6 +48,7 @@ export function createRenderCycleApi(context) {
     gameHeaderElement,
     startFreshRunButton,
     inventoryModalElement,
+    studioTopologyModalElement,
     runStatsModalElement,
     optionsModalElement,
     savegamesModalElement,
@@ -302,7 +304,7 @@ export function createRenderCycleApi(context) {
       ? `<span>Zielmodus</span><strong>${targetHint}</strong>`
       : `<span>Zielmodus</span><strong>-</strong>`;
     targetModeHintElement.classList.toggle("ui-hidden", !targetingActive);
-    openTargetModeButton.textContent = targetingActive ? "Zielen beenden" : "Zielen";
+    openTargetModeButton.textContent = "Zielen";
     openTargetModeButton.setAttribute("aria-pressed", String(targetingActive));
     openTargetModeButton.classList.toggle("targeting-active", targetingActive);
     confirmTargetModeButton.classList.toggle("ui-hidden", !targetingActive);
@@ -315,37 +317,50 @@ export function createRenderCycleApi(context) {
     renderInventory();
     renderHighscores();
     renderRunStats();
+    renderStudioTopology();
     renderLog();
-    startScreenElement.classList.toggle("ui-hidden", inGameView);
-    gameHeaderElement.classList.toggle("ui-hidden", !inGameView);
-    startFreshRunButton.classList.toggle("ui-hidden", !state.gameOver);
-    inventoryModalElement.classList.toggle("hidden", !state.modals.inventoryOpen);
-    inventoryModalElement.setAttribute("aria-hidden", String(!state.modals.inventoryOpen));
-    runStatsModalElement.classList.toggle("hidden", !state.modals.runStatsOpen);
-    runStatsModalElement.setAttribute("aria-hidden", String(!state.modals.runStatsOpen));
-    optionsModalElement.classList.toggle("hidden", !state.modals.optionsOpen);
-    optionsModalElement.setAttribute("aria-hidden", String(!state.modals.optionsOpen));
-    savegamesModalElement.classList.toggle("hidden", !state.modals.savegamesOpen);
-    savegamesModalElement.setAttribute("aria-hidden", String(!state.modals.savegamesOpen));
-    helpModalElement.classList.toggle("hidden", !state.modals.helpOpen);
-    helpModalElement.setAttribute("aria-hidden", String(!state.modals.helpOpen));
-    highscoresModalElement.classList.toggle("hidden", !state.modals.highscoresOpen);
-    highscoresModalElement.setAttribute("aria-hidden", String(!state.modals.highscoresOpen));
-    startModalElement.classList.toggle("hidden", !state.modals.startOpen);
-    startModalElement.setAttribute("aria-hidden", String(!state.modals.startOpen));
-    gameShellElement.classList.toggle("prestart-hidden", !inGameView);
-    stairsModalElement.classList.toggle("hidden", !state.pendingStairChoice);
-    stairsModalElement.setAttribute("aria-hidden", String(!state.pendingStairChoice));
-    deathModalElement.classList.contains("hidden")
-      ? deathModalElement.setAttribute("aria-hidden", "true")
-      : deathModalElement.setAttribute("aria-hidden", "false");
-    toggleStepSoundElement.checked = state.options.stepSound;
-    toggleDeathSoundElement.checked = state.options.deathSound;
-    toggleVoiceAnnouncementsElement.checked = state.options.voiceAnnouncements;
-    showcaseAnnouncementModeElement.value = state.options.showcaseAnnouncementMode ?? "floating-text";
+    startScreenElement?.classList.toggle("ui-hidden", inGameView);
+    gameHeaderElement?.classList.toggle("ui-hidden", !inGameView);
+    startFreshRunButton?.classList.toggle("ui-hidden", !state.gameOver);
+    inventoryModalElement?.classList.toggle("hidden", !state.modals.inventoryOpen);
+    inventoryModalElement?.setAttribute("aria-hidden", String(!state.modals.inventoryOpen));
+    studioTopologyModalElement?.classList.toggle("hidden", !state.modals.studioTopologyOpen);
+    studioTopologyModalElement?.setAttribute("aria-hidden", String(!state.modals.studioTopologyOpen));
+    runStatsModalElement?.classList.toggle("hidden", !state.modals.runStatsOpen);
+    runStatsModalElement?.setAttribute("aria-hidden", String(!state.modals.runStatsOpen));
+    optionsModalElement?.classList.toggle("hidden", !state.modals.optionsOpen);
+    optionsModalElement?.setAttribute("aria-hidden", String(!state.modals.optionsOpen));
+    savegamesModalElement?.classList.toggle("hidden", !state.modals.savegamesOpen);
+    savegamesModalElement?.setAttribute("aria-hidden", String(!state.modals.savegamesOpen));
+    helpModalElement?.classList.toggle("hidden", !state.modals.helpOpen);
+    helpModalElement?.setAttribute("aria-hidden", String(!state.modals.helpOpen));
+    highscoresModalElement?.classList.toggle("hidden", !state.modals.highscoresOpen);
+    highscoresModalElement?.setAttribute("aria-hidden", String(!state.modals.highscoresOpen));
+    startModalElement?.classList.toggle("hidden", !state.modals.startOpen);
+    startModalElement?.setAttribute("aria-hidden", String(!state.modals.startOpen));
+    gameShellElement?.classList.toggle("prestart-hidden", !inGameView);
+    stairsModalElement?.classList.toggle("hidden", !state.pendingStairChoice);
+    stairsModalElement?.setAttribute("aria-hidden", String(!state.pendingStairChoice));
+    if (deathModalElement) {
+      deathModalElement.classList.contains("hidden")
+        ? deathModalElement.setAttribute("aria-hidden", "true")
+        : deathModalElement.setAttribute("aria-hidden", "false");
+    }
+    if (toggleStepSoundElement) {
+      toggleStepSoundElement.checked = state.options.stepSound;
+    }
+    if (toggleDeathSoundElement) {
+      toggleDeathSoundElement.checked = state.options.deathSound;
+    }
+    if (toggleVoiceAnnouncementsElement) {
+      toggleVoiceAnnouncementsElement.checked = state.options.voiceAnnouncements;
+    }
+    if (showcaseAnnouncementModeElement) {
+      showcaseAnnouncementModeElement.value = state.options.showcaseAnnouncementMode ?? "floating-text";
+    }
     updateSavegameControls();
     syncBoardViewport(state);
-    collapsibleCards.forEach((card) => {
+    (collapsibleCards ?? []).filter(Boolean).forEach((card) => {
       const key = card.dataset.collapsible;
       if (key === "player") {
         const mode = state.collapsedCards.player ?? "summary";

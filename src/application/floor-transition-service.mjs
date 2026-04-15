@@ -140,6 +140,21 @@ export function createFloorTransitionService(context) {
     });
   }
 
+  function getTransitionTravelLabel(anchor, direction) {
+    const style = anchor?.transitionStyle ?? 'passage';
+    if (style === 'lift') {
+      return 'durch den Lift';
+    }
+
+    if (style === 'stairs') {
+      return 'über die Treppe';
+    }
+
+    return direction > 0
+      ? 'durch den Studioausgang'
+      : 'durch den Studiozugang';
+  }
+
   function moveToFloor(direction) {
     const state = getState();
     const currentFloorState = getCurrentFloorState();
@@ -171,7 +186,7 @@ export function createFloorTransitionService(context) {
         playStudioAnnouncement(announcement);
       }
       if (follower) {
-        addMessage(`${formatFollowerLabel(follower)} folgt dir über die Treppe.`, 'danger');
+        addMessage(`${formatFollowerLabel(follower)} folgt dir ${getTransitionTravelLabel(currentFloorState.exitAnchor, direction)}.`, 'danger');
       }
       return true;
     }
@@ -187,7 +202,7 @@ export function createFloorTransitionService(context) {
       const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetInteraction);
       addMessage(`Du kehrst in ${formatStudioLabel(state.floor)} zurück. ${formatArchetypeLabel(state.floors[targetFloor].studioArchetypeId)}`, 'important');
       if (follower) {
-        addMessage(`${formatFollowerLabel(follower)} setzt dir weiter nach.`, 'danger');
+        addMessage(`${formatFollowerLabel(follower)} setzt dir ${getTransitionTravelLabel(currentFloorState.entryAnchor, direction)} weiter nach.`, 'danger');
       }
       return true;
     }
@@ -208,6 +223,7 @@ export function createFloorTransitionService(context) {
         text: `Du stehst an einem Übergang. Möchtest du ${formatStudioLabel(state.floor + 1)} betreten oder hier bleiben?`,
         confirmLabel: 'Betreten',
         stayLabel: 'Hier bleiben',
+        transitionLabel: floorState.exitAnchor?.label ?? 'Übergang',
       });
       renderSelf();
       return true;
@@ -220,6 +236,7 @@ export function createFloorTransitionService(context) {
         text: `Du stehst an einem Übergang. Möchtest du in ${formatStudioLabel(state.floor - 1)} zurückkehren oder hier bleiben?`,
         confirmLabel: 'Zurückkehren',
         stayLabel: 'Hier bleiben',
+        transitionLabel: floorState.entryAnchor?.label ?? 'Übergang',
       });
       renderSelf();
       return true;

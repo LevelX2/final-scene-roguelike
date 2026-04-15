@@ -36,6 +36,7 @@ export function createModalController(context) {
 
   function closeTransientModals() {
     toggleInventory(false);
+    toggleStudioTopology(false);
     toggleRunStats(false);
     toggleOptions(false);
     toggleSavegames(false);
@@ -74,6 +75,23 @@ export function createModalController(context) {
   function toggleInventory(forceOpen) {
     const state = getState();
     state.modals.inventoryOpen = forceOpen ?? !state.modals.inventoryOpen;
+    if (state.modals.inventoryOpen) {
+      state.modals.studioTopologyOpen = false;
+    }
+    renderSelf();
+  }
+
+  function toggleStudioTopology(forceOpen) {
+    const state = getState();
+    state.modals.studioTopologyOpen = forceOpen ?? !state.modals.studioTopologyOpen;
+    if (state.modals.studioTopologyOpen) {
+      state.modals.inventoryOpen = false;
+      state.modals.runStatsOpen = false;
+      state.modals.optionsOpen = false;
+      state.modals.savegamesOpen = false;
+      state.modals.helpOpen = false;
+      state.modals.highscoresOpen = false;
+    }
     renderSelf();
   }
 
@@ -82,6 +100,7 @@ export function createModalController(context) {
     state.modals.runStatsOpen = forceOpen ?? !state.modals.runStatsOpen;
     if (state.modals.runStatsOpen) {
       state.modals.savegamesOpen = false;
+      state.modals.studioTopologyOpen = false;
     }
     if (!state.modals.runStatsOpen && state.gameOver && deathModalElement.classList.contains("hidden")) {
       setDeathModalVisibility(true);
@@ -94,6 +113,7 @@ export function createModalController(context) {
     state.modals.optionsOpen = forceOpen ?? !state.modals.optionsOpen;
     if (state.modals.optionsOpen) {
       state.modals.savegamesOpen = false;
+      state.modals.studioTopologyOpen = false;
     }
     renderSelf();
   }
@@ -107,6 +127,7 @@ export function createModalController(context) {
       state.modals.optionsOpen = false;
       state.modals.helpOpen = false;
       state.modals.highscoresOpen = false;
+      state.modals.studioTopologyOpen = false;
     }
     renderSelf();
   }
@@ -116,6 +137,7 @@ export function createModalController(context) {
     state.modals.helpOpen = forceOpen ?? !state.modals.helpOpen;
     if (state.modals.helpOpen) {
       state.modals.savegamesOpen = false;
+      state.modals.studioTopologyOpen = false;
     }
     renderSelf();
   }
@@ -125,6 +147,7 @@ export function createModalController(context) {
     state.modals.highscoresOpen = forceOpen ?? !state.modals.highscoresOpen;
     if (state.modals.highscoresOpen) {
       state.modals.savegamesOpen = false;
+      state.modals.studioTopologyOpen = false;
     }
     renderSelf();
   }
@@ -315,5 +338,6 @@ export function createModalController(context) {
     toggleSavegames,
     toggleHelp,
     toggleHighscores,
+    toggleStudioTopology,
   };
 }

@@ -1,5 +1,6 @@
 import { getShieldTemplate } from '../content/catalogs/shields.mjs';
 import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
+import { createKeyItem } from '../item-defs.mjs';
 import { normalizeKillStats } from '../kill-stats.mjs';
 import { createTimestampedId } from '../utils/id-tools.mjs';
 
@@ -284,6 +285,7 @@ export function createStatePersistenceApi(context) {
         ...createDefaultModals(false),
         ...(state.modals ?? {}),
         inventoryOpen: false,
+        studioTopologyOpen: false,
         runStatsOpen: false,
         optionsOpen: false,
         savegamesOpen: false,
@@ -387,6 +389,29 @@ export function createStatePersistenceApi(context) {
     };
   }
 
+  function normalizeKeyItem(item) {
+    if (!item || typeof item !== "object") {
+      return item ?? null;
+    }
+
+    if (!item.keyColor && item.type !== "key") {
+      return { ...item };
+    }
+
+    return createKeyItem(item.keyColor ?? "green", item.keyFloor ?? null, item);
+  }
+
+  function normalizeKeyPickup(entry) {
+    if (!entry || typeof entry !== "object") {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      item: normalizeKeyItem(entry.item),
+    };
+  }
+
   function normalizeInventoryItem(item) {
     if (!item || typeof item !== "object") {
       return item;
@@ -398,6 +423,10 @@ export function createStatePersistenceApi(context) {
 
     if (item.type === "offhand" || item.itemType === "shield" || item.subtype === "shield") {
       return normalizeOffHandItem(item);
+    }
+
+    if (item.type === "key" || item.keyColor) {
+      return normalizeKeyItem(item);
     }
 
     return { ...item };
@@ -434,6 +463,9 @@ export function createStatePersistenceApi(context) {
       : [];
     floorState.offHands = Array.isArray(floorState.offHands)
       ? floorState.offHands.map(normalizeOffHandPickup)
+      : [];
+    floorState.keys = Array.isArray(floorState.keys)
+      ? floorState.keys.map(normalizeKeyPickup)
       : [];
     floorState.enemies = Array.isArray(floorState.enemies)
       ? floorState.enemies.map((enemy) => ({
@@ -517,6 +549,7 @@ export function createStatePersistenceApi(context) {
       ...createDefaultModals(false),
       ...(savedState.modals ?? {}),
       inventoryOpen: false,
+      studioTopologyOpen: false,
       runStatsOpen: false,
       optionsOpen: false,
       savegamesOpen: false,

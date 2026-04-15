@@ -7,6 +7,7 @@ export function createInputController(context) {
     resolvePotionChoice,
     cyclePotionChoice,
     toggleInventory,
+    toggleStudioTopology,
     toggleRunStats,
     toggleOptions,
     toggleSavegames,
@@ -18,6 +19,7 @@ export function createInputController(context) {
     debugRevealOrAdvanceStudio,
     tryCloseAdjacentDoor,
     quickUsePotion,
+    cycleTargetMode,
     enterTargetMode,
     cancelTargetMode,
     moveTargetCursor,
@@ -119,13 +121,19 @@ export function createInputController(context) {
     }
 
     if (state.targeting?.active) {
-      if (matchesShortcut(["enter"], ["Enter"])) {
+      if (matchesShortcut(["enter", "f"], ["Enter", "KeyF"])) {
         event.preventDefault();
         confirmTargetAttack();
         return;
       }
 
-      if (matchesShortcut(["escape", "t", "q"], ["Escape", "KeyT", "KeyQ"])) {
+      if (matchesShortcut(["t"], ["KeyT"])) {
+        event.preventDefault();
+        cycleTargetMode();
+        return;
+      }
+
+      if (matchesShortcut(["escape", "q"], ["Escape", "KeyQ"])) {
         event.preventDefault();
         cancelTargetMode();
         return;
@@ -184,9 +192,10 @@ export function createInputController(context) {
       return;
     }
 
-    if (state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       if (matchesShortcut(["escape"], ["Escape"])) {
         toggleInventory(false);
+        toggleStudioTopology(false);
         toggleRunStats(false);
         toggleOptions(false);
         toggleSavegames(false);
@@ -224,9 +233,9 @@ export function createInputController(context) {
       return;
     }
 
-    if (matchesShortcut(["f", "t"], ["KeyF", "KeyT"])) {
+    if (matchesShortcut(["t"], ["KeyT"])) {
       event.preventDefault();
-      enterTargetMode();
+      cycleTargetMode();
       return;
     }
 

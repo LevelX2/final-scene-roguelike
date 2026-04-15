@@ -60,7 +60,7 @@ export function createPlayerTurnController(context) {
 
   function tryCloseAdjacentDoor() {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       return;
     }
 
@@ -95,7 +95,7 @@ export function createPlayerTurnController(context) {
 
   function movePlayer(dx, dy) {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       return;
     }
 
@@ -173,7 +173,7 @@ export function createPlayerTurnController(context) {
 
   function handleWait() {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       return;
     }
 
@@ -198,6 +198,7 @@ export function createPlayerTurnController(context) {
       !state.pendingChoice &&
       !state.pendingStairChoice &&
       !state.modals.inventoryOpen &&
+      !state.modals.studioTopologyOpen &&
       !state.modals.runStatsOpen &&
       !state.modals.optionsOpen &&
       !state.modals.savegamesOpen &&
@@ -205,6 +206,24 @@ export function createPlayerTurnController(context) {
       !state.modals.highscoresOpen &&
       isTargetModeWeapon(weapon),
     );
+  }
+
+  function getVisibleTargetData(state = getState()) {
+    const floorState = getCurrentFloorState();
+    const weapon = getCombatWeapon(state.player);
+
+    return {
+      floorState,
+      weapon,
+      ...getVisibleTargetSelections({
+        state,
+        floorState,
+        weapon,
+        manhattanDistance,
+        isStraightShot,
+        hasLineOfSight,
+      }),
+    };
   }
 
   function enterTargetMode() {
@@ -215,16 +234,7 @@ export function createPlayerTurnController(context) {
       return;
     }
 
-    const floorState = getCurrentFloorState();
-    const weapon = getCombatWeapon(state.player);
-    const { allVisibleTargets, validTargets } = getVisibleTargetSelections({
-      state,
-      floorState,
-      weapon,
-      manhattanDistance,
-      isStraightShot,
-      hasLineOfSight,
-    });
+    const { allVisibleTargets, validTargets } = getVisibleTargetData(state);
     const initialTarget = validTargets[0]?.enemy ?? allVisibleTargets[0]?.enemy ?? { x: state.player.x, y: state.player.y };
 
     state.targeting.active = true;
@@ -236,6 +246,54 @@ export function createPlayerTurnController(context) {
         : `Zielmodus aktiv: ${getTargetHintLabel(validTargets[0] ?? allVisibleTargets[0] ?? null)}. Richte das Fadenkreuz aus oder brich mit T ab.`,
       'important',
     );
+    renderSelf();
+  }
+
+  function cycleTargetMode() {
+    const state = getState();
+    if (!canEnterTargetMode()) {
+      addMessage('Mit dieser Waffe kannst du gerade keinen Zielmodus Ã¶ffnen.', 'danger');
+      renderSelf();
+      return;
+    }
+
+    const { validTargets } = getVisibleTargetData(state);
+    if (validTargets.length === 0) {
+      state.targeting.active = false;
+      addMessage('Kein gueltiges Ziel in Reichweite oder Sichtlinie.');
+      renderSelf();
+      return;
+    }
+
+    const wasActive = Boolean(state.targeting?.active);
+    const currentIndex = wasActive
+      ? validTargets.findIndex((target) =>
+          target.enemy?.x === state.targeting.cursorX &&
+          target.enemy?.y === state.targeting.cursorY,
+        )
+      : -1;
+
+    if (currentIndex === validTargets.length - 1) {
+      state.targeting.active = false;
+      renderSelf();
+      return;
+    }
+
+    const nextTarget = validTargets[currentIndex >= 0 ? currentIndex + 1 : 0]?.enemy;
+    if (!nextTarget) {
+      state.targeting.active = false;
+      renderSelf();
+      return;
+    }
+
+    state.targeting.active = true;
+    state.targeting.cursorX = nextTarget.x;
+    state.targeting.cursorY = nextTarget.y;
+
+    if (!wasActive) {
+      addMessage('Zielmodus aktiv: T waehlt Ziele, F feuert.', 'important');
+    }
+
     renderSelf();
   }
 
@@ -320,6 +378,7 @@ export function createPlayerTurnController(context) {
     movePlayer,
     handleWait,
     enterTargetMode,
+    cycleTargetMode,
     cancelTargetMode,
     moveTargetCursor,
     selectTargetTile,

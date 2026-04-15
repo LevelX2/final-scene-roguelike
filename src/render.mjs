@@ -4,6 +4,7 @@ import { createHudView } from './ui/hud-view.mjs';
 import { createInventoryView } from './ui/inventory-view.mjs';
 import { createLogView } from './ui/log-view.mjs';
 import { createRenderAssetHelpers } from './ui/render-assets.mjs';
+import { createStudioTopologyView } from './ui/studio-topology-view.mjs';
 import { createTooltipView } from './ui/tooltip-view.mjs';
 import { getWeaponEffectDefinition, getEffectStateLabel } from './content/catalogs/weapon-effects.mjs';
 
@@ -24,6 +25,16 @@ export function createRenderApi(context) {
     playerSheetElement,
     enemySheetElement,
     highscoreListElement,
+    studioTopologyViewportElement,
+    studioTopologySceneElement,
+    studioTopologySummaryElement,
+    studioTopologySelectorElement,
+    studioTopologyMiniMapElement,
+    studioTopologyModalElement,
+    studioTopologyZoomRangeElement,
+    studioTopologyZoomValueElement,
+    studioTopologyPrevButtonElement,
+    studioTopologyNextButtonElement,
     runStatsSummaryElement,
     runStatsKillsElement,
     hoverTooltipElement,
@@ -54,6 +65,7 @@ export function createRenderApi(context) {
     selectTargetTile,
     confirmTargetAttack,
     createRuntimeId,
+    resetStudioTopologyViewButtonElement,
   } = context;
 
   function getDoorColorLabel(color) {
@@ -178,6 +190,22 @@ export function createRenderApi(context) {
     formatLogMessage,
   });
 
+  const { renderStudioTopology } = createStudioTopologyView({
+    studioTopologyViewportElement,
+    studioTopologySceneElement,
+    studioTopologySummaryElement,
+    studioTopologySelectorElement,
+    studioTopologyMiniMapElement,
+    studioTopologyModalElement,
+    studioTopologyZoomRangeElement,
+    studioTopologyZoomValueElement,
+    studioTopologyPrevButtonElement,
+    studioTopologyNextButtonElement,
+    resetStudioTopologyViewButtonElement,
+    getState,
+    TILE,
+  });
+
   const { tileAt, renderBoard, showFloatingText } = createBoardView({
     WIDTH,
     HEIGHT,
@@ -235,6 +263,7 @@ export function createRenderApi(context) {
     renderHighscores,
     renderRunStats,
     renderLog,
+    renderStudioTopology,
     renderBoard,
     showFloatingText,
     showTooltip,

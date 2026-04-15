@@ -12,6 +12,7 @@ test('state-persistence normalizes transient modal state on load', () => {
   const createDefaultModals = (startOpen = false) => ({
     startOpen,
     inventoryOpen: false,
+    studioTopologyOpen: false,
     runStatsOpen: false,
     optionsOpen: false,
     helpOpen: false,

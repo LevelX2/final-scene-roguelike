@@ -40,6 +40,7 @@
       <div class="hero-actions">
         <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Neues Spiel beginnen</button>
         <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Spielverlauf</button>
+        <button id="openStudioTopology" class="mini-btn hero-help-btn" type="button">Karte</button>
         <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
         <button id="openTargetMode" class="mini-btn hero-help-btn" type="button">Zielen</button>
         <button id="confirmTargetMode" class="mini-btn hero-help-btn ui-hidden" type="button">Schie&szlig;en</button>
@@ -203,6 +204,56 @@
     </div>
   </div>
 
+  <div id="studioTopologyModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel scroll-modal-card studio-topology-modal-card">
+      <div class="inventory-inline-head">
+        <div>
+          <p class="modal-eyebrow">R&auml;umliche Ansicht</p>
+          <h2>Studio-Komplex 3D</h2>
+        </div>
+        <div class="card-head-actions">
+          <button id="closeStudioTopology" class="mini-btn" type="button">Schlie&szlig;en</button>
+        </div>
+      </div>
+      <div class="studio-topology-modal-layout">
+        <section class="studio-topology-stage">
+          <div class="studio-topology-stage-toolbar">
+            <label class="studio-topology-zoom-control" for="studioTopologyZoomRange">
+              <span>Zoom</span>
+              <input id="studioTopologyZoomRange" type="range" min="70" max="170" step="5" value="130" aria-label="3D-Ansicht zoomen">
+              <strong id="studioTopologyZoomValue">130%</strong>
+            </label>
+            <button id="resetStudioTopologyView" class="mini-btn studio-topology-reset-btn" type="button">Reset</button>
+          </div>
+          <div
+            id="studioTopologyViewport"
+            class="studio-topology-viewport"
+            aria-label="Drehbares 3D-Modell des Studiokomplexes"
+          >
+            <div class="studio-topology-camera">
+              <div id="studioTopologyScene" class="studio-topology-scene"></div>
+            </div>
+          </div>
+        </section>
+        <aside class="studio-topology-detail-panel">
+          <section class="studio-topology-selector-panel">
+            <div class="studio-topology-selector-head">
+              <strong>Studio-Auswahl</strong>
+            </div>
+            <div class="studio-topology-selector-strip">
+              <button id="studioTopologyPrev" class="mini-btn studio-topology-nav-btn" type="button" aria-label="Vorheriges Studio">&larr;</button>
+              <div id="studioTopologySelector" class="studio-topology-selector" aria-live="polite"></div>
+              <button id="studioTopologyNext" class="mini-btn studio-topology-nav-btn" type="button" aria-label="Naechstes Studio">&rarr;</button>
+            </div>
+          </section>
+          <section class="studio-topology-minimap-panel">
+            <div id="studioTopologyMiniMap" class="studio-topology-minimap" aria-live="polite"></div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+
   <div id="optionsModal" class="modal hidden" aria-hidden="true">
     <div class="modal-card panel">
       <div class="inventory-inline-head">
@@ -322,8 +373,8 @@
           <div class="help-list">
             <div class="help-row"><span><kbd>WASD</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen</strong></div>
             <div class="help-row"><span><kbd>Leertaste</kbd></span><strong>Warten</strong></div>
-            <div class="help-row"><span><kbd>F</kbd> oder <kbd>Zielen</kbd></span><strong>Zielmodus f&uuml;r Fernkampf &ouml;ffnen oder beenden</strong></div>
-            <div class="help-row"><span class="help-keys"><kbd>Mausklick</kbd><span class="help-key-sep">oder</span><kbd>Schie&szlig;en</kbd></span><strong>Im Zielmodus auf das gr&uuml;ne Ziel feuern</strong></div>
+            <div class="help-row"><span><kbd>T</kbd> oder <kbd>Zielen</kbd></span><strong>G&uuml;ltige Fernkampfziele durchschalten</strong></div>
+            <div class="help-row"><span class="help-keys"><kbd>F</kbd><span class="help-key-sep">oder</span><kbd>Schie&szlig;en</kbd></span><strong>Auf das gr&uuml;n markierte Ziel feuern</strong></div>
             <div class="help-row"><span><kbd>H</kbd></span><strong>Schnell Heiltrank trinken</strong></div>
             <div class="help-row"><span><kbd>C</kbd></span><strong>Benachbarte offene T&uuml;r schlie&szlig;en</strong></div>
             <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>

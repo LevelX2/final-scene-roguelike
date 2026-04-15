@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createStatePersistenceApi } from '../../src/application/state-persistence.mjs';
 
-function createPersistenceHarness() {
+test('state-persistence normalizes key inventory items and floor key pickups', () => {
   const storage = new Map();
   const HERO_CLASSES = {
-    lead: { label: 'Hauptrolle', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
+    lead: { label: 'Hauptrolle', passiveName: 'Test', passiveSummary: 'Test', passiveDescription: 'Test' },
   };
   let state = null;
 
@@ -15,10 +15,12 @@ function createPersistenceHarness() {
     studioTopologyOpen: false,
     runStatsOpen: false,
     optionsOpen: false,
+    savegamesOpen: false,
     helpOpen: false,
     highscoresOpen: false,
   });
-
+  const createDefaultCollapsedCards = () => ({ player: 'summary', log: 'visible' });
+  const createDefaultPreferences = () => ({ inventoryFilter: 'all' });
   const createFreshState = (heroName, heroClassId) => ({
     floor: 1,
     deepestFloor: 1,
@@ -44,18 +46,16 @@ function createPersistenceHarness() {
     visitedFloors: [],
     lastScoreRank: null,
     modals: createDefaultModals(false),
-    collapsedCards: {},
+    collapsedCards: createDefaultCollapsedCards(),
     options: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
-    preferences: {},
+    preferences: createDefaultPreferences(),
     floors: {
       1: {
-        floorNumber: 1,
         studioArchetypeId: 'slasher',
         grid: [['.']],
         visible: [[true]],
-        weapons: [],
-        offHands: [],
         enemies: [],
+        keys: [],
       },
     },
     player: {
@@ -91,16 +91,14 @@ function createPersistenceHarness() {
     writeStorage: (key, value) => storage.set(key, value),
     removeStorage: (key) => storage.delete(key),
     getState: () => state,
-    setState: (nextState) => {
-      state = nextState;
-    },
+    setState: (nextState) => { state = nextState; },
     loadHeroClassId: () => 'lead',
     createFreshState,
     createDefaultModals,
-    createDefaultCollapsedCards: () => ({}),
-    createDefaultPreferences: () => ({}),
+    createDefaultCollapsedCards,
+    createDefaultPreferences,
     normalizeHeroName: (value) => value?.trim() || 'Final Girl',
-    resolveHeroClassId: (value, fallback) => (HERO_CLASSES[value] ? value : fallback),
+    resolveHeroClassId: (value, fallback) => HERO_CLASSES[value] ? value : fallback,
     HERO_CLASSES,
     randomInt: () => 0,
     createRunArchetypeSequence: () => ['slasher'],
@@ -113,72 +111,25 @@ function createPersistenceHarness() {
     renderSelf: () => {},
   });
 
-  return {
-    storage,
-    getState: () => state,
-    persistence,
-  };
-}
-
-test('state-persistence normalisiert Schilde in Inventar, Boden-Pickups und Gegnerdaten', () => {
-  const { storage, getState, persistence } = createPersistenceHarness();
-
   storage.set('savegame', JSON.stringify({
     version: 4,
     entries: [{
-      id: 'save-1',
+      id: 'save-keys',
       savedAt: 123,
       snapshotVersion: 4,
       state: {
         floor: 1,
-        deepestFloor: 1,
+        player: { name: 'Ripley', classId: 'lead' },
         inventory: [
-          {
-            type: 'offhand',
-            id: 'satellite-dish-guard',
-            name: 'Satellitenschuessel-Schild',
-            rarity: 'uncommon',
-          },
+          { type: 'key', keyColor: 'green', keyFloor: 3 },
         ],
-        player: {
-          name: 'Ripley',
-          classId: 'lead',
-          offHand: {
-            id: 'clapperboard-shield',
-            name: 'Klappenbrett-Schild',
-            blockChance: 16,
-            blockValue: 2,
-          },
-        },
         floors: {
           1: {
-            floorNumber: 1,
             studioArchetypeId: 'slasher',
             grid: [['.']],
             visible: [[true]],
-            offHands: [
-              {
-                x: 2,
-                y: 3,
-                item: {
-                  id: 'stuntman-bracer',
-                  name: 'Stuntman-Bracer',
-                },
-              },
-            ],
-            enemies: [
-              {
-                id: 'test-enemy',
-                offHand: {
-                  id: 'neon-diner-tray',
-                  name: 'Neon-Diner-Tablett',
-                },
-                lootOffHand: {
-                  id: 'worksite-bracer',
-                  name: 'Arbeitsschutz-Armschild',
-                },
-              },
-            ],
+            enemies: [],
+            keys: [{ x: 0, y: 0, item: { type: 'key', keyColor: 'blue', keyFloor: 2 } }],
           },
         },
       },
@@ -187,21 +138,10 @@ test('state-persistence normalisiert Schilde in Inventar, Boden-Pickups und Gegn
   }));
 
   const result = persistence.loadSavedGame();
-  const state = getState();
 
   assert.equal(result.ok, true);
-  assert.equal(state.player.offHand.type, 'offhand');
-  assert.equal(state.player.offHand.itemType, 'shield');
-  assert.equal(state.player.offHand.subtype, 'shield');
-  assert.equal(state.player.offHand.baseItemId, 'clapperboard-shield');
-  assert.equal(state.player.offHand.iconAssetId, 'clapperboard-shield');
-
-  assert.equal(state.inventory[0].itemType, 'shield');
-  assert.equal(state.inventory[0].baseItemId, 'satellite-dish-guard');
-  assert.equal(state.inventory[0].iconAssetId, 'satellite-dish-guard');
-
-  assert.equal(state.floors[1].offHands[0].item.itemType, 'shield');
-  assert.equal(state.floors[1].offHands[0].item.iconAssetId, 'stuntman-bracer');
-  assert.equal(state.floors[1].enemies[0].offHand.itemType, 'shield');
-  assert.equal(state.floors[1].enemies[0].lootOffHand.baseItemId, 'worksite-bracer');
+  assert.equal(state.inventory[0].name, 'Grüner Schlüssel');
+  assert.match(state.inventory[0].description, /Studio 3/);
+  assert.equal(state.floors[1].keys[0].item.name, 'Blauer Schlüssel');
+  assert.match(state.floors[1].keys[0].item.description, /Studio 2/);
 });

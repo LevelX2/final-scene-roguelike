@@ -6,6 +6,7 @@ export function createUiBindingsApi(context) {
     stairsConfirmButton,
     stairsStayButton,
     openInventoryButton,
+    openStudioTopologyButton,
     openTargetModeButton,
     confirmTargetModeButton,
     zoomOutBoardButtonElement,
@@ -14,6 +15,7 @@ export function createUiBindingsApi(context) {
     closeInventoryButton,
     openRunStatsButton,
     closeRunStatsButton,
+    closeStudioTopologyButton,
     saveGameQuickButtonElement,
     loadGameQuickButtonElement,
     openOptionsButton,
@@ -59,6 +61,7 @@ export function createUiBindingsApi(context) {
     resolveChoiceBySlot,
     resolveStairChoice,
     toggleInventory,
+    toggleStudioTopology,
     toggleRunStats,
     toggleOptions,
     toggleSavegames,
@@ -83,6 +86,7 @@ export function createUiBindingsApi(context) {
     openStartModal,
     closeStartModal,
     applyStartProfile,
+    cycleTargetMode,
     enterTargetMode,
     cancelTargetMode,
     confirmTargetAttack,
@@ -114,17 +118,13 @@ export function createUiBindingsApi(context) {
   function bindModalControls() {
     const openSavegames = () => toggleSavegames(true);
     openInventoryButton.addEventListener("click", () => toggleInventory(true));
-    openTargetModeButton.addEventListener("click", () => {
-      if (getState().targeting?.active) {
-        cancelTargetMode();
-        return;
-      }
-      enterTargetMode();
-    });
+    openStudioTopologyButton.addEventListener("click", () => toggleStudioTopology(true));
+    openTargetModeButton.addEventListener("click", () => cycleTargetMode());
     confirmTargetModeButton.addEventListener("click", () => confirmTargetAttack());
     closeInventoryButton.addEventListener("click", () => toggleInventory(false));
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
+    closeStudioTopologyButton.addEventListener("click", () => toggleStudioTopology(false));
     saveGameQuickButtonElement.addEventListener("click", () => saveCurrentGame());
     loadGameQuickButtonElement.addEventListener("click", openSavegames);
     openOptionsButton.addEventListener("click", () => toggleOptions(true));

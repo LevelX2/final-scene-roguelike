@@ -175,6 +175,12 @@ export function createTestApiMutators(context) {
     renderSelf();
   }
 
+  function setDebugReveal(value = true) {
+    const floorState = getCurrentFloorState();
+    floorState.debugReveal = Boolean(value);
+    renderSelf();
+  }
+
   function createTestEnemy(position, config = {}) {
     const enemyName = config.name ?? "Testgegner";
 
@@ -194,6 +200,15 @@ export function createTestApiMutators(context) {
       retreatLabel: config.retreatLabel ?? "Standhaft",
       healingProfile: config.healingProfile ?? "slow",
       healingLabel: config.healingLabel ?? "Langsam",
+      allowedTemperaments: [...(config.allowedTemperaments ?? [])],
+      temperament: config.temperament ?? "stoic",
+      temperamentHint: config.temperamentHint ?? "Regt sich kaum, bis etwas seine stille Geduld st?rt.",
+      idleTarget: config.idleTarget ?? null,
+      idleTargetType: config.idleTargetType ?? null,
+      idlePlanAge: config.idlePlanAge ?? 0,
+      recentRoomHistory: [...(config.recentRoomHistory ?? [])],
+      recentDoorHistory: [...(config.recentDoorHistory ?? [])],
+      recentAggroPositions: (config.recentAggroPositions ?? []).map((position) => ({ ...position })),
       isRetreating: false,
       description: config.description ?? "Kontrollierter Testgegner.",
       special: config.special ?? "Nur fuer Tests.",
@@ -204,6 +219,7 @@ export function createTestApiMutators(context) {
       turnsSinceHit: 0,
       canOpenDoors: config.canOpenDoors ?? false,
       canChangeFloors: config.canChangeFloors ?? false,
+      sourceArchetypeId: config.sourceArchetypeId ?? null,
       mainHand: config.mainHand || config.weapon ? cloneWeapon(config.mainHand ?? config.weapon) : null,
       offHand: config.offHand ? cloneOffHandItem(config.offHand) : null,
       xpReward: config.xpReward ?? 0,
@@ -353,6 +369,7 @@ export function createTestApiMutators(context) {
     placeDoor,
     placeShowcase,
     placeTrap,
+    setDebugReveal,
     placeEnemy,
     setupCombatScenario,
     enterTargetMode: enterTargetModeForTests,

@@ -622,6 +622,73 @@ test("weapon tooltips show the inflected combat-log form", async ({ page }) => {
   await expect(page.locator("#hoverTooltip")).toContainText("Kampflog: mit dem leuchtenden Expeditionsrevolver der Flamme");
 });
 
+test("monster tooltips expose debug AI details after F8 reveal", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 4, y: 2 },
+      enemy: {
+        name: "Debugjaeger",
+        description: "Nur fuer Tooltip-Debug.",
+        behavior: "hunter",
+        behaviorLabel: "Jagdprofi",
+        mobility: "local",
+        mobilityLabel: "Reviertreu",
+        retreatProfile: "cowardly",
+        retreatLabel: "Fluchtbereit",
+        healingProfile: "lurking",
+        healingLabel: "Nur ausserhalb des Kampfes",
+        allowedTemperaments: ["patrol", "erratic"],
+        temperament: "patrol",
+        temperamentHint: "Prueft Zugaenge mit beunruhigender Routine.",
+        aggro: false,
+        aggroRadius: 6,
+        canOpenDoors: true,
+        canChangeFloors: true,
+        sourceArchetypeId: "action",
+        idleTarget: { x: 6, y: 2 },
+        idleTargetType: "door",
+        mainHand: {
+          type: "weapon",
+          id: "debug-rifle",
+          name: "Debuggewehr",
+          source: "Tests",
+          handedness: "two-handed",
+          attackMode: "ranged",
+          range: 4,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: -2,
+          description: "Nur fuer Tests.",
+        },
+      },
+    });
+  });
+
+  await page.locator(".tile.enemy").hover();
+  await expect(page.locator("#hoverTooltip")).toContainText("Nur fuer Tooltip-Debug.");
+  await expect(page.locator("#hoverTooltip")).not.toContainText("Debug: Aktive Monstersteuerung");
+  await expect(page.locator("#hoverTooltip")).not.toContainText("AI-Profil:");
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setDebugReveal(true);
+  });
+  await page.locator(".tile.enemy").hover();
+
+  await expect(page.locator("#hoverTooltip")).toContainText("Debug: Aktive Monstersteuerung");
+  await expect(page.locator("#hoverTooltip")).toContainText("AI-Profil: Jagdprofi (hunter)");
+  await expect(page.locator("#hoverTooltip")).toContainText("Mobilitaet: Reviertreu (local)");
+  await expect(page.locator("#hoverTooltip")).toContainText("Rueckzug: Fluchtbereit (cowardly)");
+  await expect(page.locator("#hoverTooltip")).toContainText("Temperament: patrol | erlaubt: patrol, erratic");
+  await expect(page.locator("#hoverTooltip")).toContainText("Tueren: ja | Etagenwechsel: ja");
+  await expect(page.locator("#hoverTooltip")).toContainText("Waffenprofil: Fernkampf 4 | Quelle: action");
+});
+
 test("topbar shows summed combat values while tooltips keep the breakdown", async ({ page }) => {
   await page.goto("/");
   await startRun(page);

@@ -225,6 +225,37 @@ export function createBoardView(context) {
       : null;
     if (enemy) {
       const revealed = knowsMonster(enemy);
+      const debugRevealActive = Boolean(floorState.debugReveal);
+      const showFullMonsterDetails = revealed || debugRevealActive;
+      const formatDebugBoolean = (value) => (value ? "ja" : "nein");
+      const formatDebugPosition = (position) => position ? `${position.x},${position.y}` : "keins";
+      const formatAllowedTemperaments = (temperaments) =>
+        Array.isArray(temperaments) && temperaments.length > 0
+          ? temperaments.join(", ")
+          : "keine Einschraenkung";
+      const formatEnemyWeaponProfile = (weapon) => {
+        if (!weapon) {
+          return "unbewaffnet";
+        }
+
+        if (weapon.attackMode === "ranged" && (weapon.range ?? 1) > 1) {
+          return `Fernkampf ${weapon.range}`;
+        }
+
+        return "Nahkampf";
+      };
+      const debugLines = [
+        "Debug: Aktive Monstersteuerung",
+        `AI-Profil: ${enemy.behaviorLabel ?? enemy.behavior ?? "Unbekannt"} (${enemy.behavior ?? "n/a"})`,
+        `Aggro-Radius: ${enemy.aggroRadius ?? 0} | Aggro aktiv: ${formatDebugBoolean(enemy.aggro)}`,
+        `Mobilitaet: ${enemy.mobilityLabel ?? enemy.mobility ?? "Unbekannt"} (${enemy.mobility ?? "n/a"})`,
+        `Rueckzug: ${enemy.retreatLabel ?? enemy.retreatProfile ?? "Unbekannt"} (${enemy.retreatProfile ?? "n/a"}) | aktiv: ${formatDebugBoolean(enemy.isRetreating)}`,
+        `Regeneration: ${enemy.healingLabel ?? enemy.healingProfile ?? "Unbekannt"} (${enemy.healingProfile ?? "n/a"})`,
+        `Temperament: ${enemy.temperament ?? "n/a"} | erlaubt: ${formatAllowedTemperaments(enemy.allowedTemperaments)}`,
+        `Tueren: ${formatDebugBoolean(enemy.canOpenDoors)} | Etagenwechsel: ${formatDebugBoolean(enemy.canChangeFloors)}`,
+        `Spawnanker: ${enemy.originX ?? "?"},${enemy.originY ?? "?"} | Idle-Ziel: ${formatDebugPosition(enemy.idleTarget)}${enemy.idleTargetType ? ` (${enemy.idleTargetType})` : ""}`,
+        `Waffenprofil: ${formatEnemyWeaponProfile(enemy.mainHand)} | Quelle: ${enemy.sourceArchetypeId ?? "keine Archetypquelle"}`,
+      ];
       return {
         type: `floor studio-${studioArchetypeId} enemy monster-${enemy.id}`,
         glyph: TILE.ENEMY,
@@ -235,22 +266,25 @@ export function createBoardView(context) {
           title: enemy.name,
           imageUrl: getMonsterIconAssetUrl(enemy),
           imageClass: getEnemyTooltipImageClass(enemy),
-          lines: revealed
+          lines: showFullMonsterDetails
             ? [
-            enemy.description,
-            enemy.mainHand ? `Waffe: ${formatWeaponReference(enemy.mainHand, { article: "definite", grammaticalCase: "nominative" })}` : "Waffe: Unbewaffnet",
-            `Variante: ${enemy.variantLabel ?? "Normal"}`,
+                enemy.description,
+                enemy.temperamentHint ?? "Schwer zu lesen.",
+                enemy.mainHand ? `Waffe: ${formatWeaponReference(enemy.mainHand, { article: "definite", grammaticalCase: "nominative" })}` : "Waffe: Unbewaffnet",
+                `Variante: ${enemy.variantLabel ?? "Normal"}`,
                 enemy.variantModifiers?.length
                   ? `Merkmale: ${enemy.variantModifiers.map((modifier) => modifier.label).join(", ")}`
                   : "Merkmale: Keine",
-                `Mobilität: ${enemy.mobilityLabel ?? "Mobil"}`,
-                `Rückzug: ${enemy.retreatLabel ?? "Standhaft"}`,
+                `Mobilitaet: ${enemy.mobilityLabel ?? "Mobil"}`,
+                `Rueckzug: ${enemy.retreatLabel ?? "Standhaft"}`,
                 `Regeneration: ${enemy.healingLabel ?? "Langsam"}`,
                 `Leben ${enemy.hp}/${enemy.maxHp}`,
                 enemy.special,
+                ...(debugRevealActive ? debugLines : []),
               ]
             : [
                 enemy.description,
+                enemy.temperamentHint ?? "Schwer zu lesen.",
               ],
         },
       };

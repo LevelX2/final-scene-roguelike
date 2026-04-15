@@ -1,5 +1,15 @@
 import { formatMonsterDisplayName } from '../text/combat-phrasing.mjs';
 import { weightedPick, weightedPickFromMap } from '../utils/random-tools.mjs';
+import {
+  MONSTER_HEALING_LABELS,
+  MONSTER_HEALING_PROFILE,
+  MONSTER_MOBILITY,
+  MONSTER_MOBILITY_LABELS,
+  MONSTER_RETREAT_LABELS,
+  MONSTER_RETREAT_PROFILE,
+  MONSTER_TEMPERAMENT_HINTS,
+  MONSTER_TEMPERAMENT_VALUES,
+} from '../content/catalogs/monsters.mjs';
 
 export function createDungeonEnemyFactory(context) {
   const {
@@ -135,6 +145,28 @@ export function createDungeonEnemyFactory(context) {
     return variant.id === 'dire' ? 0.24 : variant.id === 'elite' ? 0.16 : 0.08;
   }
 
+  function getAllowedTemperaments(monster) {
+    const allowed = Array.isArray(monster.allowedTemperaments) && monster.allowedTemperaments.length > 0
+      ? monster.allowedTemperaments.filter((temperament) => MONSTER_TEMPERAMENT_VALUES.includes(temperament))
+      : MONSTER_TEMPERAMENT_VALUES;
+
+    return allowed.length > 0 ? allowed : MONSTER_TEMPERAMENT_VALUES;
+  }
+
+  function rollMonsterTemperament(monster) {
+    const allowed = getAllowedTemperaments(monster);
+    if (allowed.length === 1) {
+      return allowed[0];
+    }
+
+    return allowed[randomInt(0, allowed.length - 1)] ?? MONSTER_TEMPERAMENT_VALUES[0];
+  }
+
+  function rollTemperamentHint(temperament) {
+    const hints = MONSTER_TEMPERAMENT_HINTS[temperament] ?? MONSTER_TEMPERAMENT_HINTS[MONSTER_TEMPERAMENT_VALUES[0]];
+    return hints[randomInt(0, hints.length - 1)] ?? hints[0] ?? '';
+  }
+
   function createEnemy(position, floor, monster, options = {}) {
     const scale = getEnemyScaleForFloor(floor, monster.rank);
     const variant = rollMonsterVariant(floor);
@@ -158,9 +190,13 @@ export function createDungeonEnemyFactory(context) {
         ? { namePrefixStems: variantNamePrefixStems }
         : null;
     const variantName = buildMonsterVariantName(monster.name, variant, variantModifiers, runtimeGrammar);
-    const mobilityAggroBonus = monster.mobility === 'relentless'
+    const mobility = monster.mobility ?? MONSTER_MOBILITY.ROAMING;
+    const retreatProfile = monster.retreatProfile ?? MONSTER_RETREAT_PROFILE.NONE;
+    const healingProfile = monster.healingProfile ?? MONSTER_HEALING_PROFILE.SLOW;
+    const temperament = rollMonsterTemperament(monster);
+    const mobilityAggroBonus = mobility === MONSTER_MOBILITY.RELENTLESS
       ? 2
-      : monster.mobility === 'roaming'
+      : mobility === MONSTER_MOBILITY.ROAMING
         ? 1
         : 0;
     const dropSourceTag = variant.id === 'normal'
@@ -199,12 +235,21 @@ export function createDungeonEnemyFactory(context) {
       grammar: runtimeGrammar,
       behavior: monster.behavior,
       behaviorLabel: monster.behaviorLabel,
-      mobility: monster.mobility,
-      mobilityLabel: monster.mobilityLabel,
-      retreatProfile: monster.retreatProfile,
-      retreatLabel: monster.retreatLabel,
-      healingProfile: monster.healingProfile,
-      healingLabel: monster.healingLabel,
+      mobility,
+      mobilityLabel: monster.mobilityLabel ?? MONSTER_MOBILITY_LABELS[mobility],
+      retreatProfile,
+      retreatLabel: monster.retreatLabel ?? MONSTER_RETREAT_LABELS[retreatProfile],
+      healingProfile,
+      healingLabel: monster.healingLabel ?? MONSTER_HEALING_LABELS[healingProfile],
+      allowedTemperaments: [...getAllowedTemperaments(monster)],
+      temperament,
+      temperamentHint: rollTemperamentHint(temperament),
+      idleTarget: null,
+      idleTargetType: null,
+      idlePlanAge: 0,
+      recentRoomHistory: [],
+      recentDoorHistory: [],
+      recentAggroPositions: [],
       isRetreating: false,
       description: monster.description,
       special: monster.special,
@@ -213,7 +258,9 @@ export function createDungeonEnemyFactory(context) {
       aggro: false,
       turnsSinceHit: 0,
       statusEffects: [],
+      canOpenDoors: Boolean(monster.canOpenDoors),
       canChangeFloors: Boolean(monster.canChangeFloors),
+      sourceArchetypeId: options.sourceArchetypeId ?? null,
       mainHand: generatedWeapon ? cloneWeaponItem(generatedWeapon) : null,
       offHand: generatedOffHand ? cloneOffHandItem(generatedOffHand) : null,
       lootWeapon: generatedWeapon ? cloneWeaponItem(generatedWeapon) : null,

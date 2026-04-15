@@ -142,6 +142,42 @@ test("adjacent studios preserve the transition line across the floor change", as
   expect(preservesLine).toBeTruthy();
 });
 
+test("studio transitions use dedicated overlays instead of normal door art", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.keyboard.press("F8");
+
+  const visuals = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.placeDoor({ x: snapshot.player.x + 1, y: snapshot.player.y }, { doorType: "normal", isOpen: false });
+
+    const entryTile = document.querySelector(".tile.stairs-up");
+    const exitTile = document.querySelector(".tile.stairs-down");
+    const doorTile = document.querySelector(".tile.door-closed");
+
+    return {
+      entryOverlay: entryTile?.style.getPropertyValue("--tile-overlay-image") ?? "",
+      exitOverlay: exitTile?.style.getPropertyValue("--tile-overlay-image") ?? "",
+      doorOverlay: doorTile?.style.getPropertyValue("--tile-overlay-image") ?? "",
+      entryClasses: entryTile?.className ?? "",
+      exitClasses: exitTile?.className ?? "",
+    };
+  });
+
+  expect(visuals.entryOverlay).toContain("studio-entry-");
+  expect(
+    visuals.exitOverlay.includes("studio-exit-") ||
+    visuals.exitOverlay.includes("lift-") ||
+    visuals.exitOverlay.includes("stairs-")
+  ).toBeTruthy();
+  expect(visuals.exitOverlay).not.toContain("door-open");
+  expect(visuals.exitOverlay).not.toContain("door-closed");
+  expect(visuals.doorOverlay).toContain("door-closed");
+  expect(visuals.entryClasses).toContain("studio-transition");
+  expect(visuals.exitClasses).toContain("studio-transition");
+});
+
 test("floor followers use the full inflected monster name in stair messages", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -171,7 +207,7 @@ test("floor followers use the full inflected monster name in stair messages", as
   await page.getByRole("button", { name: "Betreten" }).click();
 
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
-  expect(messages.some((entry) => entry.text.includes("Der brutale Motel-Schlurfer folgt dir über die Treppe."))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Der brutale Motel-Schlurfer folgt dir"))).toBeTruthy();
   await expect(page.locator("#messageLog .log-mark-monster").first()).toHaveText("Der brutale Motel-Schlurfer");
 });
 

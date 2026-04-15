@@ -83,19 +83,22 @@ test("hero class cards support arrow-key selection on the start screen", async (
   await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
 });
 
-test("each hero class starts with a matching random weapon", async ({ page }) => {
+test("each hero class starts with its configured opening weapon setup", async ({ page }) => {
   const classExpectations = [
     {
       classLabel: "Hauptrolle",
-      allowedIds: ["relic-dagger", "rune-sword"],
+      allowedIds: ["expedition-revolver"],
+      attackMode: "ranged",
     },
     {
       classLabel: "Stuntman",
       allowedIds: ["combat-knife", "woodcutter-axe", "breach-axe", "bowie-knife"],
+      attackMode: "melee",
     },
     {
       classLabel: "Regisseur",
       allowedIds: ["cane-blade", "electro-scalpel"],
+      attackMode: "melee",
     },
   ];
 
@@ -107,6 +110,43 @@ test("each hero class starts with a matching random weapon", async ({ page }) =>
 
     expect(inventory.equippedWeapon.id).not.toBe("bare-hands");
     expect(expectation.allowedIds).toContain(inventory.equippedWeapon.id);
+    expect(inventory.equippedWeapon.attackMode).toBe(expectation.attackMode);
+
+    await page.reload();
+  }
+});
+
+test("hero classes receive their configured starting loadouts", async ({ page }) => {
+  const classExpectations = [
+    {
+      classLabel: "Hauptrolle",
+      potionCount: 2,
+      foodIds: [],
+      equippedWeaponId: "expedition-revolver",
+    },
+    {
+      classLabel: "Stuntman",
+      potionCount: 1,
+      foodIds: ["sandwich"],
+    },
+    {
+      classLabel: "Regisseur",
+      potionCount: 1,
+      foodIds: ["energy_bar", "energy_bar"],
+    },
+  ];
+
+  await page.goto("/");
+
+  for (const expectation of classExpectations) {
+    await startRun(page, { classLabel: expectation.classLabel });
+    const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
+
+    expect(inventory.potionCount).toBe(expectation.potionCount);
+    expect(inventory.items.filter((item) => item.type === "food").map((item) => item.id)).toEqual(expectation.foodIds);
+    if (expectation.equippedWeaponId) {
+      expect(inventory.equippedWeapon.id).toBe(expectation.equippedWeaponId);
+    }
 
     await page.reload();
   }
@@ -628,7 +668,7 @@ test("topbar shows summed combat values while tooltips keep the breakdown", asyn
   await expect(page.locator("#topbarBlock")).toHaveText("20%");
 });
 
-test("pressing F with a melee weapon does not enter target mode", async ({ page }) => {
+test("pressing T with a melee weapon does not enter target mode", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -698,7 +738,7 @@ test("ranged weapons enter target mode and mark a valid target", async ({ page }
   await expect(page.locator("#enemySheet")).toContainText("Aktiv markiert");
 });
 
-test("pressing F with a ranged weapon enters target mode", async ({ page }) => {
+test("pressing T with a ranged weapon selects the first valid target", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -726,10 +766,11 @@ test("pressing F with a ranged weapon enters target mode", async ({ page }) => {
     });
   });
 
-  await page.keyboard.press("f");
+  await page.evaluate(() => window.__TEST_API__.enterTargetMode());
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
   await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
+  await expect(page.locator("#messageLog")).not.toContainText("Zielmodus aktiv: T waehlt Ziele, F feuert.");
 });
 
 test("target mode can also be opened from the header button", async ({ page }) => {
@@ -764,7 +805,7 @@ test("target mode can also be opened from the header button", async ({ page }) =
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
   await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
-  await expect(page.getByRole("button", { name: "Zielen beenden" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Zielen" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Schießen" })).toBeVisible();
 });
 
@@ -800,10 +841,10 @@ test("target mode shows a clear hint even without a valid straight shot target",
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
   await expect(page.locator("#targetModeHint")).toContainText("Kein Schuss");
-  await expect(page.locator("#messageLog")).toContainText("Kein Ziel in gerader Linie und Sichtweite");
+  await expect(page.locator("#messageLog")).toContainText("Zielmodus aktiv: Kein Schuss. Richte das Fadenkreuz aus oder brich mit T ab.");
 });
 
-test("target mode can be ended again from the header button", async ({ page }) => {
+test("the header target button closes target mode again after the last target", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -834,11 +875,11 @@ test("target mode can be ended again from the header button", async ({ page }) =
   await page.getByRole("button", { name: "Zielen" }).click();
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
 
-  await page.getByRole("button", { name: "Zielen beenden" }).click();
+  await page.getByRole("button", { name: "Zielen" }).click();
   await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
 });
 
-test("pressing T while target mode is active closes it again", async ({ page }) => {
+test("pressing T while target mode is active closes it again after the last target", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -866,11 +907,110 @@ test("pressing T while target mode is active closes it again", async ({ page }) 
     });
   });
 
-  await page.keyboard.press("f");
+  await page.keyboard.press("t");
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
 
   await page.keyboard.press("t");
 
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+});
+
+test("pressing T cycles through multiple valid targets and then exits target mode", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        id: "target-one",
+        name: "Ziel Eins",
+      },
+      enemyPosition: { x: 4, y: 2 },
+    });
+    window.__TEST_API__.placeEnemy({ x: 5, y: 2 }, {
+      id: "target-two",
+      name: "Ziel Zwei",
+    });
+  });
+
+  await page.keyboard.press("t");
+  let targeting = await page.evaluate(() => window.__TEST_API__.getSnapshot().targeting);
+  expect(targeting.active).toBeTruthy();
+  expect(targeting.cursorX).toBe(4);
+  expect(targeting.cursorY).toBe(2);
+
+  await page.keyboard.press("t");
+  targeting = await page.evaluate(() => window.__TEST_API__.getSnapshot().targeting);
+  expect(targeting.active).toBeTruthy();
+  expect(targeting.cursorX).toBe(5);
+  expect(targeting.cursorY).toBe(2);
+
+  await page.keyboard.press("t");
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+});
+
+test("pressing F fires at the currently selected target", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        strength: 4,
+        precision: 5,
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Tastenziel",
+        hp: 30,
+        maxHp: 30,
+        reaction: 1,
+        nerves: 1,
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+    window.__TEST_API__.setRandomSequence([0, 0]);
+  });
+
+  const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+  await page.keyboard.press("t");
+  await page.keyboard.press("f");
+  const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+
+  expect(after).toBeLessThan(before);
   await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
 });
 

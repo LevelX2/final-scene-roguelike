@@ -79,7 +79,7 @@ test("player attacks can miss and be logged as dodged", async ({ page }) => {
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
 
   expect(snapshot.enemies[0].hp).toBe(20);
-  expect(messages.some((entry) => entry.text.includes("weicht deinem Angriff aus"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("weicht deinem Angriff mit der Testklinge aus"))).toBeTruthy();
   expect(messages.some((entry) => entry.text.includes("Als Stuntman gehst du sofort in die Szene"))).toBeTruthy();
 });
 
@@ -125,7 +125,7 @@ test("variant monster prefixes are rendered as proper adjectives in miss logs", 
 
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
   expect(messages.some((entry) => entry.text.includes("der brutale Motel-Schlurfer entkommt knapp."))).toBeTruthy();
-  expect(messages.some((entry) => entry.text.includes("Der brutale Motel-Schlurfer weicht deinem Angriff aus."))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Der brutale Motel-Schlurfer weicht deinem Angriff mit der Testklinge aus."))).toBeTruthy();
   const markedNames = await page.locator("#messageLog .log-mark-monster").evaluateAll((nodes) =>
     nodes.map((node) => node.textContent)
   );
@@ -777,7 +777,7 @@ test("combat log inflects monster names for hit xp and kill messages", async ({ 
   await page.keyboard.press("ArrowRight");
 
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
-  expect(messages.some((entry) => entry.text.includes("Du triffst die besessene Puppe für 7 Schaden."))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Du triffst die besessene Puppe mit der Testklinge"))).toBeTruthy();
   expect(messages.some((entry) => entry.text.includes("+10 XP durch die besessene Puppe."))).toBeTruthy();
   expect(messages.some((entry) => entry.text.includes("Die besessene Puppe ist besiegt."))).toBeTruthy();
 });

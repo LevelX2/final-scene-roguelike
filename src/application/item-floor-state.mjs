@@ -8,6 +8,7 @@ export function createItemFloorStateApi(context) {
     cloneOffHandItem,
     createWeaponPickup,
     createOffHandPickup,
+    createPotionPickup,
     createFoodPickup,
     formatWeaponReference,
     addMessage,
@@ -41,13 +42,13 @@ export function createItemFloorStateApi(context) {
 
   function storePotion(index) {
     const state = getState();
+    const pickup = getCurrentFloorState().potions[index];
+    if (!pickup) {
+      return;
+    }
+
     removePotionAt(index);
-    state.inventory.push({
-      type: "potion",
-      name: "Heiltrank",
-      description: "Stellt 8 Lebenspunkte wieder her.",
-      heal: 8,
-    });
+    state.inventory.push({ ...pickup.item });
     addMessage("Du verstaust den Heiltrank in deinem Inventar.", "important");
   }
 
@@ -122,6 +123,11 @@ export function createItemFloorStateApi(context) {
 
   function drinkPotionFromGround(index) {
     const state = getState();
+    const pickup = getCurrentFloorState().potions[index];
+    if (!pickup) {
+      return false;
+    }
+
     if (state.player.hp >= state.player.maxHp) {
       addMessage("Du bist bereits bei voller Gesundheit.");
       return false;
@@ -130,7 +136,7 @@ export function createItemFloorStateApi(context) {
     removePotionAt(index);
     state.safeRestTurns = 0;
     state.consumedPotions = (state.consumedPotions ?? 0) + 1;
-    healPlayer(8);
+    healPlayer(pickup.item.heal);
     addMessage("Du trinkst den Heiltrank sofort und fuehlst dich besser.", "important");
     return true;
   }
@@ -161,11 +167,7 @@ export function createItemFloorStateApi(context) {
     }
 
     if (content.type === "potion") {
-      floorState.potions.push({
-        x: state.player.x,
-        y: state.player.y,
-        heal: content.item.heal,
-      });
+      floorState.potions.push(createPotionPickup(content.item, state.player.x, state.player.y));
       addMessage(`In der ${containerName} klirrt ein Heiltrank gegen morsches Holz.`, "important");
       return true;
     }

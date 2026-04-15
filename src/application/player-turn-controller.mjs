@@ -290,10 +290,6 @@ export function createPlayerTurnController(context) {
     state.targeting.cursorX = nextTarget.x;
     state.targeting.cursorY = nextTarget.y;
 
-    if (!wasActive) {
-      addMessage('Zielmodus aktiv: T waehlt Ziele, F feuert.', 'important');
-    }
-
     renderSelf();
   }
 

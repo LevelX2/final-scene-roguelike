@@ -23,6 +23,7 @@ test("walking onto a potion opens the loot choice modal", async ({ page }) => {
 test("potions can be stored in the inventory from the loot modal", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
+  const startingInventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
 
   await setupPotionAtPlayerStep(page);
   await page.keyboard.press("ArrowRight");
@@ -31,14 +32,15 @@ test("potions can be stored in the inventory from the loot modal", async ({ page
   const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
 
-  expect(inventory.potionCount).toBe(1);
-  expect(inventory.inventoryCount).toBe(1);
+  expect(inventory.potionCount).toBe(startingInventory.potionCount + 1);
+  expect(inventory.inventoryCount).toBe(startingInventory.inventoryCount + 1);
   expect(messages.some((entry) => entry.text.includes("verstaust den Heiltrank"))).toBeTruthy();
 });
 
 test("potions can be consumed directly from the loot modal", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
+  const startingInventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
 
   await page.evaluate(() => {
     window.__TEST_API__.clearFloorEntities();
@@ -69,12 +71,13 @@ test("potions can be consumed directly from the loot modal", async ({ page }) =>
   const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
 
   expect(snapshot.player.hp).toBe(18);
-  expect(inventory.potionCount).toBe(0);
+  expect(inventory.potionCount).toBe(startingInventory.potionCount);
 });
 
 test("stored potions can be used from the inventory", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
+  const startingInventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
 
   await page.evaluate(() => {
     window.__TEST_API__.clearFloorEntities();
@@ -102,13 +105,13 @@ test("stored potions can be used from the inventory", async ({ page }) => {
   await page.getByRole("button", { name: "Ins Inventar" }).click();
 
   await page.keyboard.press("i");
-  await page.getByRole("button", { name: "Benutzen" }).click();
+  await page.locator(".inventory-item", { hasText: "Heiltrank" }).getByRole("button", { name: "Benutzen" }).click();
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
   const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
 
   expect(snapshot.player.hp).toBe(18);
-  expect(inventory.potionCount).toBe(0);
+  expect(inventory.potionCount).toBe(startingInventory.potionCount);
 });
 
 test("potions cannot be consumed from the loot modal at full health", async ({ page }) => {
@@ -277,6 +280,7 @@ test("inventory keeps weapon variants with different effects separate", async ({
   });
 
   await page.keyboard.press("i");
+  await page.getByRole("button", { name: "Waffen", exact: true }).click();
 
   await expect(page.locator("#inventoryList .inventory-section-title")).toHaveText("Waffen");
   await expect(page.locator("#inventoryList .inventory-item")).toHaveCount(2);

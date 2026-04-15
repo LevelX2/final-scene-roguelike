@@ -1,5 +1,5 @@
 import { recordKillStat } from '../kill-stats.mjs';
-import { formatMonsterReference, formatWeaponReference } from '../text/combat-phrasing.mjs';
+import { formatMonsterReference, formatWeaponDativePhrase, formatWeaponReference } from '../text/combat-phrasing.mjs';
 
 const OPENING_STRIKE_LOGS = {
   lead: {
@@ -74,6 +74,7 @@ export function createPlayerAttackApi(context) {
     });
     const enemyReference = buildEnemyReference(enemy);
     const isRangedAttack = (options.distance ?? 1) > 1 && weapon?.attackMode === 'ranged';
+    const weaponPhrase = formatWeaponDativePhrase(weapon);
     const rangedBoardEffect = isRangedAttack
       ? {
           boardEffect: {
@@ -97,7 +98,7 @@ export function createPlayerAttackApi(context) {
       if (result.usedOpeningStrike) {
         addMessage(getOpeningStrikeMessage(state.player, enemyReference, 'miss'), 'important');
       }
-      addMessage(`${enemyReference.subjectCapitalized} weicht deinem Angriff aus.`, 'danger');
+      addMessage(`${enemyReference.subjectCapitalized} weicht deinem Angriff mit ${weaponPhrase} aus.`, 'danger');
       renderSelf();
       return;
     }
@@ -131,28 +132,26 @@ export function createPlayerAttackApi(context) {
     }
 
     if (blockResult.blocked) {
-      addMessage(`${enemyReference.subjectCapitalized} fängt ${blockResult.prevented} Schaden mit ${blockResult.item.name} ab.`, 'important');
+      addMessage(`${enemyReference.subjectCapitalized} faengt ${blockResult.prevented} Schaden mit ${blockResult.item.name} ab.`, 'important');
       if (blockResult.reflectiveDamage > 0) {
         state.player.hp = Math.max(0, state.player.hp - blockResult.reflectiveDamage);
         state.damageTaken = (state.damageTaken ?? 0) + blockResult.reflectiveDamage;
         showFloatingText(state.player.x, state.player.y, `-${blockResult.reflectiveDamage}`, 'taken');
-        addMessage(`${blockResult.item.name} wirft dir den Treffer brutal zurück.`, 'danger');
+        addMessage(`${blockResult.item.name} wirft dir den Treffer brutal zurueck.`, 'danger');
       }
     }
 
     if (itemHasModifier(weapon, 'final') && getWeaponConditionalDamageBonus(state.player, weapon) > 0) {
-      addMessage(`Mit ${formatWeaponReference(weapon, { article: 'definite', grammaticalCase: 'dative' })} triffst du im letzten Akt härter zu.`, 'important');
+      addMessage(`Mit ${formatWeaponReference(weapon, { article: 'definite', grammaticalCase: 'dative' })} triffst du im letzten Akt haerter zu.`, 'important');
     }
     if (result.usedOpeningStrike) {
       addMessage(getOpeningStrikeMessage(state.player, enemyReference, 'hit'), 'important');
     }
 
-    addMessage(
-      result.critical
-        ? `Kritischer Treffer gegen ${enemyReference.object} für ${blockResult.damage} Schaden!`
-        : `Du triffst ${enemyReference.object} für ${blockResult.damage} Schaden.`,
-      'important',
-    );
+    const attackMessage = result.critical
+      ? `Kritischer Treffer gegen ${enemyReference.object} mit ${weaponPhrase} fuer ${blockResult.damage} Schaden!`
+      : `Du triffst ${enemyReference.object} mit ${weaponPhrase} fuer ${blockResult.damage} Schaden.`;
+    addMessage(attackMessage, 'important');
 
     if (enemy.hp <= 0) {
       const floorState = getCurrentFloorState();
@@ -161,7 +160,7 @@ export function createPlayerAttackApi(context) {
       state.killStats = recordKillStat(state.killStats, enemy);
       if (enemy.lootWeapon && randomChance() < (enemy.weaponDropChance ?? 0.55)) {
         floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
-        addMessage(`${enemyReference.subjectCapitalized} lässt ${formatWeaponReference(enemy.lootWeapon, { article: 'definite', grammaticalCase: 'accusative' })} fallen.`, 'important');
+        addMessage(`${enemyReference.subjectCapitalized} laesst ${formatWeaponReference(enemy.lootWeapon, { article: 'definite', grammaticalCase: 'accusative' })} fallen.`, 'important');
       }
       if (enemy.lootOffHand && randomChance() < (enemy.offHandDropChance ?? 0.45)) {
         floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));
@@ -169,7 +168,7 @@ export function createPlayerAttackApi(context) {
       }
       if (enemy.lootDrop?.item?.type === 'food') {
         floorState.foods.push(createFoodPickup(enemy.lootDrop.item, enemy.x, enemy.y));
-        addMessage(`${enemyReference.subjectCapitalized} lässt ${enemy.lootDrop.item.name} fallen.`, 'important');
+        addMessage(`${enemyReference.subjectCapitalized} laesst ${enemy.lootDrop.item.name} fallen.`, 'important');
       }
       playVictorySound();
       grantExperience(enemy.xpReward, enemyReference.object);

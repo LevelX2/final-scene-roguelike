@@ -1,4 +1,12 @@
 export const ITEM_DEFS = {
+  "healing-potion": {
+    id: "healing-potion",
+    type: "potion",
+    name: "Heiltrank",
+    icon: "potion",
+    heal: 8,
+    description: "Stellt 8 Lebenspunkte wieder her.",
+  },
   candy: {
     id: "candy",
     type: "food",
@@ -89,5 +97,40 @@ export function cloneItemDef(itemId) {
 
   return {
     ...item,
+  };
+}
+
+function getKeyLabels(color) {
+  return {
+    articleLabel: color === "green"
+      ? "Grüner"
+      : color === "blue"
+        ? "Blauer"
+        : `${color}er`,
+    colorLabel: color === "green"
+      ? "grünen"
+      : color === "blue"
+        ? "blauen"
+        : color,
+  };
+}
+
+export function createKeyItem(color, floorNumber = null, overrides = {}) {
+  const normalizedColor = String(color ?? overrides.keyColor ?? "green");
+  const { articleLabel, colorLabel } = getKeyLabels(normalizedColor);
+  const normalizedFloor = floorNumber ?? overrides.keyFloor ?? null;
+
+  return {
+    type: "key",
+    id: overrides.id ?? `key-${normalizedColor}${normalizedFloor != null ? `-${normalizedFloor}` : ""}`,
+    name: overrides.name ?? `${articleLabel} Schlüssel`,
+    description: overrides.description ?? (
+      normalizedFloor != null
+        ? `Passt zu ${colorLabel} Türen in Studio ${normalizedFloor}. Wird beim Öffnen verbraucht.`
+        : `Passt zu ${colorLabel} Türen. Wird beim Öffnen verbraucht.`
+    ),
+    keyColor: normalizedColor,
+    keyFloor: normalizedFloor,
+    ...overrides,
   };
 }

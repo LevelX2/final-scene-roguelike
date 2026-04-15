@@ -1,3 +1,5 @@
+import { cloneItemDef } from '../item-defs.mjs';
+
 export function createTestApiMutators(context) {
   const {
     WIDTH,
@@ -11,6 +13,7 @@ export function createTestApiMutators(context) {
     cloneWeapon,
     cloneOffHandItem,
     createChestPickup,
+    createPotionPickup,
     createFoodPickup,
     createDoor,
     createKeyPickup,
@@ -70,11 +73,10 @@ export function createTestApiMutators(context) {
   function placePotion(position, potion = {}) {
     const floorState = getCurrentFloorState();
     floorState.grid[position.y][position.x] = TILE.FLOOR;
-    floorState.potions.push({
-      x: position.x,
-      y: position.y,
-      heal: potion.heal ?? 8,
-    });
+    floorState.potions.push(createPotionPickup({
+      ...(cloneItemDef("healing-potion") ?? {}),
+      ...potion,
+    }, position.x, position.y));
     renderSelf();
   }
 
@@ -173,12 +175,54 @@ export function createTestApiMutators(context) {
     renderSelf();
   }
 
+  function createTestEnemy(position, config = {}) {
+    const enemyName = config.name ?? "Testgegner";
+
+    return {
+      x: position.x,
+      y: position.y,
+      type: "monster",
+      id: config.id ?? "test-enemy",
+      baseName: config.baseName ?? enemyName,
+      name: enemyName,
+      rank: 1,
+      behavior: config.behavior ?? "dormant",
+      behaviorLabel: config.behaviorLabel ?? "Test",
+      mobility: config.mobility ?? "roaming",
+      mobilityLabel: config.mobilityLabel ?? "Mobil",
+      retreatProfile: config.retreatProfile ?? "none",
+      retreatLabel: config.retreatLabel ?? "Standhaft",
+      healingProfile: config.healingProfile ?? "slow",
+      healingLabel: config.healingLabel ?? "Langsam",
+      isRetreating: false,
+      description: config.description ?? "Kontrollierter Testgegner.",
+      special: config.special ?? "Nur fuer Tests.",
+      grammar: config.grammar ?? null,
+      originX: position.x,
+      originY: position.y,
+      aggro: config.aggro ?? false,
+      turnsSinceHit: 0,
+      canOpenDoors: config.canOpenDoors ?? false,
+      canChangeFloors: config.canChangeFloors ?? false,
+      mainHand: config.mainHand || config.weapon ? cloneWeapon(config.mainHand ?? config.weapon) : null,
+      offHand: config.offHand ? cloneOffHandItem(config.offHand) : null,
+      xpReward: config.xpReward ?? 0,
+      maxHp: config.maxHp ?? 12,
+      hp: config.hp ?? config.maxHp ?? 12,
+      strength: config.strength ?? 3,
+      precision: config.precision ?? 3,
+      reaction: config.reaction ?? 3,
+      nerves: config.nerves ?? 2,
+      intelligence: config.intelligence ?? 1,
+      aggroRadius: config.aggroRadius ?? 0,
+    };
+  }
+
   function setupCombatScenario(config = {}) {
     const state = getState();
     const floorState = getCurrentFloorState();
     const playerPosition = config.playerPosition ?? { x: 2, y: 2 };
     const enemyPosition = config.enemyPosition ?? { x: playerPosition.x + 1, y: playerPosition.y };
-    const enemyName = config.enemy?.name ?? "Testgegner";
 
     if (config.clearGrid) {
       for (let y = 0; y < HEIGHT; y += 1) {
@@ -229,51 +273,21 @@ export function createTestApiMutators(context) {
     state.pendingChoice = null;
     state.pendingStairChoice = null;
 
-    const enemy = {
-      x: enemyPosition.x,
-      y: enemyPosition.y,
-      type: "monster",
-      id: config.enemy?.id ?? "test-enemy",
-      baseName: config.enemy?.baseName ?? enemyName,
-      name: enemyName,
-      rank: 1,
-      behavior: config.enemy?.behavior ?? "dormant",
-      behaviorLabel: config.enemy?.behaviorLabel ?? "Test",
-      mobility: config.enemy?.mobility ?? "roaming",
-      mobilityLabel: config.enemy?.mobilityLabel ?? "Mobil",
-      retreatProfile: config.enemy?.retreatProfile ?? "none",
-      retreatLabel: config.enemy?.retreatLabel ?? "Standhaft",
-      healingProfile: config.enemy?.healingProfile ?? "slow",
-      healingLabel: config.enemy?.healingLabel ?? "Langsam",
-      isRetreating: false,
-      description: config.enemy?.description ?? "Kontrollierter Testgegner.",
-      special: config.enemy?.special ?? "Nur fuer Tests.",
-      grammar: config.enemy?.grammar ?? null,
-      originX: enemyPosition.x,
-      originY: enemyPosition.y,
-      aggro: config.enemy?.aggro ?? false,
-      turnsSinceHit: 0,
-      canOpenDoors: config.enemy?.canOpenDoors ?? false,
-      canChangeFloors: config.enemy?.canChangeFloors ?? false,
-      mainHand: config.enemy?.mainHand || config.enemy?.weapon ? cloneWeapon(config.enemy.mainHand ?? config.enemy.weapon) : null,
-      offHand: config.enemy?.offHand ? cloneOffHandItem(config.enemy.offHand) : null,
-      xpReward: config.enemy?.xpReward ?? 0,
-      maxHp: config.enemy?.maxHp ?? 12,
-      hp: config.enemy?.hp ?? config.enemy?.maxHp ?? 12,
-      strength: config.enemy?.strength ?? 3,
-      precision: config.enemy?.precision ?? 3,
-      reaction: config.enemy?.reaction ?? 3,
-      nerves: config.enemy?.nerves ?? 2,
-      intelligence: config.enemy?.intelligence ?? 1,
-      aggroRadius: config.enemy?.aggroRadius ?? 0,
-    };
-
+    const enemy = createTestEnemy(enemyPosition, config.enemy);
     floorState.enemies.push(enemy);
     renderSelf();
     return {
       player: { x: state.player.x, y: state.player.y },
       enemy: { x: enemy.x, y: enemy.y, hp: enemy.hp },
     };
+  }
+
+  function placeEnemy(position, enemy = {}) {
+    const floorState = getCurrentFloorState();
+    floorState.grid[position.y][position.x] = TILE.FLOOR;
+    floorState.enemies = floorState.enemies ?? [];
+    floorState.enemies.push(createTestEnemy(position, enemy));
+    renderSelf();
   }
 
   function grantExperienceForTests(amount, source = "Tests") {
@@ -339,6 +353,7 @@ export function createTestApiMutators(context) {
     placeDoor,
     placeShowcase,
     placeTrap,
+    placeEnemy,
     setupCombatScenario,
     enterTargetMode: enterTargetModeForTests,
     cancelTargetMode: cancelTargetModeForTests,

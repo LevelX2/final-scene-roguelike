@@ -143,6 +143,7 @@ test("waiting consumes nutrition and dying hunger deals damage after the action"
 test("stored food can be used from the inventory and updates the nutrition hud", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
+  const startingInventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
 
   await page.evaluate(() => {
     window.__TEST_API__.setupCombatScenario({
@@ -171,15 +172,15 @@ test("stored food can be used from the inventory and updates the nutrition hud",
   await page.getByRole("button", { name: "Ins Inventar" }).click();
 
   let inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
-  expect(inventory.foodCount).toBe(1);
+  expect(inventory.foodCount).toBe(startingInventory.foodCount + 1);
 
   await page.keyboard.press("i");
-  await page.getByRole("button", { name: "Benutzen" }).click();
+  await page.locator(".inventory-item", { hasText: "Sandwich" }).getByRole("button", { name: "Benutzen" }).click();
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
   inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
 
   expect(snapshot.player.nutrition).toBe(648);
-  expect(inventory.foodCount).toBe(0);
+  expect(inventory.foodCount).toBe(startingInventory.foodCount);
   await expect(page.locator("#topbarFood")).toHaveText("Normal");
 });

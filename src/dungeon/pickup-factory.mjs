@@ -1,3 +1,5 @@
+import { createKeyItem } from '../item-defs.mjs';
+
 export function createDungeonPickupFactory(context) {
   const {
     DOOR_TYPE,
@@ -31,6 +33,21 @@ export function createDungeonPickupFactory(context) {
       opened: false,
       containerName: options.containerName ?? 'Requisitenkiste',
       containerAssetId: options.containerAssetId ?? 'requisite-crate',
+    };
+  }
+
+  function createPotionPickup(item, x, y) {
+    return {
+      x,
+      y,
+      item: {
+        type: item?.type ?? "potion",
+        id: item?.id ?? null,
+        name: item?.name ?? "Heiltrank",
+        description: item?.description ?? "Stellt 8 Lebenspunkte wieder her.",
+        heal: item?.heal ?? 8,
+        ...(item ?? {}),
+      },
     };
   }
 
@@ -92,24 +109,10 @@ export function createDungeonPickupFactory(context) {
   }
 
   function createKeyPickup(color, x, y, floorNumber = null) {
-    const label = color === "green"
-      ? "Grüner"
-      : color === "blue"
-        ? "Blauer"
-        : `${color}er`;
-    const colorLabel = color === "green" ? "grünen" : color === "blue" ? "blauen" : color;
     return {
       x,
       y,
-      item: {
-        type: "key",
-        name: `${label} Schlüssel`,
-        description: floorNumber
-          ? `Passt zu ${colorLabel} Türen in Studio ${floorNumber}. Wird beim Öffnen verbraucht.`
-          : `Passt zu ${colorLabel} Türen. Wird beim Öffnen verbraucht.`,
-        keyColor: color,
-        keyFloor: floorNumber,
-      },
+      item: createKeyItem(color, floorNumber),
     };
   }
 
@@ -117,6 +120,7 @@ export function createDungeonPickupFactory(context) {
     createWeaponPickup,
     createOffHandPickup,
     createChestPickup,
+    createPotionPickup,
     createFoodPickup,
     createShowcase,
     cloneWeapon,

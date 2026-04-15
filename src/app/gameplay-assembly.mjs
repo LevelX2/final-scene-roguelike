@@ -58,6 +58,7 @@ export function assembleGameplayModules(context) {
     setMovePlayer,
     setHandleWait,
     setDebugRevealOrAdvanceStudio,
+    setCycleTargetMode,
     setEnterTargetMode,
     setCancelTargetMode,
     setMoveTargetCursor,
@@ -75,6 +76,7 @@ export function assembleGameplayModules(context) {
   const {
     createWeaponPickup,
     createOffHandPickup,
+    createPotionPickup,
     createFoodPickup,
     createDungeonLevel,
     detectNearbyTraps,
@@ -214,6 +216,7 @@ export function assembleGameplayModules(context) {
     cloneOffHandItem,
     createWeaponPickup,
     createOffHandPickup,
+    createPotionPickup,
     createFoodPickup,
     formatWeaponDisplayName,
     formatWeaponReference,
@@ -303,6 +306,7 @@ export function assembleGameplayModules(context) {
     cloneWeapon,
     cloneOffHandItem,
     createChestPickup,
+    createPotionPickup,
     createFoodPickup,
     createDoor,
     createKeyPickup,
@@ -326,6 +330,7 @@ export function assembleGameplayModules(context) {
   setMovePlayer(playerTurnController.movePlayer);
   setHandleWait(playerTurnController.handleWait);
   setDebugRevealOrAdvanceStudio(floorTransitionService.debugRevealOrAdvanceStudio);
+  setCycleTargetMode(playerTurnController.cycleTargetMode);
   setEnterTargetMode(playerTurnController.enterTargetMode);
   setCancelTargetMode(playerTurnController.cancelTargetMode);
   setMoveTargetCursor(playerTurnController.moveTargetCursor);

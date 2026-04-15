@@ -125,6 +125,7 @@ export const HERO_CLASS_LABEL_ALIASES = {
 export const HERO_CLASSES = {
   lead: {
     id: "lead",
+    startLoadoutId: "lead_opening",
     label: "Hauptrolle",
     assetSlug: "hauptrolle",
     tagline: "Kämpft über Timing, Präsenz und den ersten sauberen Moment.",
@@ -143,6 +144,7 @@ export const HERO_CLASSES = {
   },
   stuntman: {
     id: "stuntman",
+    startLoadoutId: "stuntman_kit",
     label: "Stuntman",
     assetSlug: "stuntman",
     tagline: "Geht voran, steckt Set-Gefahren weg und arbeitet stark mit Schilden.",
@@ -161,6 +163,7 @@ export const HERO_CLASSES = {
   },
   director: {
     id: "director",
+    startLoadoutId: "director_cache",
     label: "Regisseur",
     assetSlug: "regisseur",
     tagline: "Kontrolliert die Szene, liest Räume früh und reagiert sicherer auf Fallen.",

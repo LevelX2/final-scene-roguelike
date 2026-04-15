@@ -89,19 +89,69 @@ export function createBoardView(context) {
     };
   }
 
+  function getDirectionAssetSuffix(direction) {
+    if (direction === "left" || direction === "right") {
+      return direction;
+    }
+
+    if (direction === "front") {
+      return "top";
+    }
+
+    if (direction === "back") {
+      return "bottom";
+    }
+
+    return null;
+  }
+
   function getAnchorPresentation(anchor, isEntry) {
     const direction = anchor?.direction ?? (isEntry ? "front" : "right");
     const style = anchor?.transitionStyle ?? "passage";
+    const directionAssetSuffix = getDirectionAssetSuffix(direction);
+
+    if (style === "passage" && directionAssetSuffix) {
+      return {
+        iconAssetUrl: isEntry
+          ? `./assets/studio-entry-${directionAssetSuffix}.svg`
+          : `./assets/studio-exit-${directionAssetSuffix}.svg`,
+        imageClass: `tooltip-art-transition ${isEntry ? "tooltip-art-transition-entry" : "tooltip-art-transition-exit"}`,
+        lines: [
+          isEntry
+            ? "Ein markierter Studiozugang aus dem vorherigen Abschnitt."
+            : "Ein markierter Ausgang zum naechsten Studio.",
+        ],
+        tileClasses: [
+          "studio-transition",
+          isEntry ? "anchor-entry" : "anchor-exit",
+          "transition-passage",
+          `direction-${directionAssetSuffix}`,
+        ],
+      };
+    }
 
     if (style === "lift" || style === "stairs") {
       const upward = direction === "up";
       return {
-        iconAssetUrl: upward ? "./assets/stairs-up.svg" : "./assets/stairs-down.svg",
-        imageClass: upward ? "tooltip-art-stairs tooltip-art-stairs-up" : "tooltip-art-stairs tooltip-art-stairs-down",
+        iconAssetUrl: style === "lift"
+          ? (upward ? "./assets/lift-up.svg" : "./assets/lift-down.svg")
+          : (upward ? "./assets/stairs-up.svg" : "./assets/stairs-down.svg"),
+        imageClass: [
+          "tooltip-art-transition",
+          upward ? "tooltip-art-transition-up" : "tooltip-art-transition-down",
+          style === "lift" ? "tooltip-art-transition-lift" : "tooltip-art-transition-stairs",
+          isEntry ? "tooltip-art-transition-entry" : "tooltip-art-transition-exit",
+        ].join(" "),
         lines: [
           style === "lift"
-            ? upward ? "Ein Lift fuehrt nach oben." : "Ein Lift fuehrt nach unten oder aus dem Studio heraus."
-            : upward ? "Eine Treppe fuehrt nach oben." : "Eine Treppe fuehrt nach unten oder aus dem Studio heraus.",
+            ? upward ? "Ein Lift fuehrt nach oben." : "Ein Lift fuehrt nach unten oder weiter in den Studiokomplex."
+            : upward ? "Eine Treppe fuehrt nach oben." : "Eine Treppe fuehrt nach unten oder weiter in den Studiokomplex.",
+        ],
+        tileClasses: [
+          "studio-transition",
+          isEntry ? "anchor-entry" : "anchor-exit",
+          style === "lift" ? "transition-lift" : "transition-stairs",
+          upward ? "transition-up" : "transition-down",
         ],
       };
     }
@@ -116,9 +166,14 @@ export function createBoardView(context) {
 
     return {
       iconAssetUrl,
-      imageClass: "tooltip-art-door",
+      imageClass: `tooltip-art-transition ${isEntry ? "tooltip-art-transition-entry" : "tooltip-art-transition-exit"}`,
       lines: [
         isEntry ? "Der Zugang zu diesem Studio." : "Der Ausgang zum naechsten Studio.",
+      ],
+      tileClasses: [
+        "studio-transition",
+        isEntry ? "anchor-entry" : "anchor-exit",
+        "transition-passage",
       ],
     };
   }
@@ -201,17 +256,20 @@ export function createBoardView(context) {
       };
     }
 
-    if (isVisible && floorState.potions.some((potion) => potion.x === x && potion.y === y)) {
+    const potionPickup = isVisible
+      ? floorState.potions?.find((potion) => potion.x === x && potion.y === y)
+      : null;
+    if (potionPickup) {
       return {
         type: `floor studio-${studioArchetypeId} potion`,
         glyph: TILE.POTION,
-        overlayImageUrl: getPotionIconAssetUrl({ type: "potion" }),
+        overlayImageUrl: getPotionIconAssetUrl(potionPickup.item),
         tooltip: {
-          title: "Heiltrank",
-          imageUrl: getPotionIconAssetUrl({ type: "potion" }),
+          title: potionPickup.item.name,
+          imageUrl: getPotionIconAssetUrl(potionPickup.item),
           imageClass: "tooltip-art-potion",
           lines: [
-            "Stellt 8 Lebenspunkte wieder her.",
+            potionPickup.item.description,
             "Kann direkt getrunken oder ins Inventar gelegt werden.",
           ],
         },
@@ -421,8 +479,8 @@ export function createBoardView(context) {
       const anchorPresentation = getAnchorPresentation(floorState.exitAnchor, false);
       return {
         type: isVisible
-          ? `floor studio-${studioArchetypeId} stairs-down`
-          : `floor memory studio-${studioArchetypeId} stairs-down memory`,
+          ? `floor studio-${studioArchetypeId} stairs-down ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim()
+          : `floor memory studio-${studioArchetypeId} stairs-down memory ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim(),
         glyph: TILE.STAIRS_DOWN,
         overlayImageUrl: anchorPresentation.iconAssetUrl,
         tooltip: isVisible ? {
@@ -438,8 +496,8 @@ export function createBoardView(context) {
       const anchorPresentation = getAnchorPresentation(floorState.entryAnchor, true);
       return {
         type: isVisible
-          ? `floor studio-${studioArchetypeId} stairs-up`
-          : `floor memory studio-${studioArchetypeId} stairs-up memory`,
+          ? `floor studio-${studioArchetypeId} stairs-up ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim()
+          : `floor memory studio-${studioArchetypeId} stairs-up memory ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim(),
         glyph: TILE.STAIRS_UP,
         overlayImageUrl: anchorPresentation.iconAssetUrl,
         tooltip: isVisible ? {

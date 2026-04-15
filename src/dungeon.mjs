@@ -23,6 +23,7 @@ import { createBranchLayoutGenerator } from './dungeon/branch-layout.mjs';
 import { createWeaponGenerationService } from './application/weapon-generation-service.mjs';
 import { createShieldGenerationService } from './application/shield-generation-service.mjs';
 import { getContainerConfigForArchetype } from './content/catalogs/studio-archetypes.mjs';
+import { cloneItemDef } from './item-defs.mjs';
 
 export function createDungeonApi(context) {
   const {
@@ -56,6 +57,7 @@ export function createDungeonApi(context) {
     createWeaponPickup,
     createOffHandPickup,
     createChestPickup,
+    createPotionPickup,
     createFoodPickup,
     createShowcase,
     cloneWeapon,
@@ -141,6 +143,7 @@ export function createDungeonApi(context) {
     createWeaponPickup,
     createOffHandPickup,
     createChestPickup,
+    createPotionPickup,
     createFoodPickup,
     createShowcase,
     createDoor,
@@ -166,6 +169,7 @@ export function createDungeonApi(context) {
     getContainerConfigForArchetype,
     collectUsedShowcasePropIds,
     computeReachableTilesWithBlockedPositions,
+    cloneItemDef,
   });
 
   return {
@@ -173,6 +177,7 @@ export function createDungeonApi(context) {
     createWeaponPickup,
     createOffHandPickup,
     createChestPickup,
+    createPotionPickup,
     createFoodPickup,
     createShowcase,
     createKeyPickup,

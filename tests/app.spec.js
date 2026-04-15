@@ -399,7 +399,10 @@ test("a manual save can be loaded after a page reload", async ({ page }) => {
 
   await page.getByRole("button", { name: "Speichern" }).click();
   await saveIntoFirstEmptySlot(page);
-  await expect(page.locator("#savegameStatus")).toContainText("Ripley");
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(page.locator("#gameShell")).toHaveClass(/prestart-hidden/);
+  await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
+  await expect(page.locator("#landingSavegameStatus")).toContainText("Ripley");
 
   await page.reload();
 
@@ -477,7 +480,8 @@ test("loading a saved game restores gameplay state but keeps transient modals cl
   await expect(page.locator("#optionsModal")).toBeVisible();
   await page.locator("#saveGameQuick").evaluate((button) => button.click());
   await saveIntoFirstEmptySlot(page);
-  await expect(page.locator("#savegameStatus")).toContainText("Modalcheck");
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(page.locator("#landingSavegameStatus")).toContainText("Modalcheck");
 
   await page.reload();
   await page.locator("#loadGameFromLanding").evaluate((button) => button.click());
@@ -522,7 +526,8 @@ test("loading a legacy ranged weapon save restores target mode support", async (
 
   await page.getByRole("button", { name: "Speichern" }).click();
   await saveIntoFirstEmptySlot(page);
-  await expect(page.locator("#savegameStatus")).toContainText("Legacygun");
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(page.locator("#landingSavegameStatus")).toContainText("Legacygun");
 
   await page.reload();
   await page.locator("#loadGameFromLanding").evaluate((button) => button.click());
@@ -545,7 +550,8 @@ test("loaded save slots are consumed and leave the slot empty", async ({ page })
 
   await page.getByRole("button", { name: "Speichern" }).click();
   await saveIntoFirstEmptySlot(page);
-  await expect(page.locator("#savegameStatus")).toContainText("OneShot");
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
 
   await page.reload();
   await page.locator("#loadGameFromLanding").click();
@@ -562,7 +568,8 @@ test("a loaded run can be saved again into an empty slot", async ({ page }) => {
 
   await page.getByRole("button", { name: "Speichern" }).click();
   await saveIntoFirstEmptySlot(page);
-  await expect(page.locator("#savegameStatus")).toContainText("Resaver");
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
 
   await page.reload();
   await page.locator("#loadGameFromLanding").click();
@@ -574,6 +581,8 @@ test("a loaded run can be saved again into an empty slot", async ({ page }) => {
   await expect(page.locator("#savegameList")).toContainText("Slot 1");
   await expect(page.locator("#savegameList")).toContainText("Leer");
   await saveIntoFirstEmptySlot(page);
+  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
 
   await page.reload();
   await expect(page.locator("#loadGameFromLanding")).toBeEnabled();

@@ -3,18 +3,25 @@ const { test } = require("playwright/test");
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("dungeon-rogue-enable-test-api", "1");
-    if (!window.localStorage.getItem("dungeon-rogue-options")) {
-      window.localStorage.setItem("dungeon-rogue-options", JSON.stringify({
-        stepSound: true,
-        deathSound: true,
-        voiceAnnouncements: false,
-        showcaseAnnouncementMode: "floating-text",
-        uiScale: 1,
-        studioZoom: 1,
-        tooltipScale: 1,
-        enemyPanelMode: "detailed",
-      }));
+    let existingOptions = {};
+    try {
+      existingOptions = JSON.parse(window.localStorage.getItem("dungeon-rogue-options") ?? "{}") ?? {};
+    } catch {
+      existingOptions = {};
     }
+    window.localStorage.setItem("dungeon-rogue-options", JSON.stringify({
+      stepSound: true,
+      deathSound: true,
+      voiceAnnouncements: false,
+      showcaseAnnouncementMode: "floating-text",
+      uiScale: 1,
+      studioZoom: 1,
+      tooltipScale: 1,
+      enemyPanelMode: "detailed",
+      ...existingOptions,
+      voiceAnnouncements: false,
+      showcaseAnnouncementMode: "floating-text",
+    }));
     window.__speechCalls = [];
 
     class TestSpeechSynthesisUtterance {

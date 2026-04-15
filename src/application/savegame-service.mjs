@@ -180,11 +180,12 @@ export function createSavegameService(context) {
       return;
     }
 
-    addMessage("Spielstand gespeichert.", "important");
-    getState().modals.savegamesOpen = false;
-    updateSavegameControls(formatSavegameSummary());
+    const state = getState();
+    state.view = "start";
+    state.modals.startOpen = false;
+    state.modals.savegamesOpen = false;
+    addMessage("Spielstand gespeichert. Der aktuelle Run wurde beendet.", "important");
     renderSelf();
-    window.setTimeout(() => focusGameSurface?.(), 0);
   }
 
   function removeSavegame(entryId) {

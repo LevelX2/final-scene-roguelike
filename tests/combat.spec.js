@@ -375,6 +375,34 @@ test("stalker enemies actively pursue once roaming aggro has latched", async ({ 
   expect(snapshot.enemies[0].y).toBe(2);
 });
 
+test("hunters do not acquire aggro through multiple walls inside their radius", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    clearGrid: true,
+    playerPosition: { x: 2, y: 2 },
+    enemyPosition: { x: 6, y: 2 },
+    walls: [{ x: 3, y: 2 }, { x: 4, y: 2 }, { x: 5, y: 2 }],
+    enemy: {
+      behavior: "hunter",
+      behaviorLabel: "Jager",
+      aggro: false,
+      aggroRadius: 4,
+      hp: 12,
+      maxHp: 12,
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0.99]));
+  await page.keyboard.press(" ");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.enemies[0].aggro).toBeFalsy();
+  expect(snapshot.enemies[0].x).toBe(6);
+  expect(snapshot.enemies[0].y).toBe(2);
+});
+
 test("patrol temperament gives calm hunters a real idle destination", async ({ page }) => {
   await page.goto("/");
   await startRun(page);

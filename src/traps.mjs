@@ -102,6 +102,132 @@ function chooseTrapVariant(type, randomInt) {
   return variants[randomInt(0, variants.length - 1)];
 }
 
+function pickWeightedValue(entries, randomChance) {
+  const totalWeight = entries.reduce((sum, entry) => sum + (entry.weight ?? 0), 0);
+  if (totalWeight <= 0) {
+    return entries[entries.length - 1]?.value ?? null;
+  }
+
+  let roll = randomChance() * totalWeight;
+  for (const entry of entries) {
+    roll -= entry.weight ?? 0;
+    if (roll <= 0) {
+      return entry.value;
+    }
+  }
+
+  return entries[entries.length - 1]?.value ?? null;
+}
+
+function getWalkableAreaBonus(walkableArea) {
+  if (walkableArea >= 220) {
+    return 3;
+  }
+  if (walkableArea >= 170) {
+    return 2;
+  }
+  if (walkableArea >= 120) {
+    return 1;
+  }
+  return 0;
+}
+
+function getTrapBudgetProfilesForFloor(floorNumber) {
+  if (floorNumber <= 1) {
+    return [{ value: 0, weight: 1 }];
+  }
+
+  if (floorNumber === 2) {
+    return [
+      { value: 0, weight: 0.25 },
+      { value: 2, weight: 0.45 },
+      { value: 3, weight: 0.3 },
+    ];
+  }
+
+  if (floorNumber === 3) {
+    return [
+      { value: 0, weight: 0.3 },
+      { value: 2, weight: 0.35 },
+      { value: 4, weight: 0.25 },
+      { value: 5, weight: 0.1 },
+    ];
+  }
+
+  if (floorNumber === 4) {
+    return [
+      { value: 1, weight: 0.15 },
+      { value: 3, weight: 0.35 },
+      { value: 5, weight: 0.3 },
+      { value: 7, weight: 0.2 },
+    ];
+  }
+
+  if (floorNumber === 5) {
+    return [
+      { value: 1, weight: 0.1 },
+      { value: 4, weight: 0.3 },
+      { value: 6, weight: 0.35 },
+      { value: 8, weight: 0.25 },
+    ];
+  }
+
+  return [
+    { value: 2, weight: 0.1 },
+    { value: 5, weight: 0.25 },
+    { value: 7, weight: 0.3 },
+    { value: 9, weight: 0.2 },
+    { value: 11, weight: 0.15 },
+  ];
+}
+
+function getTrapTypeWeightsForFloor(floorNumber) {
+  if (floorNumber <= 1) {
+    return [];
+  }
+
+  if (floorNumber === 2) {
+    return [{ value: "floor", weight: 1 }];
+  }
+
+  if (floorNumber === 3) {
+    return [
+      { value: "floor", weight: 0.7 },
+      { value: "alarm", weight: 0.15 },
+      { value: "hazard", weight: 0.15 },
+    ];
+  }
+
+  if (floorNumber === 4) {
+    return [
+      { value: "floor", weight: 0.55 },
+      { value: "alarm", weight: 0.2 },
+      { value: "hazard", weight: 0.25 },
+    ];
+  }
+
+  if (floorNumber === 5) {
+    return [
+      { value: "floor", weight: 0.45 },
+      { value: "alarm", weight: 0.25 },
+      { value: "hazard", weight: 0.3 },
+    ];
+  }
+
+  return [
+    { value: "floor", weight: 0.4 },
+    { value: "alarm", weight: 0.3 },
+    { value: "hazard", weight: 0.3 },
+  ];
+}
+
+function countWalkableTiles(grid) {
+  return grid.reduce(
+    (sum, row) => sum + row.filter((tile) => tile === ".").length,
+    0,
+  );
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -178,38 +304,24 @@ export function createTrapsApi(context) {
     doors = [],
     stairsUp = null,
     stairsDown = null,
+    walkableArea = null,
   }) {
     const traps = [];
     const candidates = buildTrapCandidates(grid, occupied, doors, stairsUp, stairsDown);
-    const floorTrapCount = floorNumber >= 5 ? 3 : floorNumber >= 3 ? 2 : floorNumber >= 2 ? 1 : 0;
-    const alarmTrapCount = floorNumber >= 6 ? 2 : floorNumber >= 3 ? 1 : 0;
-    const hazardCount = floorNumber >= 5 ? 2 : floorNumber >= 3 ? 1 : 0;
+    const effectiveWalkableArea = walkableArea ?? countWalkableTiles(grid);
+    const baseBudget = pickWeightedValue(getTrapBudgetProfilesForFloor(floorNumber), randomChance) ?? 0;
+    const areaBonus = baseBudget > 0 ? getWalkableAreaBonus(effectiveWalkableArea) : 0;
+    const totalBudget = Math.min(candidates.length, Math.max(0, baseBudget + areaBonus));
+    const typeWeights = getTrapTypeWeightsForFloor(floorNumber);
 
-    for (let i = 0; i < floorTrapCount; i += 1) {
+    for (let i = 0; i < totalBudget; i += 1) {
       const position = takeTrapPosition(candidates, occupied);
-      const variant = chooseTrapVariant("floor", randomInt);
-      if (!position || !variant) {
+      const trapType = pickWeightedValue(typeWeights, randomChance);
+      const variant = trapType ? chooseTrapVariant(trapType, randomInt) : null;
+      if (!position || !trapType || !variant) {
         break;
       }
-      traps.push(createTrap("floor", variant, position.x, position.y));
-    }
-
-    for (let i = 0; i < alarmTrapCount; i += 1) {
-      const position = takeTrapPosition(candidates, occupied);
-      const variant = chooseTrapVariant("alarm", randomInt);
-      if (!position || !variant) {
-        break;
-      }
-      traps.push(createTrap("alarm", variant, position.x, position.y));
-    }
-
-    for (let i = 0; i < hazardCount; i += 1) {
-      const position = takeTrapPosition(candidates, occupied);
-      const variant = chooseTrapVariant("hazard", randomInt);
-      if (!position || !variant) {
-        break;
-      }
-      traps.push(createTrap("hazard", variant, position.x, position.y));
+      traps.push(createTrap(trapType, variant, position.x, position.y));
     }
 
     return traps;

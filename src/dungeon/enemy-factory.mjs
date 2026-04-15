@@ -139,7 +139,17 @@ export function createDungeonEnemyFactory(context) {
   }
 
   function chooseWeightedMonster(availableMonsters, floorNumber, runSeenCounts, floorSeenCounts) {
-    const weighted = availableMonsters.map((monster) => {
+    const distinctPoolTarget = Math.min(
+      3,
+      new Set(availableMonsters.map((monster) => monster.id)).size,
+    );
+    const seenDistinctCount = availableMonsters.filter((monster) => (floorSeenCounts[monster.id] ?? 0) > 0).length;
+    const selectionPool = seenDistinctCount < distinctPoolTarget
+      ? availableMonsters.filter((monster) => (floorSeenCounts[monster.id] ?? 0) === 0)
+      : availableMonsters;
+    const effectivePool = selectionPool.length > 0 ? selectionPool : availableMonsters;
+
+    const weighted = effectivePool.map((monster) => {
       const runSeen = runSeenCounts[monster.id] ?? 0;
       const floorSeen = floorSeenCounts[monster.id] ?? 0;
       const recencyBonus = Math.max(0, (monster.rank - 1) / Math.max(1, floorNumber + 1));
@@ -160,10 +170,22 @@ export function createDungeonEnemyFactory(context) {
 
   function getWeaponDropChance(monster, variant) {
     if (iconicMonsterIds.has(monster.id)) {
-      return variant.id === 'dire' ? 0.45 : variant.id === 'elite' ? 0.34 : 0.25;
+      return variant.iconicWeaponDropChance ?? variant.weaponDropChance ?? 0;
     }
 
-    return variant.id === 'dire' ? 0.24 : variant.id === 'elite' ? 0.16 : 0.08;
+    return variant.weaponDropChance ?? 0;
+  }
+
+  function getOffHandDropChance(variant) {
+    return variant.offHandDropChance ?? 0;
+  }
+
+  function resolveMonsterVariant(monster, floorNumber) {
+    if (monster.allowVariants === false) {
+      return MONSTER_VARIANT_TIERS.normal;
+    }
+
+    return rollMonsterVariant(floorNumber);
   }
 
   function getAllowedTemperaments(monster) {
@@ -190,7 +212,7 @@ export function createDungeonEnemyFactory(context) {
 
   function createEnemy(position, floor, monster, options = {}) {
     const scale = getEnemyScaleForFloor(floor, monster.rank);
-    const variant = rollMonsterVariant(floor);
+    const variant = resolveMonsterVariant(monster, floor);
     const variantModifiers = rollMonsterVariantModifiers(variant);
     const baseHp = monster.hp + scale * ENEMY_HP_PER_SCALE + randomInt(0, 2);
     const baseStrength = monster.strength + Math.floor((scale + 1) / ENEMY_STRENGTH_SCALE_STEP);
@@ -249,6 +271,7 @@ export function createDungeonEnemyFactory(context) {
       id: monster.id,
       archetypeId: monster.archetypeId ?? null,
       spawnGroup: monster.spawnGroup ?? null,
+      allowVariants: monster.allowVariants !== false,
       spawnWeight: monster.spawnWeight ?? 1,
       baseName: monster.name,
       name: variantName,
@@ -290,7 +313,7 @@ export function createDungeonEnemyFactory(context) {
       lootWeapon: generatedWeapon ? cloneWeaponItem(generatedWeapon) : null,
       lootOffHand: generatedOffHand ? cloneOffHandItem(generatedOffHand) : null,
       weaponDropChance: getWeaponDropChance(monster, variant),
-      offHandDropChance: variant.id === 'dire' ? 0.18 : variant.id === 'elite' ? 0.12 : 0.06,
+      offHandDropChance: getOffHandDropChance(variant),
       xpReward: Math.round((monster.xpReward + scale * ENEMY_XP_PER_SCALE) * variant.xpMultiplier),
       maxHp,
       hp: maxHp,

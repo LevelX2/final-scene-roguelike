@@ -72,8 +72,11 @@ export function createModalController(context) {
     setDeathModalVisibility(false);
   }
 
-  function toggleInventory(forceOpen) {
+  function toggleInventory(forceOpen, section = null) {
     const state = getState();
+    if (section === "items" || section === "hero") {
+      state.preferences.inventoryView = section;
+    }
     state.modals.inventoryOpen = forceOpen ?? !state.modals.inventoryOpen;
     if (state.modals.inventoryOpen) {
       state.modals.studioTopologyOpen = false;

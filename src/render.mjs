@@ -21,6 +21,7 @@ export function createRenderApi(context) {
     boardElement,
     messageLogElement,
     inventoryListElement,
+    heroSheetElement,
     inventoryFilterButtons = [],
     playerSheetElement,
     enemySheetElement,
@@ -147,11 +148,15 @@ export function createRenderApi(context) {
 
   const { renderInventory } = createInventoryView({
     inventoryListElement,
+    heroSheetElement,
     inventoryFilterButtons,
     getState,
+    getMainHand,
+    getOffHand,
     formatWeaponStats,
     formatOffHandStats,
     formatWeaponDisplayName,
+    getHungerStateLabel,
     formatRarityLabel,
     getItemModifierSummary,
     useInventoryItem,
@@ -183,6 +188,8 @@ export function createRenderApi(context) {
     loadLastHighscoreMarker,
     getHungerStateLabel,
     getHeroClassIconUrl,
+    getMonsterIconAssetUrl,
+    getEnemyTooltipImageClass,
     knowsMonster,
   });
 

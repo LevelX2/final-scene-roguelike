@@ -1,3 +1,5 @@
+import { MONSTER_VARIANT_TIERS } from './balance.mjs';
+
 function sanitizeCount(value) {
   return Math.max(0, Number(value) || 0);
 }
@@ -75,7 +77,11 @@ export function recordKillStat(killStats, actor) {
   const normalized = normalizeKillStats(killStats);
   const baseName = String(actor?.baseName ?? actor?.name ?? 'Unbekannt').trim() || 'Unbekannt';
   const variantTier = String(actor?.variantTier ?? 'normal').trim() || 'normal';
-  const variantLabel = String(actor?.variantLabel ?? (variantTier === 'normal' ? 'Normal' : variantTier)).trim() || null;
+  const variantLabel = String(
+    actor?.variantLabel ??
+    MONSTER_VARIANT_TIERS[variantTier]?.label ??
+    variantTier,
+  ).trim() || null;
   const monsterId = actor?.id ?? null;
   const key = buildKillStatKey(monsterId, baseName, variantTier);
   const previous = normalized[key];

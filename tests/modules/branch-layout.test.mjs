@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildAvailableMonsterPool, createBranchLayoutGenerator } from '../../src/dungeon/branch-layout.mjs';
+import { shouldSpawnFloorShield, shouldSpawnFloorWeapon } from '../../src/balance.mjs';
+import { MONSTER_CATALOG } from '../../src/content/catalogs/monsters.mjs';
 
 function computeReachableTilesWithBlockedPositions(grid, startPosition, doors, blockedPositions = []) {
   const blocked = new Set(blockedPositions.map((position) => `${position.x},${position.y}`));
@@ -90,7 +92,7 @@ function createGeneratorHarness(options = {}) {
     rollFoodBudget: () => ({ totalBudget: 0 }),
     splitFoodBudget: () => ({ direct: 0, reserve: 0, containers: 0 }),
     rollMonsterPlannedDrop: () => null,
-    buildTrapsForFloor: () => [],
+    buildTrapsForFloor: options.buildTrapsForFloor ?? (() => []),
     getContainerConfigForArchetype: () => ({ name: 'Kiste', assetId: 'crate' }),
     collectUsedShowcasePropIds: () => new Set(),
     computeReachableTilesWithBlockedPositions,
@@ -124,6 +126,70 @@ test('branch layout prefers phase-one standard monsters of the active studio arc
   );
 
   assert.deepEqual(available.map((monster) => monster.id), ['slasher-standard']);
+});
+
+test('branch layout broadens a floor-one archetype pool up to three standard monsters', () => {
+  const available = buildAvailableMonsterPool(
+    [
+      {
+        id: 'fantasy-rank-1',
+        archetypeId: 'fantasy',
+        spawnGroup: 'standard',
+        rank: 1,
+        spawnWeight: 10,
+      },
+      {
+        id: 'fantasy-rank-2',
+        archetypeId: 'fantasy',
+        spawnGroup: 'standard',
+        rank: 2,
+        spawnWeight: 9,
+      },
+      {
+        id: 'fantasy-rank-3',
+        archetypeId: 'fantasy',
+        spawnGroup: 'standard',
+        rank: 3,
+        spawnWeight: 8,
+      },
+      {
+        id: 'fantasy-rank-4',
+        archetypeId: 'fantasy',
+        spawnGroup: 'standard',
+        rank: 4,
+        spawnWeight: 7,
+      },
+    ],
+    1,
+    'fantasy',
+  );
+
+  assert.deepEqual(available.map((monster) => monster.id), [
+    'fantasy-rank-1',
+    'fantasy-rank-2',
+    'fantasy-rank-3',
+  ]);
+});
+
+test('branch layout gives slasher floor one at least three standard monster candidates', () => {
+  const available = buildAvailableMonsterPool(
+    MONSTER_CATALOG,
+    1,
+    'slasher',
+  );
+
+  assert.deepEqual(available.map((monster) => monster.id), [
+    'slasher-kellerkreatur',
+    'slasher-kultist',
+    'slasher-wahnsinniger-hausmeister',
+  ]);
+});
+
+test('balance allows a small amount of equipment to appear on floor one', () => {
+  assert.equal(shouldSpawnFloorWeapon(1, 0.2), true);
+  assert.equal(shouldSpawnFloorWeapon(1, 0.8), false);
+  assert.equal(shouldSpawnFloorShield(1, 0.1), true);
+  assert.equal(shouldSpawnFloorShield(1, 0.3), false);
 });
 
 test('branch layout keeps the main corridor bounding box horizontally dominant', () => {
@@ -258,9 +324,76 @@ test('branch layout places open connector rooms before the themed branches fan o
   assert.ok(connectorRooms.every((room) => room.doorIds.length === 0));
 });
 
-test('branch layout can top off additional connector rooms after themed placement', () => {
+test('branch layout can add a dedicated trap room on deeper floors', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.1,
+    randomInt: (min, max) => min,
+  });
+  const level = generator.createDungeonLevel(5, {
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 5,
+      position: { x: 4, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher', 'slasher'],
+  });
+
+  const trapRoom = level.rooms.find((room) => room.role === 'trap_room');
+  assert.ok(trapRoom);
+  assert.equal(trapRoom.label, 'Fallenraum');
+});
+
+test('branch layout can place traps on corridors, not only inside rooms', () => {
+  const { generator } = createGeneratorHarness({
+    randomChance: () => 0.99,
+    randomInt: (min, max) => min,
+    buildTrapsForFloor: () => (
+      [
+        {
+          id: 'test-trap-corridor',
+          type: 'floor',
+          visibility: 'hidden',
+          state: 'active',
+          trigger: 'on_enter',
+          resetMode: 'single_use',
+          affectsPlayer: true,
+          affectsEnemies: true,
+          x: 0,
+          y: 0,
+          effect: { damage: 4 },
+        },
+      ]
+    ),
+  });
+  const level = generator.createDungeonLevel(6, {
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 6,
+      position: { x: 5, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher', 'slasher', 'slasher'],
+  });
+
+  const trap = level.traps[0];
+  assert.ok(trap);
+  const trapInsideRoom = level.rooms.some((room) =>
+    room.interiorTiles.some((tile) => tile.x === trap.x && tile.y === trap.y)
+  );
+
+  assert.equal(trapInsideRoom, false);
+});
+
+test('branch layout can top off additional connector rooms after themed placement', () => {
+  const { generator } = createGeneratorHarness({
+    randomChance: () => 0.2,
     randomInt: (min, max) => min,
   });
   const level = generator.createDungeonLevel(4, {
@@ -410,4 +543,46 @@ test('branch layout can keep a vertical transition on the exact hinted edge posi
 
   assert.deepEqual(level.exitAnchor.transitionPosition, { x: 24, y: 0 });
   assert.equal(level.stairsDown.y, 0);
+});
+
+test('branch layout scatters fallback showcases across ordinary rooms when no showcase room exists', () => {
+  const { generator } = createGeneratorHarness({
+    randomChance: () => 0.95,
+    randomInt: (min, max) => {
+      if (min === 0 && max === 4) {
+        return 3;
+      }
+      return Math.floor((min + max) / 2);
+    },
+  });
+  const level = generator.createDungeonLevel(5, {
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 5,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher', 'slasher'],
+  });
+
+  const showcaseRoom = level.rooms.find((room) => room.role === 'showcase_room');
+  assert.equal(showcaseRoom, undefined);
+  assert.equal(level.showcases.length, 3);
+
+  const showcaseRoomIds = new Set(level.showcases.map((showcase) => showcase.roomId));
+  assert.equal(showcaseRoomIds.size, level.showcases.length);
+
+  const showcaseRooms = level.showcases.map((showcase) =>
+    level.rooms.find((room) => room.id === showcase.roomId)
+  );
+  assert.ok(showcaseRooms.every((room) =>
+    room &&
+    room.role !== 'entry_room' &&
+    room.role !== 'connector_room' &&
+    room.role !== 'showcase_room' &&
+    room.overlayRole == null
+  ));
 });

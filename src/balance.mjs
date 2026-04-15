@@ -28,33 +28,33 @@ export const ENEMY_AGGRO_RADIUS_CAP = 4;
 export const MONSTER_VARIANT_TIERS = {
   normal: {
     id: "normal",
-    label: "Normal",
-    weight: 100,
+    label: "Gewoehnlich",
     modCount: 0,
     hpMultiplier: 1,
     xpMultiplier: 1,
-    weaponDropChance: 0.55,
-    offHandDropChance: 0.45,
+    weaponDropChance: 0.08,
+    offHandDropChance: 0.06,
+    iconicWeaponDropChance: 0.25,
   },
   elite: {
     id: "elite",
-    label: "Elite",
-    weight: 0,
+    label: "Ungewoehnlich",
     modCount: 1,
     hpMultiplier: 1.18,
     xpMultiplier: 1.35,
-    weaponDropChance: 0.72,
-    offHandDropChance: 0.58,
+    weaponDropChance: 0.16,
+    offHandDropChance: 0.12,
+    iconicWeaponDropChance: 0.34,
   },
   dire: {
     id: "dire",
-    label: "Dire",
-    weight: 0,
+    label: "Selten",
     modCount: 2,
     hpMultiplier: 1.32,
     xpMultiplier: 1.65,
-    weaponDropChance: 0.88,
-    offHandDropChance: 0.72,
+    weaponDropChance: 0.24,
+    offHandDropChance: 0.18,
+    iconicWeaponDropChance: 0.45,
   },
 };
 export const MONSTER_VARIANT_MODIFIERS = [
@@ -271,10 +271,18 @@ export function getPotionCountForFloor(floorNumber) {
 }
 
 export function shouldSpawnFloorWeapon(floorNumber, roll = defaultRandomChance()) {
+  if (floorNumber === 1) {
+    return roll < 0.55;
+  }
+
   return floorNumber >= 2 && roll < FLOOR_WEAPON_SPAWN_CHANCE;
 }
 
 export function shouldSpawnFloorShield(floorNumber, roll = defaultRandomChance()) {
+  if (floorNumber === 1) {
+    return roll < 0.18;
+  }
+
   if (floorNumber === 2) {
     return roll < 0.35;
   }

@@ -269,7 +269,7 @@ Aktuelle Raumrollen:
 
 - `entry_room`: äußerer Ein-/Ausgangsraum am Kartenrand
 - `connector_room`: offener Zwischenraum ohne Tür, der weitere Äste tragen kann
-- Themenräume: `weapon_room`, `aggro_room`, `calm_room`, `canteen`, `props_room`, `costume_room`, `hazard_room`, `showcase_room`
+- Themenräume: `weapon_room`, `aggro_room`, `calm_room`, `canteen`, `props_room`, `costume_room`, `hazard_room`, `trap_room`, `showcase_room`
 
 Zusätzliche Strukturregeln:
 
@@ -920,24 +920,75 @@ Wichtig:
 
 ### Spawnmengen
 
-Bodenfallen:
+Die Trap-Menge wird nicht mehr linear pro Studiotiefe vergeben, sondern als variables Trap-Budget gerollt.
 
-- Studio `1`: `0`
-- Studio `2`: `1`
-- Studio `3-4`: `2`
-- Studio `5+`: `3`
+Grundprofile pro Studio:
 
-Alarmfallen:
+- Studio `1`: immer `0`
+- Studio `2`: meist `2-3`, selten `0`
+- Studio `3`: stark schwankend zwischen `0`, `2`, `4`, `5`
+- Studio `4`: stark schwankend zwischen `1`, `3`, `5`, `7`
+- Studio `5`: stark schwankend zwischen `1`, `4`, `6`, `8`
+- Studio `6+`: stark schwankend zwischen `2`, `5`, `7`, `9`, `11`
 
-- Studio `1-2`: `0`
-- Studio `3-5`: `1`
-- Studio `6+`: `2`
+Zusätzlich kommt ein kleiner Bonus aus der erreichbaren begehbaren Flaeche:
 
-Dauergefahren:
+- ab `120` erreichbaren Bodenfeldern: `+1`
+- ab `170`: `+2`
+- ab `220`: `+3`
 
-- Studio `1-2`: `0`
-- Studio `3-4`: `1`
-- Studio `5+`: `2`
+Wenn ein Studio das Profil `0` rollt, bleibt es trotz Flaechenbonus komplett fallenfrei.
+
+Trap-Typen werden danach aus dem Budget gezogen:
+
+- Studio `2`: nur `floor`
+- Studio `3`: vor allem `floor`, erste `alarm`- und `hazard`-Anteile
+- Studio `4-5`: ausgeglichener Mix
+- Studio `6+`: weiter gemischter Mix aus `floor`, `alarm`, `hazard`
+
+### Platzierung im Layout
+
+Die globale Trap-Menge wird zuerst als Budget gerollt. Die eigentliche Platzierung passiert danach ueber einen gemeinsamen Tile-Pool aus:
+
+- Raum-Innenfeldern
+- Hauptkorridorfeldern
+- Nebenkorridorfeldern
+
+Jedes freie Kandidatenfeld traegt ein Gewicht. Bei Raumfeldern ist das der `trapFactor` des Raumtyps, bei Korridoren ein eigener Korridorfaktor.
+
+Nicht verwendet werden:
+
+- Starttile des Spielers
+- Ein- und Ausgangsfelder
+- Tuerfelder
+- bereits fuer andere Spawnobjekte reservierte Tiles
+- Locked-Bonus-Raeume
+
+Aktuelle `trapFactor`-Werte der Raumrollen:
+
+| Raumrolle | trapFactor |
+| --- | ---: |
+| `entry_room` | `0` |
+| `connector_room` | `1.8` |
+| `weapon_room` | `0.6` |
+| `aggro_room` | `2.2` |
+| `calm_room` | `0` |
+| `canteen` | `0` |
+| `props_room` | `1.1` |
+| `costume_room` | `0.6` |
+| `hazard_room` | `2.8` |
+| `trap_room` | `6.0` |
+| `showcase_room` | `0` |
+
+Korridorfaktoren:
+
+- Hauptkorridor: `1.2`
+- Nebenkorridore: `1.6`
+
+Wichtig: `trapFactor = 0` bedeutet jetzt tatsaechlich, dass dieser Raumtyp keine Fallen bekommen darf. Dadurch koennen ruhige oder kuratierte Studiosegmente gezielt fallenfrei gehalten werden.
+
+Das bedeutet: Die gefuehlte Trap-Dichte wird nicht nur von der Anzahl, sondern stark von Raumtyp und Gangtyp geformt. Besonders `trap_room`, `hazard_room`, `aggro_room`, Connectoren und Nebenkorridore ziehen Fallen deutlich haeufiger an als ruhige oder kuratierte Raeume.
+
 
 ### Typen
 
@@ -1013,6 +1064,44 @@ Einige Fallen tragen schon weitere Effekte, die nur teilweise mechanisch weiterg
 
 - `slow` erzeugt derzeit nur eine Meldung, aber keinen separaten persistenten Bewegungsmalus
 - `nerveDebuff` ist als Effektfeld angelegt, wird aktuell aber nicht weiter verarbeitet
+
+### Einflusswerte auf Fallen
+
+Direkt oder indirekt auf Fallen wirken aktuell:
+
+- Trap-Budget-Profil des Studios: bestimmt die grobe Mengenklasse von ruhig bis vermint
+- erreichbare begehbare Flaeche: gibt einen kleinen Bonus auf das Trap-Budget grosser Studios
+- `trapFactor` und Korridorfaktoren: bestimmen, auf welchen Raum- und Gangtypen Fallen wahrscheinlicher landen
+- `detectDifficulty`: Gegenspieler fuer die Entdeckungsprobe
+- `reactDifficulty`: Gegenspieler fuer die Vermeidungsprobe beim Betreten
+- `effect.damage`, `effect.alarm`, `effect.slow`, `effect.nerveDebuff`: bestimmen die konkrete Falle selbst
+- `precision`: erhoeht die Entdeckungswahrscheinlichkeit
+- `reaction`: erhoeht die Vermeidungswahrscheinlichkeit
+- `endurance`: reduziert den erlittenen Fallenschaden
+- `trapDetectionBonus`: Klassenbonus des Regisseurs auf Entdeckung
+- `trapAvoidBonus`: Klassenbonus des Regisseurs auf Vermeidung
+- `trapDamageReduction`: Klassenbonus des Stuntman auf Schaden
+- Ausruestung mit `statMods` auf `precision`, `reaction` oder `endurance`: wirkt indirekt auch auf Trap-Proben
+- Level-Ups: erhoehen langfristig vor allem `precision` und `reaction`, damit auch Trap-Sicherheit
+- Gegnerwerte: Gegner nutzen beim Ausloesen ihre eigenen `reaction`-/`endurance`-Werte
+
+Wichtig: Temporaere Kampf-Debuffs wie `precision_malus` und `reaction_malus` fliessen derzeit nicht in die Trap-Formeln ein, weil Fallen direkt auf den rohen Actor-Stats rechnen.
+
+### Balanceeinschaetzung und Tuning-Hebel
+
+Der aktuelle Stand wirkt nun deutlich lebendiger und besser auf grosse Studios abgestimmt:
+
+- Studios koennen jetzt bewusst ruhig oder ploetzlich stark vermint ausfallen, statt nur linear immer voller zu werden.
+- Groessere erreichbare Studios ziehen moderat mehr Fallen an, ohne dass die Flaeche die Mengenlogik komplett dominiert.
+- Fallen koennen jetzt auch in Haupt- und Nebenkorridoren liegen, also genau auf Wegen, die der Spieler real oft nutzt.
+- Raumtypen mit `trapFactor = 0` bleiben bewusst fallenfrei; gefaehrliche Raumtypen und Korridore koennen dafuer klar betont werden.
+- Dauergefahren sind weiterhin der weichste Teil des Systems: eine Variante verursacht nur `2` Basisschaden und faellt beim Spieler wegen `endurance` fast immer auf `1`, die andere Variante meldet nur `slow`, ohne echten Folgeschritt.
+
+Empfohlene Tuning-Reihenfolge:
+
+1. Erst Wirkung schaerfen. Am meisten bringt aktuell, `slow`/`nerveDebuff` mechanisch fertigzubauen oder `sparking-cable` von `2` auf `3` Basisschaden anzuheben.
+2. Wenn Fallen noch oefter auf dem Hauptweg liegen sollen, zuerst `MAIN_CORRIDOR_TRAP_FACTOR`, `SIDE_CORRIDOR_TRAP_FACTOR`, `connector_room`, `aggro_room`, `hazard_room` und `trap_room` justieren.
+3. Wenn die Gesamtmenge weiter steigen soll, zunaechst die Budget-Profile pro Studiotiefe anheben statt wieder in ein starres lineares Spawn-Schema zurueckzufallen.
 
 ## Erfahrung und Levelaufstieg
 

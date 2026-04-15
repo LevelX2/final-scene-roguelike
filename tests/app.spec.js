@@ -1,6 +1,6 @@
 const { test, expect } = require("playwright/test");
 require("./test-setup");
-const { startRun, setupWeaponAtPlayerStep } = require("./helpers");
+const { startRun, setupCombat, setupWeaponAtPlayerStep } = require("./helpers");
 
 async function sendGameKey(page, key) {
   await page.evaluate((nextKey) => {
@@ -26,6 +26,60 @@ test("start screen renders the new title", async ({ page }) => {
   await expect(page.locator("#startScreen")).toBeVisible();
   await expect(page.getByRole("button", { name: "Neues Spiel beginnen" })).toBeVisible();
   await expect(page.locator("#gameShell")).toHaveClass(/prestart-hidden/);
+});
+
+test("start screen menu supports visible arrow-key selection", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.locator("#startNewGame")).toHaveClass(/selected/);
+  await page.keyboard.press("ArrowDown");
+
+  let activeStartButton = await page.evaluate(() => ({
+    id: document.activeElement?.id ?? null,
+    selected: Array.from(document.querySelectorAll(".start-screen-btn.selected")).map((entry) => entry.id),
+  }));
+  expect(activeStartButton.id).toBe("loadGameFromLanding");
+  expect(activeStartButton.selected).toEqual(["loadGameFromLanding"]);
+
+  await page.keyboard.press("ArrowDown");
+  activeStartButton = await page.evaluate(() => ({
+    id: document.activeElement?.id ?? null,
+    selected: Array.from(document.querySelectorAll(".start-screen-btn.selected")).map((entry) => entry.id),
+  }));
+  expect(activeStartButton.id).toBe("openHighscoresLanding");
+  expect(activeStartButton.selected).toEqual(["openHighscoresLanding"]);
+
+  await page.keyboard.press("ArrowUp");
+  activeStartButton = await page.evaluate(() => ({
+    id: document.activeElement?.id ?? null,
+    selected: Array.from(document.querySelectorAll(".start-screen-btn.selected")).map((entry) => entry.id),
+  }));
+  expect(activeStartButton.id).toBe("loadGameFromLanding");
+  expect(activeStartButton.selected).toEqual(["loadGameFromLanding"]);
+});
+
+test("hovering a landing button moves the active start-menu focus instead of leaving two highlighted", async ({ page }) => {
+  await page.goto("/");
+
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+
+  let activeStartButton = await page.evaluate(() => ({
+    id: document.activeElement?.id ?? null,
+    selected: Array.from(document.querySelectorAll(".start-screen-btn.selected")).map((entry) => entry.id),
+  }));
+  expect(activeStartButton.id).toBe("openHelpLanding");
+  expect(activeStartButton.selected).toEqual(["openHelpLanding"]);
+
+  await page.locator("#startNewGame").hover();
+
+  activeStartButton = await page.evaluate(() => ({
+    id: document.activeElement?.id ?? null,
+    selected: Array.from(document.querySelectorAll(".start-screen-btn.selected")).map((entry) => entry.id),
+  }));
+  expect(activeStartButton.id).toBe("startNewGame");
+  expect(activeStartButton.selected).toEqual(["startNewGame"]);
 });
 
 test("hero name can be changed and persists for the next session", async ({ page }) => {
@@ -86,6 +140,23 @@ test("hero class cards support arrow-key selection on the start screen", async (
 
   await page.keyboard.press("ArrowUp");
   await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
+});
+
+test("opening the class modal moves focus into class selection so arrows do not cycle the landing menu", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.locator("#startNewGame")).toHaveClass(/selected/);
+  await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
+  await expect(page.locator("#startModal")).toBeVisible();
+
+  await expect(page.locator(".class-option.selected")).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
+
+  const landingSelection = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".start-screen-btn.selected")).map((entry) => entry.id)
+  );
+  expect(landingSelection).toEqual(["startNewGame"]);
 });
 
 test("each hero class starts with its configured opening weapon setup", async ({ page }) => {
@@ -216,11 +287,213 @@ test("inventory modal toggles with keyboard controls", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
+  await page.evaluate(() => {
+    for (let index = 0; index < 18; index += 1) {
+      window.__TEST_API__.addInventoryItem({
+        type: "food",
+        id: `layout-snack-${index}`,
+        name: `Layout-Snack ${index + 1}`,
+        nutritionRestore: 5,
+        description: "Nur fuer den Layouttest.",
+      });
+    }
+  });
+
   await page.keyboard.press("i");
   await expect(page.locator("#inventoryModal")).toBeVisible();
+  await expect(page.locator("#inventoryItemsTab")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#inventoryItemsPanel")).toBeVisible();
+  await expect(page.locator("#inventoryHeroPanel")).toBeHidden();
+
+  const inventoryLayout = await page.evaluate(() => {
+    const modalCard = document.querySelector(".inventory-modal-card");
+    const inventoryList = document.getElementById("inventoryList");
+    return {
+      modalHeight: modalCard?.getBoundingClientRect().height ?? 0,
+      listOverflowY: inventoryList ? window.getComputedStyle(inventoryList).overflowY : "",
+      listCanScroll: inventoryList ? inventoryList.scrollHeight > inventoryList.clientHeight : false,
+    };
+  });
+
+  expect(inventoryLayout.listOverflowY).toBe("auto");
+  expect(inventoryLayout.listCanScroll).toBeTruthy();
+
+  await page.locator("#inventoryHeroTab").click();
+  await expect(page.locator("#inventoryHeroTab")).toHaveAttribute("aria-selected", "true");
+
+  const heroModalHeight = await page.locator(".inventory-modal-card").evaluate((node) => node.getBoundingClientRect().height);
+  expect(Math.abs(inventoryLayout.modalHeight - heroModalHeight)).toBeLessThan(2);
 
   await page.keyboard.press("Escape");
   await expect(page.locator("#inventoryModal")).toBeHidden();
+});
+
+test("player sidebar stays compact and opens hero details in the inventory modal", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await expect(page.locator("#playerSheet")).toContainText("Haupthand");
+  await expect(page.locator("#playerSheet")).toContainText("Nebenhand");
+  await expect(page.locator("#playerSheet")).not.toContainText("Status");
+  await expect(page.locator("#openHeroDetails")).toHaveAttribute("aria-label", "Heldendetails öffnen");
+
+  await page.locator("#openHeroDetails").click();
+  await expect(page.locator("#inventoryModal")).toBeVisible();
+  await expect(page.locator("#inventoryModal h2")).toContainText("Inventar & Held");
+  await expect(page.locator("#inventoryHeroTab")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#inventoryHeroPanel")).toBeVisible();
+  await expect(page.locator("#inventoryItemsPanel")).toBeHidden();
+  await expect(page.locator("#heroSheet")).toContainText("Klasse");
+  await expect(page.locator("#heroSheet")).toContainText("Haupthand");
+  await expect(page.locator("#heroSheet")).toContainText("Weitere Slots");
+
+  await page.locator("#inventoryItemsTab").click();
+  await expect(page.locator("#inventoryItemsTab")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#inventoryItemsPanel")).toBeVisible();
+  await expect(page.locator("#inventoryHeroPanel")).toBeHidden();
+});
+
+test("sidebar icon buttons expose tooltips for details and collapsing", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await expect(page.locator("#openHeroDetails")).toHaveAttribute("title", /Heldendetails/);
+  await expect(page.locator('[data-collapsible="log"] .collapse-btn')).toHaveAttribute("title", "Log ausblenden");
+  await expect(page.locator('[data-collapsible="enemy"] .collapse-btn')).toHaveAttribute("title", "Gegnerpanel ausblenden");
+  await expect(page.locator("#toggleEnemyPanelMode")).toHaveAttribute("title", "Gegneransicht kompakter schalten");
+});
+
+test("enemy sidebar omits portrait art and scrolls long detail content", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    clearGrid: true,
+    player: {
+      strength: 4,
+      precision: 9,
+    },
+    enemy: {
+      name: "Archivschrecken",
+      description: "Ein schattenhafter Schrecken aus staubigen Filmregalen mit absichtlich langem Beschreibungstext für den Layouttest.",
+      temperamentHint: "Zieht Bahnen, als folge es einem laengst einstudierten Ablauf zwischen den Regalen und Projektoren.",
+      special: "Kennt jeden dunklen Winkel des Archivs und fuehrt jede Waffe mit stoerender Sicherheit.",
+      behaviorLabel: "Verfolger",
+      mobilityLabel: "Mobil",
+      retreatLabel: "Rueckt nur widerwillig zurueck",
+      healingLabel: "Erholt sich langsam",
+      hp: 18,
+      maxHp: 18,
+      reaction: 1,
+      nerves: 0,
+      variantLabel: "Elite",
+      variantModifiers: [{ label: "Gepanzert" }, { label: "Hartnaeckig" }],
+      weapon: {
+        type: "weapon",
+        id: "enemy-layout-test-weapon",
+        name: "Archivspalter",
+        source: "Tests",
+        damage: 4,
+        hitBonus: 2,
+        critBonus: 0,
+        description: "Nur fuer Tests.",
+      },
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99, 0]));
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#enemySheet")).toContainText("Leben");
+
+  const enemyPanel = await page.evaluate(() => {
+    const enemySheet = document.getElementById("enemySheet");
+    return {
+      hasPortrait: Boolean(document.querySelector(".enemy-sheet-art")),
+      overflowY: window.getComputedStyle(enemySheet).overflowY,
+      canScroll: enemySheet.scrollHeight > enemySheet.clientHeight,
+    };
+  });
+
+  expect(enemyPanel.hasPortrait).toBeFalsy();
+  expect(enemyPanel.overflowY).toBe("auto");
+  expect(enemyPanel.canScroll).toBeTruthy();
+});
+
+test("enemy sidebar scroll area expands when other sidebar panels are collapsed", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    clearGrid: true,
+    player: {
+      strength: 4,
+      precision: 9,
+    },
+    enemy: {
+      name: "Archivschrecken",
+      description: "Ein schattenhafter Schrecken aus staubigen Filmregalen mit langem Beschreibungstext fuer den Layouttest.",
+      temperamentHint: "Zieht Bahnen, als folge es einem laengst einstudierten Ablauf zwischen den Regalen und Projektoren.",
+      special: "Kennt jeden dunklen Winkel des Archivs und fuehrt jede Waffe mit stoerender Sicherheit.",
+      behaviorLabel: "Verfolger",
+      mobilityLabel: "Mobil",
+      retreatLabel: "Rueckt nur widerwillig zurueck",
+      healingLabel: "Erholt sich langsam",
+      hp: 18,
+      maxHp: 18,
+      reaction: 1,
+      nerves: 0,
+      variantLabel: "Elite",
+      variantModifiers: [{ label: "Gepanzert" }, { label: "Hartnaeckig" }],
+      weapon: {
+        type: "weapon",
+        id: "enemy-layout-growth-weapon",
+        name: "Archivspalter",
+        source: "Tests",
+        damage: 4,
+        hitBonus: 2,
+        critBonus: 0,
+        description: "Nur fuer Tests.",
+      },
+    },
+  });
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99, 0]));
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#enemySheet")).toContainText("Leben");
+
+  const initialEnemyPanelLayout = await page.evaluate(() => {
+    const enemyCardBody = document.querySelector('[data-collapsible="enemy"] .card-body');
+    const enemySheet = document.getElementById("enemySheet");
+    if (!enemyCardBody || !enemySheet) {
+      return null;
+    }
+
+    return {
+      bodyHeight: enemyCardBody.getBoundingClientRect().height,
+      sheetHeight: enemySheet.getBoundingClientRect().height,
+    };
+  });
+
+  await page.locator('[data-collapsible="log"] .collapse-btn').click();
+  await page.locator('[data-collapsible="player"] .collapse-btn').click();
+
+  const enemyPanelLayout = await page.evaluate(() => {
+    const enemyCardBody = document.querySelector('[data-collapsible="enemy"] .card-body');
+    const enemySheet = document.getElementById("enemySheet");
+    if (!enemyCardBody || !enemySheet) {
+      return null;
+    }
+
+    return {
+      bodyHeight: enemyCardBody.getBoundingClientRect().height,
+      sheetHeight: enemySheet.getBoundingClientRect().height,
+    };
+  });
+
+  expect(initialEnemyPanelLayout).not.toBeNull();
+  expect(enemyPanelLayout).not.toBeNull();
+  expect(enemyPanelLayout.sheetHeight).toBeGreaterThan(initialEnemyPanelLayout.sheetHeight + 40);
+  expect(enemyPanelLayout.sheetHeight / enemyPanelLayout.bodyHeight).toBeGreaterThan(0.9);
 });
 
 test("options modal toggles with keyboard controls", async ({ page }) => {
@@ -560,7 +833,12 @@ test("loaded save slots are consumed and leave the slot empty", async ({ page })
   await expect(page.locator("#startModal")).toBeHidden();
 
   await page.reload();
-  await expect(page.locator("#loadGameFromLanding")).toBeDisabled();
+  await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
+  await page.locator("#loadGameFromLanding").click();
+  await expect(page.locator("#savegamesModal")).toBeVisible();
+  await expect(page.locator("#savegameStatus")).toContainText("Kein Spielstand gefunden");
+  await expect(page.locator("#savegameList")).toContainText("Slot 1");
+  await expect(page.locator("#savegameList")).toContainText("Leer");
 });
 
 test("a loaded run can be saved again into an empty slot", async ({ page }) => {

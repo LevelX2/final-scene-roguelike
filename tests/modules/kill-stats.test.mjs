@@ -10,28 +10,28 @@ test('recordKillStat tracks monster variants consistently across kill sources', 
     baseName: 'Ghostface',
     name: 'Ghostface',
     variantTier: 'normal',
-    variantLabel: 'Normal',
+    variantLabel: 'Gewöhnlich',
   });
   killStats = recordKillStat(killStats, {
     id: 'ghostface',
     baseName: 'Ghostface',
     name: 'Ghostface, brutal',
     variantTier: 'elite',
-    variantLabel: 'Elite',
+    variantLabel: 'Ungewöhnlich',
   });
   killStats = recordKillStat(killStats, {
     id: 'ghostface',
     baseName: 'Ghostface',
     name: 'Ghostface, jagend und listig',
     variantTier: 'dire',
-    variantLabel: 'Dire',
+    variantLabel: 'Selten',
   });
   killStats = recordKillStat(killStats, {
     id: 'ghostface',
     baseName: 'Ghostface',
     name: 'Ghostface',
     variantTier: 'normal',
-    variantLabel: 'Normal',
+    variantLabel: 'Gewöhnlich',
   });
 
   assert.deepEqual(
@@ -40,8 +40,8 @@ test('recordKillStat tracks monster variants consistently across kill sources', 
     ),
     {
       'ghostface::normal': { label: 'Ghostface', count: 2 },
-      'ghostface::elite': { label: 'Ghostface (Elite)', count: 1 },
-      'ghostface::dire': { label: 'Ghostface (Dire)', count: 1 },
+      'ghostface::elite': { label: 'Ghostface (Ungewöhnlich)', count: 1 },
+      'ghostface::dire': { label: 'Ghostface (Selten)', count: 1 },
     },
   );
 });
@@ -54,7 +54,7 @@ test('normalizeKillStats keeps legacy saves readable and sortable', () => {
       monsterId: 'ghostface',
       baseName: 'Ghostface',
       variantTier: 'elite',
-      variantLabel: 'Elite',
+      variantLabel: 'Ungewöhnlich',
       count: 1,
     },
   });
@@ -62,6 +62,6 @@ test('normalizeKillStats keeps legacy saves readable and sortable', () => {
   const labels = getKillStatEntries(normalized).map((entry) => [formatKillStatLabel(entry), entry.count]);
   assert.deepEqual(labels, [
     ['Bates', 2],
-    ['Ghostface (Elite)', 1],
+    ['Ghostface (Ungewöhnlich)', 1],
   ]);
 });

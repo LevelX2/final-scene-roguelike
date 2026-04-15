@@ -48,6 +48,8 @@ export function createRenderCycleApi(context) {
     gameHeaderElement,
     startFreshRunButton,
     inventoryModalElement,
+    inventoryItemsPanelElement,
+    inventoryHeroPanelElement,
     studioTopologyModalElement,
     runStatsModalElement,
     optionsModalElement,
@@ -71,6 +73,8 @@ export function createRenderCycleApi(context) {
     studioZoomValueElement,
     enemyPanelModeElement,
     toggleEnemyPanelModeButtonElement,
+    inventoryItemsTabButtonElement,
+    inventoryHeroTabButtonElement,
     updateSavegameControls,
     collapsibleCards,
     updatePotionChoiceSelection,
@@ -181,9 +185,14 @@ export function createRenderCycleApi(context) {
       enemyPanelModeElement.value = state.options.enemyPanelMode ?? "detailed";
     }
     if (toggleEnemyPanelModeButtonElement) {
-      toggleEnemyPanelModeButtonElement.textContent = (state.options.enemyPanelMode ?? "detailed") === "compact"
+      const enemyPanelCompact = (state.options.enemyPanelMode ?? "detailed") === "compact";
+      toggleEnemyPanelModeButtonElement.textContent = enemyPanelCompact
         ? "Details"
         : "Kompakt";
+      toggleEnemyPanelModeButtonElement.setAttribute(
+        "title",
+        enemyPanelCompact ? "Gegneransicht detaillierter zeigen" : "Gegneransicht kompakter schalten",
+      );
     }
   }
 
@@ -319,11 +328,21 @@ export function createRenderCycleApi(context) {
     renderRunStats();
     renderStudioTopology();
     renderLog();
+    const inventoryView = state.preferences?.inventoryView === "hero" ? "hero" : "items";
+    const showInventoryItems = inventoryView === "items";
     startScreenElement?.classList.toggle("ui-hidden", inGameView);
     gameHeaderElement?.classList.toggle("ui-hidden", !inGameView);
     startFreshRunButton?.classList.toggle("ui-hidden", !state.gameOver);
     inventoryModalElement?.classList.toggle("hidden", !state.modals.inventoryOpen);
     inventoryModalElement?.setAttribute("aria-hidden", String(!state.modals.inventoryOpen));
+    inventoryItemsPanelElement?.classList.toggle("ui-hidden", !showInventoryItems);
+    inventoryItemsPanelElement?.setAttribute("aria-hidden", String(!showInventoryItems));
+    inventoryHeroPanelElement?.classList.toggle("ui-hidden", showInventoryItems);
+    inventoryHeroPanelElement?.setAttribute("aria-hidden", String(showInventoryItems));
+    inventoryItemsTabButtonElement?.classList.toggle("active", showInventoryItems);
+    inventoryHeroTabButtonElement?.classList.toggle("active", !showInventoryItems);
+    inventoryItemsTabButtonElement?.setAttribute("aria-selected", String(showInventoryItems));
+    inventoryHeroTabButtonElement?.setAttribute("aria-selected", String(!showInventoryItems));
     studioTopologyModalElement?.classList.toggle("hidden", !state.modals.studioTopologyOpen);
     studioTopologyModalElement?.setAttribute("aria-hidden", String(!state.modals.studioTopologyOpen));
     runStatsModalElement?.classList.toggle("hidden", !state.modals.runStatsOpen);
@@ -380,15 +399,20 @@ export function createRenderCycleApi(context) {
       if (button) {
         if (key === "player") {
           const mode = state.collapsedCards.player ?? "summary";
-          button.textContent = mode === "summary"
-            ? "Ausblenden"
-            : "Anzeigen";
+          const collapsed = mode === "hidden";
+          button.textContent = collapsed ? "v" : "^";
+          button.setAttribute("aria-label", collapsed ? "Spielerpanel anzeigen" : "Spielerpanel ausblenden");
+          button.setAttribute("title", collapsed ? "Spielerpanel anzeigen" : "Spielerpanel ausblenden");
         } else if (key === "log") {
           const collapsed = state.collapsedCards.log === "hidden" || state.collapsedCards.log === true;
-          button.textContent = collapsed ? "Ausklappen" : "Einklappen";
+          button.textContent = collapsed ? "v" : "^";
+          button.setAttribute("aria-label", collapsed ? "Log anzeigen" : "Log ausblenden");
+          button.setAttribute("title", collapsed ? "Log anzeigen" : "Log ausblenden");
         } else {
           const collapsed = Boolean(state.collapsedCards[key]);
-          button.textContent = collapsed ? "Ausklappen" : "Einklappen";
+          button.textContent = collapsed ? "v" : "^";
+          button.setAttribute("aria-label", collapsed ? "Gegnerpanel anzeigen" : "Gegnerpanel ausblenden");
+          button.setAttribute("title", collapsed ? "Gegnerpanel anzeigen" : "Gegnerpanel ausblenden");
         }
       }
     });

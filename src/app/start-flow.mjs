@@ -131,6 +131,12 @@ export function createStartFlowApi(context) {
     syncStartModalControls();
     state.modals.startOpen = true;
     renderSelf();
+    window.setTimeout(() => {
+      const selectedOption = classOptionsElement.querySelector(".class-option.selected");
+      if (selectedOption instanceof HTMLElement) {
+        selectedOption.focus();
+      }
+    }, 0);
   }
 
   function closeStartModal() {

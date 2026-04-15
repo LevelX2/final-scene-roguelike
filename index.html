@@ -23,10 +23,10 @@
           </p>
         </div>
         <div class="start-screen-menu">
-          <button id="startNewGame" class="choice-btn accent start-screen-btn" type="button">Neues Spiel beginnen</button>
+          <button id="startNewGame" class="choice-btn start-screen-btn" type="button">Neues Spiel beginnen</button>
           <button id="loadGameFromLanding" class="choice-btn start-screen-btn" type="button">Spiel laden</button>
           <button id="openHighscoresLanding" class="choice-btn start-screen-btn" type="button">Final Scenes Bestenliste</button>
-          <button id="openHelpLanding" class="choice-btn ghost start-screen-btn" type="button">Hilfe ansehen</button>
+          <button id="openHelpLanding" class="choice-btn start-screen-btn" type="button">Hilfe ansehen</button>
           <p id="landingSavegameStatus" class="hero-identity-note ui-hidden" aria-hidden="true">Kein Spielstand gefunden.</p>
         </div>
       </div>
@@ -121,7 +121,9 @@
         <section class="panel sidebar-card log-card" data-collapsible="log">
           <div class="inventory-inline-head card-head">
             <h2>Log</h2>
-            <button class="mini-btn collapse-btn" type="button" data-target="log">Einklappen</button>
+            <div class="card-head-actions panel-icon-actions">
+              <button class="mini-btn collapse-btn panel-icon-btn" type="button" data-target="log" aria-label="Log ausblenden" title="Log ausblenden">^</button>
+            </div>
           </div>
           <div class="card-body">
             <div id="messageLog" class="log" aria-live="polite"></div>
@@ -131,8 +133,9 @@
         <section class="panel sidebar-card" data-collapsible="player">
           <div class="inventory-inline-head card-head">
             <h2 id="playerPanelTitle">Held</h2>
-            <div class="card-head-actions">
-              <button class="mini-btn collapse-btn" type="button" data-target="player">Ausblenden</button>
+            <div class="card-head-actions panel-icon-actions">
+              <button id="openHeroDetails" class="mini-btn panel-icon-btn" type="button" aria-label="Heldendetails öffnen" title="Heldendetails öffnen">i</button>
+              <button class="mini-btn collapse-btn panel-icon-btn" type="button" data-target="player" aria-label="Spielerpanel ausblenden" title="Spielerpanel ausblenden">^</button>
             </div>
           </div>
           <div class="card-body">
@@ -143,9 +146,9 @@
         <section class="panel sidebar-card" data-collapsible="enemy">
           <div class="inventory-inline-head card-head">
             <h2>Gegner im Blick</h2>
-            <div class="card-head-actions">
-              <button id="toggleEnemyPanelMode" class="mini-btn" type="button">Kompakt</button>
-              <button class="mini-btn collapse-btn" type="button" data-target="enemy">Einklappen</button>
+            <div class="card-head-actions panel-icon-actions">
+              <button id="toggleEnemyPanelMode" class="mini-btn" type="button" title="Gegneransicht kompakter schalten">Kompakt</button>
+              <button class="mini-btn collapse-btn panel-icon-btn" type="button" data-target="enemy" aria-label="Gegnerpanel ausblenden" title="Gegnerpanel ausblenden">^</button>
             </div>
           </div>
           <div class="card-body">
@@ -182,24 +185,37 @@
   </div>
 
   <div id="inventoryModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-card panel">
+    <div class="modal-card panel scroll-modal-card inventory-modal-card">
       <div class="inventory-inline-head">
-        <div>
-          <p class="modal-eyebrow">Ausr&uuml;stung</p>
-          <h2>Inventar</h2>
-        </div>
+        <h2>Inventar &amp; Held</h2>
         <button id="closeInventory" class="mini-btn" type="button">Schlie&szlig;en</button>
       </div>
-      <p class="modal-copy">Hier verwaltest du alle eingesammelten Gegenst&auml;nde.</p>
-      <div id="inventoryFilterBar" class="inventory-filter-bar" aria-label="Inventarfilter">
-        <button class="mini-btn inventory-filter-btn active" type="button" data-filter="all">Alle</button>
-        <button class="mini-btn inventory-filter-btn" type="button" data-filter="weapon">Waffen</button>
-        <button class="mini-btn inventory-filter-btn" type="button" data-filter="offhand">Schilde</button>
-        <button class="mini-btn inventory-filter-btn" type="button" data-filter="potion">Tr&auml;nke</button>
-        <button class="mini-btn inventory-filter-btn" type="button" data-filter="food">Essen</button>
-        <button class="mini-btn inventory-filter-btn" type="button" data-filter="key">Schl&uuml;ssel</button>
+      <div class="help-switch inventory-switch" role="tablist" aria-label="Inventarbereiche">
+        <button id="inventoryItemsTab" class="mini-btn help-switch-btn inventory-switch-btn active" type="button" aria-selected="true">Inventar</button>
+        <button id="inventoryHeroTab" class="mini-btn help-switch-btn inventory-switch-btn" type="button" aria-selected="false">Held</button>
       </div>
-      <div id="inventoryList" class="inventory-list modal-list"></div>
+      <section id="inventoryItemsPanel" class="modal-scroll-section inventory-panel inventory-items-panel" aria-hidden="false">
+        <div id="inventoryFilterBar" class="inventory-filter-bar" aria-label="Inventarfilter">
+          <button class="mini-btn inventory-filter-btn active" type="button" data-filter="all">Alle</button>
+          <button class="mini-btn inventory-filter-btn" type="button" data-filter="weapon">Waffen</button>
+          <button class="mini-btn inventory-filter-btn" type="button" data-filter="offhand">Schilde</button>
+          <button class="mini-btn inventory-filter-btn" type="button" data-filter="potion">Tr&auml;nke</button>
+          <button class="mini-btn inventory-filter-btn" type="button" data-filter="food">Essen</button>
+          <button class="mini-btn inventory-filter-btn" type="button" data-filter="key">Schl&uuml;ssel</button>
+        </div>
+        <div id="inventoryList" class="inventory-list modal-list"></div>
+      </section>
+      <section id="inventoryHeroPanel" class="modal-scroll-section inventory-panel inventory-hero-panel ui-hidden" aria-hidden="true">
+        <div class="inventory-modal-content">
+          <div class="inventory-inline-head inventory-hero-head">
+            <div>
+              <p class="modal-eyebrow">Heldenschirm</p>
+              <h3>Charakter &amp; Ausr&uuml;stung</h3>
+            </div>
+          </div>
+          <div id="heroSheet" class="sheet inventory-hero-sheet"></div>
+        </div>
+      </section>
     </div>
   </div>
 

@@ -213,7 +213,7 @@ export function assembleCoreModules(context) {
       landingSavegameStatusElement.textContent = text;
     },
     setLoadButtonsDisabled: (disabled) => {
-      loadGameFromLandingButtonElement.disabled = disabled;
+      loadGameFromLandingButtonElement.removeAttribute("disabled");
     },
     setSaveButtonDisabled: (disabled) => {
       saveGameQuickButtonElement.disabled = disabled;

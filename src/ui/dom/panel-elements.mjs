@@ -1,4 +1,5 @@
 export const inventoryListElement = document.getElementById("inventoryList");
+export const heroSheetElement = document.getElementById("heroSheet");
 export const playerSheetElement = document.getElementById("playerSheet");
 export const playerPanelTitleElement = document.getElementById("playerPanelTitle");
 export const enemySheetElement = document.getElementById("enemySheet");

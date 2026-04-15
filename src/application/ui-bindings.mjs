@@ -6,6 +6,9 @@ export function createUiBindingsApi(context) {
     stairsConfirmButton,
     stairsStayButton,
     openInventoryButton,
+    openHeroDetailsButton,
+    inventoryItemsTabButtonElement,
+    inventoryHeroTabButtonElement,
     openStudioTopologyButton,
     openTargetModeButton,
     confirmTargetModeButton,
@@ -105,6 +108,10 @@ export function createUiBindingsApi(context) {
     helpControlsTabButtonElement?.setAttribute("aria-selected", String(!showOverview));
   }
 
+  function showInventorySection(section = "items") {
+    toggleInventory(true, section === "hero" ? "hero" : "items");
+  }
+
   function bindChoiceControls() {
     choiceDrinkButton.addEventListener("click", () => resolveChoiceBySlot(0));
     choiceStoreButton.addEventListener("click", () => resolveChoiceBySlot(1));
@@ -115,7 +122,8 @@ export function createUiBindingsApi(context) {
 
   function bindModalControls() {
     const openSavegames = () => toggleSavegames(true);
-    openInventoryButton.addEventListener("click", () => toggleInventory(true));
+    openInventoryButton.addEventListener("click", () => toggleInventory(true, "items"));
+    openHeroDetailsButton?.addEventListener("click", () => toggleInventory(true, "hero"));
     openStudioTopologyButton.addEventListener("click", () => toggleStudioTopology(true));
     openTargetModeButton.addEventListener("click", () => cycleTargetMode());
     confirmTargetModeButton.addEventListener("click", () => confirmTargetAttack());
@@ -136,6 +144,8 @@ export function createUiBindingsApi(context) {
     closeHelpButton.addEventListener("click", () => toggleHelp(false));
     helpOverviewTabButtonElement?.addEventListener("click", () => showHelpSection("overview"));
     helpControlsTabButtonElement?.addEventListener("click", () => showHelpSection("controls"));
+    inventoryItemsTabButtonElement?.addEventListener("click", () => showInventorySection("items"));
+    inventoryHeroTabButtonElement?.addEventListener("click", () => showInventorySection("hero"));
     showControlsHelpButtonElement?.addEventListener("click", () => showHelpSection("controls"));
     showOverviewHelpButtonElement?.addEventListener("click", () => showHelpSection("overview"));
     viewDeathStudioButton.addEventListener("click", () => hideDeathModal());
@@ -218,6 +228,91 @@ export function createUiBindingsApi(context) {
   }
 
   function bindStartControls() {
+    const startMenuButtons = [
+      startNewGameButton,
+      loadGameFromLandingButtonElement,
+      openHighscoresLandingButton,
+      openHelpLandingButton,
+    ].filter(Boolean);
+    const isStartMenuActive = () => {
+      const state = getState();
+      return Boolean(
+        state &&
+        state.view !== "game" &&
+        !state.modals.startOpen &&
+        !state.modals.savegamesOpen &&
+        !state.modals.helpOpen &&
+        !state.modals.highscoresOpen
+      );
+    };
+    const selectStartMenuButton = (nextButton, { focus = false } = {}) => {
+      if (!nextButton) {
+        return;
+      }
+      startMenuButtons.forEach((button) => {
+        const isActive = button === nextButton;
+        button.classList.toggle("selected", isActive);
+        button.tabIndex = isActive ? 0 : -1;
+      });
+      if (focus) {
+        nextButton.focus();
+      }
+    };
+    const moveStartMenuSelection = (currentButton, direction) => {
+      const currentIndex = startMenuButtons.indexOf(currentButton);
+      if (currentIndex < 0) {
+        return;
+      }
+      const nextIndex = (currentIndex + direction + startMenuButtons.length) % startMenuButtons.length;
+      selectStartMenuButton(startMenuButtons[nextIndex], { focus: true });
+    };
+
+    startMenuButtons.forEach((button) => {
+      button.addEventListener("focus", () => selectStartMenuButton(button));
+      button.addEventListener("mouseenter", () => selectStartMenuButton(button, { focus: true }));
+    });
+    const handleStartMenuKeydown = (event) => {
+      if (!isStartMenuActive()) {
+        return;
+      }
+
+      const selectedButton = startMenuButtons.find((button) => button.classList.contains("selected")) ?? startMenuButtons[0];
+      if (!selectedButton) {
+        return;
+      }
+
+      if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+        event.preventDefault();
+        moveStartMenuSelection(selectedButton, 1);
+        return;
+      }
+
+      if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+        event.preventDefault();
+        moveStartMenuSelection(selectedButton, -1);
+        return;
+      }
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        selectStartMenuButton(startMenuButtons[0], { focus: true });
+        return;
+      }
+
+      if (event.key === "End") {
+        event.preventDefault();
+        selectStartMenuButton(startMenuButtons[startMenuButtons.length - 1], { focus: true });
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectedButton.click();
+      }
+    };
+    window.addEventListener("keydown", handleStartMenuKeydown);
+    selectStartMenuButton(startMenuButtons[0]);
+
     startNewGameButton.addEventListener("click", () => openStartModal());
     loadGameFromLandingButtonElement.addEventListener("click", () => toggleSavegames(true));
     openHighscoresLandingButton.addEventListener("click", () => toggleHighscores(true));

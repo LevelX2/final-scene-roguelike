@@ -349,6 +349,7 @@ export function createStateBlueprintApi(context) {
       potionAction: "drink",
       foodAction: "eat",
       inventoryFilter: "all",
+      inventoryView: "items",
     };
   }
 

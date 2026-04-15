@@ -12,11 +12,9 @@ export function createUiPreferencesApi(context) {
     const state = getState();
     if (key === "player") {
       const currentMode = state.collapsedCards.player ?? "summary";
-      state.collapsedCards.player = currentMode === "summary"
-        ? "hidden"
-        : currentMode === "hidden"
-          ? "full"
-          : "summary";
+      state.collapsedCards.player = currentMode === "hidden"
+        ? "summary"
+        : "hidden";
     } else if (key === "log") {
       const currentMode = state.collapsedCards.log ?? "full";
       state.collapsedCards.log = currentMode === "full" || currentMode === "visible"

@@ -4,11 +4,15 @@ import { getFoodSatietyEstimate } from '../nutrition.mjs';
 export function createInventoryView(context) {
   const {
     inventoryListElement,
+    heroSheetElement,
     inventoryFilterButtons = [],
     getState,
+    getMainHand,
+    getOffHand,
     formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
+    getHungerStateLabel,
     formatRarityLabel,
     getItemModifierSummary,
     useInventoryItem,
@@ -168,8 +172,85 @@ export function createInventoryView(context) {
     return formatStudioOrigin(item.floorNumber);
   }
 
+  function formatStatusSummary(actor) {
+    const effects = actor?.statusEffects ?? [];
+    if (!effects.length) {
+      return "Keine";
+    }
+
+    return effects
+      .map((effect) => `${effect.type ?? "Effekt"} ${effect.duration ?? 0}`)
+      .join(" | ");
+  }
+
+  function createHeroStatCard(label, value, extraClass = "") {
+    const className = ["inventory-hero-stat", extraClass].filter(Boolean).join(" ");
+    return `
+      <div class="${className}">
+        <span>${label}</span>
+        <strong>${value}</strong>
+      </div>
+    `;
+  }
+
+  function createHeroSlotCard(label, title, detail, slotState = "") {
+    return `
+      <article class="inventory-hero-slot ${slotState}">
+        <span>${label}</span>
+        <strong>${title}</strong>
+        <p>${detail}</p>
+      </article>
+    `;
+  }
+
+  function renderHeroSheet(state) {
+    if (!heroSheetElement) {
+      return;
+    }
+
+    const mainHand = getMainHand(state.player);
+    const offHand = getOffHand(state.player);
+    const statusSummary = formatStatusSummary(state.player);
+    const hungerLabel = getHungerStateLabel(state.player.hungerState);
+    const xpLabel = state.player.xpToNext > 0
+      ? `${state.player.xp} / ${state.player.xpToNext}`
+      : `${state.player.xp}`;
+
+    heroSheetElement.innerHTML = [
+      `<div class="inventory-hero-summary">`,
+      createHeroStatCard("Name", state.player.name),
+      createHeroStatCard("Klasse", state.player.classLabel ?? "Unbekannt"),
+      createHeroStatCard("Level", state.player.level ?? 1),
+      createHeroStatCard("Leben", `${state.player.hp}/${state.player.maxHp}`),
+      createHeroStatCard("Hunger", hungerLabel),
+      createHeroStatCard("Status", statusSummary, statusSummary === "Keine" ? "is-muted" : ""),
+      createHeroStatCard("Erfahrung", xpLabel),
+      `</div>`,
+      `<div class="inventory-hero-loadout">`,
+      createHeroSlotCard(
+        "Haupthand",
+        formatWeaponDisplayName(mainHand),
+        formatWeaponStats(mainHand),
+      ),
+      createHeroSlotCard(
+        "Nebenhand",
+        offHand ? offHand.name : "Leer",
+        offHand ? formatOffHandStats(offHand) : "Zurzeit nichts ausgeruestet.",
+        offHand ? "" : "is-empty",
+      ),
+      createHeroSlotCard(
+        "Weitere Slots",
+        "Reserviert fuer Ausbau",
+        "Hier koennen spaeter Kleidung, Ringe oder andere feste Ausruestungsplaetze landen.",
+        "is-muted",
+      ),
+      `</div>`,
+    ].join("");
+  }
+
   function renderInventory() {
     const state = getState();
+    renderHeroSheet(state);
     inventoryListElement.innerHTML = "";
     inventoryFilterButtons.forEach((button) => {
       button.classList.toggle("active", (button.dataset.filter ?? "all") === (state.preferences.inventoryFilter ?? "all"));

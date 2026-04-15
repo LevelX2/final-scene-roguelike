@@ -8,8 +8,12 @@ const ROOM_TYPE_ORDER = [
   "props_room",
   "costume_room",
   "hazard_room",
+  "trap_room",
   "showcase_room",
 ];
+
+const MAIN_CORRIDOR_TRAP_FACTOR = 1.2;
+const SIDE_CORRIDOR_TRAP_FACTOR = 1.6;
 
 const ROOM_TYPE_SPECS = {
   entry_room: {
@@ -27,7 +31,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 0.6,
     foodFactor: 0.8,
     ambienceFactor: 0.5,
-    trapFactor: 0.5,
+    trapFactor: 0,
     preferredPathRole: "main",
     isAnchorRoom: true,
     doorChance: 0,
@@ -47,7 +51,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 0.9,
     foodFactor: 0.9,
     ambienceFactor: 0.7,
-    trapFactor: 0.7,
+    trapFactor: 1.8,
     preferredPathRole: "side",
     isConnectorRoom: true,
     doorChance: 0,
@@ -67,7 +71,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 1.6,
     foodFactor: 0.7,
     ambienceFactor: 0.8,
-    trapFactor: 0.9,
+    trapFactor: 0.6,
     preferredPathRole: "main",
     doorChance: 1,
   },
@@ -86,7 +90,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 1.0,
     foodFactor: 0.7,
     ambienceFactor: 0.7,
-    trapFactor: 1.0,
+    trapFactor: 2.2,
     preferredPathRole: "main",
     doorChance: 0.35,
   },
@@ -105,7 +109,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 0.9,
     foodFactor: 0.9,
     ambienceFactor: 0.8,
-    trapFactor: 0.5,
+    trapFactor: 0,
     preferredPathRole: "side",
     doorChance: 0.3,
   },
@@ -124,7 +128,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 1.0,
     foodFactor: 2.2,
     ambienceFactor: 1.4,
-    trapFactor: 0.6,
+    trapFactor: 0,
     preferredPathRole: "side",
     doorChance: 1,
   },
@@ -143,7 +147,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 1.5,
     foodFactor: 0.8,
     ambienceFactor: 1.3,
-    trapFactor: 0.8,
+    trapFactor: 1.1,
     preferredPathRole: "flex",
     doorChance: 1,
   },
@@ -162,7 +166,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 1.3,
     foodFactor: 0.7,
     ambienceFactor: 1.2,
-    trapFactor: 0.7,
+    trapFactor: 0.6,
     preferredPathRole: "flex",
     doorChance: 1,
   },
@@ -181,7 +185,26 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 0.9,
     foodFactor: 0.6,
     ambienceFactor: 0.8,
-    trapFactor: 1.8,
+    trapFactor: 2.8,
+    preferredPathRole: "flex",
+    doorChance: 1,
+  },
+  trap_room: {
+    id: "trap_room",
+    label: "Fallenraum",
+    maxCount: 1,
+    minWidth: 9,
+    minHeight: 7,
+    maxWidth: 11,
+    maxHeight: 9,
+    preferredAttachment: "flexible",
+    allowedAttachments: ["direct_main", "sidearm_main"],
+    maxChildren: 0,
+    enemyFactor: 0.9,
+    itemFactor: 0.6,
+    foodFactor: 0.4,
+    ambienceFactor: 0.9,
+    trapFactor: 6,
     preferredPathRole: "flex",
     doorChance: 1,
   },
@@ -200,7 +223,7 @@ const ROOM_TYPE_SPECS = {
     itemFactor: 0.8,
     foodFactor: 0.7,
     ambienceFactor: 2.4,
-    trapFactor: 0.4,
+    trapFactor: 0,
     preferredPathRole: "side",
     doorChance: 1,
   },
@@ -214,6 +237,7 @@ const ROOM_TYPE_CHANCES = {
   props_room: [0.5],
   costume_room: [0.45],
   hazard_room: [0.55, 0.25],
+  trap_room: [0.38],
   showcase_room: [0.3],
 };
 
@@ -228,6 +252,7 @@ const ROOM_FILL_PRIORITY = [
   "canteen",
   "props_room",
   "hazard_room",
+  "trap_room",
   "aggro_room",
   "costume_room",
   "weapon_room",
@@ -251,7 +276,31 @@ export function buildAvailableMonsterPool(monsterCatalog, unlockedMonsterRank, s
     monster.archetypeId === studioArchetypeId
   );
 
-  return archetypeMonsters.length > 0 ? archetypeMonsters : unlockedMonsters;
+  if (archetypeMonsters.length > 0) {
+    if (archetypeMonsters.length >= 3) {
+      return archetypeMonsters;
+    }
+
+    const supplementalMonsters = monsterCatalog
+      .filter((monster) =>
+        monster.spawnGroup === "standard" &&
+        monster.archetypeId === studioArchetypeId &&
+        !archetypeMonsters.some((candidate) => candidate.id === monster.id)
+      )
+      .sort((left, right) => {
+        const rankDelta = (left.rank ?? 99) - (right.rank ?? 99);
+        if (rankDelta !== 0) {
+          return rankDelta;
+        }
+
+        return (right.spawnWeight ?? 0) - (left.spawnWeight ?? 0);
+      })
+      .slice(0, Math.max(0, 3 - archetypeMonsters.length));
+
+    return [...archetypeMonsters, ...supplementalMonsters];
+  }
+
+  return unlockedMonsters;
 }
 
 function parseKey(key) {
@@ -2141,47 +2190,41 @@ function chooseFreeRoomTile(state, room, options = {}) {
   return selected;
 }
 
-function placeShowcasesInShowcaseRoom(state, room, studioArchetypeId) {
-  if (!room) {
-    return;
-  }
-
-  const usedPropIds = state.collectUsedShowcasePropIds();
+function findShowcasePlacementForRoom(state, room, blockedPositions = [], claimedTriggerKeys = new Set()) {
   const roomFloorKeys = buildTileKeySet(room.floorTiles);
   const candidateTiles = shuffleList(
-    room.interiorTiles.filter((tile) =>
-      !room.doorTiles.some((door) => door.x === tile.x && door.y === tile.y)
-    ),
+    room.interiorTiles.filter((tile) => {
+      const tileKey = keyOf(tile.x, tile.y);
+      return !state.occupiedSpawnKeys.has(tileKey) &&
+        !blockedPositions.some((entry) => entry.x === tile.x && entry.y === tile.y) &&
+        !room.doorTiles.some((door) => door.x === tile.x && door.y === tile.y);
+    }),
     state.randomChance,
   );
-  const selectedTiles = [];
-  const claimedTriggerKeys = new Set();
 
   for (const tile of candidateTiles) {
     const triggerNeighbors = getOrthogonalNeighbors(tile)
-      .filter((neighbor) => roomFloorKeys.has(keyOf(neighbor.x, neighbor.y)))
+      .filter((neighbor) => roomFloorKeys.has(keyOf(neighbor.x, neighbor.y)));
     const triggerKeys = triggerNeighbors.map((neighbor) => keyOf(neighbor.x, neighbor.y));
 
     if (triggerKeys.length === 0 || triggerKeys.some((triggerKey) => claimedTriggerKeys.has(triggerKey))) {
       continue;
     }
 
-    const currentBlockedPositions = [...state.showcases, ...selectedTiles];
     const baselineReachableKeys = buildTileKeySet(
       state.computeReachableTilesWithBlockedPositions(
         state.grid,
         state.startPosition,
         state.doors,
-        currentBlockedPositions,
+        blockedPositions,
       ),
     );
-    const blockedPositions = [...currentBlockedPositions, tile];
     const reachableKeys = buildTileKeySet(
       state.computeReachableTilesWithBlockedPositions(
         state.grid,
         state.startPosition,
         state.doors,
-        blockedPositions,
+        [...blockedPositions, tile],
       ),
     );
     const roomStillReachable = room.floorTiles.some((floorTile) => reachableKeys.has(keyOf(floorTile.x, floorTile.y)));
@@ -2197,22 +2240,27 @@ function placeShowcasesInShowcaseRoom(state, room, studioArchetypeId) {
       continue;
     }
 
-    selectedTiles.push(tile);
-    triggerKeys.forEach((triggerKey) => claimedTriggerKeys.add(triggerKey));
-    if (selectedTiles.length >= 3) {
-      break;
-    }
+    return { tile, triggerKeys };
   }
 
+  return null;
+}
+
+function placeCommittedShowcases(state, placements, studioArchetypeId) {
+  if (placements.length === 0) {
+    return;
+  }
+
+  const usedPropIds = state.collectUsedShowcasePropIds();
   const props = chooseShowcaseProps(
     state.propCatalog,
     usedPropIds,
     studioArchetypeId,
-    selectedTiles.length,
+    placements.length,
     state.randomChance,
   );
 
-  selectedTiles.forEach((tile, index) => {
+  placements.forEach(({ room, tile }, index) => {
     const prop = props[index];
     if (!prop) {
       return;
@@ -2223,6 +2271,58 @@ function placeShowcasesInShowcaseRoom(state, room, studioArchetypeId) {
     state.showcases.push(showcase);
     state.occupiedSpawnKeys.add(keyOf(tile.x, tile.y));
   });
+}
+
+function placeShowcasesInShowcaseRoom(state, room, studioArchetypeId) {
+  if (!room) {
+    return;
+  }
+
+  const placements = [];
+  const claimedTriggerKeys = new Set();
+
+  while (placements.length < 3) {
+    const blockedPositions = [...state.showcases, ...placements.map((entry) => entry.tile)];
+    const placement = findShowcasePlacementForRoom(state, room, blockedPositions, claimedTriggerKeys);
+    if (!placement) {
+      break;
+    }
+
+    placements.push({ room, tile: placement.tile });
+    placement.triggerKeys.forEach((triggerKey) => claimedTriggerKeys.add(triggerKey));
+  }
+
+  placeCommittedShowcases(state, placements, studioArchetypeId);
+}
+
+function placeFallbackShowcases(state, studioArchetypeId) {
+  const candidateRooms = shuffleList(
+    state.rooms.filter((room) =>
+      room.role !== "entry_room" &&
+      room.role !== "connector_room" &&
+      room.role !== "showcase_room" &&
+      room.overlayRole == null
+    ),
+    state.randomChance,
+  );
+  const desiredCount = state.randomInt(0, Math.min(4, candidateRooms.length));
+  const placements = [];
+
+  for (const room of candidateRooms) {
+    if (placements.length >= desiredCount) {
+      break;
+    }
+
+    const blockedPositions = [...state.showcases, ...placements.map((entry) => entry.tile)];
+    const placement = findShowcasePlacementForRoom(state, room, blockedPositions);
+    if (!placement) {
+      continue;
+    }
+
+    placements.push({ room, tile: placement.tile });
+  }
+
+  placeCommittedShowcases(state, placements, studioArchetypeId);
 }
 
 function chooseWeightedRoom(state, factorKey, options = {}) {
@@ -2242,6 +2342,75 @@ function chooseWeightedRoom(state, factorKey, options = {}) {
     }));
 
   return weightedPick(entries, state.randomChance)?.room ?? null;
+}
+
+function buildDoorKeySet(doors = []) {
+  return new Set((doors ?? []).map((door) => keyOf(door.x, door.y)));
+}
+
+function buildTrapPlacementEntries(state) {
+  const entries = [];
+  const doorKeys = buildDoorKeySet(state.doors);
+
+  state.rooms.forEach((room) => {
+    const trapFactor = ROOM_TYPE_SPECS[room.role]?.trapFactor ?? 1;
+    if (trapFactor <= 0 || room.overlayRole === "locked_bonus") {
+      return;
+    }
+
+    room.interiorTiles.forEach((tile) => {
+      const tileKey = keyOf(tile.x, tile.y);
+      if (state.occupiedSpawnKeys.has(tileKey) || doorKeys.has(tileKey)) {
+        return;
+      }
+      entries.push({
+        x: tile.x,
+        y: tile.y,
+        weight: trapFactor,
+      });
+    });
+  });
+
+  [...state.mainCorridorKeys].map(parseKey).forEach((tile) => {
+    const tileKey = keyOf(tile.x, tile.y);
+    if (state.occupiedSpawnKeys.has(tileKey) || doorKeys.has(tileKey)) {
+      return;
+    }
+    entries.push({
+      x: tile.x,
+      y: tile.y,
+      weight: MAIN_CORRIDOR_TRAP_FACTOR,
+    });
+  });
+
+  [...state.sideCorridorKeys].map(parseKey).forEach((tile) => {
+    const tileKey = keyOf(tile.x, tile.y);
+    if (state.occupiedSpawnKeys.has(tileKey) || doorKeys.has(tileKey)) {
+      return;
+    }
+    entries.push({
+      x: tile.x,
+      y: tile.y,
+      weight: SIDE_CORRIDOR_TRAP_FACTOR,
+    });
+  });
+
+  return entries.filter((entry) => entry.weight > 0);
+}
+
+function takeWeightedTrapTile(state) {
+  const entries = buildTrapPlacementEntries(state);
+  if (entries.length === 0) {
+    return null;
+  }
+
+  const picked = weightedPick(entries, state.randomChance);
+  if (!picked) {
+    return null;
+  }
+
+  state.occupiedSpawnKeys.add(keyOf(picked.x, picked.y));
+  return { x: picked.x, y: picked.y };
 }
 
 function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
@@ -2457,6 +2626,12 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
     }
   }
 
+  const walkableArea = state.computeReachableTilesWithBlockedPositions(
+    state.grid,
+    state.startPosition,
+    state.doors,
+    [],
+  ).length;
   const trapSeedOccupied = [...state.occupiedSpawnKeys].map(parseKey);
   const builtTraps = state.buildTrapsForFloor({
     floorNumber,
@@ -2465,10 +2640,10 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
     doors: state.doors,
     stairsUp: state.stairsUp,
     stairsDown: state.stairsDown,
+    walkableArea,
   });
   builtTraps.forEach((trap) => {
-    const room = chooseWeightedRoom(state, "trapFactor", { excludeLockedBonus: true });
-    const tile = room ? chooseFreeRoomTile(state, room, { reserveOnly: true }) : null;
+    const tile = takeWeightedTrapTile(state);
     if (!tile) {
       return;
     }
@@ -2716,6 +2891,9 @@ export function createBranchLayoutGenerator(context) {
       addPeripheralRoomLoops(state);
       placeShowcasesInShowcaseRoom(state, showcaseRoom, studioArchetypeId);
       assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
+      if (!showcaseRoom) {
+        placeFallbackShowcases(state, studioArchetypeId);
+      }
       placeWorldContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
 
       return {

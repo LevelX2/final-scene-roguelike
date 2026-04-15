@@ -37,12 +37,13 @@ export function createWeaponGenerationService(context) {
 
         const isRangedTemplate = template.attackMode === 'ranged' && (template.range ?? 1) > 1;
         const floorNumber = Math.max(1, options.floorNumber ?? 1);
+        const prefersRanged = preferredWeaponRoles.includes('ranged');
         if (isRangedTemplate) {
           if (options.sourceType === 'monster') {
             if (floorNumber <= 2) {
-              weight *= 0.12;
+              weight *= prefersRanged ? 0.9 : 0.12;
             } else if (floorNumber <= 4) {
-              weight *= 0.35;
+              weight *= prefersRanged ? 0.7 : 0.35;
             }
           } else if (floorNumber <= 2) {
             weight *= 0.35;

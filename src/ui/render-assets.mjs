@@ -1,4 +1,5 @@
 import { getItemRarityClass, getOffHandIconAssetUrl, getWeaponIconAssetUrl } from './item-asset-helpers.mjs';
+import { MONSTER_ASSET_OVERRIDES } from '../content/catalogs/enemy-asset-manifest.mjs';
 
 export function createRenderAssetHelpers(context) {
   const { getHeroClassAssets } = context;
@@ -56,7 +57,11 @@ export function createRenderAssetHelpers(context) {
       return null;
     }
 
-    return `./assets/monster-${enemy.id}.svg`;
+    if (MONSTER_ASSET_OVERRIDES[enemy.id]) {
+      return MONSTER_ASSET_OVERRIDES[enemy.id];
+    }
+
+    return `./assets/enemies/legacy-${enemy.id}.svg`;
   }
 
   function getEnemyTooltipImageClass(enemy) {

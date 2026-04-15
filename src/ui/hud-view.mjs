@@ -102,7 +102,6 @@ export function createHudView(context) {
     const summaryRows = [
       createSheetRow('Haupthand', `${formatWeaponDisplayName(getMainHand(state.player))} (${formatWeaponStats(getMainHand(state.player))})`),
       createSheetRow('Nebenhand', getOffHand(state.player) ? `${getOffHand(state.player).name} (${formatOffHandStats(getOffHand(state.player))})` : 'Leer'),
-      createSheetRow('Status', formatStatusSummary(state.player)),
     ];
 
     playerSheetElement.innerHTML = summaryRows.join('');
@@ -125,6 +124,9 @@ export function createHudView(context) {
     const attackSummary = target.enemy.mainHand
       ? formatWeaponRoleSummary(target.enemy.mainHand)
       : 'Unbewaffnet';
+    const enemyWeaponLabel = target.enemy.mainHand
+      ? `${formatWeaponDisplayName(target.enemy.mainHand)} (${formatWeaponStats(target.enemy.mainHand)})`
+      : 'Keine';
 
     if (compactMode) {
       enemySheetElement.innerHTML = [
@@ -132,8 +134,8 @@ export function createHudView(context) {
         createSheetRow('Ziel', target.targeted ? 'Aktiv markiert' : 'Nächster Gegner'),
         createSheetRow('Leben', `${target.enemy.hp}/${target.enemy.maxHp}`),
         createSheetRow('Distanz', `${target.distance} Felder`),
-        createSheetRow('Bedrohung', target.enemy.variantLabel ?? 'Normal'),
-        createSheetRow('Angriff', attackSummary),
+        createSheetRow('Bedrohung', target.enemy.variantLabel ?? 'Gewöhnlich'),
+        createSheetRow('Waffe', revealed ? enemyWeaponLabel : attackSummary),
         createSheetRow('Status', revealed ? formatStatusSummary(target.enemy) : 'Unbekannt'),
       ].join('');
       return;
@@ -146,14 +148,14 @@ export function createHudView(context) {
       createSheetRow('Auftreten', target.enemy.temperamentHint ?? 'Schwer zu lesen.'),
       ...(revealed
         ? [
-            createSheetRow('Variante', target.enemy.variantLabel ?? 'Normal'),
+            createSheetRow('Variante', target.enemy.variantLabel ?? 'Gewöhnlich'),
             createSheetRow('Merkmale', variantSummary),
             createSheetRow('Verhalten', target.enemy.behaviorLabel),
             createSheetRow('Mobilität', target.enemy.mobilityLabel ?? 'Mobil'),
             createSheetRow('Rückzug', target.enemy.retreatLabel ?? 'Standhaft'),
             createSheetRow('Regeneration', target.enemy.healingLabel ?? 'Langsam'),
             createSheetRow('Entfernung', `${target.distance} Felder`),
-            createSheetRow('Waffe', target.enemy.mainHand ? `${formatWeaponDisplayName(target.enemy.mainHand)} (${formatWeaponStats(target.enemy.mainHand)})` : 'Keine'),
+            createSheetRow('Waffe', enemyWeaponLabel),
             createSheetRow('Kampfprofil', attackSummary),
             createSheetRow('Status', formatStatusSummary(target.enemy)),
             createSheetRow('Leben', `${target.enemy.hp}/${target.enemy.maxHp}`),
@@ -161,6 +163,7 @@ export function createHudView(context) {
             createSheetRow('Besonderheit', target.enemy.special),
           ]
         : [
+            createSheetRow('Waffe', attackSummary),
             createSheetRow('Status', 'Mehr Details nach dem ersten Kampf.'),
           ]),
     ].join('');

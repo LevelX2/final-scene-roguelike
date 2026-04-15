@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDungeonEnemyFactory } from '../../src/dungeon/enemy-factory.mjs';
 import { MONSTER_TEMPERAMENT_HINTS } from '../../src/content/catalogs/monsters.mjs';
+import { MONSTER_CATALOG } from '../../src/content/catalogs/monsters.mjs';
+import { buildAvailableMonsterPool } from '../../src/dungeon/branch-layout.mjs';
 
 function createFactoryHarness(overrides = {}) {
   return createDungeonEnemyFactory({
@@ -19,11 +21,20 @@ function createFactoryHarness(overrides = {}) {
     ENEMY_NERVES_SCALE_STEP: 99,
     ENEMY_INTELLIGENCE_SCALE_STEP: 99,
     ENEMY_AGGRO_RADIUS_CAP: 0,
-    MONSTER_VARIANT_TIERS: {
-      normal: { id: 'normal', label: 'Normal', hpMultiplier: 1, xpMultiplier: 1, modCount: 0 },
+    MONSTER_VARIANT_TIERS: overrides.MONSTER_VARIANT_TIERS ?? {
+      normal: {
+        id: 'normal',
+        label: 'Gewoehnlich',
+        hpMultiplier: 1,
+        xpMultiplier: 1,
+        modCount: 0,
+        weaponDropChance: 0.08,
+        offHandDropChance: 0.06,
+        iconicWeaponDropChance: 0.25,
+      },
     },
     MONSTER_VARIANT_MODIFIERS: [],
-    getMonsterVariantWeights: () => ({ normal: 1 }),
+    getMonsterVariantWeights: overrides.getMonsterVariantWeights ?? (() => ({ normal: 1 })),
     NON_ICONIC_MONSTER_WEIGHT_BONUS: 1,
     ICONIC_MONSTER_WEIGHT_PENALTY: 1,
   });
@@ -110,4 +121,96 @@ test('enemy factory respects spawn weight when picking among equally fresh monst
   );
 
   assert.equal(chosen.id, 'high-weight');
+});
+
+test('enemy factory forces early floor variety before repeating the same monster id', () => {
+  const factory = createFactoryHarness({
+    randomChance: () => 0.05,
+  });
+
+  const floorSeenCounts = {};
+  const pool = [
+    { id: 'western-ranch-hand', rank: 1, spawnWeight: 9 },
+    { id: 'western-bandit', rank: 2, spawnWeight: 11 },
+    { id: 'western-saloon-schlaeger', rank: 3, spawnWeight: 7 },
+  ];
+
+  const first = factory.chooseWeightedMonster(pool, 1, {}, floorSeenCounts);
+  floorSeenCounts[first.id] = 1;
+  const second = factory.chooseWeightedMonster(pool, 1, {}, floorSeenCounts);
+  floorSeenCounts[second.id] = 1;
+  const third = factory.chooseWeightedMonster(pool, 1, {}, floorSeenCounts);
+
+  assert.equal(new Set([first.id, second.id, third.id]).size, 3);
+});
+
+test('enemy factory yields three distinct picks on a fresh slasher floor-one pool', () => {
+  const factory = createFactoryHarness({
+    randomChance: () => 0.05,
+  });
+
+  const floorSeenCounts = {};
+  const pool = buildAvailableMonsterPool(MONSTER_CATALOG, 1, 'slasher');
+
+  const first = factory.chooseWeightedMonster(pool, 1, {}, floorSeenCounts);
+  floorSeenCounts[first.id] = 1;
+  const second = factory.chooseWeightedMonster(pool, 1, {}, floorSeenCounts);
+  floorSeenCounts[second.id] = 1;
+  const third = factory.chooseWeightedMonster(pool, 1, {}, floorSeenCounts);
+
+  assert.equal(new Set([first.id, second.id, third.id]).size, 3);
+});
+
+test('enemy factory can suppress variants per monster for future bosses or scripted encounters', () => {
+  const factory = createFactoryHarness({
+    MONSTER_VARIANT_TIERS: {
+      normal: {
+        id: 'normal',
+        label: 'Gewoehnlich',
+        hpMultiplier: 1,
+        xpMultiplier: 1,
+        modCount: 0,
+        weaponDropChance: 0.08,
+        offHandDropChance: 0.06,
+        iconicWeaponDropChance: 0.25,
+      },
+      elite: {
+        id: 'elite',
+        label: 'Ungewoehnlich',
+        hpMultiplier: 1.18,
+        xpMultiplier: 1.35,
+        modCount: 1,
+        weaponDropChance: 0.16,
+        offHandDropChance: 0.12,
+        iconicWeaponDropChance: 0.34,
+      },
+    },
+    getMonsterVariantWeights: () => ({ normal: 0, elite: 1 }),
+  });
+
+  const enemy = factory.createEnemy({ x: 2, y: 3 }, 6, {
+    id: 'scripted-boss-prototype',
+    name: 'Scripted Boss Prototype',
+    rank: 6,
+    behavior: 'hunter',
+    behaviorLabel: 'Boss',
+    description: 'Nur fuer Tests.',
+    special: 'Nur fuer Tests.',
+    strength: 5,
+    precision: 5,
+    reaction: 5,
+    nerves: 5,
+    intelligence: 5,
+    hp: 18,
+    xpReward: 18,
+    aggroRadius: 6,
+    canOpenDoors: true,
+    allowVariants: false,
+  });
+
+  assert.equal(enemy.allowVariants, false);
+  assert.equal(enemy.variantTier, 'normal');
+  assert.equal(enemy.variantLabel, 'Gewoehnlich');
+  assert.equal(enemy.weaponDropChance, 0.08);
+  assert.equal(enemy.offHandDropChance, 0.06);
 });

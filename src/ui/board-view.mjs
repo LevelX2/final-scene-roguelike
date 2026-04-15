@@ -271,7 +271,7 @@ export function createBoardView(context) {
                 enemy.description,
                 enemy.temperamentHint ?? "Schwer zu lesen.",
                 enemy.mainHand ? `Waffe: ${formatWeaponReference(enemy.mainHand, { article: "definite", grammaticalCase: "nominative" })}` : "Waffe: Unbewaffnet",
-                `Variante: ${enemy.variantLabel ?? "Normal"}`,
+                `Variante: ${enemy.variantLabel ?? "Gewöhnlich"}`,
                 enemy.variantModifiers?.length
                   ? `Merkmale: ${enemy.variantModifiers.map((modifier) => modifier.label).join(", ")}`
                   : "Merkmale: Keine",

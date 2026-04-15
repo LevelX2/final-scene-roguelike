@@ -21,3 +21,52 @@ test('phase one standard monsters cover every archetype with ten curated entries
     );
   }
 });
+
+test('phase one spawn weights reinforce each studio archetype signature', () => {
+  const hallmarkBehaviors = {
+    fantasy: ['hunter', 'stalker', 'juggernaut'],
+    action: ['hunter', 'juggernaut'],
+    western: ['wanderer', 'hunter', 'stalker'],
+    slasher: ['stalker', 'juggernaut', 'trickster'],
+    noir: ['hunter', 'stalker', 'trickster'],
+    adventure: ['dormant', 'hunter', 'stalker'],
+    space_opera: ['hunter', 'stalker', 'trickster'],
+    creature_feature: ['stalker', 'trickster'],
+    romcom: ['wanderer', 'trickster'],
+    social_drama: ['hunter'],
+  };
+
+  const standardMonsters = MONSTER_CATALOG.filter((monster) => monster.spawnGroup === 'standard');
+
+  for (const archetypeId of STUDIO_ARCHETYPE_IDS) {
+    const archetypeMonsters = standardMonsters.filter((monster) => monster.archetypeId === archetypeId);
+    const favored = new Set(hallmarkBehaviors[archetypeId]);
+    const favoredWeight = archetypeMonsters
+      .filter((monster) => favored.has(monster.behavior))
+      .reduce((sum, monster) => sum + monster.spawnWeight, 0);
+    const otherWeight = archetypeMonsters
+      .filter((monster) => !favored.has(monster.behavior))
+      .reduce((sum, monster) => sum + monster.spawnWeight, 0);
+
+    assert.ok(
+      favoredWeight > otherWeight,
+      `${archetypeId} should lean toward its hallmark behaviors (${favoredWeight} <= ${otherWeight})`,
+    );
+  }
+});
+
+test('phase one early monsters stay sturdier without frontloading early damage', () => {
+  const earlyStandardMonsters = MONSTER_CATALOG.filter(
+    (monster) => monster.spawnGroup === 'standard' && monster.rank >= 1 && monster.rank <= 3,
+  );
+
+  assert.ok(earlyStandardMonsters.length > 0, 'expected early standard monsters');
+  assert.ok(
+    earlyStandardMonsters.every((monster) => monster.hp >= 8),
+    'rank 1-3 standard monsters should no longer fall into paper-thin HP ranges',
+  );
+  assert.ok(
+    earlyStandardMonsters.every((monster) => monster.strength <= 3),
+    'rank 1-3 standard monsters should not frontload damage too hard',
+  );
+});

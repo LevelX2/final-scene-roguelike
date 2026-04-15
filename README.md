@@ -150,7 +150,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 - Gegner mit unterschiedlichen Verhaltensprofilen
 - Waffen, Schilde, Nahrung, Heiltränke, Schlüssel und Truhen
 - Hunger-/Nutrition-System mit negativen Folgen bei Vernachlässigung
-- Save/Load über `localStorage`
+- Save/Load über `localStorage` mit 10 festen Slots, bewusstem Überschreiben und verbrauchendem Load
 - Highscores ebenfalls über `localStorage`
 
 ## Steuerung

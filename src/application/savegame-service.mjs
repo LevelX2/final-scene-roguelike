@@ -15,7 +15,6 @@ export function createSavegameService(context) {
     savegameListElement,
     detectNearbyTraps,
     addMessage,
-    returnToStartScreen,
     renderSelf,
     focusGameSurface,
   } = context;
@@ -39,7 +38,8 @@ export function createSavegameService(context) {
 
   function formatSavegameSummary() {
     const entries = listSavedGames();
-    const latestEntry = entries[0] ?? getSavedGameMetadata();
+    const occupiedEntries = entries.filter((entry) => entry?.empty === false);
+    const latestEntry = getSavedGameMetadata();
     if (!latestEntry) {
       return hasSavedGame()
         ? "Vorhandene Save-Daten sind nicht kompatibel mit dieser Version."
@@ -52,35 +52,9 @@ export function createSavegameService(context) {
 
     const heroName = latestEntry.heroName ?? "Unbekannt";
     const floor = latestEntry.floor ? formatStudioLabel(latestEntry.floor) : "unbekanntem Studio";
-    return entries.length > 1
-      ? `${entries.length} Spielst\u00e4nde verf\u00fcgbar. Zuletzt: ${heroName} in ${floor}.`
-      : `Gespeichert: ${heroName} in ${floor}.`;
-  }
-
-  function appendNewSaveAction() {
-    if (!savegameListElement || !canSaveCurrentGame()) {
-      return;
-    }
-
-    const createItem = document.createElement("div");
-    createItem.className = "savegame-item";
-    createItem.innerHTML = `
-      <div class="savegame-meta">
-        <span class="savegame-tag">Neuer Slot</span>
-        <strong>Aktuellen Run als neuen Spielstand sichern</strong>
-        <span>Lege einen zus\u00e4tzlichen Save-Slot an, ohne bestehende Spielst\u00e4nde zu \u00fcberschreiben.</span>
-      </div>
-      <div class="savegame-actions"></div>
-    `;
-
-    const createActions = createItem.querySelector(".savegame-actions");
-    const createButton = document.createElement("button");
-    createButton.className = "choice-btn accent";
-    createButton.type = "button";
-    createButton.textContent = "Neu speichern";
-    createButton.addEventListener("click", () => saveCurrentGame());
-    createActions?.appendChild(createButton);
-    savegameListElement.appendChild(createItem);
+    return occupiedEntries.length > 1
+      ? `${occupiedEntries.length} belegte Slots. Zuletzt gespeichert: ${heroName} in ${floor}. Geladene Slots werden verbraucht.`
+      : `1 belegter Slot. Zuletzt gespeichert: ${heroName} in ${floor}. Geladene Slots werden verbraucht.`;
   }
 
   function renderSavegameList() {
@@ -91,7 +65,6 @@ export function createSavegameService(context) {
     const entries = listSavedGames();
     const canSave = canSaveCurrentGame();
     savegameListElement.innerHTML = "";
-    appendNewSaveAction();
 
     if (!entries.length) {
       const emptyState = document.createElement("div");
@@ -105,51 +78,76 @@ export function createSavegameService(context) {
       return;
     }
 
-    entries.forEach((entry, index) => {
+    entries.forEach((entry) => {
       const item = document.createElement("div");
-      item.className = "savegame-item";
+      item.className = `savegame-item${entry.empty ? " savegame-item-empty" : ""}`;
       const compatible = entry.compatible !== false;
       const floorLabel = entry.floor ? formatStudioLabel(entry.floor) : "Unbekanntes Studio";
       const tagLabel = compatible
-        ? (index === 0 ? "Neuester Slot" : "Save-Slot")
+        ? entry.slotLabel ?? "Save-Slot"
         : "Nicht kompatibel";
-      const headline = compatible
-        ? `${entry.heroName ?? "Unbekannt"} | ${floorLabel}`
-        : `${entry.heroName ?? "Unbekannt"} | nicht kompatibel`;
-      const detailLine = compatible
-        ? `${entry.heroClass ?? "Unbekannter Beruf"} | Level ${entry.level ?? "?"} | Zug ${entry.turn ?? "?"}`
-        : `Version ${entry.version ?? "?"} | Dieser Spielstand kann nicht geladen werden.`;
+      const headline = !compatible
+        ? `${entry.heroName ?? "Unbekannt"} | nicht kompatibel`
+        : entry.empty
+          ? "Leer"
+          : `${entry.heroName ?? "Unbekannt"} | ${floorLabel}`;
+      const detailLine = !compatible
+        ? `Version ${entry.version ?? "?"} | Dieser Spielstand kann nicht geladen werden.`
+        : entry.empty
+          ? (canSave
+              ? "Dieser Slot ist frei. Du kannst den aktuellen Run hier sichern."
+              : "Dieser Slot ist frei.")
+          : `${entry.heroClass ?? "Unbekannter Beruf"} | Level ${entry.level ?? "?"} | Zug ${entry.turn ?? "?"}${entry.isLatest ? " | Zuletzt gespeichert" : ""}`;
+      const footerLine = entry.empty || !compatible
+        ? ""
+        : `${formatSavegameTimestamp(entry.savedAt)} | Wird beim Laden verbraucht.`;
       item.innerHTML = `
         <div class="savegame-meta">
           <span class="savegame-tag">${tagLabel}</span>
           <strong>${headline}</strong>
           <span>${detailLine}</span>
-          <span>${formatSavegameTimestamp(entry.savedAt)}</span>
+          ${footerLine ? `<span>${footerLine}</span>` : ""}
         </div>
         <div class="savegame-actions"></div>
       `;
 
       const actions = item.querySelector(".savegame-actions");
 
-      if (entry.canLoad !== false) {
+      if (entry.empty) {
+        if (canSave) {
+          const saveButton = document.createElement("button");
+          saveButton.className = "choice-btn accent";
+          saveButton.type = "button";
+          saveButton.textContent = "In Slot speichern";
+          saveButton.addEventListener("click", () => saveCurrentGame(entry.slotIndex));
+          actions?.appendChild(saveButton);
+        }
+      } else if (entry.canLoad !== false) {
         const loadButton = document.createElement("button");
         loadButton.className = "choice-btn accent";
         loadButton.type = "button";
         loadButton.textContent = "Laden";
-        loadButton.addEventListener("click", () => loadCurrentGame(entry.id));
+        loadButton.addEventListener("click", () => loadCurrentGame(entry.slotIndex));
         actions?.appendChild(loadButton);
-      }
 
-      if (canSave && entry.canOverwrite !== false) {
-        const saveButton = document.createElement("button");
-        saveButton.className = "choice-btn";
-        saveButton.type = "button";
-        saveButton.textContent = "\u00dcberschreiben";
-        saveButton.addEventListener("click", () => saveCurrentGame(entry.id));
-        actions?.appendChild(saveButton);
-      }
+        if (canSave && entry.canOverwrite !== false) {
+          const saveButton = document.createElement("button");
+          saveButton.className = "choice-btn";
+          saveButton.type = "button";
+          saveButton.textContent = "\u00dcberschreiben";
+          saveButton.addEventListener("click", () => saveCurrentGame(entry.slotIndex));
+          actions?.appendChild(saveButton);
+        }
 
-      if (entry.canDelete !== false) {
+        if (entry.canDelete !== false) {
+          const deleteButton = document.createElement("button");
+          deleteButton.className = "choice-btn ghost";
+          deleteButton.type = "button";
+          deleteButton.textContent = "L\u00f6schen";
+          deleteButton.addEventListener("click", () => removeSavegame(entry.slotIndex));
+          actions?.appendChild(deleteButton);
+        }
+      } else if (entry.canDelete !== false) {
         const deleteButton = document.createElement("button");
         deleteButton.className = "choice-btn ghost";
         deleteButton.type = "button";
@@ -183,9 +181,10 @@ export function createSavegameService(context) {
     }
 
     addMessage("Spielstand gespeichert.", "important");
+    getState().modals.savegamesOpen = false;
     updateSavegameControls(formatSavegameSummary());
     renderSelf();
-    returnToStartScreen?.({ openStartModal: false, clearSavedGame: false });
+    window.setTimeout(() => focusGameSurface?.(), 0);
   }
 
   function removeSavegame(entryId) {
@@ -207,12 +206,6 @@ export function createSavegameService(context) {
         return;
       }
 
-      if (result.reason === "consumed") {
-        updateSavegameControls("Dieser Spielstand wurde bereits geladen und ist verbraucht.");
-        renderSelf();
-        return;
-      }
-
       if (result.reason === "invalid") {
         updateSavegameControls("Der Spielstand ist besch\u00e4digt und konnte nicht geladen werden.");
         return;
@@ -223,7 +216,7 @@ export function createSavegameService(context) {
     }
 
     detectNearbyTraps();
-    addMessage("Spielstand geladen.", "important");
+    addMessage("Spielstand geladen. Der gew\u00e4hlte Slot wurde dabei verbraucht.", "important");
     getState().modals.savegamesOpen = false;
     updateSavegameControls(formatSavegameSummary());
     renderSelf();

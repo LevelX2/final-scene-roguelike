@@ -469,8 +469,10 @@ Zusätzlich zur Run-Logik gibt es ein manuelles Save/Load-System.
 
 Aktuelles Verhalten:
 
-- Spielstand kann aus den Optionen gespeichert werden
-- kompatible Saves können vom Startscreen wieder geladen werden
+- es gibt 10 feste Save-Slots
+- der Save-/Load-Manager ist im aktiven Run und am Startscreen erreichbar
+- leere Slots können direkt beschrieben werden, belegte Slots lassen sich laden, löschen oder ohne Laden überschreiben
+- geladene Spielstände werden verbraucht und hinterlassen danach wieder einen leeren Slot
 - inkompatible Save-Versionen werden abgefangen und mit klarer Meldung abgelehnt
 
 Das unterstützt längere Test- und Spielsessions, ohne den Rogue-like-Charakter als Grundstruktur aufzugeben.

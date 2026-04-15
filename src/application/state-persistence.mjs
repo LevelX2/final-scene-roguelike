@@ -44,8 +44,8 @@ export function createStatePersistenceApi(context) {
     updateVisibility,
     renderSelf,
   } = context;
-  const SAVEGAME_STORE_VERSION = SAVEGAME_VERSION;
-  const MAX_SAVE_ENTRIES = 24;
+  const SAVEGAME_STORE_VERSION = 2;
+  const MAX_SAVE_SLOTS = 10;
   const INCOMPATIBLE_SAVE_ENTRY_ID = "__incompatible_savegame_store__";
 
   function normalizeShowcaseAnnouncementMode(value) {
@@ -114,9 +114,50 @@ export function createStatePersistenceApi(context) {
     writeStorage(OPTIONS_KEY, JSON.stringify(state.options));
   }
 
-  function createSaveMetadata(entry) {
+  function createEmptySavegameStore() {
     return {
-      id: entry.id ?? null,
+      version: SAVEGAME_STORE_VERSION,
+      slots: Array.from({ length: MAX_SAVE_SLOTS }, () => null),
+    };
+  }
+
+  function normalizeSaveSlotIndex(slotIndex) {
+    const normalized = Number(slotIndex);
+    if (!Number.isInteger(normalized) || normalized < 0 || normalized >= MAX_SAVE_SLOTS) {
+      return null;
+    }
+    return normalized;
+  }
+
+  function createSaveMetadata(slotIndex, entry, options = {}) {
+    const normalizedSlotIndex = normalizeSaveSlotIndex(slotIndex) ?? 0;
+    const slotLabel = `Slot ${normalizedSlotIndex + 1}`;
+    if (!entry) {
+      return {
+        id: `save-slot-${normalizedSlotIndex + 1}`,
+        slotIndex: normalizedSlotIndex,
+        slotLabel,
+        isLatest: false,
+        empty: true,
+        compatible: true,
+        canLoad: false,
+        canOverwrite: true,
+        canDelete: false,
+        savedAt: null,
+        heroName: null,
+        heroClass: null,
+        floor: null,
+        level: null,
+        turn: null,
+      };
+    }
+
+    return {
+      id: entry.id ?? `save-slot-${normalizedSlotIndex + 1}`,
+      slotIndex: normalizedSlotIndex,
+      slotLabel,
+      isLatest: Boolean(options.isLatest),
+      empty: false,
       version: entry.snapshotVersion ?? null,
       compatible: true,
       canLoad: true,
@@ -144,19 +185,29 @@ export function createStatePersistenceApi(context) {
       parsed = null;
     }
 
+    const parsedEntry = Array.isArray(parsed?.slots)
+      ? parsed.slots.find((entry) => entry?.state)
+      : Array.isArray(parsed?.entries)
+        ? parsed.entries[0]
+        : parsed;
+
     return {
       id: INCOMPATIBLE_SAVE_ENTRY_ID,
+      slotIndex: null,
+      slotLabel: "Inkompatibler Spielstand",
+      empty: false,
+      isLatest: false,
       version: parsed?.version ?? null,
       compatible: false,
       canLoad: false,
       canOverwrite: false,
       canDelete: true,
-      savedAt: parsed?.savedAt ?? null,
-      heroName: parsed?.state?.player?.name ?? "Unbekannt",
-      heroClass: parsed?.state?.player?.classLabel ?? null,
-      floor: parsed?.state?.floor ?? null,
-      level: parsed?.state?.player?.level ?? null,
-      turn: parsed?.state?.turn ?? null,
+      savedAt: parsedEntry?.savedAt ?? null,
+      heroName: parsedEntry?.state?.player?.name ?? parsed?.state?.player?.name ?? "Unbekannt",
+      heroClass: parsedEntry?.state?.player?.classLabel ?? parsed?.state?.player?.classLabel ?? null,
+      floor: parsedEntry?.state?.floor ?? parsed?.state?.floor ?? null,
+      level: parsedEntry?.state?.player?.level ?? parsed?.state?.player?.level ?? null,
+      turn: parsedEntry?.state?.turn ?? parsed?.state?.turn ?? null,
     };
   }
 
@@ -168,33 +219,53 @@ export function createStatePersistenceApi(context) {
     return {
       id: entry.id ?? createTimestampedId("save"),
       savedAt: Number(entry.savedAt) || Date.now(),
-      snapshotVersion: SAVEGAME_VERSION,
+      snapshotVersion: Number(entry.snapshotVersion) || SAVEGAME_VERSION,
       state: entry.state,
     };
+  }
+
+  function normalizeSaveSlots(slots) {
+    const normalizedSlots = Array.from({ length: MAX_SAVE_SLOTS }, (_, slotIndex) =>
+      normalizeSaveEntry(slots?.[slotIndex] ?? null)
+    );
+    return normalizedSlots;
+  }
+
+  function migrateLegacyEntryStore(parsed) {
+    const normalizedEntries = (parsed.entries ?? [])
+      .map(normalizeSaveEntry)
+      .filter(Boolean)
+      .sort((left, right) => (right.savedAt ?? 0) - (left.savedAt ?? 0))
+      .slice(0, MAX_SAVE_SLOTS);
+    const store = createEmptySavegameStore();
+    normalizedEntries.forEach((entry, index) => {
+      store.slots[index] = entry;
+    });
+    return store;
   }
 
   function readSavegameStore() {
     const rawSave = readStorage(SAVEGAME_KEY);
     if (!rawSave) {
-      return {
-        version: SAVEGAME_STORE_VERSION,
-        entries: [],
-        consumedIds: {},
-      };
+      return createEmptySavegameStore();
     }
 
     const parsed = JSON.parse(rawSave);
-    if (parsed?.version === SAVEGAME_STORE_VERSION && Array.isArray(parsed.entries)) {
+    if (parsed?.version === SAVEGAME_STORE_VERSION && Array.isArray(parsed.slots)) {
       return {
         version: SAVEGAME_STORE_VERSION,
-        entries: parsed.entries
-          .map(normalizeSaveEntry)
-          .filter(Boolean)
-          .sort((left, right) => (right.savedAt ?? 0) - (left.savedAt ?? 0)),
-        consumedIds: parsed.consumedIds && typeof parsed.consumedIds === "object"
-          ? { ...parsed.consumedIds }
-          : {},
+        slots: normalizeSaveSlots(parsed.slots),
       };
+    }
+
+    if (parsed?.version === SAVEGAME_VERSION && Array.isArray(parsed.entries)) {
+      return migrateLegacyEntryStore(parsed);
+    }
+
+    if (parsed?.version === SAVEGAME_VERSION && parsed?.state && typeof parsed.state === "object") {
+      const store = createEmptySavegameStore();
+      store.slots[0] = normalizeSaveEntry(parsed);
+      return store;
     }
 
     throw new Error("incompatible-savegame-store");
@@ -203,14 +274,13 @@ export function createStatePersistenceApi(context) {
   function writeSavegameStore(store) {
     return writeStorage(SAVEGAME_KEY, JSON.stringify({
       version: SAVEGAME_STORE_VERSION,
-      entries: (store.entries ?? []).slice(0, MAX_SAVE_ENTRIES),
-      consumedIds: store.consumedIds ?? {},
+      slots: normalizeSaveSlots(store.slots),
     }));
   }
 
   function hasSavedGame() {
     try {
-      return readSavegameStore().entries.length > 0;
+      return readSavegameStore().slots.some(Boolean);
     } catch {
       return Boolean(readStorage(SAVEGAME_KEY));
     }
@@ -221,7 +291,8 @@ export function createStatePersistenceApi(context) {
   }
 
   function deleteSavedGame(targetEntryId) {
-    if (!targetEntryId) {
+    const targetSlotIndex = normalizeSaveSlotIndex(targetEntryId);
+    if (targetSlotIndex === null && targetEntryId !== INCOMPATIBLE_SAVE_ENTRY_ID) {
       return false;
     }
 
@@ -234,28 +305,40 @@ export function createStatePersistenceApi(context) {
     }
 
     const store = readSavegameStore();
-    const nextEntries = (store.entries ?? []).filter((entry) => entry?.id !== targetEntryId);
-    if (nextEntries.length === (store.entries ?? []).length) {
+    if (!store.slots[targetSlotIndex]) {
       return false;
     }
 
-    if (!nextEntries.length) {
+    store.slots[targetSlotIndex] = null;
+    if (!store.slots.some(Boolean)) {
       removeStorage(SAVEGAME_KEY);
       return true;
     }
 
-    if (store.consumedIds && typeof store.consumedIds === "object") {
-      delete store.consumedIds[targetEntryId];
-    }
-    store.entries = nextEntries;
     return writeSavegameStore(store);
+  }
+
+  function getLatestSaveMetadataFromStore(store) {
+    const latestEntry = (store.slots ?? []).reduce((latest, entry, slotIndex) => {
+      if (!entry) {
+        return latest;
+      }
+
+      if (!latest || (entry.savedAt ?? 0) > (latest.entry.savedAt ?? 0)) {
+        return { slotIndex, entry };
+      }
+
+      return latest;
+    }, null);
+
+    return latestEntry
+      ? createSaveMetadata(latestEntry.slotIndex, latestEntry.entry, { isLatest: true })
+      : null;
   }
 
   function getSavedGameMetadata() {
     try {
-      return readSavegameStore().entries[0]
-        ? createSaveMetadata(readSavegameStore().entries[0])
-        : null;
+      return getLatestSaveMetadataFromStore(readSavegameStore());
     } catch {
       return createIncompatibleSaveMetadata();
     }
@@ -263,7 +346,13 @@ export function createStatePersistenceApi(context) {
 
   function listSavedGames() {
     try {
-      return readSavegameStore().entries.map(createSaveMetadata);
+      const store = readSavegameStore();
+      const latestMetadata = getLatestSaveMetadataFromStore(store);
+      return store.slots.map((entry, slotIndex) =>
+        createSaveMetadata(slotIndex, entry, {
+          isLatest: latestMetadata?.slotIndex === slotIndex,
+        })
+      );
     } catch {
       const incompatibleEntry = createIncompatibleSaveMetadata();
       return incompatibleEntry ? [incompatibleEntry] : [];
@@ -480,22 +569,28 @@ export function createStatePersistenceApi(context) {
     return floorState;
   }
 
+  function findFirstEmptySaveSlot(store) {
+    return (store.slots ?? []).findIndex((entry) => !entry);
+  }
+
   function saveGame(targetEntryId = null) {
     const state = getState();
     const store = readSavegameStore();
+    const resolvedSlotIndex = normalizeSaveSlotIndex(targetEntryId)
+      ?? (() => {
+        const firstEmptySlotIndex = findFirstEmptySaveSlot(store);
+        return firstEmptySlotIndex >= 0 ? firstEmptySlotIndex : 0;
+      })();
     const entry = {
-      id: targetEntryId ?? createTimestampedId("save"),
+      id: store.slots[resolvedSlotIndex]?.id ?? createTimestampedId("save"),
       savedAt: Date.now(),
       snapshotVersion: SAVEGAME_VERSION,
       state: createSerializableSnapshot(state),
     };
-    store.entries = [
-      entry,
-      ...(store.entries ?? []).filter((saveEntry) => saveEntry?.id !== entry.id),
-    ].sort((left, right) => (right.savedAt ?? 0) - (left.savedAt ?? 0));
+    store.slots[resolvedSlotIndex] = entry;
 
     return writeSavegameStore(store)
-      ? { ok: true, entry: createSaveMetadata(entry) }
+      ? { ok: true, entry: createSaveMetadata(resolvedSlotIndex, entry, { isLatest: true }), slotIndex: resolvedSlotIndex }
       : { ok: false };
   }
 
@@ -641,7 +736,7 @@ export function createStatePersistenceApi(context) {
       };
     }
 
-    if (!store.entries.length) {
+    if (!store.slots.some(Boolean)) {
       return {
         ok: false,
         reason: "missing",
@@ -649,22 +744,16 @@ export function createStatePersistenceApi(context) {
     }
 
     try {
-      const entry = targetEntryId
-        ? store.entries.find((candidate) => candidate.id === targetEntryId)
-        : store.entries[0];
+      const targetSlotIndex = normalizeSaveSlotIndex(targetEntryId)
+        ?? (() => {
+          const latestMetadata = getLatestSaveMetadataFromStore(store);
+          return latestMetadata?.slotIndex ?? null;
+        })();
+      const entry = targetSlotIndex === null ? null : store.slots[targetSlotIndex];
       if (!entry) {
         return {
           ok: false,
           reason: "missing",
-        };
-      }
-
-      if (store.consumedIds?.[entry.id]) {
-        store.entries = store.entries.filter((candidate) => candidate.id !== entry.id);
-        writeSavegameStore(store);
-        return {
-          ok: false,
-          reason: "consumed",
         };
       }
 
@@ -679,19 +768,17 @@ export function createStatePersistenceApi(context) {
       setState(normalizedState);
       updateVisibility();
       renderSelf();
-      store.entries = store.entries.filter((candidate) => candidate.id !== entry.id);
-      store.consumedIds = {
-        ...(store.consumedIds ?? {}),
-        [entry.id]: {
-          loadedAt: Date.now(),
-        },
-      };
-      writeSavegameStore(store);
+      store.slots[targetSlotIndex] = null;
+      if (store.slots.some(Boolean)) {
+        writeSavegameStore(store);
+      } else {
+        removeStorage(SAVEGAME_KEY);
+      }
       return {
         ok: true,
         state: normalizedState,
         savedAt: entry.savedAt ?? null,
-        metadata: createSaveMetadata(entry),
+        metadata: createSaveMetadata(targetSlotIndex, entry, { isLatest: true }),
       };
     } catch {
       return {

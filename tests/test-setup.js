@@ -3,6 +3,18 @@ const { test } = require("playwright/test");
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("dungeon-rogue-enable-test-api", "1");
+    if (!window.localStorage.getItem("dungeon-rogue-options")) {
+      window.localStorage.setItem("dungeon-rogue-options", JSON.stringify({
+        stepSound: true,
+        deathSound: true,
+        voiceAnnouncements: false,
+        showcaseAnnouncementMode: "floating-text",
+        uiScale: 1,
+        studioZoom: 1,
+        tooltipScale: 1,
+        enemyPanelMode: "detailed",
+      }));
+    }
     window.__speechCalls = [];
 
     class TestSpeechSynthesisUtterance {
@@ -50,5 +62,23 @@ test.beforeEach(async ({ page }) => {
         removeEventListener() {},
       },
     });
+
+    const nativeFetch = window.fetch?.bind(window);
+    if (nativeFetch) {
+      Object.defineProperty(window, "fetch", {
+        configurable: true,
+        writable: true,
+        value: async (...args) => {
+          const [input] = args;
+          const url = typeof input === "string"
+            ? input
+            : input?.url ?? "";
+          if (url.includes("/api/tts")) {
+            return new Response("", { status: 404 });
+          }
+          return nativeFetch(...args);
+        },
+      });
+    }
   });
 });

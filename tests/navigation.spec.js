@@ -247,6 +247,18 @@ test("studio archetypes stay stable when returning to a previous studio", async 
 });
 
 test("spoken studio announcements only play on first entry to a studio", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("dungeon-rogue-options", JSON.stringify({
+      stepSound: true,
+      deathSound: true,
+      voiceAnnouncements: true,
+      showcaseAnnouncementMode: "floating-text",
+      uiScale: 1,
+      studioZoom: 1,
+      tooltipScale: 1,
+      enemyPanelMode: "detailed",
+    }));
+  });
   await page.goto("/");
   await startRun(page);
 

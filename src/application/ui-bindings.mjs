@@ -80,7 +80,6 @@ export function createUiBindingsApi(context) {
     setTooltipScale,
     setEnemyPanelMode,
     toggleEnemyPanelMode,
-    saveCurrentGame,
     getState,
     saveOptions,
     openStartModal,
@@ -125,7 +124,7 @@ export function createUiBindingsApi(context) {
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
     closeStudioTopologyButton.addEventListener("click", () => toggleStudioTopology(false));
-    saveGameQuickButtonElement.addEventListener("click", () => saveCurrentGame());
+    saveGameQuickButtonElement.addEventListener("click", openSavegames);
     loadGameQuickButtonElement.addEventListener("click", openSavegames);
     openOptionsButton.addEventListener("click", () => toggleOptions(true));
     closeOptionsButton.addEventListener("click", () => toggleOptions(false));

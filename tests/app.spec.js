@@ -13,6 +13,11 @@ async function loadFirstSaveFromList(page) {
   await page.locator("#savegameList .choice-btn", { hasText: "Laden" }).first().click();
 }
 
+async function saveIntoFirstEmptySlot(page) {
+  await expect(page.locator("#savegamesModal")).toBeVisible();
+  await page.locator("#savegameList .choice-btn", { hasText: "In Slot speichern" }).first().click();
+}
+
 test("start screen renders the new title", async ({ page }) => {
   await page.goto("/");
 
@@ -229,11 +234,16 @@ test("options modal toggles with keyboard controls", async ({ page }) => {
   await expect(page.locator("#optionsModal")).toBeHidden();
 });
 
-test("quick save button is available in the dungeon header", async ({ page }) => {
+test("save button opens the 10-slot save manager from the dungeon header", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
   await expect(page.getByRole("button", { name: "Speichern" })).toBeVisible();
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.locator("#savegamesModal")).toBeVisible();
+  await expect(page.locator("#savegameList .savegame-item")).toHaveCount(10);
+  await expect(page.locator("#savegameList")).toContainText("Slot 1");
+  await expect(page.locator("#savegameList")).toContainText("Leer");
 });
 
 test("help modal opens from the help button and lists door closing", async ({ page }) => {
@@ -388,6 +398,7 @@ test("a manual save can be loaded after a page reload", async ({ page }) => {
   }));
 
   await page.getByRole("button", { name: "Speichern" }).click();
+  await saveIntoFirstEmptySlot(page);
   await expect(page.locator("#savegameStatus")).toContainText("Ripley");
 
   await page.reload();
@@ -441,7 +452,8 @@ test("an incompatible save stays visible in the list and can be deleted", async 
   await page.locator("#savegameList .choice-btn", { hasText: "Löschen" }).click();
 
   await expect(page.locator("#savegameStatus")).toContainText("Kein Spielstand gefunden");
-  await expect(page.locator("#savegameList")).toContainText("Keine gespeicherten Runs");
+  await expect(page.locator("#savegameList")).toContainText("Slot 1");
+  await expect(page.locator("#savegameList")).toContainText("Leer");
 });
 
 test("loading a saved game restores gameplay state but keeps transient modals closed", async ({ page }) => {
@@ -464,6 +476,7 @@ test("loading a saved game restores gameplay state but keeps transient modals cl
   await page.keyboard.press("o");
   await expect(page.locator("#optionsModal")).toBeVisible();
   await page.locator("#saveGameQuick").evaluate((button) => button.click());
+  await saveIntoFirstEmptySlot(page);
   await expect(page.locator("#savegameStatus")).toContainText("Modalcheck");
 
   await page.reload();
@@ -508,6 +521,7 @@ test("loading a legacy ranged weapon save restores target mode support", async (
   });
 
   await page.getByRole("button", { name: "Speichern" }).click();
+  await saveIntoFirstEmptySlot(page);
   await expect(page.locator("#savegameStatus")).toContainText("Legacygun");
 
   await page.reload();
@@ -525,11 +539,12 @@ test("loading a legacy ranged weapon save restores target mode support", async (
   await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
 });
 
-test("loaded save slots are consumed and disappear from the load list", async ({ page }) => {
+test("loaded save slots are consumed and leave the slot empty", async ({ page }) => {
   await page.goto("/");
   await startRun(page, { name: "OneShot" });
 
   await page.getByRole("button", { name: "Speichern" }).click();
+  await saveIntoFirstEmptySlot(page);
   await expect(page.locator("#savegameStatus")).toContainText("OneShot");
 
   await page.reload();
@@ -539,6 +554,29 @@ test("loaded save slots are consumed and disappear from the load list", async ({
 
   await page.reload();
   await expect(page.locator("#loadGameFromLanding")).toBeDisabled();
+});
+
+test("a loaded run can be saved again into an empty slot", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page, { name: "Resaver" });
+
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await saveIntoFirstEmptySlot(page);
+  await expect(page.locator("#savegameStatus")).toContainText("Resaver");
+
+  await page.reload();
+  await page.locator("#loadGameFromLanding").click();
+  await loadFirstSaveFromList(page);
+  await expect(page.locator("#startModal")).toBeHidden();
+
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.locator("#savegamesModal")).toBeVisible();
+  await expect(page.locator("#savegameList")).toContainText("Slot 1");
+  await expect(page.locator("#savegameList")).toContainText("Leer");
+  await saveIntoFirstEmptySlot(page);
+
+  await page.reload();
+  await expect(page.locator("#loadGameFromLanding")).toBeEnabled();
 });
 
 test("fresh starts allow target mode with a newly equipped expedition revolver", async ({ page }) => {

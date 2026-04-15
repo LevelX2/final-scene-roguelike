@@ -14,7 +14,6 @@ export const zoomResetBoardButtonElement = document.getElementById("zoomResetBoa
 export const zoomInBoardButtonElement = document.getElementById("zoomInBoard");
 export const closeInventoryButton = document.getElementById("closeInventory");
 export const saveGameQuickButtonElement = document.getElementById("saveGameQuick");
-export const loadGameQuickButtonElement = document.getElementById("loadGameQuick");
 export const startFreshRunButton = document.getElementById("startFreshRun");
 export const inventoryFilterButtons = Array.from(document.querySelectorAll(".inventory-filter-btn"));
 export const openOptionsButton = document.getElementById("openOptions");

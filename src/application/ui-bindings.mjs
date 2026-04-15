@@ -17,7 +17,6 @@ export function createUiBindingsApi(context) {
     closeRunStatsButton,
     closeStudioTopologyButton,
     saveGameQuickButtonElement,
-    loadGameQuickButtonElement,
     openOptionsButton,
     closeOptionsButton,
     closeSavegamesButtonElement,
@@ -125,7 +124,6 @@ export function createUiBindingsApi(context) {
     closeRunStatsButton.addEventListener("click", () => toggleRunStats(false));
     closeStudioTopologyButton.addEventListener("click", () => toggleStudioTopology(false));
     saveGameQuickButtonElement.addEventListener("click", openSavegames);
-    loadGameQuickButtonElement.addEventListener("click", openSavegames);
     openOptionsButton.addEventListener("click", () => toggleOptions(true));
     closeOptionsButton.addEventListener("click", () => toggleOptions(false));
     closeSavegamesButtonElement.addEventListener("click", () => toggleSavegames(false));

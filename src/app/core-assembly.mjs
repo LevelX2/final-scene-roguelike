@@ -82,7 +82,6 @@ export function assembleCoreModules(context) {
     startSavegameStatusElement,
     landingSavegameStatusElement,
     savegameListElement,
-    loadGameQuickButtonElement,
     loadGameFromLandingButtonElement,
     saveGameQuickButtonElement,
   } = ui;
@@ -214,7 +213,6 @@ export function assembleCoreModules(context) {
       landingSavegameStatusElement.textContent = text;
     },
     setLoadButtonsDisabled: (disabled) => {
-      loadGameQuickButtonElement.disabled = disabled;
       loadGameFromLandingButtonElement.disabled = disabled;
     },
     setSaveButtonDisabled: (disabled) => {

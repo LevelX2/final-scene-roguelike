@@ -239,6 +239,7 @@ test("save button opens the 10-slot save manager from the dungeon header", async
   await startRun(page);
 
   await expect(page.getByRole("button", { name: "Speichern" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Laden" })).toHaveCount(0);
   await page.getByRole("button", { name: "Speichern" }).click();
   await expect(page.locator("#savegamesModal")).toBeVisible();
   await expect(page.locator("#savegameList .savegame-item")).toHaveCount(10);

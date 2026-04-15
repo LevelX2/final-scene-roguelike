@@ -413,7 +413,6 @@ const { bindAppControls } = createUiBindingsApi({
   closeInventoryButton: appUi.closeInventoryButton,
   closeStudioTopologyButton: appUi.closeStudioTopologyButton,
   saveGameQuickButtonElement: appUi.saveGameQuickButtonElement,
-  loadGameQuickButtonElement: appUi.loadGameQuickButtonElement,
   openRunStatsButton: appUi.openRunStatsButton,
   closeRunStatsButton: appUi.closeRunStatsButton,
   openOptionsButton: appUi.openOptionsButton,

@@ -1169,20 +1169,68 @@ export function createEnemyTurnApi(context) {
   }
 
   function fleeFromTarget(enemy, target, floorState) {
-    const steps = [...CARDINAL_STEPS, { x: 0, y: 0 }].sort((left, right) => {
-      const leftDistance = Math.abs(target.x - (enemy.x + left.x)) + Math.abs(target.y - (enemy.y + left.y));
-      const rightDistance = Math.abs(target.x - (enemy.x + right.x)) + Math.abs(target.y - (enemy.y + right.y));
-      return rightDistance - leftDistance;
-    });
+    const recentMovePositions = enemy.recentMovePositions ?? [];
+    const immediateBacktrack = recentMovePositions[recentMovePositions.length - 2] ?? null;
+    const currentDistance = manhattanDistance(enemy, target);
 
-    for (const step of steps) {
-      const previousPosition = { x: enemy.x, y: enemy.y };
-      if (moveEnemyToStep(enemy, step, floorState, { trackAggro: true })) {
-        return !isSamePosition(previousPosition, enemy) || (step.x === 0 && step.y === 0);
-      }
+    const candidates = [...CARDINAL_STEPS, { x: 0, y: 0 }]
+      .filter((step) =>
+        step.x === 0 && step.y === 0
+          ? true
+          : isEnemyPathTileOpen(enemy, enemy.x + step.x, enemy.y + step.y, floorState)
+      )
+      .map((step) => {
+        const nextPosition = { x: enemy.x + step.x, y: enemy.y + step.y };
+        const nextDistance = manhattanDistance(nextPosition, target);
+        const nextRoom = getRoomAtPosition(floorState, nextPosition);
+        let score = nextDistance * 5;
+
+        if (nextDistance > currentDistance) {
+          score += 3;
+        } else if (nextDistance < currentDistance) {
+          score -= 8;
+        }
+
+        if (step.x === 0 && step.y === 0) {
+          score -= 6;
+        }
+
+        if (recentMovePositions.some((position) => isSamePosition(position, nextPosition))) {
+          score -= 2;
+        }
+
+        if (immediateBacktrack && isSamePosition(immediateBacktrack, nextPosition)) {
+          score -= 5;
+        }
+
+        score += nextRoom ? 1 : 0;
+
+        return {
+          step,
+          nextPosition,
+          score,
+          distance: nextDistance,
+        };
+      })
+      .sort((left, right) => {
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
+
+        return right.distance - left.distance;
+      });
+
+    const selected = candidates[0];
+    if (!selected) {
+      return false;
     }
 
-    return false;
+    const previousPosition = { x: enemy.x, y: enemy.y };
+    if (!moveEnemyToStep(enemy, selected.step, floorState, { trackAggro: true })) {
+      return false;
+    }
+
+    return !isSamePosition(previousPosition, enemy) || (selected.step.x === 0 && selected.step.y === 0);
   }
 
   function performIdleMovement(enemy, floorState) {

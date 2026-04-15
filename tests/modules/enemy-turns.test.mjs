@@ -393,6 +393,50 @@ test('enemies keep pressing when they can plausibly finish the player in two hit
   assert.equal(scenario.enemy.y, 2);
 });
 
+test('retreat movement avoids immediate left-right ping-pong when two escape steps are equally viable', () => {
+  const enemy = createBaseEnemy({
+    id: 'retreat-ping-pong',
+    x: 3,
+    y: 3,
+    originX: 3,
+    originY: 3,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'cowardly',
+    temperament: 'erratic',
+    aggro: true,
+    hp: 3,
+    maxHp: 10,
+    intelligence: 1,
+    recentMovePositions: [{ x: 2, y: 3 }, { x: 3, y: 3 }],
+  });
+
+  const grid = createGrid(7, 7, '#');
+  grid[3][2] = '.';
+  grid[3][3] = '.';
+  grid[3][4] = '.';
+  grid[4][3] = '.';
+
+  const floorState = {
+    grid,
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+  };
+
+  const { api } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: { x: 3, y: 2, hp: 20, maxHp: 20 },
+    randomChance: () => 0.1,
+  });
+
+  api.moveEnemies();
+
+  assert.notDeepEqual({ x: enemy.x, y: enemy.y }, { x: 2, y: 3 });
+});
+
 test('roaming idle movement picks a real reachable waypoint in open space', () => {
   const enemy = {
     id: 'creature-feature-bio-experiment',

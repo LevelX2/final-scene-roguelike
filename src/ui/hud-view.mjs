@@ -143,6 +143,7 @@ export function createHudView(context) {
       createSheetRow('Name', target.enemy.name),
       createSheetRow('Ziel', target.targeted ? 'Aktiv markiert' : 'Nächster Gegner'),
       createSheetRow('Hinweis', target.enemy.description),
+      createSheetRow('Auftreten', target.enemy.temperamentHint ?? 'Schwer zu lesen.'),
       ...(revealed
         ? [
             createSheetRow('Variante', target.enemy.variantLabel ?? 'Normal'),

@@ -202,7 +202,7 @@ export function createTestApiMutators(context) {
       healingLabel: config.healingLabel ?? "Langsam",
       allowedTemperaments: [...(config.allowedTemperaments ?? [])],
       temperament: config.temperament ?? "stoic",
-      temperamentHint: config.temperamentHint ?? "Regt sich kaum, bis etwas seine stille Geduld st?rt.",
+      temperamentHint: config.temperamentHint ?? "Regt sich kaum, bis etwas seine stille Geduld stört.",
       idleTarget: config.idleTarget ?? null,
       idleTargetType: config.idleTargetType ?? null,
       idlePlanAge: config.idlePlanAge ?? 0,

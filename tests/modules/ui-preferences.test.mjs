@@ -14,12 +14,14 @@ test('ui-preferences cycles card collapse modes and stores inventory filters', (
   });
 
   api.toggleCardCollapse('player');
+  assert.equal(state.collapsedCards.player, 'hidden');
   api.toggleCardCollapse('player');
+  assert.equal(state.collapsedCards.player, 'summary');
   api.toggleCardCollapse('player');
   api.toggleCardCollapse('log');
   api.setInventoryFilter('consumables');
 
-  assert.equal(state.collapsedCards.player, 'summary');
+  assert.equal(state.collapsedCards.player, 'hidden');
   assert.equal(state.collapsedCards.log, 'full');
   assert.equal(state.preferences.inventoryFilter, 'consumables');
   assert.equal(renders, 5);

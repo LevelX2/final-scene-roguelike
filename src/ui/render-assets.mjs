@@ -17,7 +17,7 @@ export function createRenderAssetHelpers(context) {
       return null;
     }
 
-    return `./assets/food-${item.icon}.svg`;
+    return `./assets/consumables/food-${item.icon}.svg`;
   }
 
   function getPotionIconAssetUrl(item) {
@@ -25,7 +25,7 @@ export function createRenderAssetHelpers(context) {
       return null;
     }
 
-    return "./assets/potion.svg";
+    return "./assets/consumables/potion.svg";
   }
 
   function getKeyIconAssetUrl(item) {
@@ -34,8 +34,8 @@ export function createRenderAssetHelpers(context) {
     }
 
     return item.keyColor
-      ? `./assets/key-${item.keyColor}.svg`
-      : "./assets/key.svg";
+      ? `./assets/keys/key-${item.keyColor}.svg`
+      : "./assets/keys/key.svg";
   }
 
   function getShowcaseIconAssetUrl(item) {
@@ -48,7 +48,7 @@ export function createRenderAssetHelpers(context) {
 
   function getPlayerIconAssetUrl(player, isDead = false) {
     return isDead
-      ? "./assets/player-dead.svg"
+      ? "./assets/player/player-dead.svg"
       : getHeroClassSpriteUrl(player?.classId);
   }
 
@@ -75,8 +75,8 @@ export function createRenderAssetHelpers(context) {
     }
 
     return door.isOpen
-      ? "./assets/door-open.svg"
-      : "./assets/door-closed.svg";
+      ? "./assets/transitions/door-open.svg"
+      : "./assets/transitions/door-closed.svg";
   }
 
   function getTrapIconAssetUrl(trap) {

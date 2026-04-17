@@ -167,7 +167,7 @@ test("inventory items render with an icon", async ({ page }) => {
   const icon = page.locator("#inventoryList .inventory-icon").first();
   await expect(icon).toBeVisible();
   const backgroundImage = await icon.evaluate((node) => getComputedStyle(node).backgroundImage);
-  expect(backgroundImage).toContain("assets/potion.svg");
+  expect(backgroundImage).toContain("assets/consumables/potion.svg");
 });
 
 test("weapon icons use the dedicated asset folder when available", async ({ page }) => {
@@ -347,8 +347,8 @@ test("inventory uses svg icons for potions and keys when available", async ({ pa
   const potionBackground = await potionIcon.evaluate((node) => getComputedStyle(node).backgroundImage);
   const keyBackground = await keyIcon.evaluate((node) => getComputedStyle(node).backgroundImage);
 
-  expect(potionBackground).toContain("assets/potion.svg");
-  expect(keyBackground).toContain("assets/key-green.svg");
+  expect(potionBackground).toContain("assets/consumables/potion.svg");
+  expect(keyBackground).toContain("assets/keys/key-green.svg");
 });
 
 test("weapons can be equipped directly from the loot modal", async ({ page }) => {

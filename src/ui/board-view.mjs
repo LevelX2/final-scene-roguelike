@@ -1,5 +1,6 @@
 import { evaluateTargetSelection } from '../application/targeting-service.mjs';
 import { getActorDerivedMaxHp, getActorDerivedStats } from '../application/derived-actor-stats.mjs';
+import { getDecorativeOverlayPreset } from '../content/catalogs/studio-overlay-presets.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 
 export function createBoardView(context) {
@@ -78,8 +79,8 @@ export function createBoardView(context) {
       ? ((door.x + door.y) % 2 === 0 ? "top" : "bottom")
       : ((door.x + door.y) % 2 === 0 ? "left" : "right");
     const iconAssetUrl = door.isOpen
-      ? `./assets/door-open-${hinge}.svg`
-      : `./assets/door-closed-${passageAxis === "horizontal" ? "vertical" : "horizontal"}.svg`;
+      ? `./assets/transitions/door-open-${hinge}.svg`
+      : `./assets/transitions/door-closed-${passageAxis === "horizontal" ? "vertical" : "horizontal"}.svg`;
 
     return {
       iconAssetUrl,
@@ -114,8 +115,8 @@ export function createBoardView(context) {
     if (style === "passage" && directionAssetSuffix) {
       return {
         iconAssetUrl: isEntry
-          ? `./assets/studio-entry-${directionAssetSuffix}.svg`
-          : `./assets/studio-exit-${directionAssetSuffix}.svg`,
+          ? `./assets/transitions/studio-entry-${directionAssetSuffix}.svg`
+          : `./assets/transitions/studio-exit-${directionAssetSuffix}.svg`,
         imageClass: `tooltip-art-transition ${isEntry ? "tooltip-art-transition-entry" : "tooltip-art-transition-exit"}`,
         lines: [
           isEntry
@@ -135,8 +136,8 @@ export function createBoardView(context) {
       const upward = direction === "up";
       return {
         iconAssetUrl: style === "lift"
-          ? (upward ? "./assets/lift-up.svg" : "./assets/lift-down.svg")
-          : (upward ? "./assets/stairs-up.svg" : "./assets/stairs-down.svg"),
+          ? (upward ? "./assets/transitions/lift-up.svg" : "./assets/transitions/lift-down.svg")
+          : (upward ? "./assets/transitions/stairs-up.svg" : "./assets/transitions/stairs-down.svg"),
         imageClass: [
           "tooltip-art-transition",
           upward ? "tooltip-art-transition-up" : "tooltip-art-transition-down",
@@ -158,12 +159,12 @@ export function createBoardView(context) {
     }
 
     const iconAssetUrl = direction === "left"
-      ? "./assets/door-open-left.svg"
+      ? "./assets/transitions/door-open-left.svg"
       : direction === "right"
-        ? "./assets/door-open-right.svg"
+        ? "./assets/transitions/door-open-right.svg"
         : direction === "front"
-          ? "./assets/door-open-top.svg"
-          : "./assets/door-open-bottom.svg";
+          ? "./assets/transitions/door-open-top.svg"
+          : "./assets/transitions/door-open-bottom.svg";
 
     return {
       iconAssetUrl,
@@ -177,6 +178,37 @@ export function createBoardView(context) {
         "transition-passage",
       ],
     };
+  }
+
+  function getDecorativeOverlayTileMap(floorState) {
+    const map = new Map();
+    const overlays = floorState?.decorativeOverlays ?? [];
+
+    overlays.forEach((overlay) => {
+      const preset = getDecorativeOverlayPreset(overlay.presetId);
+      if (!preset) {
+        return;
+      }
+
+      const fullWidth = preset.widthTiles * TILE_SIZE + Math.max(0, preset.widthTiles - 1) * TILE_GAP;
+      const fullHeight = preset.heightTiles * TILE_SIZE + Math.max(0, preset.heightTiles - 1) * TILE_GAP;
+
+      preset.mask.forEach((maskTile) => {
+        const worldX = overlay.x + maskTile.x;
+        const worldY = overlay.y + maskTile.y;
+        map.set(`${worldX},${worldY}`, {
+          presetId: preset.id,
+          family: preset.family,
+          imageUrl: preset.svgAsset,
+          backgroundWidth: fullWidth,
+          backgroundHeight: fullHeight,
+          backgroundX: -(maskTile.x * (TILE_SIZE + TILE_GAP)),
+          backgroundY: -(maskTile.y * (TILE_SIZE + TILE_GAP)),
+        });
+      });
+    });
+
+    return map;
   }
 
   function tileAt(x, y) {
@@ -429,7 +461,7 @@ export function createBoardView(context) {
     if (chestPickup) {
       const chestImageUrl = chestPickup.containerAssetId
         ? `./assets/containers/${chestPickup.containerAssetId}.svg`
-        : "./assets/chest.svg";
+        : "./assets/fallbacks/chest.svg";
       return {
         type: `floor studio-${studioArchetypeId} chest`,
         glyph: TILE.CHEST,
@@ -584,6 +616,14 @@ export function createBoardView(context) {
   function renderBoard() {
     const state = getState();
     const floorState = getCurrentFloorState();
+    const decorativeOverlaysEnabled = state.options?.decorativeOverlaysEnabled ?? true;
+    const decorativeOverlayDebugMask = Boolean(state.options?.decorativeOverlayDebugMask);
+    const decorativeOverlayTileMap = decorativeOverlaysEnabled
+      ? getDecorativeOverlayTileMap(floorState)
+      : new Map();
+    const decorativeOverlayMaskTiles = decorativeOverlayDebugMask
+      ? new Set((floorState?.decorativeOverlayOccupiedTiles ?? []).map((tile) => `${tile.x},${tile.y}`))
+      : new Set();
     boardElement.style.gridTemplateColumns = `repeat(${WIDTH}, ${TILE_SIZE}px)`;
     boardElement.style.gridTemplateRows = `repeat(${HEIGHT}, ${TILE_SIZE}px)`;
     boardElement.classList.toggle('targeting-mode', Boolean(state.targeting?.active));
@@ -611,6 +651,16 @@ export function createBoardView(context) {
           });
         }
         cell.textContent = tile.glyph ?? "";
+        if (decorativeOverlayMaskTiles.has(`${x},${y}`)) {
+          cell.classList.add("decorative-overlay-debug-mask");
+        }
+        const decorativeOverlay = decorativeOverlayTileMap.get(`${x},${y}`) ?? null;
+        if (decorativeOverlay) {
+          cell.classList.add("has-decorative-overlay", `decorative-family-${decorativeOverlay.family}`);
+          cell.style.setProperty("--decorative-overlay-image", `url("${decorativeOverlay.imageUrl}")`);
+          cell.style.setProperty("--decorative-overlay-size", `${decorativeOverlay.backgroundWidth}px ${decorativeOverlay.backgroundHeight}px`);
+          cell.style.setProperty("--decorative-overlay-position", `${decorativeOverlay.backgroundX}px ${decorativeOverlay.backgroundY}px`);
+        }
         if (tile.overlayImageUrl) {
           cell.classList.add("has-overlay");
           cell.style.setProperty("--tile-overlay-image", `url("${tile.overlayImageUrl}")`);

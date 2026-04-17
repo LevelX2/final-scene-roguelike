@@ -101,7 +101,7 @@ select {
   inset: 0;
   background:
     radial-gradient(circle at 50% 38%, rgba(255, 175, 76, 0.18), transparent 22%),
-    url("./assets/start-screen-final-scene.png");
+    url("./assets/title/start-screen-final-scene.png");
   background-repeat: no-repeat, no-repeat;
   background-position: center 12%, center 12%;
   background-size: cover, cover;
@@ -1136,6 +1136,27 @@ kbd {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 22px 22px;
+  isolation: isolate;
+}
+
+.tile.has-decorative-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--decorative-overlay-image);
+  background-repeat: no-repeat;
+  background-size: var(--decorative-overlay-size);
+  background-position: var(--decorative-overlay-position);
+  pointer-events: none;
+  opacity: 0.96;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  z-index: 0;
+}
+
+.tile.decorative-overlay-debug-mask {
+  box-shadow:
+    inset 0 0 0 1px rgba(91, 208, 255, 0.9),
+    inset 0 0 0 3px rgba(91, 208, 255, 0.22);
 }
 
 .tile.has-overlay::after {
@@ -1148,6 +1169,7 @@ kbd {
   background-size: 22px 22px;
   pointer-events: none;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+  z-index: 1;
 }
 
 .tile-hp {
@@ -1160,6 +1182,7 @@ kbd {
   overflow: hidden;
   background: rgba(0, 0, 0, 0.35);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  z-index: 2;
 }
 
 .tile-hp-fill {
@@ -1210,127 +1233,127 @@ kbd {
 .tile.floor.studio-slasher {
   background-image:
     linear-gradient(180deg, rgba(17, 25, 22, 0.16) 0%, rgba(8, 12, 10, 0.12) 100%),
-    url("./assets/floor-slasher.svg");
+    url("./assets/tiles/floor-slasher.svg");
 }
 
 .tile.floor.memory.studio-slasher {
   background-image:
     linear-gradient(180deg, rgba(8, 10, 9, 0.56) 0%, rgba(6, 8, 7, 0.64) 100%),
-    url("./assets/floor-slasher.svg");
+    url("./assets/tiles/floor-slasher.svg");
 }
 
 .tile.floor.studio-adventure {
   background-image:
     linear-gradient(180deg, rgba(58, 43, 22, 0.15) 0%, rgba(25, 18, 10, 0.12) 100%),
-    url("./assets/floor-adventure.svg");
+    url("./assets/tiles/floor-adventure.svg");
 }
 
 .tile.floor.memory.studio-adventure {
   background-image:
     linear-gradient(180deg, rgba(13, 11, 7, 0.5) 0%, rgba(10, 8, 6, 0.6) 100%),
-    url("./assets/floor-adventure.svg");
+    url("./assets/tiles/floor-adventure.svg");
 }
 
 .tile.floor.studio-space_opera {
   background-image:
     linear-gradient(180deg, rgba(13, 23, 28, 0.14) 0%, rgba(7, 13, 16, 0.12) 100%),
-    url("./assets/floor-space-opera.svg");
+    url("./assets/tiles/floor-space-opera.svg");
 }
 
 .tile.floor.memory.studio-space_opera {
   background-image:
     linear-gradient(180deg, rgba(8, 11, 13, 0.52) 0%, rgba(5, 8, 9, 0.62) 100%),
-    url("./assets/floor-space-opera.svg");
+    url("./assets/tiles/floor-space-opera.svg");
 }
 
 .tile.floor.studio-noir {
   background-image:
     linear-gradient(180deg, rgba(20, 23, 28, 0.14) 0%, rgba(8, 10, 12, 0.12) 100%),
-    url("./assets/floor-noir.svg");
+    url("./assets/tiles/floor-noir.svg");
 }
 
 .tile.floor.memory.studio-noir {
   background-image:
     linear-gradient(180deg, rgba(8, 9, 11, 0.58) 0%, rgba(6, 7, 8, 0.66) 100%),
-    url("./assets/floor-noir.svg");
+    url("./assets/tiles/floor-noir.svg");
 }
 
 .tile.floor.studio-romcom {
   background-image:
     linear-gradient(180deg, rgba(61, 45, 40, 0.12) 0%, rgba(22, 16, 14, 0.1) 100%),
-    url("./assets/floor-romcom.svg");
+    url("./assets/tiles/floor-romcom.svg");
 }
 
 .tile.floor.memory.studio-romcom {
   background-image:
     linear-gradient(180deg, rgba(12, 10, 9, 0.5) 0%, rgba(9, 7, 7, 0.58) 100%),
-    url("./assets/floor-romcom.svg");
+    url("./assets/tiles/floor-romcom.svg");
 }
 
 .tile.floor.studio-social_drama {
   background-image:
     linear-gradient(180deg, rgba(40, 37, 34, 0.12) 0%, rgba(17, 15, 14, 0.1) 100%),
-    url("./assets/floor-social-drama.svg");
+    url("./assets/tiles/floor-social-drama.svg");
 }
 
 .tile.floor.memory.studio-social_drama {
   background-image:
     linear-gradient(180deg, rgba(10, 9, 9, 0.52) 0%, rgba(8, 7, 7, 0.6) 100%),
-    url("./assets/floor-social-drama.svg");
+    url("./assets/tiles/floor-social-drama.svg");
 }
 
 .tile.floor.studio-action {
   background-image:
     linear-gradient(180deg, rgba(27, 29, 31, 0.14) 0%, rgba(13, 14, 15, 0.12) 100%),
-    url("./assets/floor-action.svg");
+    url("./assets/tiles/floor-action.svg");
 }
 
 .tile.floor.memory.studio-action {
   background-image:
     linear-gradient(180deg, rgba(9, 10, 10, 0.56) 0%, rgba(6, 7, 8, 0.62) 100%),
-    url("./assets/floor-action.svg");
+    url("./assets/tiles/floor-action.svg");
 }
 
 .tile.floor.studio-western {
   background-image:
     linear-gradient(180deg, rgba(52, 36, 23, 0.14) 0%, rgba(22, 16, 10, 0.12) 100%),
-    url("./assets/floor-western.svg");
+    url("./assets/tiles/floor-western.svg");
 }
 
 .tile.floor.memory.studio-western {
   background-image:
     linear-gradient(180deg, rgba(12, 9, 7, 0.5) 0%, rgba(8, 7, 5, 0.6) 100%),
-    url("./assets/floor-western.svg");
+    url("./assets/tiles/floor-western.svg");
 }
 
 .tile.floor.studio-fantasy {
   background-image:
     linear-gradient(180deg, rgba(22, 31, 28, 0.14) 0%, rgba(10, 14, 12, 0.12) 100%),
-    url("./assets/floor-fantasy.svg");
+    url("./assets/tiles/floor-fantasy.svg");
 }
 
 .tile.floor.memory.studio-fantasy {
   background-image:
     linear-gradient(180deg, rgba(9, 11, 10, 0.52) 0%, rgba(6, 8, 7, 0.62) 100%),
-    url("./assets/floor-fantasy.svg");
+    url("./assets/tiles/floor-fantasy.svg");
 }
 
 .tile.floor.studio-creature_feature {
   background-image:
     linear-gradient(180deg, rgba(20, 31, 29, 0.16) 0%, rgba(9, 15, 14, 0.13) 100%),
-    url("./assets/floor-creature-feature.svg");
+    url("./assets/tiles/floor-creature-feature.svg");
 }
 
 .tile.floor.memory.studio-creature_feature {
   background-image:
     linear-gradient(180deg, rgba(8, 11, 10, 0.56) 0%, rgba(6, 8, 7, 0.64) 100%),
-    url("./assets/floor-creature-feature.svg");
+    url("./assets/tiles/floor-creature-feature.svg");
 }
 
 .tile.wall {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(18, 28, 20, 0.12) 100%),
-    url("./assets/wall-tile.svg");
+    url("./assets/tiles/wall-tile.svg");
   width: 30px;
   height: 30px;
   margin: -1px;
@@ -1346,7 +1369,7 @@ kbd {
 .tile.wall.memory {
   background:
     linear-gradient(180deg, rgba(12, 18, 14, 0.18) 0%, rgba(9, 13, 10, 0.24) 100%),
-    url("./assets/wall-tile.svg");
+    url("./assets/tiles/wall-tile.svg");
   width: 30px;
   height: 30px;
   margin: -1px;
@@ -1538,7 +1561,7 @@ kbd {
   background-color: var(--loot-bg-bottom);
   background-image:
     linear-gradient(180deg, var(--loot-bg-top), var(--loot-bg-bottom)),
-    url("./assets/weapon.svg");
+    url("./assets/fallbacks/weapon.svg");
   box-shadow:
     inset 0 0 0 1px var(--loot-frame),
     0 0 0 1px rgba(0, 0, 0, 0.18),

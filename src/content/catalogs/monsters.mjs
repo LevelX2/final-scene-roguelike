@@ -136,6 +136,80 @@ function createMonsterAiProfile({
   };
 }
 
+export const LEGACY_STUDIO_SPECIAL_POOLS = Object.freeze({
+  slasher: Object.freeze([
+    "bates",
+    "motel-shlurfer",
+    "kellerkriecher",
+    "ghostface",
+    "maskierter-nachahmer",
+    "videotheken-stalker",
+    "chucky",
+    "besessene-puppe",
+    "gremlin",
+    "myers",
+    "stummer-maskentraeger",
+    "friedhofsschlurfer",
+    "jason",
+    "camp-schlaechter",
+    "mutierter-hinterwaeldler",
+    "freddy",
+    "traumwandler",
+    "kesselraum-peiniger",
+    "pennywise",
+    "kanalclown",
+    "gestaltlaeufer",
+  ]),
+  creature_feature: Object.freeze([
+    "xenomorph",
+    "critter",
+    "tunnelkriecher",
+  ]),
+  action: Object.freeze([
+    "predator",
+    "trophaeenjaeger",
+    "soeldner-tracker",
+    "terminator",
+    "killerdrohne",
+    "cyborg-vollstrecker",
+  ]),
+  space_opera: Object.freeze([
+    "vader",
+    "dunkler-vollstrecker",
+    "sternen-inquisitor",
+  ]),
+});
+
+const LEGACY_SPECIAL_MONSTER_CONFIG_BY_ID = Object.freeze(
+  Object.fromEntries(
+    Object.entries(LEGACY_STUDIO_SPECIAL_POOLS).flatMap(([archetypeId, monsterIds]) =>
+      monsterIds.map((monsterId) => [
+        monsterId,
+        Object.freeze({
+          archetypeId,
+          spawnGroup: "legacy_special",
+          spawnWeight: 1,
+        }),
+      ])
+    ),
+  ),
+);
+
+function applyLegacySpecialPoolConfig(monster) {
+  const config = LEGACY_SPECIAL_MONSTER_CONFIG_BY_ID[monster.id];
+  if (!config) {
+    return monster;
+  }
+
+  return {
+    ...monster,
+    archetypeId: config.archetypeId,
+    spawnGroup: config.spawnGroup,
+    spawnWeight: config.spawnWeight,
+    legacySpecialPool: true,
+  };
+}
+
 export const MONSTER_CATALOG = [
   {
     id: "bates",
@@ -976,7 +1050,7 @@ export const MONSTER_CATALOG = [
     canOpenDoors: true,
     special: "Rückt stoisch vor und lässt sich kaum abschütteln.",
   },
-];
+].map(applyLegacySpecialPoolConfig);
 
 MONSTER_CATALOG.push(...PHASE_ONE_STANDARD_MONSTERS);
 

@@ -1,6 +1,8 @@
 import { getWeaponTemplate } from './content/catalogs/weapon-templates.mjs';
 import { getShieldTemplate } from './content/catalogs/shields.mjs';
+import { getItemBalanceGroups } from './item-balance-groups.mjs';
 import { buildWeaponGrammar, formatWeaponDisplayName as formatWeaponDisplayNameText, formatWeaponReference as formatWeaponReferenceText } from './text/combat-phrasing.mjs';
+import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from './weapon-runtime-effects.mjs';
 
 export function createBareHandsWeapon() {
   const weapon = {
@@ -18,6 +20,7 @@ export function createBareHandsWeapon() {
     effects: [],
     description: 'Nicht ideal, aber immerhin ehrlich.',
   };
+  weapon.balanceGroups = getItemBalanceGroups(weapon);
   weapon.grammar = buildWeaponGrammar(weapon);
   return weapon;
 }
@@ -43,6 +46,7 @@ function normalizeWeaponRuntimeFields(weapon) {
   weapon.profileId = weapon.profileId ?? template.profileId ?? null;
   weapon.archetypeId = weapon.archetypeId ?? template.archetypeId ?? null;
   weapon.lightBonus = weapon.lightBonus ?? 0;
+  weapon.balanceGroups = Array.isArray(weapon.balanceGroups) ? [...weapon.balanceGroups] : getItemBalanceGroups(weapon);
   weapon.grammar = weapon.grammar ?? buildWeaponGrammar(weapon);
   return weapon;
 }
@@ -66,15 +70,11 @@ export function cloneOffHandItem(item) {
     iconAssetId: item.iconAssetId ?? template?.iconAssetId ?? item.id ?? item.icon ?? null,
     blockChance: item.blockChance ?? template?.blockChance ?? 0,
     blockValue: item.blockValue ?? template?.blockValue ?? 0,
-    modifiers: item.modifiers ? item.modifiers.map((modifier) => ({
-      ...modifier,
-      allowedItemTypes: [...(modifier.allowedItemTypes ?? [])],
-      statChanges: { ...(modifier.statChanges ?? {}) },
-      tags: [...(modifier.tags ?? [])],
-    })) : [],
+    modifiers: item.modifiers ? item.modifiers.map(cloneItemModifierRuntime) : [],
     modifierIds: [...(item.modifierIds ?? [])],
     numericMods: [...(item.numericMods ?? [])],
-    effects: (item.effects ?? []).map((effect) => ({ ...effect })),
+    effects: (item.effects ?? []).map(cloneWeaponRuntimeEffect),
+    balanceGroups: Array.isArray(item.balanceGroups) ? [...item.balanceGroups] : getItemBalanceGroups(item),
     statMods: { ...(item.statMods ?? {}) },
   };
 }

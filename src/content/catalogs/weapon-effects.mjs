@@ -130,8 +130,42 @@ export const HIGH_IMPACT_EFFECT_IDS = Object.values(WEAPON_EFFECT_DEFS)
   .filter((entry) => entry.pool === "highImpact")
   .map((entry) => entry.id);
 
+const WEAPON_EFFECT_CATEGORIES = Object.freeze({
+  bleed: "dot",
+  poison: "dot",
+  precision_malus: "debuff",
+  reaction_malus: "debuff",
+  light_bonus: "passive",
+  crit_bonus: "passive",
+  stun: "control",
+  root: "control",
+});
+
+function resolveEffectType(effectOrType) {
+  return typeof effectOrType === "string" ? effectOrType : effectOrType?.type ?? null;
+}
+
 export function getWeaponEffectDefinition(effectType) {
   return WEAPON_EFFECT_DEFS[effectType] ?? null;
+}
+
+export function getWeaponEffectCategory(effectOrType) {
+  const effectType = resolveEffectType(effectOrType);
+  return effectType ? WEAPON_EFFECT_CATEGORIES[effectType] ?? "unknown" : "unknown";
+}
+
+export function isPassiveWeaponEffect(effectOrType) {
+  return getWeaponEffectCategory(effectOrType) === "passive";
+}
+
+export function isOnHitWeaponEffect(effectOrType) {
+  const effectType = resolveEffectType(effectOrType);
+  const definition = effectType ? getWeaponEffectDefinition(effectType) : null;
+  return definition?.trigger === "hit";
+}
+
+export function getWeaponEffectIdsByCategory(category) {
+  return Object.keys(WEAPON_EFFECT_CATEGORIES).filter((effectType) => WEAPON_EFFECT_CATEGORIES[effectType] === category);
 }
 
 export function getProcBonusForFloor(floorNumber) {

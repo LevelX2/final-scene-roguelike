@@ -1,10 +1,10 @@
 import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
+import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
 export function createItemEquipmentApi(context) {
   const {
     getState,
     getMainHand,
-    applyItemStatMods,
     cloneWeapon,
     cloneOffHandItem,
     formatWeaponReference,
@@ -24,7 +24,6 @@ export function createItemEquipmentApi(context) {
 
     state.player.mainHand = nextWeapon;
     if (nextWeapon.handedness === "two-handed" && previousOffHand) {
-      applyItemStatMods(state.player, previousOffHand, -1);
       state.inventory.push(previousOffHand);
       state.player.offHand = null;
       refreshNutritionState(state.player.hungerState);
@@ -51,12 +50,8 @@ export function createItemEquipmentApi(context) {
 
     const nextItem = cloneOffHandItem(item);
     const previous = cloneOffHandItem(state.player.offHand);
-    if (previous) {
-      applyItemStatMods(state.player, previous, -1);
-    }
 
     state.player.offHand = nextItem;
-    applyItemStatMods(state.player, nextItem, 1);
     refreshNutritionState(state.player.hungerState);
     addMessage(`Du nimmst jetzt ${nextItem.name} in die Nebenhand.`, "important");
     if (previous) {
@@ -77,7 +72,7 @@ export function createItemEquipmentApi(context) {
     }
 
     if (item.type === "potion") {
-      if (state.player.hp >= state.player.maxHp) {
+      if (state.player.hp >= getActorDerivedMaxHp(state.player)) {
         addMessage("Du bist bereits bei voller Gesundheit.");
         renderSelf();
         return;

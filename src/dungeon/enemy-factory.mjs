@@ -1,5 +1,8 @@
+import { getEnemyBalanceGroups } from '../enemy-balance-groups.mjs';
 import { formatMonsterDisplayName } from '../text/combat-phrasing.mjs';
+import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { weightedPick, weightedPickFromMap } from '../utils/random-tools.mjs';
+import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 import {
   MONSTER_HEALING_LABELS,
   MONSTER_HEALING_PROFILE,
@@ -32,6 +35,7 @@ export function createDungeonEnemyFactory(context) {
     getMonsterVariantWeights,
     NON_ICONIC_MONSTER_WEIGHT_BONUS,
     ICONIC_MONSTER_WEIGHT_PENALTY,
+    getLegacySpecialMonsterSpawnChance,
   } = context;
 
   const iconicMonsterIds = new Set([
@@ -56,9 +60,10 @@ export function createDungeonEnemyFactory(context) {
     return {
       ...item,
       numericMods: [...(item.numericMods ?? [])],
-      effects: (item.effects ?? []).map((effect) => ({ ...effect })),
-      modifiers: (item.modifiers ?? []).map((modifier) => ({ ...modifier })),
+      effects: (item.effects ?? []).map(cloneWeaponRuntimeEffect),
+      modifiers: (item.modifiers ?? []).map(cloneItemModifierRuntime),
       modifierIds: [...(item.modifierIds ?? [])],
+      balanceGroups: Array.isArray(item.balanceGroups) ? [...item.balanceGroups] : getItemBalanceGroups(item),
     };
   }
 
@@ -138,16 +143,29 @@ export function createDungeonEnemyFactory(context) {
     return 0.34;
   }
 
+  function chooseSpawnCohort(availableMonsters, floorNumber) {
+    const standardMonsters = availableMonsters.filter((monster) => monster.spawnGroup !== 'legacy_special');
+    const legacySpecialMonsters = availableMonsters.filter((monster) => monster.spawnGroup === 'legacy_special');
+
+    if (standardMonsters.length === 0 || legacySpecialMonsters.length === 0) {
+      return availableMonsters;
+    }
+
+    const specialChance = getLegacySpecialMonsterSpawnChance?.(floorNumber) ?? 0;
+    return randomChance() < specialChance ? legacySpecialMonsters : standardMonsters;
+  }
+
   function chooseWeightedMonster(availableMonsters, floorNumber, runSeenCounts, floorSeenCounts) {
+    const cohortPool = chooseSpawnCohort(availableMonsters, floorNumber);
     const distinctPoolTarget = Math.min(
       3,
-      new Set(availableMonsters.map((monster) => monster.id)).size,
+      new Set(cohortPool.map((monster) => monster.id)).size,
     );
-    const seenDistinctCount = availableMonsters.filter((monster) => (floorSeenCounts[monster.id] ?? 0) > 0).length;
+    const seenDistinctCount = cohortPool.filter((monster) => (floorSeenCounts[monster.id] ?? 0) > 0).length;
     const selectionPool = seenDistinctCount < distinctPoolTarget
-      ? availableMonsters.filter((monster) => (floorSeenCounts[monster.id] ?? 0) === 0)
-      : availableMonsters;
-    const effectivePool = selectionPool.length > 0 ? selectionPool : availableMonsters;
+      ? cohortPool.filter((monster) => (floorSeenCounts[monster.id] ?? 0) === 0)
+      : cohortPool;
+    const effectivePool = selectionPool.length > 0 ? selectionPool : cohortPool;
 
     const weighted = effectivePool.map((monster) => {
       const runSeen = runSeenCounts[monster.id] ?? 0;
@@ -265,14 +283,17 @@ export function createDungeonEnemyFactory(context) {
           : null,
     });
 
-    return {
+    const enemy = {
       ...position,
       type: 'monster',
       id: monster.id,
       archetypeId: monster.archetypeId ?? null,
       spawnGroup: monster.spawnGroup ?? null,
+      spawnProfileId: monster.spawnGroup === 'legacy_special' ? 'studio-special' : 'studio-standard',
       allowVariants: monster.allowVariants !== false,
       spawnWeight: monster.spawnWeight ?? 1,
+      roleProfileId: monster.roleProfileId ?? monster.behavior ?? null,
+      preferredWeaponRoles: Array.isArray(monster.preferredWeaponRoles) ? [...monster.preferredWeaponRoles] : [],
       baseName: monster.name,
       name: variantName,
       rank: monster.rank,
@@ -308,6 +329,7 @@ export function createDungeonEnemyFactory(context) {
       canOpenDoors: Boolean(monster.canOpenDoors),
       canChangeFloors: Boolean(monster.canChangeFloors),
       sourceArchetypeId: options.sourceArchetypeId ?? null,
+      equipmentStatsApplied: false,
       mainHand: generatedWeapon ? cloneWeaponItem(generatedWeapon) : null,
       offHand: generatedOffHand ? cloneOffHandItem(generatedOffHand) : null,
       lootWeapon: generatedWeapon ? cloneWeaponItem(generatedWeapon) : null,
@@ -323,6 +345,10 @@ export function createDungeonEnemyFactory(context) {
       nerves: baseNerves + (variantBonus.nerves ?? 0),
       intelligence: baseIntelligence + (variantBonus.intelligence ?? 0),
       aggroRadius: baseAggroRadius + mobilityAggroBonus + (variantBonus.aggroRadius ?? 0),
+    };
+    return {
+      ...enemy,
+      balanceGroups: getEnemyBalanceGroups(enemy),
     };
   }
 

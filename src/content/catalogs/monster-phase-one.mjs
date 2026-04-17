@@ -130,6 +130,7 @@ function createStandardMonster(spec) {
     ),
     grammar: createGrammar(spec),
     rank: spec.rank,
+    roleProfileId: spec.roleProfile,
     behavior: spec.behavior,
     behaviorLabel: spec.behaviorLabel,
     description: spec.description ?? buildDescription(spec),

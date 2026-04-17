@@ -14,7 +14,9 @@ export function createShieldGenerationService(context) {
   } = archetypeLootService;
 
   function chooseTemplateForArchetype(archetypeId, options = {}) {
-    const templates = getArchetypeShieldTemplates(archetypeId);
+    const floorNumber = Math.max(1, options.floorNumber ?? 1);
+    const templates = getArchetypeShieldTemplates(archetypeId)
+      .filter((template) => (template.minFloor ?? 1) <= floorNumber);
     if (templates.length === 0) {
       return null;
     }
@@ -38,7 +40,7 @@ export function createShieldGenerationService(context) {
     } = options;
 
     const archetypeId = rollLootArchetype(floorNumber, dropSourceTag, preferredArchetypeId, runArchetypeSequence);
-    const template = chooseTemplateForArchetype(archetypeId, { currentShieldId });
+    const template = chooseTemplateForArchetype(archetypeId, { currentShieldId, floorNumber });
     if (!template) {
       return null;
     }

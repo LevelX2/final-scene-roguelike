@@ -2007,7 +2007,7 @@ test("crit bonus effects raise generated weapon crit values", async ({ page }) =
   });
 
   expect(generated.crit.critBonus).toBeGreaterThan(generated.plain.critBonus);
-  expect(generated.crit.effects.some((effect) => effect.type === "crit_bonus")).toBeTruthy();
+  expect(generated.crit.modifiers.some((modifier) => modifier.runtimeEffect?.type === "crit_bonus")).toBeTruthy();
 });
 
 test("light bonus effects raise generated weapon light values", async ({ page }) => {
@@ -2043,7 +2043,7 @@ test("light bonus effects raise generated weapon light values", async ({ page })
   });
 
   expect(generated.lit.lightBonus).toBeGreaterThan(generated.plain.lightBonus ?? 0);
-  expect(generated.lit.effects.some((effect) => effect.type === "light_bonus")).toBeTruthy();
+  expect(generated.lit.modifiers.some((modifier) => modifier.runtimeEffect?.type === "light_bonus")).toBeTruthy();
 });
 
 test("stun prevents enemies from advancing during their turn", async ({ page }) => {

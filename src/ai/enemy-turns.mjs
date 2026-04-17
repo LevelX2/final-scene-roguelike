@@ -1,3 +1,29 @@
+import { recordKillStat } from '../kill-stats.mjs';
+import {
+  getEnemyAggroBreakDistance,
+  getEnemyAggroChaseChance,
+  getEnemyAggroPursuitDetectionBonus,
+  estimateEnemyBaseStrikeDamage,
+  getEnemyHealingProfile,
+  getEnemyHealingRules,
+  getEnemyIdleChance,
+  getEnemyIdleExplorationRadius,
+  getEnemyIdlePlanAgeLimit,
+  getEnemyMobility,
+  getEnemyMobilityLeash,
+  getEnemyRangedDetectionBonus,
+  getEnemyRetreatDistanceLimit,
+  getEnemyRetreatHealthThreshold,
+  getEnemyRetreatMinimumIntelligence,
+  getEnemyRetreatProfile,
+  getEnemyTemperament,
+  shouldEnemyFallbackFromCloseRange,
+  shouldEnemyAggroFromDetection,
+  shouldEnemyKeepAggroByMobility,
+  shouldEnemyPauseAtIdleTarget,
+  shouldEnemyReplanIdleErratically,
+} from './enemy-profile-helpers.mjs';
+import { getActorDerivedMaxHp, getActorDerivedStat } from '../application/derived-actor-stats.mjs';
 import { buildCombatEnemyReference, formatEnemyAttackLog } from '../text/combat-log.mjs';
 import { formatWeaponReference } from '../text/combat-phrasing.mjs';
 
@@ -7,13 +33,6 @@ const CARDINAL_STEPS = Object.freeze([
   { x: 0, y: 1 },
   { x: 0, y: -1 },
 ]);
-
-const IDLE_PLAN_AGE_LIMITS = Object.freeze({
-  stoic: 8,
-  patrol: 12,
-  restless: 9,
-  erratic: 7,
-});
 
 const RECENT_ROOM_LIMIT = 4;
 const RECENT_DOOR_LIMIT = 5;
@@ -31,6 +50,9 @@ export function createEnemyTurnApi(context) {
     getCurrentFloorState,
     getDoorAt,
     getOffHand,
+    createWeaponPickup,
+    createOffHandPickup,
+    createFoodPickup,
     resolveCombatAttack,
     resolveBlock,
     hasLineOfSight,
@@ -42,58 +64,17 @@ export function createEnemyTurnApi(context) {
     createDeathCause,
     playPlayerHitSound,
     playDodgeSound,
+    playVictorySound,
     playDeathSound,
     playDoorOpenSound,
     saveHighscoreIfNeeded,
     showDeathModal,
+    grantExperience,
     noteMonsterEncounter,
     handleActorEnterTile,
     manhattanDistance,
     randomChance = Math.random,
   } = context;
-
-  function getMobility(enemy) {
-    return enemy.mobility ?? 'roaming';
-  }
-
-  function getRetreatProfile(enemy) {
-    return enemy.retreatProfile ?? 'none';
-  }
-
-  function getHealingProfile(enemy) {
-    return enemy.healingProfile ?? 'slow';
-  }
-
-  function getTemperament(enemy) {
-    return enemy.temperament ?? 'stoic';
-  }
-
-  function getMobilityLeash(enemy) {
-    return getMobility(enemy) === 'local' ? 6 : Number.POSITIVE_INFINITY;
-  }
-
-  function getIdlePlanAgeLimit(enemy) {
-    return IDLE_PLAN_AGE_LIMITS[getTemperament(enemy)] ?? 9;
-  }
-
-  function getIdleExplorationRadius(enemy) {
-    const mobility = getMobility(enemy);
-    const temperament = getTemperament(enemy);
-    const baseRadius = mobility === 'local'
-      ? 8
-      : mobility === 'relentless'
-        ? 22
-        : 18;
-
-    const temperamentModifier = {
-      stoic: -4,
-      patrol: 0,
-      restless: 3,
-      erratic: 2,
-    }[temperament] ?? 0;
-
-    return Math.max(6, baseRadius + temperamentModifier);
-  }
 
   function createPositionKey(position) {
     return `${position.x},${position.y}`;
@@ -254,32 +235,27 @@ export function createEnemyTurnApi(context) {
           : 0
       : 0;
 
-    return Math.max(1, (enemy.strength ?? 1) + weaponDamage - rangedDamagePenalty);
+    return estimateEnemyBaseStrikeDamage(enemy, weaponDamage, rangedDamagePenalty);
   }
 
   function shouldEnemyRetreat(enemy, player, distanceToPlayer = manhattanDistance(enemy, player)) {
-    const retreatProfile = getRetreatProfile(enemy);
+    const retreatProfile = getEnemyRetreatProfile(enemy);
     if (retreatProfile === 'none' || !enemy.aggro) {
       return false;
     }
 
-    const minimumRetreatIntelligence = retreatProfile === 'cowardly' ? 1 : 3;
-    if ((enemy.intelligence ?? 0) < minimumRetreatIntelligence) {
+    if (getActorDerivedStat(enemy, 'intelligence') < getEnemyRetreatMinimumIntelligence(enemy)) {
       return false;
     }
 
-    const retreatDistanceLimit = retreatProfile === 'cowardly'
-      ? (enemy.isRetreating ? 6 : 5)
-      : (enemy.isRetreating ? 4 : 3);
-    if (distanceToPlayer > retreatDistanceLimit) {
+    if (distanceToPlayer > getEnemyRetreatDistanceLimit(enemy)) {
       return false;
     }
 
     const enemyHealthRatio = enemy.maxHp > 0 ? enemy.hp / enemy.maxHp : 0;
-    const playerHealthRatio = player.maxHp > 0 ? player.hp / player.maxHp : 0;
-    const retreatThreshold = retreatProfile === 'cowardly' ? 0.55 : 0.4;
-
-    if (enemyHealthRatio > retreatThreshold) {
+    const playerMaxHp = getActorDerivedMaxHp(player);
+    const playerHealthRatio = playerMaxHp > 0 ? player.hp / playerMaxHp : 0;
+    if (enemyHealthRatio > getEnemyRetreatHealthThreshold(enemy)) {
       return false;
     }
 
@@ -293,22 +269,22 @@ export function createEnemyTurnApi(context) {
   }
 
   function tryEnemyRegeneration(enemy, distanceToPlayer, floorState) {
-    if (enemy.hp >= enemy.maxHp || distanceToPlayer <= 1) {
+    if (enemy.hp >= enemy.maxHp) {
       return;
     }
 
-    const profile = getHealingProfile(enemy);
+    const profile = getEnemyHealingProfile(enemy);
     if (profile === 'none') {
       return;
     }
 
-    const rules = {
-      slow: { cooldown: 6, heal: 1, requireCalm: false },
-      steady: { cooldown: 4, heal: 1, requireCalm: false },
-      lurking: { cooldown: 3, heal: 1, requireCalm: true },
-    }[profile];
+    const rules = getEnemyHealingRules(enemy);
 
     if (!rules) {
+      return;
+    }
+
+    if (distanceToPlayer < (rules.minimumDistance ?? 2)) {
       return;
     }
 
@@ -348,47 +324,70 @@ export function createEnemyTurnApi(context) {
   function updateEnemyAggroState(enemy, mobility, distanceToPlayer, detectsPlayer, randomChance) {
     const startedAggro = Boolean(enemy.aggro);
 
-    if (mobility === 'local' && enemy.aggro && distanceToPlayer > (enemy.aggroRadius ?? 0) + 4) {
+    if (enemy.aggro && distanceToPlayer > getEnemyAggroBreakDistance(enemy)) {
       enemy.aggro = false;
     }
 
-    if (mobility === 'roaming' && detectsPlayer(1)) {
+    if (mobility === 'roaming' && detectsPlayer(getEnemyAggroPursuitDetectionBonus(enemy))) {
       enemy.aggro = true;
     }
 
-    if (mobility === 'relentless' && (enemy.aggro || detectsPlayer(2))) {
+    if (shouldEnemyKeepAggroByMobility(enemy) && (enemy.aggro || detectsPlayer(getEnemyAggroPursuitDetectionBonus(enemy)))) {
       enemy.aggro = true;
     }
 
-    if (enemy.behavior === 'dormant') {
-      if (detectsPlayer() && randomChance() < 0.55) {
-        enemy.aggro = true;
-      }
-    } else if (enemy.behavior === 'wanderer') {
-      if (detectsPlayer(mobility === 'roaming' ? 1 : 0) && randomChance() < 0.68) {
-        enemy.aggro = true;
-      }
-    } else if (enemy.behavior === 'trickster') {
-      if (detectsPlayer(1)) {
-        enemy.aggro = true;
-      }
-    } else if (enemy.behavior === 'stalker') {
-      if (detectsPlayer(1)) {
-        enemy.aggro = true;
-      }
-    } else if (enemy.behavior === 'hunter') {
-      if (detectsPlayer(mobility === 'relentless' ? 2 : 1)) {
-        enemy.aggro = true;
-      }
-    } else if (enemy.behavior === 'juggernaut') {
-      if (detectsPlayer(mobility === 'relentless' ? 1 : 0)) {
-        enemy.aggro = true;
-      }
+    if (shouldEnemyAggroFromDetection(enemy, detectsPlayer, randomChance)) {
+      enemy.aggro = true;
     }
 
     return {
       aggroTriggered: !startedAggro && enemy.aggro,
     };
+  }
+
+  function handleEnemyDefeatByCounter(enemy, floorState, enemyReference, message) {
+    const state = getState();
+    floorState.enemies = floorState.enemies.filter((entry) => entry !== enemy);
+    state.kills += 1;
+    state.killStats = recordKillStat(state.killStats, enemy);
+    if (enemy.lootWeapon && randomChance() < (enemy.weaponDropChance ?? 0.55)) {
+      floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
+      addMessage(`${enemyReference.subjectCapitalized} laesst ${formatWeaponReference(enemy.lootWeapon, { article: 'definite', grammaticalCase: 'accusative' })} fallen.`, 'important');
+    }
+    if (enemy.lootOffHand && randomChance() < (enemy.offHandDropChance ?? 0.45)) {
+      floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));
+      addMessage(`${enemyReference.subjectCapitalized} verliert ${enemy.lootOffHand.name}.`, 'important');
+    }
+    if (enemy.lootDrop?.item?.type === 'food') {
+      floorState.foods.push(createFoodPickup(enemy.lootDrop.item, enemy.x, enemy.y));
+      addMessage(`${enemyReference.subjectCapitalized} laesst ${enemy.lootDrop.item.name} fallen.`, 'important');
+    }
+    playVictorySound?.();
+    grantExperience?.(enemy.xpReward, enemyReference.object);
+    addMessage(message ?? `${enemyReference.subjectCapitalized} geht am Gegenschlag zugrunde.`, 'important');
+  }
+
+  function applyReflectiveCounterToEnemy(enemy, blockResult, floorState, enemyReference) {
+    if ((blockResult.reflectiveDamage ?? 0) <= 0) {
+      return false;
+    }
+
+    const state = getState();
+    enemy.hp = Math.max(0, enemy.hp - blockResult.reflectiveDamage);
+    state.damageDealt = (state.damageDealt ?? 0) + blockResult.reflectiveDamage;
+    showFloatingText(enemy.x, enemy.y, `-${blockResult.reflectiveDamage}`, 'dealt');
+    addMessage(`${blockResult.item.name} wirft ${blockResult.reflectiveDamage} Schaden auf ${enemyReference.object} zurueck.`, 'important');
+    if (enemy.hp > 0) {
+      return false;
+    }
+
+    handleEnemyDefeatByCounter(
+      enemy,
+      floorState,
+      enemyReference,
+      `${enemyReference.subjectCapitalized} zerbricht am reflektierten Treffer.`,
+    );
+    return true;
   }
 
   function isEnemyPathTileOpen(enemy, x, y, floorState, target = null, options = {}) {
@@ -401,7 +400,7 @@ export function createEnemyTurnApi(context) {
       return false;
     }
 
-    if (manhattanDistance({ x, y }, { x: enemy.originX, y: enemy.originY }) > getMobilityLeash(enemy)) {
+    if (manhattanDistance({ x, y }, { x: enemy.originX, y: enemy.originY }) > getEnemyMobilityLeash(enemy)) {
       return false;
     }
 
@@ -450,7 +449,7 @@ export function createEnemyTurnApi(context) {
       floorState.enemies.some((other) => other !== enemy && other.x === nextX && other.y === nextY) ||
       (state.player.x === nextX && state.player.y === nextY);
 
-    if (manhattanDistance({ x: nextX, y: nextY }, { x: enemy.originX, y: enemy.originY }) > getMobilityLeash(enemy)) {
+    if (manhattanDistance({ x: nextX, y: nextY }, { x: enemy.originX, y: enemy.originY }) > getEnemyMobilityLeash(enemy)) {
       return false;
     }
 
@@ -659,7 +658,7 @@ export function createEnemyTurnApi(context) {
   }
 
   function choosePatrolAnchor(enemy, floorState) {
-    if (!(enemy.behavior === 'dormant' && getTemperament(enemy) === 'patrol')) {
+    if (!(enemy.behavior === 'dormant' && getEnemyTemperament(enemy) === 'patrol')) {
       return null;
     }
 
@@ -831,7 +830,7 @@ export function createEnemyTurnApi(context) {
       });
     }
 
-    const explorationRadius = getIdleExplorationRadius(enemy);
+    const explorationRadius = getEnemyIdleExplorationRadius(enemy);
     const explorationCandidates = reachableTiles
       .map((tile) => {
         const room = getRoomAtPosition(floorState, tile);
@@ -869,7 +868,7 @@ export function createEnemyTurnApi(context) {
   }
 
   function scoreIdleAnchor(enemy, floorState, anchor) {
-    const temperament = getTemperament(enemy);
+    const temperament = getEnemyTemperament(enemy);
     const currentRoom = getRoomAtPosition(floorState, enemy);
     const recentRooms = new Set(enemy.recentRoomHistory ?? []);
     const recentDoors = new Set(enemy.recentDoorHistory ?? []);
@@ -984,7 +983,7 @@ export function createEnemyTurnApi(context) {
 
   function chooseIdleAnchor(enemy, floorState) {
     const anchors = collectIdleAnchors(enemy, floorState);
-    const temperament = getTemperament(enemy);
+    const temperament = getEnemyTemperament(enemy);
     const scoredAnchors = anchors.map((anchor) => ({
       entry: anchor,
       score: scoreIdleAnchor(enemy, floorState, anchor),
@@ -1022,11 +1021,11 @@ export function createEnemyTurnApi(context) {
       return true;
     }
 
-    if ((enemy.idlePlanAge ?? 0) >= getIdlePlanAgeLimit(enemy)) {
+    if ((enemy.idlePlanAge ?? 0) >= getEnemyIdlePlanAgeLimit(enemy)) {
       return true;
     }
 
-    return getTemperament(enemy) === 'erratic' && (enemy.idlePlanAge ?? 0) >= 3 && randomChance() < 0.18;
+    return shouldEnemyReplanIdleErratically(enemy, randomChance);
   }
 
   function buildMovementCandidates(enemy, floorState, target, pathStep, mode) {
@@ -1075,7 +1074,7 @@ export function createEnemyTurnApi(context) {
   }
 
   function scoreMovementCandidate(enemy, candidate, mode) {
-    const temperament = getTemperament(enemy);
+    const temperament = getEnemyTemperament(enemy);
     const idleTargetType = enemy.idleTargetType ?? null;
     const recentMovePositions = enemy.recentMovePositions ?? [];
     const immediateBacktrack = recentMovePositions[recentMovePositions.length - 2] ?? null;
@@ -1126,7 +1125,7 @@ export function createEnemyTurnApi(context) {
 
   function moveTowardTarget(enemy, target, floorState, mode = 'aggro') {
     const pathStep = findPathStep(enemy, target, floorState);
-    const temperament = getTemperament(enemy);
+    const temperament = getEnemyTemperament(enemy);
     const movementCandidates = buildMovementCandidates(enemy, floorState, target, pathStep, mode);
     const directPathCandidate = pathStep && temperament !== 'erratic'
       ? movementCandidates.find((candidate) => candidate.matchesPath)
@@ -1255,9 +1254,9 @@ export function createEnemyTurnApi(context) {
         return false;
       }
 
-      const temperament = getTemperament(enemy);
+      const temperament = getEnemyTemperament(enemy);
       clearIdleTarget(enemy);
-      if (temperament === 'stoic' && randomChance() < 0.7) {
+      if (shouldEnemyPauseAtIdleTarget(enemy, randomChance)) {
         return false;
       }
 
@@ -1326,7 +1325,7 @@ export function createEnemyTurnApi(context) {
         distance > 1 &&
         distance <= weaponRange &&
         isStraightShot?.(enemy.x, enemy.y, state.player.x, state.player.y) &&
-        detectsPlayer(weaponRange - (enemy.aggroRadius ?? 0)),
+        detectsPlayer(getEnemyRangedDetectionBonus(enemy, weapon)),
       );
       tryEnemyRegeneration(enemy, distance, floorState);
       const adjacent = distance === 1;
@@ -1375,6 +1374,24 @@ export function createEnemyTurnApi(context) {
         }
         if (blockResult.blocked) {
           addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden fuer dich ab.`, 'important');
+          if (applyReflectiveCounterToEnemy(enemy, blockResult, floorState, enemyReference)) {
+            if (state.player.hp <= 0) {
+              state.player.hp = 0;
+              state.gameOver = true;
+              state.deathCause = createDeathCause(enemy, {
+                critical: result.critical,
+                ranged: false,
+                victimName: state.player.name,
+                weapon,
+              });
+              playDeathSound();
+              const rank = saveHighscoreIfNeeded();
+              addMessage('Du bist gefallen. Druecke R fuer einen neuen Versuch.', 'danger');
+              showDeathModal(rank);
+              return;
+            }
+            continue;
+          }
         }
         addMessage(formatEnemyAttackLog({
           enemyReference,
@@ -1450,6 +1467,27 @@ export function createEnemyTurnApi(context) {
             ...rangedBoardEffect,
           });
         }
+        if (blockResult.blocked) {
+          addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden fuer dich ab.`, 'important');
+          if (applyReflectiveCounterToEnemy(enemy, blockResult, floorState, enemyReference)) {
+            if (state.player.hp <= 0) {
+              state.player.hp = 0;
+              state.gameOver = true;
+              state.deathCause = createDeathCause(enemy, {
+                critical: result.critical,
+                ranged: true,
+                victimName: state.player.name,
+                weapon,
+              });
+              playDeathSound();
+              const rank = saveHighscoreIfNeeded();
+              addMessage('Du bist gefallen. Druecke R fuer einen neuen Versuch.', 'danger');
+              showDeathModal(rank);
+              return;
+            }
+            continue;
+          }
+        }
         addMessage(formatEnemyAttackLog({
           enemyReference,
           weaponLabel,
@@ -1479,10 +1517,10 @@ export function createEnemyTurnApi(context) {
         continue;
       }
 
-      const mobility = getMobility(enemy);
+      const mobility = getEnemyMobility(enemy);
       const aggroState = updateEnemyAggroState(enemy, mobility, distance, detectsPlayer, randomChance);
 
-      if (retreating || (weapon?.attackMode === 'ranged' && distance <= 2)) {
+      if (retreating || shouldEnemyFallbackFromCloseRange(enemy, weapon, distance)) {
         clearIdleTarget(enemy);
         fleeFromTarget(enemy, playerPosition, floorState);
         continue;
@@ -1492,7 +1530,7 @@ export function createEnemyTurnApi(context) {
         if (enemy.aggro) {
           clearIdleTarget(enemy);
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < 0.28) {
+        } else if (randomChance() < getEnemyIdleChance(enemy)) {
           performIdleMovement(enemy, floorState);
         }
         continue;
@@ -1502,7 +1540,7 @@ export function createEnemyTurnApi(context) {
         if (aggroState.aggroTriggered) {
           clearIdleTarget(enemy);
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (enemy.aggro && randomChance() < 0.78) {
+        } else if (enemy.aggro && randomChance() < getEnemyAggroChaseChance(enemy)) {
           clearIdleTarget(enemy);
           chaseTarget(enemy, playerPosition, floorState);
         } else {
@@ -1512,7 +1550,7 @@ export function createEnemyTurnApi(context) {
       }
 
       if (enemy.behavior === 'trickster') {
-        if (enemy.aggro && randomChance() < 0.8) {
+        if (enemy.aggro && randomChance() < getEnemyAggroChaseChance(enemy)) {
           clearIdleTarget(enemy);
           chaseTarget(enemy, playerPosition, floorState);
         } else {
@@ -1525,7 +1563,7 @@ export function createEnemyTurnApi(context) {
         if (enemy.aggro) {
           clearIdleTarget(enemy);
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < 0.22) {
+        } else if (randomChance() < getEnemyIdleChance(enemy)) {
           performIdleMovement(enemy, floorState);
         }
         continue;
@@ -1535,7 +1573,7 @@ export function createEnemyTurnApi(context) {
         if (enemy.aggro || detectsPlayer()) {
           clearIdleTarget(enemy);
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < 0.25) {
+        } else if (randomChance() < getEnemyIdleChance(enemy)) {
           performIdleMovement(enemy, floorState);
         }
         continue;
@@ -1545,7 +1583,7 @@ export function createEnemyTurnApi(context) {
         if (enemy.aggro) {
           clearIdleTarget(enemy);
           chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < 0.15) {
+        } else if (randomChance() < getEnemyIdleChance(enemy)) {
           performIdleMovement(enemy, floorState);
         }
         continue;
@@ -1554,7 +1592,7 @@ export function createEnemyTurnApi(context) {
       if (detectsPlayer()) {
         clearIdleTarget(enemy);
         chaseTarget(enemy, playerPosition, floorState);
-      } else if (randomChance() < 0.25) {
+      } else if (randomChance() < getEnemyIdleChance(enemy)) {
         performIdleMovement(enemy, floorState);
       }
     }

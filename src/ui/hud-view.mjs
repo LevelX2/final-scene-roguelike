@@ -1,6 +1,7 @@
 import { formatStudioLabel, formatStudioWithArchetype, getStudioArchetypeLabel } from '../studio-theme.mjs';
 import { getWeaponEffectDefinition, getEffectStateLabel } from '../content/catalogs/weapon-effects.mjs';
 import { formatKillStatLabel, getKillStatEntries } from '../kill-stats.mjs';
+import { getWeaponRuntimeEffects } from '../weapon-runtime-effects.mjs';
 
 export function createHudView(context) {
   const {
@@ -43,6 +44,7 @@ export function createHudView(context) {
       return 'Unbewaffnet';
     }
 
+    const runtimeEffects = getWeaponRuntimeEffects(weapon);
     const parts = [
       weapon.attackMode === 'ranged' && (weapon.range ?? 1) > 1
         ? `Fernkampf ${weapon.range}`
@@ -57,9 +59,9 @@ export function createHudView(context) {
       parts.push(`Licht +${weapon.lightBonus}`);
     }
 
-    if ((weapon.effects ?? []).length > 0) {
+    if (runtimeEffects.length > 0) {
       parts.push(
-        weapon.effects
+        runtimeEffects
           .map((effect) => getWeaponEffectDefinition(effect.type)?.label ?? effect.type)
           .join(', '),
       );

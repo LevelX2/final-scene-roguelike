@@ -1,3 +1,5 @@
+import { getActorDerivedMaxHp } from '../application/derived-actor-stats.mjs';
+
 export function createAiAwarenessApi(context) {
   const {
     getState,
@@ -26,7 +28,7 @@ export function createAiAwarenessApi(context) {
 
   function processSafeRegeneration(actionType = "wait") {
     const state = getState();
-    if (state.player.hp >= state.player.maxHp) {
+    if (state.player.hp >= getActorDerivedMaxHp(state.player)) {
       state.safeRestTurns = 0;
       return;
     }

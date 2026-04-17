@@ -17,6 +17,9 @@ export const DUNGEON_WEAPON_WEIGHT_BONUS = 1.35;
 export const DUPLICATE_WEAPON_WEIGHT_PENALTY = 0.35;
 export const NON_ICONIC_MONSTER_WEIGHT_BONUS = 1.45;
 export const ICONIC_MONSTER_WEIGHT_PENALTY = 0.72;
+export const LEGACY_SPECIAL_MONSTER_SPAWN_CHANCE_BASE = 0.12;
+export const LEGACY_SPECIAL_MONSTER_SPAWN_CHANCE_STEP = 0.02;
+export const LEGACY_SPECIAL_MONSTER_SPAWN_CHANCE_CAP = 0.24;
 export const ENEMY_HP_PER_SCALE = 5;
 export const ENEMY_XP_PER_SCALE = 5;
 export const ENEMY_STRENGTH_SCALE_STEP = 1;
@@ -256,6 +259,15 @@ export function getEnemyCountForFloor(floorNumber) {
 
 export function getEnemyScaleForFloor(floorNumber, monsterRank) {
   return Math.max(0, floorNumber - monsterRank);
+}
+
+export function getLegacySpecialMonsterSpawnChance(floorNumber) {
+  const normalizedFloor = Math.max(1, Number(floorNumber) || 1);
+  const growthSteps = Math.max(0, Math.floor((normalizedFloor - 1) / 3));
+  return Math.min(
+    LEGACY_SPECIAL_MONSTER_SPAWN_CHANCE_CAP,
+    LEGACY_SPECIAL_MONSTER_SPAWN_CHANCE_BASE + growthSteps * LEGACY_SPECIAL_MONSTER_SPAWN_CHANCE_STEP,
+  );
 }
 
 export function getMonsterVariantWeights(floorNumber) {

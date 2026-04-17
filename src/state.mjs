@@ -35,7 +35,7 @@ export function createStateApi(context) {
   } = context;
   const HIGHSCORE_LAST_ENTRY_KEY = "dungeon-rogue-highscores-last-entry";
   const SAVEGAME_KEY = "dungeon-rogue-savegame";
-  const SAVEGAME_VERSION = 5;
+  const SAVEGAME_VERSION = 7;
   const storageApi = createBrowserStorageApi();
 
   function readStorage(key) {

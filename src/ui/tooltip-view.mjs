@@ -1,3 +1,4 @@
+import { getActorBlockChance, getActorCombatSnapshot, getActorDerivedMaxHp, getActorDerivedStats } from '../application/derived-actor-stats.mjs';
 import { collectLogHighlights, createLogHighlightTerms } from '../text/combat-log.mjs';
 
 export function createTooltipView(context) {
@@ -55,58 +56,59 @@ export function createTooltipView(context) {
     return html;
   }
 
-  function getPlayerCombatSummary() {
+  function buildPlayerCombatState() {
     const state = getState();
-    const weapon = getMainHand(state.player);
+    const weapon = getCombatWeapon(state.player);
     const offHand = getOffHand(state.player);
-    const precisionPenalty = (state.player.statusEffects ?? [])
-      .filter((effect) => effect.type === "precision_malus")
-      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
-    const reactionPenalty = (state.player.statusEffects ?? [])
-      .filter((effect) => effect.type === "reaction_malus")
-      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
-    const baseDamage = Math.max(1, state.player.strength + weapon.damage);
-    const hitValue = (state.player.precision - precisionPenalty) * 2 + weapon.hitBonus;
-    const critChance = clamp(state.player.precision - precisionPenalty + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
-    const blockBase = offHand?.subtype === "shield" ? offHand.blockChance : 0;
-    const blockChance = offHand?.subtype === "shield"
-      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0) - reactionPenalty, 5, 75)
-      : 0;
 
     return {
-      hp: `${state.player.hp}/${state.player.maxHp}`,
+      state,
+      weapon,
+      offHand,
+      derived: getActorDerivedStats(state.player),
+      combat: getActorCombatSnapshot(state.player, {
+        weapon,
+        clamp,
+        minCritChance: MIN_CRIT_CHANCE,
+        maxCritChance: MAX_CRIT_CHANCE,
+        distance: 1,
+        floorNumber: state.floor ?? 1,
+      }),
+      blockChance: getActorBlockChance(state.player, offHand, clamp),
+    };
+  }
+
+  function getPlayerCombatSummary() {
+    const { state, combat, blockChance } = buildPlayerCombatState();
+    const playerMaxHp = getActorDerivedMaxHp(state.player);
+
+    return {
+      hp: `${state.player.hp}/${playerMaxHp}`,
       level: String(state.player.level),
-      damage: String(baseDamage),
-      totalDamage: String(baseDamage),
-      hit: String(hitValue),
-      totalHit: String(hitValue),
-      crit: `${critChance}%`,
-      totalCrit: `${critChance}%`,
+      damage: String(combat.baseDamage),
+      totalDamage: String(combat.baseDamage),
+      hit: String(combat.hitValue),
+      totalHit: String(combat.hitValue),
+      crit: `${combat.critChance}%`,
+      totalCrit: `${combat.critChance}%`,
       block: `${blockChance}%`,
       totalBlock: `${blockChance}%`,
     };
   }
 
   function getTopbarTooltipContent() {
-    const state = getState();
-    const weapon = getCombatWeapon(state.player);
-    const offHand = getOffHand(state.player);
-    const precisionPenalty = (state.player.statusEffects ?? [])
-      .filter((effect) => effect.type === "precision_malus")
-      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
-    const reactionPenalty = (state.player.statusEffects ?? [])
-      .filter((effect) => effect.type === "reaction_malus")
-      .reduce((sum, effect) => sum + (effect.penalty ?? 0), 0);
+    const {
+      state,
+      weapon,
+      offHand,
+      derived,
+      combat,
+      blockChance,
+    } = buildPlayerCombatState();
     const activeStatusEffects = getActorStatusDisplay(state.player)
       .map((effect) => `${effect.label} ${effect.duration}`)
       .join(", ");
-    const baseDamage = Math.max(1, state.player.strength + weapon.damage);
-    const hitValue = (state.player.precision - precisionPenalty) * 2 + weapon.hitBonus;
-    const critChance = clamp(state.player.precision - precisionPenalty + weapon.critBonus, MIN_CRIT_CHANCE, MAX_CRIT_CHANCE);
-    const blockBase = offHand?.subtype === "shield" ? offHand.blockChance : 0;
-    const blockChance = offHand?.subtype === "shield"
-      ? clamp(blockBase + state.player.nerves + (state.player.shieldBlockBonus ?? 0) - reactionPenalty, 5, 75)
-      : 0;
+    const playerMaxHp = getActorDerivedMaxHp(state.player);
     const weaponStyle = weapon.attackMode === "ranged" && (weapon.range ?? 1) > 1
       ? `Fernkampf ${weapon.range}`
       : "Nahkampf";
@@ -120,8 +122,8 @@ export function createTooltipView(context) {
       hp: {
         title: "Lebenspunkte",
         lines: [
-          `Aktuell ${state.player.hp}/${state.player.maxHp}`,
-          "Wenn das auf 0 fällt, endet das Spiel.",
+          `Aktuell ${state.player.hp}/${playerMaxHp}`,
+          "Wenn das auf 0 faellt, endet das Spiel.",
         ],
       },
       level: {
@@ -134,40 +136,38 @@ export function createTooltipView(context) {
       damage: {
         title: "Basisschaden",
         lines: [
-          `Stärke ${state.player.strength} + Waffenschaden ${weapon.damage}`,
+          `Staerke ${derived.final.strength} + Waffenschaden ${weapon.damage}`,
           weaponStyleDetail,
-          `Ergibt aktuell ${baseDamage} Schaden pro Treffer vor Krits.`,
+          `Ergibt aktuell ${combat.baseDamage} Schaden pro Treffer vor Krits.`,
         ].filter(Boolean),
       },
       hit: {
         title: "Trefferwert",
         lines: [
-          `Präzision ${state.player.precision}${precisionPenalty > 0 ? ` - Statusmalus ${precisionPenalty}` : ""} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
-          (weapon.meleePenaltyHit ?? 0) < 0 ? `Im Nahkampf fällt zusätzlich ${Math.abs(weapon.meleePenaltyHit)} Treffer an.` : null,
+          `Praezision ${derived.final.precision} x 2 + Waffenbonus ${weapon.hitBonus >= 0 ? "+" : ""}${weapon.hitBonus}`,
+          (weapon.meleePenaltyHit ?? 0) < 0 ? `Im Nahkampf faellt zusaetzlich ${Math.abs(weapon.meleePenaltyHit)} Treffer an.` : null,
           activeStatusEffects ? `Aktive Effekte: ${activeStatusEffects}` : null,
-          `Ergibt aktuell Trefferwert ${hitValue}.`,
+          `Ergibt aktuell Trefferwert ${combat.hitValue}.`,
         ].filter(Boolean),
       },
       crit: {
         title: "Krit-Chance",
         lines: [
-          `Präzision ${state.player.precision}${precisionPenalty > 0 ? ` - Statusmalus ${precisionPenalty}` : ""} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
-          (weapon.lightBonus ?? 0) > 0 ? `Diese Waffe erhöht zugleich deine Sichtweite um ${weapon.lightBonus}.` : null,
-          `Ergibt aktuell ${critChance}% Krit-Chance.`,
+          `Praezision ${derived.final.precision} + Waffenkrit ${weapon.critBonus >= 0 ? "+" : ""}${weapon.critBonus}`,
+          (weapon.lightBonus ?? 0) > 0 ? `Diese Waffe erhoeht zugleich deine Sichtweite um ${weapon.lightBonus}.` : null,
+          `Ergibt aktuell ${combat.critChance}% Krit-Chance.`,
         ].filter(Boolean),
       },
       block: {
         title: "Blockchance",
         lines: offHand?.subtype === "shield"
           ? [
-              `Schild ${offHand.blockChance}% + Nerven ${state.player.nerves}${(state.player.shieldBlockBonus ?? 0) ? ` + Klassenbonus ${state.player.shieldBlockBonus}` : ""}${reactionPenalty > 0 ? ` - Reaktionsmalus ${reactionPenalty}` : ""}`,
+              `Schild ${offHand.blockChance}% + Nerven ${derived.final.nerves}${(state.player.shieldBlockBonus ?? 0) ? ` + Klassenbonus ${state.player.shieldBlockBonus}` : ""}`,
               `Ergibt aktuell ${blockChance}% Blockchance mit ${offHand.blockValue} Blockwert.`,
             ]
           : [
               "Kein Schild in der Nebenhand.",
-              reactionPenalty > 0
-                ? `Aktiver Reaktionsmalus ${reactionPenalty} wirkt derzeit auf Ausweichen und Blocken.`
-                : "Mit Schild würdest du hier deine Blockchance sehen.",
+              "Mit Schild wuerdest du hier deine Blockchance sehen.",
             ],
       },
     };

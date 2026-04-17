@@ -1,4 +1,6 @@
 import { createKeyItem } from '../item-defs.mjs';
+import { getItemBalanceGroups } from '../item-balance-groups.mjs';
+import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 
 export function createDungeonPickupFactory(context) {
   const {
@@ -84,15 +86,11 @@ export function createDungeonPickupFactory(context) {
     return {
       ...weapon,
       type: "weapon",
-      modifiers: weapon.modifiers ? weapon.modifiers.map((modifier) => ({
-        ...modifier,
-        allowedItemTypes: [...(modifier.allowedItemTypes ?? [])],
-        statChanges: { ...(modifier.statChanges ?? {}) },
-        tags: [...(modifier.tags ?? [])],
-      })) : [],
+      balanceGroups: Array.isArray(weapon.balanceGroups) ? [...weapon.balanceGroups] : getItemBalanceGroups(weapon),
+      modifiers: weapon.modifiers ? weapon.modifiers.map(cloneItemModifierRuntime) : [],
       modifierIds: [...(weapon.modifierIds ?? [])],
       numericMods: [...(weapon.numericMods ?? [])],
-      effects: (weapon.effects ?? []).map((effect) => ({ ...effect })),
+      effects: (weapon.effects ?? []).map(cloneWeaponRuntimeEffect),
     };
   }
 

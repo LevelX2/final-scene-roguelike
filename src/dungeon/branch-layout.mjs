@@ -247,6 +247,52 @@ const MAIN_ATTACHMENT_PRIORITY = {
   flex: ["direct_main", "sidearm_main", "sidearm_room"],
 };
 
+const LAYOUT_ROOM_PLACEMENT_OVERRIDES = {
+  hub: {
+    weapon_room: {
+      attachmentOrder: ["direct_main", "sidearm_main"],
+    },
+    aggro_room: {
+      attachmentOrder: ["direct_main", "sidearm_main", "sidearm_room"],
+    },
+    props_room: {
+      attachmentOrder: ["direct_main", "sidearm_main", "sidearm_room"],
+    },
+    calm_room: {
+      attachmentOrder: ["sidearm_main", "sidearm_room", "direct_main"],
+    },
+    canteen: {
+      attachmentOrder: ["sidearm_main", "sidearm_room", "direct_main"],
+    },
+    showcase_room: {
+      attachmentOrder: ["sidearm_main", "sidearm_room"],
+    },
+  },
+  ring: {
+    weapon_room: {
+      attachmentOrder: ["direct_main", "sidearm_main"],
+    },
+    aggro_room: {
+      attachmentOrder: ["direct_main", "sidearm_main", "sidearm_room"],
+    },
+    props_room: {
+      attachmentOrder: ["direct_main", "sidearm_main", "sidearm_room"],
+    },
+    hazard_room: {
+      attachmentOrder: ["direct_main", "sidearm_main"],
+    },
+    calm_room: {
+      attachmentOrder: ["sidearm_main", "sidearm_room", "direct_main"],
+    },
+    canteen: {
+      attachmentOrder: ["sidearm_main", "sidearm_room", "direct_main"],
+    },
+    showcase_room: {
+      attachmentOrder: ["sidearm_main", "sidearm_room"],
+    },
+  },
+};
+
 const ROOM_FILL_PRIORITY = [
   "calm_room",
   "canteen",
@@ -260,6 +306,13 @@ const ROOM_FILL_PRIORITY = [
 ];
 
 const SIDE_ORIENTATIONS = ["north", "south", "west", "east"];
+const STUDIO_LAYOUT_IDS = ["branch", "hub", "ring"];
+const PRIMARY_EDGE_DIRECTIONS = [
+  { x: 1, y: 0 },
+  { x: -1, y: 0 },
+  { x: 0, y: 1 },
+  { x: 0, y: -1 },
+];
 
 function keyOf(x, y) {
   return `${x},${y}`;
@@ -269,35 +322,52 @@ function clonePosition(position) {
   return { x: position.x, y: position.y };
 }
 
-export function buildAvailableMonsterPool(monsterCatalog, unlockedMonsterRank, studioArchetypeId) {
-  const unlockedMonsters = monsterCatalog.filter((monster) => monster.rank <= unlockedMonsterRank);
-  const archetypeMonsters = unlockedMonsters.filter((monster) =>
-    monster.spawnGroup === "standard" &&
+function collectStudioMonsters(monsters, studioArchetypeId, spawnGroup) {
+  return monsters.filter((monster) =>
+    monster.spawnGroup === spawnGroup &&
     monster.archetypeId === studioArchetypeId
   );
+}
 
-  if (archetypeMonsters.length > 0) {
-    if (archetypeMonsters.length >= 3) {
-      return archetypeMonsters;
+function appendDistinctMonsters(pool, monsters) {
+  monsters.forEach((monster) => {
+    if (!pool.some((candidate) => candidate.id === monster.id)) {
+      pool.push(monster);
+    }
+  });
+  return pool;
+}
+
+export function buildAvailableMonsterPool(monsterCatalog, unlockedMonsterRank, studioArchetypeId) {
+  const unlockedMonsters = monsterCatalog.filter((monster) => monster.rank <= unlockedMonsterRank);
+  const archetypeMonsters = collectStudioMonsters(unlockedMonsters, studioArchetypeId, "standard");
+  const legacySpecialMonsters = collectStudioMonsters(unlockedMonsters, studioArchetypeId, "legacy_special");
+
+  if (archetypeMonsters.length > 0 || legacySpecialMonsters.length > 0) {
+    const pool = [...archetypeMonsters];
+
+    if (pool.length < 3) {
+      const supplementalMonsters = monsterCatalog
+        .filter((monster) =>
+          monster.spawnGroup === "standard" &&
+          monster.archetypeId === studioArchetypeId &&
+          !pool.some((candidate) => candidate.id === monster.id)
+        )
+        .sort((left, right) => {
+          const rankDelta = (left.rank ?? 99) - (right.rank ?? 99);
+          if (rankDelta !== 0) {
+            return rankDelta;
+          }
+
+          return (right.spawnWeight ?? 0) - (left.spawnWeight ?? 0);
+        })
+        .slice(0, Math.max(0, 3 - pool.length));
+
+      appendDistinctMonsters(pool, supplementalMonsters);
     }
 
-    const supplementalMonsters = monsterCatalog
-      .filter((monster) =>
-        monster.spawnGroup === "standard" &&
-        monster.archetypeId === studioArchetypeId &&
-        !archetypeMonsters.some((candidate) => candidate.id === monster.id)
-      )
-      .sort((left, right) => {
-        const rankDelta = (left.rank ?? 99) - (right.rank ?? 99);
-        if (rankDelta !== 0) {
-          return rankDelta;
-        }
-
-        return (right.spawnWeight ?? 0) - (left.spawnWeight ?? 0);
-      })
-      .slice(0, Math.max(0, 3 - archetypeMonsters.length));
-
-    return [...archetypeMonsters, ...supplementalMonsters];
+    appendDistinctMonsters(pool, legacySpecialMonsters);
+    return pool;
   }
 
   return unlockedMonsters;
@@ -306,6 +376,345 @@ export function buildAvailableMonsterPool(monsterCatalog, unlockedMonsterRank, s
 function parseKey(key) {
   const [x, y] = key.split(",").map((entry) => Number(entry));
   return { x, y };
+}
+
+function cloneBounds(bounds) {
+  return bounds
+    ? {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+      }
+    : null;
+}
+
+function computeBoundingBoxFromTiles(tiles) {
+  if (!tiles || tiles.length === 0) {
+    return null;
+  }
+
+  let minX = tiles[0].x;
+  let maxX = tiles[0].x;
+  let minY = tiles[0].y;
+  let maxY = tiles[0].y;
+
+  tiles.forEach((tile) => {
+    minX = Math.min(minX, tile.x);
+    maxX = Math.max(maxX, tile.x);
+    minY = Math.min(minY, tile.y);
+    maxY = Math.max(maxY, tile.y);
+  });
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1,
+  };
+}
+
+function collectPrimaryStructureTiles(state) {
+  return [...state.mainCorridorKeys].map(parseKey);
+}
+
+function isPrimaryStructureEdgeTile(state, tile) {
+  const tileKey = keyOf(tile.x, tile.y);
+  if (!state.mainCorridorKeys.has(tileKey)) {
+    return false;
+  }
+
+  return PRIMARY_EDGE_DIRECTIONS.some((direction) =>
+    !state.mainCorridorKeys.has(keyOf(tile.x + direction.x, tile.y + direction.y))
+  );
+}
+
+function carvePrimaryRectangle(state, bounds) {
+  for (let y = bounds.y; y < bounds.y + bounds.height; y += 1) {
+    for (let x = bounds.x; x < bounds.x + bounds.width; x += 1) {
+      if (!isInsidePlayableArea(state, x, y)) {
+        continue;
+      }
+
+      state.grid[y][x] = state.TILE.FLOOR;
+      state.mainCorridorKeys.add(keyOf(x, y));
+    }
+  }
+}
+
+function refreshPrimaryStructureBounds(state) {
+  state.gangBoundingBox = computeBoundingBoxFromTiles(collectPrimaryStructureTiles(state));
+}
+
+function countPrimaryTilesInBounds(state, bounds) {
+  if (!bounds) {
+    return 0;
+  }
+
+  let count = 0;
+  for (let y = bounds.y; y < bounds.y + bounds.height; y += 1) {
+    for (let x = bounds.x; x < bounds.x + bounds.width; x += 1) {
+      if (state.mainCorridorKeys.has(keyOf(x, y))) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+function computeConnectedPrimaryTileCount(state) {
+  const tiles = collectPrimaryStructureTiles(state);
+  if (tiles.length === 0) {
+    return 0;
+  }
+
+  const queue = [tiles[0]];
+  const seen = new Set([keyOf(tiles[0].x, tiles[0].y)]);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    PRIMARY_EDGE_DIRECTIONS.forEach((direction) => {
+      const next = {
+        x: current.x + direction.x,
+        y: current.y + direction.y,
+      };
+      const nextKey = keyOf(next.x, next.y);
+      if (seen.has(nextKey) || !state.mainCorridorKeys.has(nextKey)) {
+        return;
+      }
+      seen.add(nextKey);
+      queue.push(next);
+    });
+  }
+
+  return seen.size;
+}
+
+function validateHubPrimaryStructure(state) {
+  const hubCore = state.layoutMetadata?.hubCore ?? null;
+  const hubArms = state.layoutMetadata?.hubArms ?? [];
+  if (!hubCore || hubArms.length < 3 || hubArms.length > 5) {
+    return false;
+  }
+
+  if (computeConnectedPrimaryTileCount(state) !== state.mainCorridorKeys.size) {
+    return false;
+  }
+
+  const expectedHubTileCount = hubCore.width * hubCore.height;
+  if (countPrimaryTilesInBounds(state, hubCore) !== expectedHubTileCount) {
+    return false;
+  }
+
+  return hubArms.every((arm) => {
+    const startKey = keyOf(arm.start.x, arm.start.y);
+    const endKey = keyOf(arm.end.x, arm.end.y);
+    if (!state.mainCorridorKeys.has(startKey) || !state.mainCorridorKeys.has(endKey)) {
+      return false;
+    }
+
+    if (
+      arm.end.x >= hubCore.x &&
+      arm.end.x < hubCore.x + hubCore.width &&
+      arm.end.y >= hubCore.y &&
+      arm.end.y < hubCore.y + hubCore.height
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function countPrimaryTilesOnVerticalLine(state, x, fromY, toY) {
+  let count = 0;
+  for (let y = fromY; y <= toY; y += 1) {
+    if (state.mainCorridorKeys.has(keyOf(x, y))) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function countPrimaryTilesOnHorizontalLine(state, y, fromX, toX) {
+  let count = 0;
+  for (let x = fromX; x <= toX; x += 1) {
+    if (state.mainCorridorKeys.has(keyOf(x, y))) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function validateRingPrimaryStructure(state) {
+  const ringBounds = state.layoutMetadata?.ringBounds ?? null;
+  const ringInteriorBounds = state.layoutMetadata?.ringInteriorBounds ?? null;
+  const openSide = state.layoutMetadata?.ringOpenSide ?? null;
+  if (!ringBounds || !ringInteriorBounds) {
+    return false;
+  }
+
+  if (ringInteriorBounds.width < 8 || ringInteriorBounds.height < 6) {
+    return false;
+  }
+
+  if (computeConnectedPrimaryTileCount(state) !== state.mainCorridorKeys.size) {
+    return false;
+  }
+
+  const topCount = countPrimaryTilesOnHorizontalLine(
+    state,
+    ringBounds.y,
+    ringBounds.x,
+    ringBounds.x + ringBounds.width - 1,
+  );
+  const bottomCount = countPrimaryTilesOnHorizontalLine(
+    state,
+    ringBounds.y + ringBounds.height - 1,
+    ringBounds.x,
+    ringBounds.x + ringBounds.width - 1,
+  );
+  const leftCount = countPrimaryTilesOnVerticalLine(
+    state,
+    ringBounds.x,
+    ringBounds.y,
+    ringBounds.y + ringBounds.height - 1,
+  );
+  const rightCount = countPrimaryTilesOnVerticalLine(
+    state,
+    ringBounds.x + ringBounds.width - 1,
+    ringBounds.y,
+    ringBounds.y + ringBounds.height - 1,
+  );
+  const minHorizontalCount = Math.max(4, Math.floor(ringBounds.width * 0.65));
+  const minVerticalCount = Math.max(4, Math.floor(ringBounds.height * 0.65));
+
+  if (topCount < minHorizontalCount || bottomCount < minHorizontalCount) {
+    return false;
+  }
+
+  if (state.layoutVariant === "closed") {
+    return leftCount >= minVerticalCount &&
+      rightCount >= minVerticalCount &&
+      openSide == null;
+  }
+
+  if (state.layoutVariant === "open") {
+    if (!["left", "right"].includes(openSide)) {
+      return false;
+    }
+
+    const openCount = openSide === "left" ? leftCount : rightCount;
+    const closedCount = openSide === "left" ? rightCount : leftCount;
+    return openCount < minVerticalCount / 2 && closedCount >= minVerticalCount;
+  }
+
+  return false;
+}
+
+function validatePrimaryStructureForLayout(state) {
+  if (state.layoutId === "hub") {
+    return validateHubPrimaryStructure(state);
+  }
+
+  if (state.layoutId === "ring") {
+    return validateRingPrimaryStructure(state);
+  }
+
+  return state.mainCorridorKeys.size > 0;
+}
+
+function findInteriorRoomIdsAtTile(state, position) {
+  return state.rooms
+    .filter((room) => room.interiorTiles.some((tile) => tile.x === position.x && tile.y === position.y))
+    .map((room) => room.id);
+}
+
+function classifyDoorAdjacentArea(state, position) {
+  const roomIds = findInteriorRoomIdsAtTile(state, position);
+  if (roomIds.length > 0) {
+    return `room:${roomIds[0]}`;
+  }
+
+  if (state.mainCorridorKeys.has(keyOf(position.x, position.y))) {
+    return "primary";
+  }
+
+  if (state.sideCorridorKeys.has(keyOf(position.x, position.y))) {
+    return "side";
+  }
+
+  return null;
+}
+
+function areDirectionsPerpendicular(directionA, directionB) {
+  return (directionA === "north" || directionA === "south")
+    ? (directionB === "east" || directionB === "west")
+    : (directionB === "north" || directionB === "south");
+}
+
+function validateDoorGeometry(state, door) {
+  const directionTiles = {
+    north: { x: door.x, y: door.y - 1 },
+    south: { x: door.x, y: door.y + 1 },
+    west: { x: door.x - 1, y: door.y },
+    east: { x: door.x + 1, y: door.y },
+  };
+  const adjacentAreas = Object.entries(directionTiles)
+    .map(([direction, tile]) => ({
+      direction,
+      areaId: state.grid[tile.y]?.[tile.x] === "."
+        ? classifyDoorAdjacentArea(state, tile)
+        : null,
+    }))
+    .filter((entry) => entry.areaId != null);
+
+  const uniqueAreaIds = [...new Set(adjacentAreas.map((entry) => entry.areaId))];
+  if (uniqueAreaIds.length !== 2) {
+    return false;
+  }
+
+  const northArea = adjacentAreas.find((entry) => entry.direction === "north")?.areaId ?? null;
+  const southArea = adjacentAreas.find((entry) => entry.direction === "south")?.areaId ?? null;
+  const westArea = adjacentAreas.find((entry) => entry.direction === "west")?.areaId ?? null;
+  const eastArea = adjacentAreas.find((entry) => entry.direction === "east")?.areaId ?? null;
+  const hasValidAxis = (
+    (northArea && southArea && northArea !== southArea) ||
+    (westArea && eastArea && westArea !== eastArea)
+  );
+  if (!hasValidAxis) {
+    return false;
+  }
+
+  const roomDirections = new Map();
+  adjacentAreas.forEach((entry) => {
+    if (!entry.areaId.startsWith("room:")) {
+      return;
+    }
+    const directions = roomDirections.get(entry.areaId) ?? [];
+    directions.push(entry.direction);
+    roomDirections.set(entry.areaId, directions);
+  });
+
+  for (const directions of roomDirections.values()) {
+    if (directions.length <= 1) {
+      continue;
+    }
+
+    for (let index = 0; index < directions.length; index += 1) {
+      for (let otherIndex = index + 1; otherIndex < directions.length; otherIndex += 1) {
+        if (areDirectionsPerpendicular(directions[index], directions[otherIndex])) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+function validateDoorGeometryForLayout(state) {
+  return state.doors.every((door) => validateDoorGeometry(state, door));
 }
 
 function randomBetween(randomInt, min, max) {
@@ -387,7 +796,16 @@ function buildRoomFillOrder(state, placedThemeRooms) {
   return fillOrder;
 }
 
-function getAttachmentTryOrder(spec) {
+function getRoomPlacementOverride(state, roomTypeId) {
+  return LAYOUT_ROOM_PLACEMENT_OVERRIDES[state.layoutId]?.[roomTypeId] ?? null;
+}
+
+function getAttachmentTryOrder(state, spec) {
+  const override = getRoomPlacementOverride(state, spec.id);
+  if (override?.attachmentOrder?.length) {
+    return override.attachmentOrder.filter((attachment) => spec.allowedAttachments.includes(attachment));
+  }
+
   if (spec.preferredAttachment === "flexible") {
     return MAIN_ATTACHMENT_PRIORITY[spec.preferredPathRole] ?? spec.allowedAttachments;
   }
@@ -403,7 +821,7 @@ function hasEligibleSidearmParents(state) {
 }
 
 function getExpansionAttachmentTryOrder(state, spec) {
-  const baseOrder = getAttachmentTryOrder(spec);
+  const baseOrder = getAttachmentTryOrder(state, spec);
   if (!spec.allowedAttachments.includes("sidearm_room") || !hasEligibleSidearmParents(state)) {
     return baseOrder;
   }
@@ -603,9 +1021,153 @@ function buildMainCorridor(state) {
   }
 }
 
+function buildHubPrimaryStructure(state) {
+  state.corridorWidth = state.randomInt(0, 1) === 0 ? 2 : 3;
+  const hubWidth = randomBetween(state.randomInt, 10, 15);
+  const hubHeight = randomBetween(state.randomInt, 8, 12);
+  const hubX = randomBetween(state.randomInt, 8, Math.max(8, state.WIDTH - hubWidth - 9));
+  const hubY = randomBetween(state.randomInt, 7, Math.max(7, state.HEIGHT - hubHeight - 8));
+  const hubBounds = {
+    x: hubX,
+    y: hubY,
+    width: hubWidth,
+    height: hubHeight,
+  };
+  carvePrimaryRectangle(state, hubBounds);
+
+  const armCount = randomBetween(state.randomInt, 3, 5);
+  const sidePool = shuffleList(
+    ["left", "right", "front", "back", "left", "right", "front", "back"],
+    state.randomChance,
+  ).slice(0, armCount);
+  const arms = [];
+
+  sidePool.forEach((side, index) => {
+    const armLength = randomBetween(state.randomInt, 5, 11);
+    if (side === "left" || side === "right") {
+      const line = randomBetween(
+        state.randomInt,
+        hubBounds.y + 1,
+        hubBounds.y + hubBounds.height - 2,
+      );
+      const start = {
+        x: side === "left" ? hubBounds.x : hubBounds.x + hubBounds.width - 1,
+        y: line,
+      };
+      const end = {
+        x: side === "left"
+          ? Math.max(1, start.x - armLength)
+          : Math.min(state.WIDTH - 2, start.x + armLength),
+        y: line,
+      };
+      carveWideSegment(state, start, end);
+      arms.push({
+        id: `arm-${index}`,
+        side,
+        start,
+        end,
+      });
+      return;
+    }
+
+    const line = randomBetween(
+      state.randomInt,
+      hubBounds.x + 1,
+      hubBounds.x + hubBounds.width - 2,
+    );
+    const start = {
+      x: line,
+      y: side === "front" ? hubBounds.y : hubBounds.y + hubBounds.height - 1,
+    };
+    const end = {
+      x: line,
+      y: side === "front"
+        ? Math.max(1, start.y - armLength)
+        : Math.min(state.HEIGHT - 2, start.y + armLength),
+    };
+    carveWideSegment(state, start, end);
+    arms.push({
+      id: `arm-${index}`,
+      side,
+      start,
+      end,
+    });
+  });
+
+  refreshPrimaryStructureBounds(state);
+  state.layoutMetadata = {
+    hubCore: cloneBounds(hubBounds),
+    hubArmCount: arms.length,
+    hubArms: arms.map((arm) => ({
+      ...arm,
+      start: clonePosition(arm.start),
+      end: clonePosition(arm.end),
+    })),
+  };
+}
+
+function buildRingPrimaryStructure(state, layoutVariant = "closed") {
+  state.corridorWidth = state.randomInt(0, 1) === 0 ? 2 : 3;
+  const outerWidth = randomBetween(state.randomInt, 26, 38);
+  const outerHeight = randomBetween(state.randomInt, 18, 28);
+  const x = randomBetween(state.randomInt, 3, Math.max(3, state.WIDTH - outerWidth - 4));
+  const y = randomBetween(state.randomInt, 4, Math.max(4, state.HEIGHT - outerHeight - 5));
+  const bounds = {
+    x,
+    y,
+    width: outerWidth,
+    height: outerHeight,
+  };
+  const left = bounds.x;
+  const right = bounds.x + bounds.width - 1;
+  const top = bounds.y;
+  const bottom = bounds.y + bounds.height - 1;
+
+  carveWideSegment(state, { x: left, y: top }, { x: right, y: top });
+  carveWideSegment(state, { x: left, y: bottom }, { x: right, y: bottom });
+
+  const openSide = layoutVariant === "open"
+    ? (state.randomChance() < 0.5 ? "left" : "right")
+    : null;
+
+  if (openSide !== "left") {
+    carveWideSegment(state, { x: left, y: top }, { x: left, y: bottom });
+  }
+
+  if (openSide !== "right") {
+    carveWideSegment(state, { x: right, y: top }, { x: right, y: bottom });
+  }
+
+  refreshPrimaryStructureBounds(state);
+  state.layoutMetadata = {
+    ringBounds: cloneBounds(bounds),
+    ringOpenSide: openSide,
+    ringInteriorBounds: {
+      x: bounds.x + state.corridorWidth,
+      y: bounds.y + state.corridorWidth,
+      width: Math.max(0, bounds.width - state.corridorWidth * 2),
+      height: Math.max(0, bounds.height - state.corridorWidth * 2),
+    },
+  };
+}
+
+function buildPrimaryStructureForLayout(state) {
+  if (state.layoutId === "hub") {
+    buildHubPrimaryStructure(state);
+    return;
+  }
+
+  if (state.layoutId === "ring") {
+    buildRingPrimaryStructure(state, state.layoutVariant ?? "closed");
+    return;
+  }
+
+  buildMainCorridor(state);
+}
+
 function selectAnchorPosition(state, direction, reservedKeys = new Set(), preferredTransitionHint = null) {
-  const mainTiles = [...state.mainCorridorKeys]
-    .map(parseKey)
+  const mainTiles = collectPrimaryStructureTiles(state)
+    .filter((tile) => isPrimaryStructureEdgeTile(state, tile))
     .filter((tile) => !reservedKeys.has(keyOf(tile.x, tile.y)));
 
   if (mainTiles.length === 0) {
@@ -981,38 +1543,56 @@ function createSideAnchorGeometry(state, corridorPosition, direction) {
     return roomGeometry;
   }
 
+  const hintedLine = state.currentAnchorTransitionHint
+    ? ((direction === "left" || direction === "right")
+      ? state.currentAnchorTransitionHint.y
+      : state.currentAnchorTransitionHint.x)
+    : null;
+  const corridorLine = (direction === "left" || direction === "right")
+    ? corridorPosition.y
+    : corridorPosition.x;
+  const targetLine = hintedLine ?? corridorLine;
+
   if (direction === "left") {
-    const transitionPosition = { x: 0, y: corridorPosition.y };
-    carveAnchorApproach(state, transitionPosition, corridorPosition);
+    const transitionPosition = { x: 0, y: targetLine };
+    const approachTarget = { x: corridorPosition.x, y: targetLine };
+    carveAnchorApproach(state, transitionPosition, approachTarget);
+    carveAnchorApproach(state, approachTarget, corridorPosition);
     return {
-      position: { x: 1, y: corridorPosition.y },
+      position: { x: 1, y: targetLine },
       transitionPosition,
     };
   }
 
   if (direction === "right") {
-    const transitionPosition = { x: state.WIDTH - 1, y: corridorPosition.y };
-    carveAnchorApproach(state, transitionPosition, corridorPosition);
+    const transitionPosition = { x: state.WIDTH - 1, y: targetLine };
+    const approachTarget = { x: corridorPosition.x, y: targetLine };
+    carveAnchorApproach(state, transitionPosition, approachTarget);
+    carveAnchorApproach(state, approachTarget, corridorPosition);
     return {
-      position: { x: state.WIDTH - 2, y: corridorPosition.y },
+      position: { x: state.WIDTH - 2, y: targetLine },
       transitionPosition,
     };
   }
 
   if (direction === "front") {
-    const transitionPosition = { x: corridorPosition.x, y: 0 };
-    carveAnchorApproach(state, transitionPosition, corridorPosition);
+    const transitionPosition = { x: targetLine, y: 0 };
+    const approachTarget = { x: targetLine, y: corridorPosition.y };
+    carveAnchorApproach(state, transitionPosition, approachTarget);
+    carveAnchorApproach(state, approachTarget, corridorPosition);
     return {
-      position: { x: corridorPosition.x, y: 1 },
+      position: { x: targetLine, y: 1 },
       transitionPosition,
     };
   }
 
   if (direction === "back") {
-    const transitionPosition = { x: corridorPosition.x, y: state.HEIGHT - 1 };
-    carveAnchorApproach(state, transitionPosition, corridorPosition);
+    const transitionPosition = { x: targetLine, y: state.HEIGHT - 1 };
+    const approachTarget = { x: targetLine, y: corridorPosition.y };
+    carveAnchorApproach(state, transitionPosition, approachTarget);
+    carveAnchorApproach(state, approachTarget, corridorPosition);
     return {
-      position: { x: corridorPosition.x, y: state.HEIGHT - 2 },
+      position: { x: targetLine, y: state.HEIGHT - 2 },
       transitionPosition,
     };
   }
@@ -1198,11 +1778,39 @@ function placeAnchor(state, direction, transitionStyle, reservedKeys, isEntry, p
   };
 }
 
+function protectAnchor(state, anchor) {
+  if (!anchor) {
+    return;
+  }
+
+  if (anchor.roomId != null) {
+    state.anchorProtectedRoomIds.add(anchor.roomId);
+  }
+
+  [
+    anchor.position,
+    anchor.transitionPosition,
+    anchor.corridorPosition,
+  ].forEach((tile) => {
+    if (!tile) {
+      return;
+    }
+    state.anchorProtectedKeys.add(keyOf(tile.x, tile.y));
+  });
+}
+
 function chooseRoomDimensions(spec, randomInt) {
   return {
     width: randomBetween(randomInt, spec.minWidth, spec.maxWidth),
     height: randomBetween(randomInt, spec.minHeight, spec.maxHeight),
   };
+}
+
+function isBoundaryTileInRoomBounds(roomBounds, x, y) {
+  return x === roomBounds.x ||
+    x === roomBounds.x + roomBounds.width - 1 ||
+    y === roomBounds.y ||
+    y === roomBounds.y + roomBounds.height - 1;
 }
 
 function isInsidePlayableArea(state, x, y) {
@@ -1227,14 +1835,22 @@ function canClaimTile(state, x, y, allowedOverlapKeys = null) {
     !state.sideCorridorKeys.has(key);
 }
 
-function canClaimRoomTile(state, x, y, allowedOverlapKeys = null) {
+function canClaimRoomTile(state, x, y, allowedOverlapKeys = null, isBoundaryTile = false) {
   if (!isInsideRoomPlacementArea(state, x, y)) {
     return false;
   }
 
   const key = keyOf(x, y);
   if (allowedOverlapKeys?.has(key)) {
-    return !state.roomBlockKeys.has(key) && !state.sideCorridorKeys.has(key);
+    return !state.roomInteriorKeys.has(key) && !state.roomDoorKeys.has(key) && !state.sideCorridorKeys.has(key);
+  }
+
+  if (state.roomBlockKeys.has(key)) {
+    return isBoundaryTile &&
+      !state.roomInteriorKeys.has(key) &&
+      !state.roomDoorKeys.has(key) &&
+      !state.mainCorridorKeys.has(key) &&
+      !state.sideCorridorKeys.has(key);
   }
 
   return !state.roomBlockKeys.has(key) &&
@@ -1250,7 +1866,7 @@ function canPlaceRoomBounds(state, roomBounds, allowedOverlapKeys = null) {
 
   for (let y = roomBounds.y; y < roomBounds.y + roomBounds.height; y += 1) {
     for (let x = roomBounds.x; x < roomBounds.x + roomBounds.width; x += 1) {
-      if (!canClaimRoomTile(state, x, y, allowedOverlapKeys)) {
+      if (!canClaimRoomTile(state, x, y, allowedOverlapKeys, isBoundaryTileInRoomBounds(roomBounds, x, y))) {
         return false;
       }
     }
@@ -1365,6 +1981,7 @@ function paintRoom(state, room) {
 
       if (isInterior) {
         state.grid[y][x] = state.TILE.FLOOR;
+        state.roomInteriorKeys.add(key);
         room.floorTiles.push({ x, y });
         room.interiorTiles.push({ x, y });
       }
@@ -1374,6 +1991,7 @@ function paintRoom(state, room) {
 
 function addDoor(state, room, position, config = {}) {
   state.grid[position.y][position.x] = state.TILE.FLOOR;
+  state.roomDoorKeys.add(keyOf(position.x, position.y));
   room.floorTiles.push(clonePosition(position));
   room.doorTiles.push(clonePosition(position));
   const door = state.createDoor(position.x, position.y, {
@@ -1387,6 +2005,7 @@ function addDoor(state, room, position, config = {}) {
 
 function addOpening(state, room, position) {
   state.grid[position.y][position.x] = state.TILE.FLOOR;
+  state.roomDoorKeys.add(keyOf(position.x, position.y));
   room.floorTiles.push(clonePosition(position));
   room.doorTiles.push(clonePosition(position));
   return null;
@@ -1514,7 +2133,10 @@ function computeAttachmentOpportunityScore(state, sourceTile, orientation, maxDe
 
 function buildOrderedMainAttachmentCandidates(state, spec) {
   return shuffleList(
-    sortTilesForAttachment([...state.mainCorridorKeys].map(parseKey), spec.preferredPathRole),
+    sortTilesForAttachment(
+      collectPrimaryStructureTiles(state).filter((tile) => isPrimaryStructureEdgeTile(state, tile)),
+      spec.preferredPathRole,
+    ),
     state.randomChance,
   )
     .flatMap((sourceTile) =>
@@ -1819,18 +2441,42 @@ function tryPlaceSidearmRoom(state, spec) {
   return null;
 }
 
+function getInitialConnectorRoomCount(state, spec) {
+  if (state.layoutId === "hub") {
+    return randomBetween(state.randomInt, 1, Math.min(3, spec.maxCount ?? 1));
+  }
+
+  if (state.layoutId === "ring") {
+    return state.randomInt(0, Math.min(2, spec.maxCount ?? 1));
+  }
+
+  return randomBetween(state.randomInt, 1, Math.min(5, spec.maxCount ?? 1));
+}
+
+function getConnectorTopOffLimit(state, remaining) {
+  if (state.layoutId === "hub") {
+    return Math.min(remaining, 3);
+  }
+
+  if (state.layoutId === "ring") {
+    return Math.min(remaining, 2);
+  }
+
+  return remaining;
+}
+
 function placeConnectorRooms(state) {
   const spec = ROOM_TYPE_SPECS.connector_room;
   if (!spec) {
     return [];
   }
 
-  const desiredCount = randomBetween(state.randomInt, 1, Math.min(5, spec.maxCount ?? 1));
+  const desiredCount = getInitialConnectorRoomCount(state, spec);
   const placedRooms = [];
 
   for (let attempt = 0; attempt < desiredCount; attempt += 1) {
     let placedRoom = null;
-    for (const attachment of getAttachmentTryOrder(spec)) {
+    for (const attachment of getAttachmentTryOrder(state, spec)) {
       if (attachment === "direct_main") {
         placedRoom = tryPlaceDirectMainRoom(state, spec);
       } else if (attachment === "sidearm_main") {
@@ -1859,9 +2505,10 @@ function topOffConnectorRooms(state) {
 
   const placedCounts = countPlacedRoomsByRole(state);
   const remaining = Math.max(0, (spec.maxCount ?? 0) - (placedCounts.connector_room ?? 0));
+  const desiredCount = getConnectorTopOffLimit(state, remaining);
   const placedRooms = [];
 
-  for (let attempt = 0; attempt < remaining; attempt += 1) {
+  for (let attempt = 0; attempt < desiredCount; attempt += 1) {
     let placedRoom = null;
     for (const attachment of getExpansionAttachmentTryOrder(state, spec)) {
       if (attachment === "direct_main") {
@@ -2071,7 +2718,7 @@ function pickThemeRooms(state, minimumCount = 3) {
 
   for (const roomTypeId of roomsToAttempt) {
     const spec = ROOM_TYPE_SPECS[roomTypeId];
-    const attachments = getAttachmentTryOrder(spec);
+    const attachments = getAttachmentTryOrder(state, spec);
     let placedRoom = null;
 
     for (const attachment of attachments) {
@@ -2413,6 +3060,41 @@ function takeWeightedTrapTile(state) {
   return { x: picked.x, y: picked.y };
 }
 
+function isRoomReachableWithCurrentDoors(state, room) {
+  if (!room) {
+    return false;
+  }
+
+  const reachable = buildTileKeySet(
+    state.computeReachableTilesWithBlockedPositions(
+      state.grid,
+      state.startPosition,
+      state.doors,
+      [],
+    ),
+  );
+
+  return room.floorTiles.some((tile) => reachable.has(keyOf(tile.x, tile.y)));
+}
+
+function areCoreAnchorsReachableWithCurrentDoors(state) {
+  const reachable = buildTileKeySet(
+    state.computeReachableTilesWithBlockedPositions(
+      state.grid,
+      state.startPosition,
+      state.doors,
+      [],
+    ),
+  );
+
+  const exitTarget = state.exitAnchor?.position ?? state.stairsDown ?? null;
+  if (!exitTarget) {
+    return true;
+  }
+
+  return reachable.has(keyOf(exitTarget.x, exitTarget.y));
+}
+
 function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
   const candidateLockedRooms = shuffleList(
     state.rooms.filter((room) =>
@@ -2420,6 +3102,7 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
       room.childrenCount === 0 &&
       room.doorIds.length === 1 &&
       room.doorTiles.length === 1 &&
+      !state.anchorProtectedRoomIds.has(room.id) &&
       room.role !== "showcase_room" &&
       room.role !== "connector_room" &&
       room.role !== "entry_room"
@@ -2428,6 +3111,7 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
   );
   const candidateKeyRooms = shuffleList(
     state.rooms.filter((room) =>
+      !state.anchorProtectedRoomIds.has(room.id) &&
       room.role !== "showcase_room" &&
       room.role !== "connector_room" &&
       room.role !== "entry_room"
@@ -2464,8 +3148,27 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
     matchingKeyRoom.overlayRole = matchingKeyRoom.overlayRole ?? "key_room";
     matchingKeyRoom.keyColor = lockColor;
     const keyTile = chooseFreeRoomTile(state, matchingKeyRoom, { reserveOnly: true });
-    if (keyTile) {
-      state.keys.push(state.createKeyPickup(lockColor, keyTile.x, keyTile.y, floorNumber));
+    const keyPickup = keyTile
+      ? state.createKeyPickup(lockColor, keyTile.x, keyTile.y, floorNumber)
+      : null;
+    if (keyPickup) {
+      state.keys.push(keyPickup);
+    }
+
+    if (!isRoomReachableWithCurrentDoors(state, matchingKeyRoom) || !areCoreAnchorsReachableWithCurrentDoors(state)) {
+      door.doorType = state.DOOR_TYPE.NORMAL;
+      delete door.lockColor;
+      lockedRoom.overlayRole = null;
+      delete lockedRoom.lockColor;
+      if (matchingKeyRoom.overlayRole === "key_room") {
+        matchingKeyRoom.overlayRole = null;
+      }
+      delete matchingKeyRoom.keyColor;
+      if (keyPickup) {
+        state.keys.pop();
+        state.occupiedSpawnKeys.delete(keyOf(keyPickup.x, keyPickup.y));
+      }
+      continue;
     }
 
     if (state.shouldPlaceLockedRoomChest()) {
@@ -2653,12 +3356,15 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
   });
 }
 
-function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode) {
+function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode, options = {}) {
   return {
     ...context,
     floorNumber,
     studioArchetypeId,
     topologyNode,
+    layoutId: options.layoutId ?? "branch",
+    layoutVariant: options.layoutVariant ?? null,
+    layoutMetadata: null,
     grid: context.createGrid(),
     rooms: [],
     doors: [],
@@ -2673,8 +3379,12 @@ function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode
     showcases: [],
     extraLoopConnections: [],
     roomBlockKeys: new Set(),
+    roomInteriorKeys: new Set(),
+    roomDoorKeys: new Set(),
     mainCorridorKeys: new Set(),
     sideCorridorKeys: new Set(),
+    anchorProtectedKeys: new Set(),
+    anchorProtectedRoomIds: new Set(),
     occupiedSpawnKeys: new Set(),
     lastThemeAttemptOrder: [],
     lastPlacedThemeRoomRoles: [],
@@ -2687,6 +3397,109 @@ function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode
     stairsDown: null,
     startPosition: null,
   };
+}
+
+function buildLayoutResult(state, layoutFailureReason = null) {
+  return {
+    layoutId: state.layoutId,
+    layoutVariant: state.layoutVariant,
+    layoutFailureReason,
+    layoutMetadata: state.layoutMetadata ? JSON.parse(JSON.stringify(state.layoutMetadata)) : null,
+    floorNumber: state.floorNumber,
+    studioArchetypeId: state.studioArchetypeId,
+    grid: state.grid,
+    rooms: state.rooms,
+    startPosition: state.startPosition,
+    stairsUp: state.stairsUp,
+    stairsDown: state.stairsDown,
+    entryAnchor: state.entryAnchor,
+    exitAnchor: state.exitAnchor,
+    corridorWidth: state.corridorWidth,
+    gangBoundingBox: state.gangBoundingBox,
+    topologyNode: state.topologyNode,
+    enemies: state.enemies,
+    potions: state.potions,
+    foods: state.foods,
+    weapons: state.weapons,
+    offHands: state.offHands,
+    chests: state.chests,
+    keys: state.keys,
+    doors: state.doors,
+    showcases: state.showcases,
+    extraLoopConnections: state.extraLoopConnections,
+    showcaseAmbienceSeen: {},
+    traps: state.traps,
+    explored: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
+    visible: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
+  };
+}
+
+function chooseStudioLayout(state, options = {}) {
+  if (options.layoutId && STUDIO_LAYOUT_IDS.includes(options.layoutId)) {
+    return {
+      layoutId: options.layoutId,
+      layoutVariant: options.layoutVariant ?? (options.layoutId === "ring" ? "closed" : null),
+    };
+  }
+
+  const layoutEntry = weightedPick([
+    { id: "branch", weight: 1 },
+    { id: "hub", weight: 1 },
+    { id: "ring", weight: 1 },
+  ], state.randomChance);
+  const layoutId = layoutEntry?.id ?? "branch";
+
+  return {
+    layoutId,
+    layoutVariant: layoutId === "ring"
+      ? (options.layoutVariant ?? (state.randomChance() < 0.5 ? "closed" : "open"))
+      : null,
+  };
+}
+
+function placeAnchorsForState(state, topologyNode, options, attempt, onFailure) {
+  const reservedAnchorKeys = new Set();
+  state.entryAnchor = placeAnchor(
+    state,
+    topologyNode?.entryDirection ?? "front",
+    topologyNode?.entryTransitionStyle ?? "passage",
+    reservedAnchorKeys,
+    true,
+    topologyNode?.entryTransitionHint ?? null,
+  );
+  state.exitAnchor = placeAnchor(
+    state,
+    topologyNode?.exitDirection ?? "right",
+    topologyNode?.exitTransitionStyle ?? "passage",
+    reservedAnchorKeys,
+    false,
+    topologyNode?.exitTransitionHint ?? null,
+  );
+
+  if (!state.entryAnchor || !state.exitAnchor) {
+    onFailure?.({
+      attempt,
+      reason: "anchor-placement",
+      layoutId: state.layoutId,
+      layoutVariant: state.layoutVariant,
+      corridorWidth: state.corridorWidth,
+      gangBoundingBox: state.gangBoundingBox ? { ...state.gangBoundingBox } : null,
+      entryAnchor: state.entryAnchor ? { ...state.entryAnchor, position: { ...state.entryAnchor.position } } : null,
+      exitAnchor: state.exitAnchor ? { ...state.exitAnchor, position: { ...state.exitAnchor.position } } : null,
+    });
+    return false;
+  }
+
+  protectAnchor(state, state.entryAnchor);
+  protectAnchor(state, state.exitAnchor);
+  state.startPosition = clonePosition(state.entryAnchor.position);
+  state.stairsUp = clonePosition(state.entryAnchor.transitionPosition ?? state.entryAnchor.position);
+  state.stairsDown = clonePosition(state.exitAnchor.transitionPosition ?? state.exitAnchor.position);
+  state.occupiedSpawnKeys.add(keyOf(state.startPosition.x, state.startPosition.y));
+  state.occupiedSpawnKeys.add(keyOf(state.stairsUp.x, state.stairsUp.y));
+  state.occupiedSpawnKeys.add(keyOf(state.exitAnchor.position.x, state.exitAnchor.position.y));
+  state.occupiedSpawnKeys.add(keyOf(state.stairsDown.x, state.stairsDown.y));
+  return true;
 }
 
 function forcePlaceRoom(state, roomTypeId, roomBounds, doorPosition, attachmentType, corridorPath = [], parentRoom = null) {
@@ -2717,8 +3530,11 @@ function forcePlaceRoom(state, roomTypeId, roomBounds, doorPosition, attachmentT
   return room;
 }
 
-function buildFallbackDungeonLevel(context, floorNumber, studioArchetypeId, topologyNode, runArchetypeSequence, playerState) {
-  const state = createLayoutState(context, floorNumber, studioArchetypeId, topologyNode);
+function buildFallbackDungeonLevel(context, floorNumber, studioArchetypeId, topologyNode, runArchetypeSequence, playerState, options = {}) {
+  const state = createLayoutState(context, floorNumber, studioArchetypeId, topologyNode, options);
+  state.layoutId = "branch_fallback";
+  state.layoutVariant = null;
+  state.layoutMetadata = null;
   state.corridorWidth = 2;
   state.gangBoundingBox = { x: 5, y: 12, width: 40, height: 12 };
   carveWideSegment(state, { x: 5, y: 17 }, { x: 44, y: 17 });
@@ -2755,6 +3571,8 @@ function buildFallbackDungeonLevel(context, floorNumber, studioArchetypeId, topo
   state.startPosition = clonePosition(state.entryAnchor.position);
   state.stairsUp = clonePosition(state.entryAnchor.transitionPosition ?? state.entryAnchor.position);
   state.stairsDown = clonePosition(state.exitAnchor.transitionPosition ?? state.exitAnchor.position);
+  protectAnchor(state, state.entryAnchor);
+  protectAnchor(state, state.exitAnchor);
   state.occupiedSpawnKeys.add(keyOf(state.startPosition.x, state.startPosition.y));
   state.occupiedSpawnKeys.add(keyOf(state.stairsUp.x, state.stairsUp.y));
   state.occupiedSpawnKeys.add(keyOf(state.exitAnchor.position.x, state.exitAnchor.position.y));
@@ -2786,87 +3604,47 @@ function buildFallbackDungeonLevel(context, floorNumber, studioArchetypeId, topo
   assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
   placeWorldContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
 
-  return {
-    layoutId: "branch_fallback",
-    floorNumber,
-    studioArchetypeId,
-    grid: state.grid,
-    rooms: state.rooms,
-    startPosition: state.startPosition,
-    stairsUp: state.stairsUp,
-    stairsDown: state.stairsDown,
-    entryAnchor: state.entryAnchor,
-    exitAnchor: state.exitAnchor,
-    corridorWidth: state.corridorWidth,
-    gangBoundingBox: state.gangBoundingBox,
-    topologyNode,
-    enemies: state.enemies,
-    potions: state.potions,
-    foods: state.foods,
-    weapons: state.weapons,
-    offHands: state.offHands,
-    chests: state.chests,
-    keys: state.keys,
-    doors: state.doors,
-    showcases: state.showcases,
-    extraLoopConnections: state.extraLoopConnections,
-    showcaseAmbienceSeen: {},
-    traps: state.traps,
-    explored: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
-    visible: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
-  };
+  return buildLayoutResult(state);
 }
 
-export function createBranchLayoutGenerator(context) {
+function createLayoutGenerator(context, resolveLayoutOptions) {
   function createDungeonLevel(floorNumber, options = {}) {
     const studioArchetypeId = options.studioArchetypeId;
     const topologyNode = options.studioTopologyNode ?? null;
     const runArchetypeSequence = options.runArchetypeSequence ?? [];
     const playerState = context.getState()?.player ?? null;
+    const layoutOptions = resolveLayoutOptions(context, floorNumber, options);
     let lastFailureReason = "unknown";
 
     for (let attempt = 0; attempt < 120; attempt += 1) {
-      const state = createLayoutState(context, floorNumber, studioArchetypeId, topologyNode);
-      buildMainCorridor(state);
-
-      const reservedAnchorKeys = new Set();
-      state.entryAnchor = placeAnchor(
-        state,
-        topologyNode?.entryDirection ?? "front",
-        topologyNode?.entryTransitionStyle ?? "passage",
-        reservedAnchorKeys,
-        true,
-        topologyNode?.entryTransitionHint ?? null,
-      );
-      state.exitAnchor = placeAnchor(
-        state,
-        topologyNode?.exitDirection ?? "right",
-        topologyNode?.exitTransitionStyle ?? "passage",
-        reservedAnchorKeys,
-        false,
-        topologyNode?.exitTransitionHint ?? null,
-      );
-
-      if (!state.entryAnchor || !state.exitAnchor) {
-        lastFailureReason = "anchor-placement";
+      const state = createLayoutState(context, floorNumber, studioArchetypeId, topologyNode, layoutOptions);
+      buildPrimaryStructureForLayout(state);
+      if (!validatePrimaryStructureForLayout(state)) {
+        lastFailureReason = "primary-structure-validation";
         options.onAttemptFailure?.({
           attempt,
           reason: lastFailureReason,
-          corridorWidth: state.corridorWidth,
+          layoutId: state.layoutId,
+          layoutVariant: state.layoutVariant,
           gangBoundingBox: state.gangBoundingBox ? { ...state.gangBoundingBox } : null,
-          entryAnchor: state.entryAnchor ? { ...state.entryAnchor, position: { ...state.entryAnchor.position } } : null,
-          exitAnchor: state.exitAnchor ? { ...state.exitAnchor, position: { ...state.exitAnchor.position } } : null,
+          layoutMetadata: state.layoutMetadata ? JSON.parse(JSON.stringify(state.layoutMetadata)) : null,
         });
         continue;
       }
 
-  state.startPosition = clonePosition(state.entryAnchor.position);
-  state.stairsUp = clonePosition(state.entryAnchor.transitionPosition ?? state.entryAnchor.position);
-  state.stairsDown = clonePosition(state.exitAnchor.transitionPosition ?? state.exitAnchor.position);
-  state.occupiedSpawnKeys.add(keyOf(state.startPosition.x, state.startPosition.y));
-  state.occupiedSpawnKeys.add(keyOf(state.stairsUp.x, state.stairsUp.y));
-  state.occupiedSpawnKeys.add(keyOf(state.exitAnchor.position.x, state.exitAnchor.position.y));
-  state.occupiedSpawnKeys.add(keyOf(state.stairsDown.x, state.stairsDown.y));
+      if (layoutOptions.anchorPlacementPhase === "before_rooms") {
+        const placed = placeAnchorsForState(
+          state,
+          topologyNode,
+          options,
+          attempt,
+          options.onAttemptFailure,
+        );
+        if (!placed) {
+          lastFailureReason = "anchor-placement";
+          continue;
+        }
+      }
 
       placeConnectorRooms(state);
 
@@ -2876,56 +3654,52 @@ export function createBranchLayoutGenerator(context) {
         options.onAttemptFailure?.({
           attempt,
           reason: lastFailureReason,
+          layoutId: state.layoutId,
+          layoutVariant: state.layoutVariant,
           themeAttemptOrder: [...state.lastThemeAttemptOrder],
           placedThemeRoomRoles: [...state.lastPlacedThemeRoomRoles],
           corridorWidth: state.corridorWidth,
           gangBoundingBox: state.gangBoundingBox ? { ...state.gangBoundingBox } : null,
-          entryAnchor: state.entryAnchor ? { ...state.entryAnchor, position: { ...state.entryAnchor.position } } : null,
-          exitAnchor: state.exitAnchor ? { ...state.exitAnchor, position: { ...state.exitAnchor.position } } : null,
         });
         continue;
       }
 
-      const showcaseRoom = themeRooms.find((room) => room.role === "showcase_room") ?? null;
       topOffConnectorRooms(state);
       addPeripheralRoomLoops(state);
+
+      if (layoutOptions.anchorPlacementPhase !== "before_rooms") {
+        const placed = placeAnchorsForState(
+          state,
+          topologyNode,
+          options,
+          attempt,
+          options.onAttemptFailure,
+        );
+        if (!placed) {
+          lastFailureReason = "anchor-placement";
+          continue;
+        }
+      }
+
+      const showcaseRoom = themeRooms.find((room) => room.role === "showcase_room") ?? null;
       placeShowcasesInShowcaseRoom(state, showcaseRoom, studioArchetypeId);
       assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
       if (!showcaseRoom) {
         placeFallbackShowcases(state, studioArchetypeId);
       }
       placeWorldContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
+      if (!validateDoorGeometryForLayout(state)) {
+        lastFailureReason = "door-geometry-validation";
+        options.onAttemptFailure?.({
+          attempt,
+          reason: lastFailureReason,
+          layoutId: state.layoutId,
+          layoutVariant: state.layoutVariant,
+        });
+        continue;
+      }
 
-      return {
-        layoutId: "branch",
-        layoutFailureReason: null,
-        floorNumber,
-        studioArchetypeId,
-        grid: state.grid,
-        rooms: state.rooms,
-        startPosition: state.startPosition,
-        stairsUp: state.stairsUp,
-        stairsDown: state.stairsDown,
-        entryAnchor: state.entryAnchor,
-        exitAnchor: state.exitAnchor,
-        corridorWidth: state.corridorWidth,
-        gangBoundingBox: state.gangBoundingBox,
-        topologyNode,
-        enemies: state.enemies,
-        potions: state.potions,
-        foods: state.foods,
-        weapons: state.weapons,
-        offHands: state.offHands,
-        chests: state.chests,
-        keys: state.keys,
-        doors: state.doors,
-        showcases: state.showcases,
-        extraLoopConnections: state.extraLoopConnections,
-        showcaseAmbienceSeen: {},
-        traps: state.traps,
-        explored: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
-        visible: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
-      };
+      return buildLayoutResult(state);
     }
 
     const fallbackLevel = buildFallbackDungeonLevel(
@@ -2935,6 +3709,7 @@ export function createBranchLayoutGenerator(context) {
       topologyNode,
       runArchetypeSequence,
       playerState,
+      layoutOptions,
     );
     fallbackLevel.layoutFailureReason = lastFailureReason;
     return fallbackLevel;
@@ -2943,4 +3718,27 @@ export function createBranchLayoutGenerator(context) {
   return {
     createDungeonLevel,
   };
+}
+
+export function createBranchLayoutGenerator(context) {
+  return createLayoutGenerator(
+    context,
+    () => ({
+      layoutId: "branch",
+      layoutVariant: null,
+      anchorPlacementPhase: "before_rooms",
+    }),
+  );
+}
+
+export function createStudioLayoutGenerator(context) {
+  return createLayoutGenerator(
+    context,
+    (_context, floorNumber, options = {}) => {
+      const state = {
+        randomChance: context.randomChance ?? Math.random,
+      };
+      return chooseStudioLayout(state, options, floorNumber);
+    },
+  );
 }

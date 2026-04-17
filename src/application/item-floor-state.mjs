@@ -1,4 +1,5 @@
 import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
+import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
 export function createItemFloorStateApi(context) {
   const {
@@ -128,7 +129,7 @@ export function createItemFloorStateApi(context) {
       return false;
     }
 
-    if (state.player.hp >= state.player.maxHp) {
+    if (state.player.hp >= getActorDerivedMaxHp(state.player)) {
       addMessage("Du bist bereits bei voller Gesundheit.");
       return false;
     }

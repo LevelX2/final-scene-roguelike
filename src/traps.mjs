@@ -1,3 +1,4 @@
+import { getActorDerivedStat } from './application/derived-actor-stats.mjs';
 import { recordKillStat } from './kill-stats.mjs';
 import { formatMonsterReference } from './text/combat-phrasing.mjs';
 
@@ -329,7 +330,7 @@ export function createTrapsApi(context) {
 
   function getDetectionChance(actor, trap) {
     return clamp(
-      25 + ((actor.precision ?? 0) - (trap.detectDifficulty ?? 0)) * 15 + (actor.trapDetectionBonus ?? 0),
+      25 + (getActorDerivedStat(actor, 'precision') - (trap.detectDifficulty ?? 0)) * 15 + (actor.trapDetectionBonus ?? 0),
       5,
       95,
     );
@@ -338,7 +339,7 @@ export function createTrapsApi(context) {
   function getAvoidChance(actor, trap, trapVisible = false) {
     const visibleBonus = trapVisible ? 15 : 0;
     return clamp(
-      20 + ((actor.reaction ?? 0) - (trap.reactDifficulty ?? 0)) * 15 + visibleBonus + (actor.trapAvoidBonus ?? 0),
+      20 + (getActorDerivedStat(actor, 'reaction') - (trap.reactDifficulty ?? 0)) * 15 + visibleBonus + (actor.trapAvoidBonus ?? 0),
       5,
       95,
     );
@@ -395,8 +396,8 @@ export function createTrapsApi(context) {
         actor.turnsSinceHit = 0;
       }
       const enduranceMitigation = isPlayer
-        ? Math.floor((actor.endurance ?? 0) / (isContinuous ? 2 : 3))
-        : Math.floor((actor.endurance ?? 0) / 4);
+        ? Math.floor(getActorDerivedStat(actor, 'endurance') / (isContinuous ? 2 : 3))
+        : Math.floor(getActorDerivedStat(actor, 'endurance') / 4);
       const classMitigation = isPlayer ? (actor.trapDamageReduction ?? 0) : 0;
       const damage = Math.max(1, trap.effect.damage - enduranceMitigation - classMitigation - (reduced ? 1 : 0));
       actor.hp = Math.max(0, actor.hp - damage);

@@ -1,9 +1,11 @@
 import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
 import { getShieldTemplate } from '../content/catalogs/shields.mjs';
+import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { getStartLoadout } from '../content/start-loadouts.mjs';
 import { cloneItemDef, createKeyItem } from '../item-defs.mjs';
 import { cloneOffHandItem } from '../equipment-helpers.mjs';
-import { applyItemStatMods } from './item-stat-mods.mjs';
+import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
+import { createEmptyProgressionBonuses } from './derived-actor-stats.mjs';
 
 export function createStateBlueprintApi(context) {
   const {
@@ -92,19 +94,21 @@ export function createStateBlueprintApi(context) {
         name: item.name ?? template.name,
         displayName: item.displayName ?? item.name ?? template.name,
         source: item.source ?? sourceLabel,
-        modifiers: Array.isArray(item.modifiers) ? item.modifiers.map((modifier) => ({ ...modifier })) : weapon.modifiers,
+        modifiers: Array.isArray(item.modifiers) ? item.modifiers.map(cloneItemModifierRuntime) : weapon.modifiers,
         modifierIds: Array.isArray(item.modifierIds) ? [...item.modifierIds] : weapon.modifierIds,
         numericMods: Array.isArray(item.numericMods) ? [...item.numericMods] : weapon.numericMods,
-        effects: Array.isArray(item.effects) ? item.effects.map((effect) => ({ ...effect })) : weapon.effects,
+        effects: Array.isArray(item.effects) ? item.effects.map(cloneWeaponRuntimeEffect) : weapon.effects,
+        balanceGroups: Array.isArray(item.balanceGroups) ? [...item.balanceGroups] : getItemBalanceGroups(item),
       };
     }
 
     return {
       type: "weapon",
-      modifiers: Array.isArray(item.modifiers) ? item.modifiers.map((modifier) => ({ ...modifier })) : [],
+      modifiers: Array.isArray(item.modifiers) ? item.modifiers.map(cloneItemModifierRuntime) : [],
       modifierIds: [...(item.modifierIds ?? [])],
       numericMods: [...(item.numericMods ?? [])],
-      effects: (item.effects ?? []).map((effect) => ({ ...effect })),
+      effects: (item.effects ?? []).map(cloneWeaponRuntimeEffect),
+      balanceGroups: Array.isArray(item.balanceGroups) ? [...item.balanceGroups] : getItemBalanceGroups(item),
       lightBonus: item.lightBonus ?? 0,
       source: item.source ?? sourceLabel,
       ...item,
@@ -285,6 +289,7 @@ export function createStateBlueprintApi(context) {
     const loadout = getHeroStartLoadout(heroClass);
     const startingOffHand = createStartingOffHand(heroClass, loadout);
     const player = {
+      type: "player",
       name: heroName,
       classId: resolvedClassId,
       classLabel: heroClass.label,
@@ -304,6 +309,7 @@ export function createStateBlueprintApi(context) {
       reaction: heroClass.reaction,
       nerves: heroClass.nerves,
       intelligence: heroClass.intelligence,
+      progressionBonuses: createEmptyProgressionBonuses(),
       endurance: heroClass.endurance ?? 0,
       openingStrikeHitBonus: heroClass.openingStrikeHitBonus ?? 0,
       openingStrikeCritBonus: heroClass.openingStrikeCritBonus ?? 0,
@@ -313,12 +319,9 @@ export function createStateBlueprintApi(context) {
       shieldBlockBonus: heroClass.shieldBlockBonus ?? 0,
       mainHand: createStartingWeapon(heroClass, loadout),
       offHand: startingOffHand,
+      equipmentStatsApplied: false,
       statusEffects: [],
     };
-
-    if (startingOffHand) {
-      applyItemStatMods(player, startingOffHand, 1);
-    }
 
     return player;
   }

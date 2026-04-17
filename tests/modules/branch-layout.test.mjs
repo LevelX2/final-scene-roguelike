@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAvailableMonsterPool, createBranchLayoutGenerator } from '../../src/dungeon/branch-layout.mjs';
+import { buildAvailableMonsterPool, createBranchLayoutGenerator, createStudioLayoutGenerator } from '../../src/dungeon/branch-layout.mjs';
 import { shouldSpawnFloorShield, shouldSpawnFloorWeapon } from '../../src/balance.mjs';
 import { MONSTER_CATALOG } from '../../src/content/catalogs/monsters.mjs';
 
@@ -45,6 +45,43 @@ function computeReachableTilesWithBlockedPositions(grid, startPosition, doors, b
   return reachable;
 }
 
+function countFloorsOnVerticalLine(grid, x, fromY, toY) {
+  let count = 0;
+  for (let y = fromY; y <= toY; y += 1) {
+    if (grid[y]?.[x] === '.') {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function countFloorsOnHorizontalLine(grid, y, fromX, toX) {
+  let count = 0;
+  for (let x = fromX; x <= toX; x += 1) {
+    if (grid[y]?.[x] === '.') {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function findInteriorRoomIdsAt(level, position) {
+  return level.rooms
+    .filter((room) => room.interiorTiles.some((tile) => tile.x === position.x && tile.y === position.y))
+    .map((room) => room.id);
+}
+
+function classifyAdjacentDoorArea(level, position) {
+  const roomIds = findInteriorRoomIdsAt(level, position);
+  if (roomIds.length > 0) {
+    return `room:${roomIds[0]}`;
+  }
+  if (level.grid[position.y]?.[position.x] !== '.') {
+    return null;
+  }
+  return 'open';
+}
+
 function createGeneratorHarness(options = {}) {
   const TILE = {
     WALL: '#',
@@ -87,7 +124,7 @@ function createGeneratorHarness(options = {}) {
     shouldSpawnChest: () => false,
     getChestCountForFloor: () => 0,
     shouldPlaceLockedRoomChest: () => false,
-    getLockedDoorCountForFloor: () => 0,
+    getLockedDoorCountForFloor: options.getLockedDoorCountForFloor ?? (() => 0),
     buildFoodItemsForBudget: () => [],
     rollFoodBudget: () => ({ totalBudget: 0 }),
     splitFoodBudget: () => ({ direct: 0, reserve: 0, containers: 0 }),
@@ -96,6 +133,64 @@ function createGeneratorHarness(options = {}) {
     getContainerConfigForArchetype: () => ({ name: 'Kiste', assetId: 'crate' }),
     collectUsedShowcasePropIds: () => new Set(),
     computeReachableTilesWithBlockedPositions,
+  });
+
+  return { generator };
+}
+
+function createStudioGeneratorHarness(options = {}) {
+  const TILE = {
+    WALL: '#',
+    FLOOR: '.',
+  };
+
+  const generator = createStudioLayoutGenerator({
+    WIDTH: 50,
+    HEIGHT: 36,
+    TILE,
+    DOOR_TYPE: { NORMAL: 'normal', LOCKED: 'locked' },
+    LOCK_COLORS: ['red', 'blue', 'green'],
+    MONSTER_CATALOG: options.MONSTER_CATALOG ?? [],
+    propCatalog: [
+      { id: 'slasher-prop', archetype: 'slasher', name: 'Slasher-Prop', source: 'Test', description: 'Test.' },
+      { id: 'global-prop', archetype: 'global', name: 'Global-Prop', source: 'Test', description: 'Test.' },
+    ],
+    randomChance: options.randomChance ?? (() => 0.5),
+    randomInt: options.randomInt ?? ((min, max) => Math.floor((min + max) / 2)),
+    createGrid: () => Array.from({ length: 36 }, () => Array(50).fill(TILE.WALL)),
+    getState: () => ({ player: null }),
+    createEnemy: options.createEnemy ?? (() => null),
+    chooseWeightedMonster: options.chooseWeightedMonster ?? (() => null),
+    createWeaponPickup: (item, x, y) => ({ item, x, y }),
+    createOffHandPickup: (item, x, y) => ({ item, x, y }),
+    createChestPickup: (content, x, y) => ({ content, x, y }),
+    createFoodPickup: (item, x, y) => ({ item, x, y }),
+    createPotionPickup: (item, x, y) => ({ item, x, y }),
+    createShowcase: (item, x, y) => ({ item, x, y }),
+    createDoor: (x, y, config = {}) => ({ x, y, ...config, doorType: config.doorType ?? 'normal', isOpen: config.isOpen ?? false }),
+    createKeyPickup: (color, x, y) => ({ x, y, item: { keyColor: color } }),
+    chooseWeightedWeapon: () => null,
+    chooseWeightedShield: () => null,
+    rollChestContent: () => null,
+    getFloorWeaponSpawnCount: () => 0,
+    getEnemyCountForFloor: () => 0,
+    getPotionCountForFloor: () => 0,
+    getUnlockedMonsterRank: () => 0,
+    shouldSpawnFloorWeapon: () => false,
+    shouldSpawnFloorShield: () => false,
+    shouldSpawnChest: () => false,
+    getChestCountForFloor: () => 0,
+    shouldPlaceLockedRoomChest: options.shouldPlaceLockedRoomChest ?? (() => false),
+    getLockedDoorCountForFloor: options.getLockedDoorCountForFloor ?? (() => 0),
+    buildFoodItemsForBudget: () => [],
+    rollFoodBudget: () => ({ totalBudget: 0 }),
+    splitFoodBudget: () => ({ direct: 0, reserve: 0, containers: 0, monsters: 0, world: 0 }),
+    rollMonsterPlannedDrop: () => null,
+    buildTrapsForFloor: options.buildTrapsForFloor ?? (() => []),
+    getContainerConfigForArchetype: () => ({ name: 'Kiste', assetId: 'crate' }),
+    collectUsedShowcasePropIds: () => new Set(),
+    computeReachableTilesWithBlockedPositions,
+    cloneItemDef: () => null,
   });
 
   return { generator };
@@ -278,6 +373,340 @@ test('branch layout also prefers an outer exit room on the top edge when there i
   assert.equal(level.exitAnchor.position.y, 1);
   assert.equal(exitRoom?.y, 0);
   assert.equal(exitRoom?.role, 'entry_room');
+});
+
+test('studio generator can build a hub layout with hub metadata and anchors', () => {
+  const { generator } = createStudioGeneratorHarness();
+  const level = generator.createDungeonLevel(2, {
+    layoutId: 'hub',
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 2,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher'],
+  });
+
+  assert.equal(level.layoutId, 'hub');
+  assert.equal(level.layoutVariant, null);
+  assert.ok(level.layoutMetadata?.hubCore);
+  assert.ok(level.layoutMetadata?.hubArmCount >= 3);
+  assert.ok(level.layoutMetadata?.hubArmCount <= 5);
+  assert.ok(level.entryAnchor);
+  assert.ok(level.exitAnchor);
+});
+
+test('studio generator can build an open ring variant with a recorded open side', () => {
+  const { generator } = createStudioGeneratorHarness();
+  const level = generator.createDungeonLevel(3, {
+    layoutId: 'ring',
+    layoutVariant: 'open',
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 3,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher'],
+  });
+
+  assert.equal(level.layoutId, 'ring');
+  assert.equal(level.layoutVariant, 'open');
+  assert.ok(['left', 'right'].includes(level.layoutMetadata?.ringOpenSide));
+  assert.ok(level.gangBoundingBox?.width >= 1);
+});
+
+test('studio generator keeps exit reachable when locked rooms are added to a ring layout', () => {
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => 0.1,
+    randomInt: (min, max) => min,
+    getLockedDoorCountForFloor: () => 2,
+  });
+  const level = generator.createDungeonLevel(5, {
+    layoutId: 'ring',
+    layoutVariant: 'closed',
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 5,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher', 'slasher'],
+  });
+
+  const reachable = computeReachableTilesWithBlockedPositions(
+    level.grid,
+    level.startPosition,
+    level.doors,
+  );
+  const reachableKeys = new Set(reachable.map((tile) => `${tile.x},${tile.y}`));
+  assert.ok(reachableKeys.has(`${level.exitAnchor.position.x},${level.exitAnchor.position.y}`));
+});
+
+test('studio generator keeps a hinted left-side anchor on the exact edge row', () => {
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => 0.3,
+    randomInt: (min, max) => Math.floor((min + max) / 2),
+  });
+  const level = generator.createDungeonLevel(4, {
+    layoutId: 'hub',
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 4,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      entryTransitionHint: { x: 0, y: 9 },
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher'],
+  });
+
+  assert.equal(level.entryAnchor.transitionPosition.x, 0);
+  assert.equal(level.entryAnchor.transitionPosition.y, 9);
+});
+
+test('studio generator can repeatedly build readable mixed layouts', () => {
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => 0.42,
+    randomInt: (min, max) => Math.floor((min + max) / 2),
+  });
+
+  const built = [];
+  for (let floorNumber = 1; floorNumber <= 6; floorNumber += 1) {
+    const layoutId = floorNumber % 3 === 1 ? 'branch' : floorNumber % 3 === 2 ? 'hub' : 'ring';
+    const layoutVariant = layoutId === 'ring'
+      ? (floorNumber % 2 === 0 ? 'open' : 'closed')
+      : null;
+    const level = generator.createDungeonLevel(floorNumber, {
+      layoutId,
+      layoutVariant,
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber,
+        position: { x: floorNumber, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: Array.from({ length: floorNumber }, () => 'slasher'),
+    });
+    built.push(level);
+  }
+
+  assert.equal(built.length, 6);
+  assert.ok(built.every((level) => level.entryAnchor && level.exitAnchor));
+  assert.ok(built.every((level) => level.rooms.length >= 3));
+});
+
+test('studio generator repeatedly builds a fully connected hub core with valid arms', () => {
+  let successfulHubLayouts = 0;
+  for (let run = 0; run < 8; run += 1) {
+    const offset = run % 3;
+    const { generator } = createStudioGeneratorHarness({
+      randomChance: () => 0.41 + offset * 0.05,
+      randomInt: (min, max) => Math.min(max, Math.floor((min + max) / 2) + offset),
+    });
+    const level = generator.createDungeonLevel(run + 1, {
+      layoutId: 'hub',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: run + 1,
+        position: { x: run, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: Array.from({ length: run + 1 }, () => 'slasher'),
+    });
+
+    assert.notEqual(level.layoutFailureReason, 'primary-structure-validation');
+
+    if (level.layoutId === 'hub') {
+      successfulHubLayouts += 1;
+      const hubCore = level.layoutMetadata?.hubCore;
+      assert.equal(level.layoutFailureReason, null);
+      assert.ok(hubCore);
+      assert.ok(level.layoutMetadata?.hubArmCount >= 3);
+      assert.ok(level.layoutMetadata?.hubArmCount <= 5);
+
+      for (let y = hubCore.y; y < hubCore.y + hubCore.height; y += 1) {
+        for (let x = hubCore.x; x < hubCore.x + hubCore.width; x += 1) {
+          assert.equal(level.grid[y][x], '.');
+        }
+      }
+
+      level.layoutMetadata.hubArms.forEach((arm) => {
+        assert.equal(level.grid[arm.start.y][arm.start.x], '.');
+        assert.equal(level.grid[arm.end.y][arm.end.x], '.');
+      });
+    }
+  }
+
+  assert.ok(successfulHubLayouts >= 4);
+});
+
+test('studio generator repeatedly builds closed rings with readable side walls', () => {
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => 0.37,
+    randomInt: (min, max) => Math.floor((min + max) / 2),
+  });
+
+  for (let run = 0; run < 6; run += 1) {
+    const level = generator.createDungeonLevel(run + 1, {
+      layoutId: 'ring',
+      layoutVariant: 'closed',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: run + 1,
+        position: { x: run, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: Array.from({ length: run + 1 }, () => 'slasher'),
+    });
+
+    const bounds = level.layoutMetadata?.ringBounds;
+    assert.equal(level.layoutId, 'ring');
+    assert.equal(level.layoutVariant, 'closed');
+    assert.equal(level.layoutFailureReason, null);
+    assert.ok(bounds);
+
+    const leftCount = countFloorsOnVerticalLine(level.grid, bounds.x, bounds.y, bounds.y + bounds.height - 1);
+    const rightCount = countFloorsOnVerticalLine(level.grid, bounds.x + bounds.width - 1, bounds.y, bounds.y + bounds.height - 1);
+    const topCount = countFloorsOnHorizontalLine(level.grid, bounds.y, bounds.x, bounds.x + bounds.width - 1);
+    const bottomCount = countFloorsOnHorizontalLine(level.grid, bounds.y + bounds.height - 1, bounds.x, bounds.x + bounds.width - 1);
+
+    assert.ok(leftCount >= Math.floor(bounds.height * 0.6));
+    assert.ok(rightCount >= Math.floor(bounds.height * 0.6));
+    assert.ok(topCount >= Math.floor(bounds.width * 0.6));
+    assert.ok(bottomCount >= Math.floor(bounds.width * 0.6));
+  }
+});
+
+test('studio generator repeatedly builds open rings with only one weakened side', () => {
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => 0.29,
+    randomInt: (min, max) => Math.floor((min + max) / 2),
+  });
+
+  for (let run = 0; run < 6; run += 1) {
+    const level = generator.createDungeonLevel(run + 1, {
+      layoutId: 'ring',
+      layoutVariant: 'open',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: run + 1,
+        position: { x: run, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: Array.from({ length: run + 1 }, () => 'slasher'),
+    });
+
+    const bounds = level.layoutMetadata?.ringBounds;
+    const openSide = level.layoutMetadata?.ringOpenSide;
+    assert.equal(level.layoutId, 'ring');
+    assert.equal(level.layoutVariant, 'open');
+    assert.equal(level.layoutFailureReason, null);
+    assert.ok(bounds);
+    assert.ok(['left', 'right'].includes(openSide));
+
+    const leftCount = countFloorsOnVerticalLine(level.grid, bounds.x, bounds.y, bounds.y + bounds.height - 1);
+    const rightCount = countFloorsOnVerticalLine(level.grid, bounds.x + bounds.width - 1, bounds.y, bounds.y + bounds.height - 1);
+    const openCount = openSide === 'left' ? leftCount : rightCount;
+    const closedCount = openSide === 'left' ? rightCount : leftCount;
+
+    assert.ok(openCount < closedCount);
+    assert.ok(closedCount >= Math.floor(bounds.height * 0.6));
+  }
+});
+
+test('generated doors separate exactly two local area classes without corner ambiguity', () => {
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => 0.27,
+    randomInt: (min, max) => Math.floor((min + max) / 2),
+    getLockedDoorCountForFloor: () => 1,
+  });
+
+  const levels = [
+    generator.createDungeonLevel(3, {
+      layoutId: 'branch',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: 3,
+        position: { x: 0, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: ['slasher', 'slasher', 'slasher'],
+    }),
+    generator.createDungeonLevel(4, {
+      layoutId: 'hub',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: 4,
+        position: { x: 1, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher'],
+    }),
+    generator.createDungeonLevel(5, {
+      layoutId: 'ring',
+      layoutVariant: 'closed',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: 5,
+        position: { x: 2, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher', 'slasher'],
+    }),
+  ];
+
+  levels.forEach((level) => {
+    level.doors.forEach((door) => {
+      const adjacent = [
+        { x: door.x, y: door.y - 1, direction: 'north' },
+        { x: door.x, y: door.y + 1, direction: 'south' },
+        { x: door.x - 1, y: door.y, direction: 'west' },
+        { x: door.x + 1, y: door.y, direction: 'east' },
+      ]
+        .map((entry) => ({
+          ...entry,
+          areaId: classifyAdjacentDoorArea(level, entry),
+        }))
+        .filter((entry) => entry.areaId != null);
+
+      const uniqueAreaIds = [...new Set(adjacent.map((entry) => entry.areaId))];
+      assert.equal(uniqueAreaIds.length, 2);
+    });
+  });
 });
 
 test('branch layout can place second-row rooms off an already connected side room', () => {

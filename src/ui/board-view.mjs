@@ -1,4 +1,5 @@
 import { evaluateTargetSelection } from '../application/targeting-service.mjs';
+import { getActorDerivedMaxHp, getActorDerivedStats } from '../application/derived-actor-stats.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 
 export function createBoardView(context) {
@@ -190,6 +191,8 @@ export function createBoardView(context) {
     }
 
     if (state.player.x === x && state.player.y === y) {
+      const playerDerivedStats = getActorDerivedStats(state.player);
+      const playerMaxHp = getActorDerivedMaxHp(state.player);
       return {
         type: state.gameOver
           ? `floor studio-${studioArchetypeId} player dead`
@@ -197,7 +200,7 @@ export function createBoardView(context) {
         glyph: TILE.PLAYER,
         overlayImageUrl: getPlayerIconAssetUrl(state.player, state.gameOver),
         hp: state.player.hp,
-        maxHp: state.player.maxHp,
+        maxHp: playerMaxHp,
         tooltip: {
           title: state.gameOver ? "Gefallener Held" : "Held",
           imageUrl: getPlayerIconAssetUrl(state.player, state.gameOver),
@@ -205,12 +208,12 @@ export function createBoardView(context) {
           lines: [
             `${state.player.classLabel ?? "Held"} | ${state.player.classPassiveName ?? "Keine Passive"}`,
             `Level ${state.player.level}`,
-            `Leben ${state.player.hp}/${state.player.maxHp}`,
-            `Stärke ${state.player.strength}`,
-            `Präzision ${state.player.precision}`,
-            `Reaktion ${state.player.reaction}`,
-            `Nerven ${state.player.nerves}`,
-            `Intelligenz ${state.player.intelligence}`,
+            `Leben ${state.player.hp}/${playerMaxHp}`,
+            `Staerke ${playerDerivedStats.final.strength ?? 0}`,
+            `Praezision ${playerDerivedStats.final.precision ?? 0}`,
+            `Reaktion ${playerDerivedStats.final.reaction ?? 0}`,
+            `Nerven ${playerDerivedStats.final.nerves ?? 0}`,
+            `Intelligenz ${playerDerivedStats.final.intelligence ?? 0}`,
             `Waffe ${formatWeaponReference(getMainHand(state.player), { article: "definite", grammaticalCase: "nominative" })} (${formatWeaponStats(getMainHand(state.player))})`,
             `Nebenhand ${getOffHand(state.player)?.name ?? "Leer"}${getOffHand(state.player) ? ` (${formatOffHandStats(getOffHand(state.player))})` : ""}`,
             state.player.classPassiveDescription,

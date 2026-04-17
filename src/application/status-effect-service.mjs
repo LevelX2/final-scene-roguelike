@@ -1,5 +1,6 @@
 import { recordKillStat } from '../kill-stats.mjs';
 import { formatMonsterReference } from '../text/combat-phrasing.mjs';
+import { getWeaponOnHitEffects } from '../weapon-runtime-effects.mjs';
 
 export function createStatusEffectService(context) {
   const {
@@ -115,16 +116,13 @@ export function createStatusEffectService(context) {
   }
 
   function tryApplyWeaponEffects(attacker, defender, weapon, result) {
-    if (!result?.hit || !weapon?.effects?.length || (result.damage ?? 0) <= 0) {
+    const onHitEffects = getWeaponOnHitEffects(weapon);
+    if (!result?.hit || onHitEffects.length === 0 || (result.damage ?? 0) <= 0) {
       return;
     }
 
     const state = getState();
-    for (const effect of weapon.effects) {
-      if (effect.trigger !== 'hit') {
-        continue;
-      }
-
+    for (const effect of onHitEffects) {
       if (randomChance() * 100 > (effect.procChance ?? 0)) {
         continue;
       }

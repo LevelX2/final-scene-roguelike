@@ -1,3 +1,5 @@
+import { getActorDerivedMaxHp, getActorDerivedStats } from './derived-actor-stats.mjs';
+
 export function createTestApiSnapshots(context) {
   const {
     getState,
@@ -10,9 +12,58 @@ export function createTestApiSnapshots(context) {
     generateEquipmentItem,
   } = context;
 
+  function collectUniqueGroups(entries) {
+    return Array.from(new Set(
+      (entries ?? []).flatMap((entry) => Array.isArray(entry?.balanceGroups) ? entry.balanceGroups : [])
+    )).sort((left, right) => left.localeCompare(right, 'de'));
+  }
+
   function getSnapshot() {
     const state = getState();
     const floorState = getCurrentFloorState();
+    const playerMaxHp = getActorDerivedMaxHp(state.player);
+    const floorWeapons = (floorState.weapons ?? []).map((entry) => ({
+      x: entry.x,
+      y: entry.y,
+      id: entry.item.id,
+      name: entry.item.name,
+      balanceGroups: [...(entry.item.balanceGroups ?? [])],
+    }));
+    const floorOffHands = (floorState.offHands ?? []).map((entry) => ({
+      x: entry.x,
+      y: entry.y,
+      id: entry.item.id,
+      name: entry.item.name,
+      balanceGroups: [...(entry.item.balanceGroups ?? [])],
+    }));
+    const enemies = floorState.enemies.map((enemy) => ({
+      id: enemy.id,
+      name: enemy.name,
+      x: enemy.x,
+      y: enemy.y,
+      hp: enemy.hp,
+      maxHp: enemy.maxHp,
+      aggro: Boolean(enemy.aggro),
+      canOpenDoors: Boolean(enemy.canOpenDoors),
+      spawnGroup: enemy.spawnGroup ?? null,
+      spawnProfileId: enemy.spawnProfileId ?? null,
+      roleProfileId: enemy.roleProfileId ?? null,
+      preferredWeaponRoles: [...(enemy.preferredWeaponRoles ?? [])],
+      balanceGroups: [...(enemy.balanceGroups ?? [])],
+      derivedStats: getActorDerivedStats(enemy),
+      temperament: enemy.temperament ?? "stoic",
+      temperamentHint: enemy.temperamentHint ?? "",
+      idleTarget: enemy.idleTarget ? { ...enemy.idleTarget } : null,
+      idleTargetType: enemy.idleTargetType ?? null,
+      retreatProfile: enemy.retreatProfile ?? "none",
+      retreatLabel: enemy.retreatLabel ?? "Standhaft",
+      healingProfile: enemy.healingProfile ?? "slow",
+      healingLabel: enemy.healingLabel ?? "Langsam",
+      isRetreating: Boolean(enemy.isRetreating),
+      statusEffects: (enemy.statusEffects ?? []).map((effect) => ({ ...effect })),
+      mainHandBalanceGroups: enemy.mainHand?.balanceGroups ? [...enemy.mainHand.balanceGroups] : [],
+      offHandBalanceGroups: enemy.offHand?.balanceGroups ? [...enemy.offHand.balanceGroups] : [],
+    }));
     return {
       floor: state.floor,
       player: {
@@ -23,10 +74,12 @@ export function createTestApiSnapshots(context) {
         x: state.player.x,
         y: state.player.y,
         hp: state.player.hp,
-        maxHp: state.player.maxHp,
+        maxHp: playerMaxHp,
         nutrition: state.player.nutrition,
         nutritionMax: state.player.nutritionMax,
         hungerState: state.player.hungerState,
+        progressionBonuses: { ...(state.player.progressionBonuses ?? {}) },
+        derivedStats: getActorDerivedStats(state.player),
         statusEffects: (state.player.statusEffects ?? []).map((effect) => ({ ...effect })),
       },
       targeting: {
@@ -49,7 +102,9 @@ export function createTestApiSnapshots(context) {
         corridorPosition: floorState.exitAnchor.corridorPosition ? { ...floorState.exitAnchor.corridorPosition } : null,
       } : null,
       layoutId: floorState.layoutId ?? null,
+      layoutVariant: floorState.layoutVariant ?? null,
       layoutFailureReason: floorState.layoutFailureReason ?? null,
+      layoutMetadata: floorState.layoutMetadata ? JSON.parse(JSON.stringify(floorState.layoutMetadata)) : null,
       corridorWidth: floorState.corridorWidth ?? null,
       gangBoundingBox: floorState.gangBoundingBox ? { ...floorState.gangBoundingBox } : null,
       topologyNode: floorState.topologyNode
@@ -101,32 +156,14 @@ export function createTestApiSnapshots(context) {
         y: trap.y,
         effect: { ...(trap.effect ?? {}) },
       })),
-      offHands: (floorState.offHands ?? []).map((item) => ({
-        id: item.item.id,
-        name: item.item.name,
-        x: item.x,
-        y: item.y,
-      })),
-      enemies: floorState.enemies.map((enemy) => ({
-        id: enemy.id,
-        name: enemy.name,
-        x: enemy.x,
-        y: enemy.y,
-        hp: enemy.hp,
-        maxHp: enemy.maxHp,
-        aggro: Boolean(enemy.aggro),
-        canOpenDoors: Boolean(enemy.canOpenDoors),
-        temperament: enemy.temperament ?? "stoic",
-        temperamentHint: enemy.temperamentHint ?? "",
-        idleTarget: enemy.idleTarget ? { ...enemy.idleTarget } : null,
-        idleTargetType: enemy.idleTargetType ?? null,
-        retreatProfile: enemy.retreatProfile ?? "none",
-        retreatLabel: enemy.retreatLabel ?? "Standhaft",
-        healingProfile: enemy.healingProfile ?? "slow",
-        healingLabel: enemy.healingLabel ?? "Langsam",
-        isRetreating: Boolean(enemy.isRetreating),
-        statusEffects: (enemy.statusEffects ?? []).map((effect) => ({ ...effect })),
-      })),
+      weapons: floorWeapons,
+      offHands: floorOffHands,
+      enemies,
+      balanceGroupSummary: {
+        enemies: collectUniqueGroups(enemies),
+        floorWeapons: collectUniqueGroups(floorWeapons.map((entry) => ({ balanceGroups: entry.balanceGroups }))),
+        floorOffHands: collectUniqueGroups(floorOffHands.map((entry) => ({ balanceGroups: entry.balanceGroups }))),
+      },
     };
   }
 
@@ -143,7 +180,10 @@ export function createTestApiSnapshots(context) {
       foodCount: countFoodInInventory(),
       equippedWeapon: getMainHand(state.player) ? { ...getMainHand(state.player) } : null,
       offHand: getOffHand(state.player) ? { ...getOffHand(state.player) } : null,
+      equippedWeaponBalanceGroups: getMainHand(state.player)?.balanceGroups ? [...getMainHand(state.player).balanceGroups] : [],
+      offHandBalanceGroups: getOffHand(state.player)?.balanceGroups ? [...getOffHand(state.player).balanceGroups] : [],
       items: state.inventory.map((item) => ({ ...item })),
+      inventoryBalanceGroupSummary: collectUniqueGroups(state.inventory),
     };
   }
 

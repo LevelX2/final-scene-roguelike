@@ -1,5 +1,7 @@
 import { formatStudioOrigin } from '../studio-theme.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
+import { getActorDerivedMaxHp } from '../application/derived-actor-stats.mjs';
+import { getWeaponRuntimeEffects } from '../weapon-runtime-effects.mjs';
 
 export function createInventoryView(context) {
   const {
@@ -85,7 +87,7 @@ export function createInventoryView(context) {
   }
 
   function serializeWeaponEffects(item) {
-    return (item.effects ?? [])
+    return getWeaponRuntimeEffects(item)
       .map((effect) => [
         effect.type ?? "",
         effect.trigger ?? "",
@@ -212,6 +214,7 @@ export function createInventoryView(context) {
     const offHand = getOffHand(state.player);
     const statusSummary = formatStatusSummary(state.player);
     const hungerLabel = getHungerStateLabel(state.player.hungerState);
+    const playerMaxHp = getActorDerivedMaxHp(state.player);
     const xpLabel = state.player.xpToNext > 0
       ? `${state.player.xp} / ${state.player.xpToNext}`
       : `${state.player.xp}`;
@@ -221,7 +224,7 @@ export function createInventoryView(context) {
       createHeroStatCard("Name", state.player.name),
       createHeroStatCard("Klasse", state.player.classLabel ?? "Unbekannt"),
       createHeroStatCard("Level", state.player.level ?? 1),
-      createHeroStatCard("Leben", `${state.player.hp}/${state.player.maxHp}`),
+      createHeroStatCard("Leben", `${state.player.hp}/${playerMaxHp}`),
       createHeroStatCard("Hunger", hungerLabel),
       createHeroStatCard("Status", statusSummary, statusSummary === "Keine" ? "is-muted" : ""),
       createHeroStatCard("Erfahrung", xpLabel),

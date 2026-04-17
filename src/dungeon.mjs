@@ -14,12 +14,13 @@ import {
   MONSTER_VARIANT_MODIFIERS,
   getMonsterVariantWeights,
   getEnemyScaleForFloor,
+  getLegacySpecialMonsterSpawnChance,
 } from './balance.mjs';
 import { createDungeonEquipmentRolls } from './dungeon/equipment-rolls.mjs';
 import { createDungeonEnemyFactory } from './dungeon/enemy-factory.mjs';
 import { createDungeonPickupFactory } from './dungeon/pickup-factory.mjs';
 import { createDungeonSpatialApi } from './dungeon/spatial-helpers.mjs';
-import { createBranchLayoutGenerator } from './dungeon/branch-layout.mjs';
+import { createStudioLayoutGenerator } from './dungeon/branch-layout.mjs';
 import { createWeaponGenerationService } from './application/weapon-generation-service.mjs';
 import { createShieldGenerationService } from './application/shield-generation-service.mjs';
 import { getContainerConfigForArchetype } from './content/catalogs/studio-archetypes.mjs';
@@ -112,6 +113,7 @@ export function createDungeonApi(context) {
     getMonsterVariantWeights,
     NON_ICONIC_MONSTER_WEIGHT_BONUS,
     ICONIC_MONSTER_WEIGHT_PENALTY,
+    getLegacySpecialMonsterSpawnChance,
   });
 
   const {
@@ -126,7 +128,7 @@ export function createDungeonApi(context) {
     getState,
   });
 
-  const branchLayoutGenerator = createBranchLayoutGenerator({
+  const studioLayoutGenerator = createStudioLayoutGenerator({
     WIDTH,
     HEIGHT,
     TILE,
@@ -184,6 +186,6 @@ export function createDungeonApi(context) {
     createDoor,
     rollChestContent,
     cloneWeapon,
-    createDungeonLevel: branchLayoutGenerator.createDungeonLevel,
+    createDungeonLevel: studioLayoutGenerator.createDungeonLevel,
   };
 }

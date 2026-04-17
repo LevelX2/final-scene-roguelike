@@ -1,3 +1,5 @@
+import { getActorDerivedStat } from './application/derived-actor-stats.mjs';
+
 export const NUTRITION_MAX_BASE = 700;
 export const NUTRITION_START_BASE = 501;
 export const ENDURANCE_NUTRITION_BONUS_PER_POINT = 100;
@@ -28,11 +30,11 @@ export const FOOD_SATIETY_ESTIMATES = [
 ];
 
 export function getNutritionMax(player) {
-  return NUTRITION_MAX_BASE + (player.endurance ?? 0) * ENDURANCE_NUTRITION_BONUS_PER_POINT;
+  return NUTRITION_MAX_BASE + getActorDerivedStat(player, 'endurance') * ENDURANCE_NUTRITION_BONUS_PER_POINT;
 }
 
 export function getNutritionStart(player) {
-  return NUTRITION_START_BASE + (player.endurance ?? 0) * ENDURANCE_NUTRITION_BONUS_PER_POINT;
+  return NUTRITION_START_BASE + getActorDerivedStat(player, 'endurance') * ENDURANCE_NUTRITION_BONUS_PER_POINT;
 }
 
 export function clampNutritionValue(value, player) {

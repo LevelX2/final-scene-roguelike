@@ -1,17 +1,15 @@
 import { RARITY_LABELS, WEAPON_MODIFIER_DEFS, SHIELD_MODIFIER_DEFS } from './content/item-modifiers.mjs';
 import { applyRarityCap, getMaxEquipmentRarity } from './balance.mjs';
+import { getItemBalanceGroups } from './item-balance-groups.mjs';
 import { getStudioCycleIndex } from './studio-theme.mjs';
-import { getDecadePrefix, STANDARD_EFFECT_IDS, HIGH_IMPACT_EFFECT_IDS, getWeaponEffectDefinition, getProcBonusForFloor, getEffectNameParts, getEffectSummary } from './content/catalogs/weapon-effects.mjs';
+import { getDecadePrefix, STANDARD_EFFECT_IDS, HIGH_IMPACT_EFFECT_IDS, getWeaponEffectCategory, getWeaponEffectDefinition, getProcBonusForFloor, getEffectNameParts, getEffectSummary } from './content/catalogs/weapon-effects.mjs';
 import { getFloorScalingBonus, getWeaponProfile } from './content/catalogs/weapon-templates.mjs';
 import { buildWeaponGrammar } from './text/combat-phrasing.mjs';
+import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect, getWeaponRuntimeEffects } from './weapon-runtime-effects.mjs';
+import { getActorDerivedMaxHp } from './application/derived-actor-stats.mjs';
 
 function cloneModifier(modifier) {
-  return {
-    ...modifier,
-    allowedItemTypes: [...(modifier.allowedItemTypes ?? [])],
-    statChanges: { ...(modifier.statChanges ?? {}) },
-    tags: [...(modifier.tags ?? [])],
-  };
+  return cloneItemModifierRuntime(modifier);
 }
 
 const WEAPON_RARITY_WEIGHTS = {
@@ -20,6 +18,11 @@ const WEAPON_RARITY_WEIGHTS = {
   monster: { common: 40, uncommon: 40, rare: 16, veryRare: 4 },
   bonusChest: { common: 30, uncommon: 45, rare: 20, veryRare: 5 },
 };
+
+const WEAPON_CONDITIONAL_MODIFIER_CHANCES = Object.freeze({
+  rare: 0.18,
+  veryRare: 0.4,
+});
 
 const NUMERIC_MOD_POOL = [
   { id: 'damage', stat: 'damage', amount: 1, label: 'Scharf', namePrefix: 'Scharf' },
@@ -191,6 +194,29 @@ export function createItemizationApi(context) {
     return selected;
   }
 
+  function createWeaponModifierFromNumericMod(numericMod) {
+    if (!numericMod) {
+      return null;
+    }
+
+    const statChanges = numericMod.stat === 'damage'
+      ? { damageAdd: numericMod.amount }
+      : numericMod.stat === 'hitBonus'
+        ? { hitBonusAdd: numericMod.amount }
+        : numericMod.stat === 'critBonus'
+          ? { critBonusAdd: numericMod.amount }
+          : {};
+
+    return {
+      id: `weapon-numeric-${numericMod.id}`,
+      affix: numericMod.label,
+      summary: `${numericMod.label}: ${numericMod.stat} +${numericMod.amount}`,
+      statChanges,
+      source: 'numeric',
+      tags: ['weapon-stat'],
+    };
+  }
+
   function hasControlConflict(existingEffects, nextType) {
     const existingTypes = new Set(existingEffects.map((effect) => effect.type));
     return (existingTypes.has('stun') && nextType === 'root') || (existingTypes.has('root') && nextType === 'stun');
@@ -224,6 +250,44 @@ export function createItemizationApi(context) {
       dotDamage: definition.dotDamageByTier?.[tier - 1] ?? 0,
       penalty: definition.penaltyByTier?.[tier - 1] ?? 0,
     };
+  }
+
+  function createWeaponModifierFromEffect(effect) {
+    if (!effect?.type) {
+      return null;
+    }
+
+    const definition = getWeaponEffectDefinition(effect.type);
+    const statChanges = {};
+    if (effect.type === 'crit_bonus' && (effect.value ?? 0) !== 0) {
+      statChanges.critBonusAdd = effect.value ?? 0;
+    }
+    if (effect.type === 'light_bonus' && (effect.value ?? 0) !== 0) {
+      statChanges.lightBonusAdd = effect.value ?? 0;
+    }
+
+    return {
+      id: `weapon-effect-${effect.type}`,
+      affix: definition?.label ?? effect.type,
+      summary: getEffectSummary(effect) || definition?.label || effect.type,
+      statChanges,
+      source: effect.source ?? 'effect',
+      runtimeEffect: cloneWeaponRuntimeEffect(effect),
+      tags: [
+        effect.trigger === 'passive' ? 'passive-effect' : 'weapon-effect',
+        `effect-category:${getWeaponEffectCategory(effect)}`,
+      ],
+    };
+  }
+
+  function rollWeaponConditionalModifiers(rarity) {
+    const finalModifier = WEAPON_MODIFIER_DEFS.find((modifier) => modifier.id === 'final');
+    const chance = WEAPON_CONDITIONAL_MODIFIER_CHANCES[rarity] ?? 0;
+    if (!finalModifier || chance <= 0 || randomChance() >= chance) {
+      return [];
+    }
+
+    return [cloneModifier(finalModifier)];
   }
 
   function rollEffectMods(rarity, floorNumber, existingEffects = []) {
@@ -267,23 +331,13 @@ export function createItemizationApi(context) {
     return effects.slice(0, 2);
   }
 
-  function applyNumericMods(baseStats, numericMods) {
+  function applyWeaponStatChanges(baseStats, modifiers) {
     const nextItem = { ...baseStats };
-    for (const modifier of numericMods) {
-      nextItem[modifier.stat] = (nextItem[modifier.stat] ?? 0) + modifier.amount;
-    }
-    return nextItem;
-  }
-
-  function applyPassiveEffects(item, effects) {
-    const nextItem = { ...item, lightBonus: 0 };
-    for (const effect of effects) {
-      if (effect.type === 'crit_bonus') {
-        nextItem.critBonus += effect.value ?? 0;
-      }
-      if (effect.type === 'light_bonus') {
-        nextItem.lightBonus += effect.value ?? 0;
-      }
+    for (const modifier of modifiers) {
+      nextItem.damage = (nextItem.damage ?? 0) + (modifier.statChanges?.damageAdd ?? 0);
+      nextItem.hitBonus = (nextItem.hitBonus ?? 0) + (modifier.statChanges?.hitBonusAdd ?? 0);
+      nextItem.critBonus = (nextItem.critBonus ?? 0) + (modifier.statChanges?.critBonusAdd ?? 0);
+      nextItem.lightBonus = (nextItem.lightBonus ?? 0) + (modifier.statChanges?.lightBonusAdd ?? 0);
     }
     return nextItem;
   }
@@ -388,9 +442,15 @@ export function createItemizationApi(context) {
       }
     }
     effects = rollEffectMods(rarity, floorNumber, effects);
-
-    const numericallyModified = applyNumericMods(baseStats, numericMods);
-    const finalStats = applyPassiveEffects(numericallyModified, effects);
+    const modifiers = [
+      ...numericMods.map(createWeaponModifierFromNumericMod).filter(Boolean),
+      ...effects.map(createWeaponModifierFromEffect).filter(Boolean),
+      ...rollWeaponConditionalModifiers(rarity),
+    ];
+    const finalStats = applyWeaponStatChanges({
+      ...baseStats,
+      lightBonus: 0,
+    }, modifiers);
     const nameParts = buildWeaponNameParts(baseItem, rarity, numericMods, effects, floorNumber);
     const displayName = buildWeaponName(baseItem, rarity, numericMods, effects, floorNumber);
     const grammar = buildWeaponGrammar({
@@ -402,7 +462,7 @@ export function createItemizationApi(context) {
       nameParts,
     });
 
-    return {
+    const weapon = {
       ...baseItem,
       type: 'weapon',
       itemType: 'weapon',
@@ -414,9 +474,9 @@ export function createItemizationApi(context) {
       rarity,
       rarityLabel: formatRarityLabel(rarity),
       numericMods,
-      effects,
-      modifierIds: [],
-      modifiers: [],
+      effects: [],
+      modifierIds: modifiers.map((modifier) => modifier.id),
+      modifiers,
       lightBonus: finalStats.lightBonus ?? 0,
       displayName,
       name: displayName,
@@ -426,6 +486,10 @@ export function createItemizationApi(context) {
       sourceArchetypeId: dropContext.sourceArchetypeId ?? baseItem.archetypeId ?? null,
       floorNumber,
       description: buildWeaponDescription(baseItem, numericMods, effects),
+    };
+    return {
+      ...weapon,
+      balanceGroups: getItemBalanceGroups(weapon),
     };
   }
 
@@ -445,7 +509,7 @@ export function createItemizationApi(context) {
       ? appendDecadeSuffix(`${modifiers.slice(0, 2).map((modifier) => modifier.affix).join(' ')} ${baseItem.name}`.trim(), decadeSuffix)
       : appendDecadeSuffix(baseItem.name, decadeSuffix);
 
-    return {
+    const shield = {
       ...computedItem,
       templateId: baseItem.id,
       baseItemId: baseItem.id,
@@ -462,6 +526,10 @@ export function createItemizationApi(context) {
         ? `${modifiers.map((modifier) => modifier.summary).join(' | ')}. ${baseItem.description}`
         : baseItem.description,
     };
+    return {
+      ...shield,
+      balanceGroups: getItemBalanceGroups(shield),
+    };
   }
 
   function generateEquipmentItem(baseItem, dropContext = {}) {
@@ -473,20 +541,41 @@ export function createItemizationApi(context) {
   }
 
   function getItemModifierSummary(item) {
-    const parts = [
-      ...(item?.numericMods?.map((modifier) => modifier.label) ?? []),
-      ...(item?.effects?.map((effect) => getWeaponEffectDefinition(effect.type)?.label).filter(Boolean) ?? []),
-      ...(item?.modifiers?.map((modifier) => modifier.affix) ?? []),
-    ];
+    const modifierParts = item?.modifiers?.map((modifier) => modifier.summary ?? modifier.affix).filter(Boolean) ?? [];
+    const parts = modifierParts.length > 0
+      ? modifierParts
+      : [
+          ...(item?.numericMods?.map((modifier) => modifier.label) ?? []),
+          ...getWeaponRuntimeEffects(item).map((effect) => getWeaponEffectDefinition(effect.type)?.label).filter(Boolean),
+        ];
     return parts.length > 0 ? parts.join(', ') : 'Keine Modifikatoren';
   }
 
-  function getWeaponConditionalDamageBonus() {
+  function getWeaponConditionalDamageBonus(actor, weapon) {
+    if (!itemHasModifier(weapon, 'final')) {
+      return 0;
+    }
+
+    const currentHp = Math.max(0, actor?.hp ?? 0);
+    const maxHp = getActorDerivedMaxHp(actor);
+    const hpRatio = currentHp / maxHp;
+    if (hpRatio <= 0.34) {
+      return 2;
+    }
+    if (hpRatio <= 0.5) {
+      return 1;
+    }
     return 0;
   }
 
   function itemHasModifier(item, modifierId) {
-    return Boolean(item?.modifierIds?.includes(modifierId));
+    return Boolean(
+      item?.modifierIds?.includes(modifierId) ||
+      item?.modifiers?.some((modifier) =>
+        modifier?.id === modifierId ||
+        modifier?.tags?.includes(modifierId)
+      )
+    );
   }
 
   return {

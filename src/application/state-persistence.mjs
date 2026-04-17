@@ -1,8 +1,11 @@
 import { getShieldTemplate } from '../content/catalogs/shields.mjs';
 import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
+import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { createKeyItem } from '../item-defs.mjs';
 import { normalizeKillStats } from '../kill-stats.mjs';
 import { createTimestampedId } from '../utils/id-tools.mjs';
+import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
+import { createEmptyProgressionBonuses, getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
 export function createStatePersistenceApi(context) {
   const {
@@ -152,6 +155,8 @@ export function createStatePersistenceApi(context) {
       };
     }
 
+    const compatible = isSaveEntryCompatible(entry);
+
     return {
       id: entry.id ?? `save-slot-${normalizedSlotIndex + 1}`,
       slotIndex: normalizedSlotIndex,
@@ -159,8 +164,8 @@ export function createStatePersistenceApi(context) {
       isLatest: Boolean(options.isLatest),
       empty: false,
       version: entry.snapshotVersion ?? null,
-      compatible: true,
-      canLoad: true,
+      compatible,
+      canLoad: compatible,
       canOverwrite: true,
       canDelete: true,
       savedAt: entry.savedAt ?? null,
@@ -231,17 +236,12 @@ export function createStatePersistenceApi(context) {
     return normalizedSlots;
   }
 
-  function migrateLegacyEntryStore(parsed) {
-    const normalizedEntries = (parsed.entries ?? [])
-      .map(normalizeSaveEntry)
-      .filter(Boolean)
-      .sort((left, right) => (right.savedAt ?? 0) - (left.savedAt ?? 0))
-      .slice(0, MAX_SAVE_SLOTS);
-    const store = createEmptySavegameStore();
-    normalizedEntries.forEach((entry, index) => {
-      store.slots[index] = entry;
-    });
-    return store;
+  function isSaveEntryCompatible(entry) {
+    if (!entry) {
+      return false;
+    }
+
+    return Number(entry.snapshotVersion) === SAVEGAME_VERSION;
   }
 
   function readSavegameStore() {
@@ -256,16 +256,6 @@ export function createStatePersistenceApi(context) {
         version: SAVEGAME_STORE_VERSION,
         slots: normalizeSaveSlots(parsed.slots),
       };
-    }
-
-    if (parsed?.version === SAVEGAME_VERSION && Array.isArray(parsed.entries)) {
-      return migrateLegacyEntryStore(parsed);
-    }
-
-    if (parsed?.version === SAVEGAME_VERSION && parsed?.state && typeof parsed.state === "object") {
-      const store = createEmptySavegameStore();
-      store.slots[0] = normalizeSaveEntry(parsed);
-      return store;
     }
 
     throw new Error("incompatible-savegame-store");
@@ -415,10 +405,11 @@ export function createStatePersistenceApi(context) {
       profileId: item.profileId ?? template?.profileId ?? null,
       iconAsset: item.iconAsset ?? template?.iconAsset ?? null,
       lightBonus: item.lightBonus ?? 0,
-      effects: Array.isArray(item.effects) ? item.effects : [],
+      effects: Array.isArray(item.effects) ? item.effects.map(cloneWeaponRuntimeEffect) : [],
       numericMods: Array.isArray(item.numericMods) ? item.numericMods : [],
-      modifiers: Array.isArray(item.modifiers) ? item.modifiers : [],
+      modifiers: Array.isArray(item.modifiers) ? item.modifiers.map(cloneItemModifierRuntime) : [],
       modifierIds: Array.isArray(item.modifierIds) ? item.modifierIds : [],
+      balanceGroups: Array.isArray(item.balanceGroups) ? item.balanceGroups : getItemBalanceGroups(item),
     };
   }
 
@@ -461,9 +452,10 @@ export function createStatePersistenceApi(context) {
       blockValue: item.blockValue ?? template?.blockValue ?? 0,
       statMods: { ...(item.statMods ?? template?.statMods ?? {}) },
       modifiers: Array.isArray(item.modifiers)
-        ? item.modifiers.map((modifier) => ({ ...modifier }))
+        ? item.modifiers.map(cloneItemModifierRuntime)
         : [],
       modifierIds: Array.isArray(item.modifierIds) ? [...item.modifierIds] : [],
+      balanceGroups: Array.isArray(item.balanceGroups) ? [...item.balanceGroups] : getItemBalanceGroups(item),
     };
   }
 
@@ -685,6 +677,7 @@ export function createStatePersistenceApi(context) {
     normalizedState.player = {
       ...normalizedState.player,
       ...(savedState.player ?? {}),
+      type: "player",
       name: heroName,
       classId: heroClassId,
       classLabel: HERO_CLASSES[heroClassId]?.label ?? normalizedState.player.classLabel,
@@ -699,8 +692,13 @@ export function createStatePersistenceApi(context) {
       trapAvoidBonus: HERO_CLASSES[heroClassId]?.trapAvoidBonus ?? 0,
       shieldBlockBonus: HERO_CLASSES[heroClassId]?.shieldBlockBonus ?? 0,
     };
+    normalizedState.player.progressionBonuses = {
+      ...createEmptyProgressionBonuses(),
+      ...(savedState.player?.progressionBonuses ?? {}),
+    };
     normalizedState.player.mainHand = normalizeWeaponItem(savedState.player?.mainHand ?? normalizedState.player.mainHand);
     normalizedState.player.offHand = normalizeOffHandItem(savedState.player?.offHand ?? normalizedState.player.offHand);
+    normalizedState.player.equipmentStatsApplied = false;
     normalizedState.player.statusEffects = Array.isArray(savedState.player?.statusEffects)
       ? savedState.player.statusEffects
       : [];
@@ -754,6 +752,15 @@ export function createStatePersistenceApi(context) {
         return {
           ok: false,
           reason: "missing",
+        };
+      }
+
+      if (!isSaveEntryCompatible(entry)) {
+        return {
+          ok: false,
+          reason: "incompatible",
+          foundVersion: entry.snapshotVersion ?? "unknown",
+          expectedVersion: SAVEGAME_VERSION,
         };
       }
 
@@ -811,7 +818,7 @@ export function createStatePersistenceApi(context) {
       deepestStudioArchetypeId: state.floors[state.deepestFloor]?.studioArchetypeId ?? null,
       level: state.player.level,
       hp: state.player.hp,
-      maxHp: state.player.maxHp,
+      maxHp: getActorDerivedMaxHp(state.player),
       turns: state.turn,
       kills: state.kills,
       deathCause: state.deathCause ?? "Verschwand auf mysterioese Weise im Schneideraum.",

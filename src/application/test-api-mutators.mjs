@@ -1,3 +1,4 @@
+import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 import { cloneItemDef } from '../item-defs.mjs';
 
 export function createTestApiMutators(context) {
@@ -255,7 +256,7 @@ export function createTestApiMutators(context) {
 
     state.player.x = playerPosition.x;
     state.player.y = playerPosition.y;
-    state.player.hp = config.player?.hp ?? state.player.maxHp;
+    state.player.hp = config.player?.hp ?? getActorDerivedMaxHp(state.player);
     if (config.player) {
       Object.assign(state.player, config.player);
       if (config.player.weapon || config.player.mainHand) {

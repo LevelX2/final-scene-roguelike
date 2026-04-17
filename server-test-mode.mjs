@@ -2,7 +2,10 @@ export function injectTestModeBootstrap(html) {
   const bootstrapScript = `<script>
 (() => {
   try {
+    const DISABLE_VOICE_ANNOUNCEMENTS_KEY = "dungeon-rogue-disable-voice-announcements";
     window.localStorage.setItem("dungeon-rogue-enable-test-api", "1");
+    window.localStorage.setItem(DISABLE_VOICE_ANNOUNCEMENTS_KEY, "1");
+    window.__DUNGEON_ROGUE_DISABLE_VOICE_ANNOUNCEMENTS__ = true;
     let existingOptions = {};
     try {
       existingOptions = JSON.parse(window.localStorage.getItem("dungeon-rogue-options") ?? "{}") ?? {};

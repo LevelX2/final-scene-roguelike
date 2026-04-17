@@ -1,3 +1,5 @@
+import { areVoiceAnnouncementsForcedOff } from './test-mode.mjs';
+
 export function createAudioService(context) {
   const {
     getState,
@@ -31,6 +33,10 @@ export function createAudioService(context) {
   }
 
   function isVoiceAnnouncementEnabled() {
+    if (areVoiceAnnouncementsForcedOff()) {
+      return false;
+    }
+
     return Boolean(getState()?.options?.voiceAnnouncements);
   }
 

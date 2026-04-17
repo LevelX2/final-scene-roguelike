@@ -9,6 +9,8 @@ test("injectTestModeBootstrap injects the audio-safe test bootstrap before head 
   const result = injectTestModeBootstrap(html);
 
   assert.match(result, /dungeon-rogue-enable-test-api/);
+  assert.match(result, /dungeon-rogue-disable-voice-announcements/);
+  assert.match(result, /__DUNGEON_ROGUE_DISABLE_VOICE_ANNOUNCEMENTS__ = true/);
   assert.match(result, /voiceAnnouncements: false/);
   assert.ok(result.indexOf("voiceAnnouncements: false") < result.indexOf("</head>"));
 });

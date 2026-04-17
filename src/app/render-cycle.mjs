@@ -214,12 +214,13 @@ export function createRenderCycleApi(context) {
     boardScalerElement.style.height = `${metrics.scaledBoardHeight}px`;
 
     const playerTile = boardElement.querySelector(".tile.player");
-    if (!playerTile) {
+    const playerCell = playerTile?.closest(".tile-cell") ?? playerTile;
+    if (!playerCell) {
       return;
     }
 
-    const playerBoardX = playerTile.offsetLeft + (playerTile.offsetWidth / 2);
-    const playerBoardY = playerTile.offsetTop + (playerTile.offsetHeight / 2);
+    const playerBoardX = playerCell.offsetLeft + (playerCell.offsetWidth / 2);
+    const playerBoardY = playerCell.offsetTop + (playerCell.offsetHeight / 2);
     const playerCenterX = playerBoardX * metrics.effectiveZoom;
     const playerCenterY = playerBoardY * metrics.effectiveZoom;
     const edgeBufferX = Math.max(84, metrics.viewportWidth * 0.22);

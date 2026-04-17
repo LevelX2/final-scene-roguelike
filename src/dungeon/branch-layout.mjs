@@ -3077,6 +3077,10 @@ function isRoomReachableWithCurrentDoors(state, room) {
   return room.floorTiles.some((tile) => reachable.has(keyOf(tile.x, tile.y)));
 }
 
+function isRoomSealedWithCurrentDoors(state, room) {
+  return room ? !isRoomReachableWithCurrentDoors(state, room) : false;
+}
+
 function areCoreAnchorsReachableWithCurrentDoors(state) {
   const reachable = buildTileKeySet(
     state.computeReachableTilesWithBlockedPositions(
@@ -3155,7 +3159,11 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
       state.keys.push(keyPickup);
     }
 
-    if (!isRoomReachableWithCurrentDoors(state, matchingKeyRoom) || !areCoreAnchorsReachableWithCurrentDoors(state)) {
+    if (
+      !isRoomReachableWithCurrentDoors(state, matchingKeyRoom) ||
+      !isRoomSealedWithCurrentDoors(state, lockedRoom) ||
+      !areCoreAnchorsReachableWithCurrentDoors(state)
+    ) {
       door.doorType = state.DOOR_TYPE.NORMAL;
       delete door.lockColor;
       lockedRoom.overlayRole = null;

@@ -1,6 +1,7 @@
 import { formatStudioOrigin } from '../studio-theme.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 import { getActorDerivedMaxHp } from '../application/derived-actor-stats.mjs';
+import { getEffectStateLabel, getWeaponEffectDefinition } from '../content/catalogs/weapon-effects.mjs';
 import { getWeaponRuntimeEffects } from '../weapon-runtime-effects.mjs';
 
 export function createInventoryView(context) {
@@ -181,7 +182,10 @@ export function createInventoryView(context) {
     }
 
     return effects
-      .map((effect) => `${effect.type ?? "Effekt"} ${effect.duration ?? 0}`)
+      .map((effect) => {
+        const label = getEffectStateLabel(effect.type) ?? getWeaponEffectDefinition(effect.type)?.label ?? effect.type ?? "Effekt";
+        return `${label} ${effect.duration ?? 0}`;
+      })
       .join(" | ");
   }
 

@@ -82,3 +82,110 @@ test('trap generation gains extra budget from larger reachable floor area', () =
   assert.equal(compactFloor.length, 7);
   assert.equal(sprawlingFloor.length, 10);
 });
+
+function createTrapPerceptionHarness({
+  randomChance = () => 0.99,
+  visible = [],
+} = {}) {
+  const messages = [];
+  const floatingTexts = [];
+  const state = {
+    player: { x: 1, y: 1, hp: 10 },
+    damageTaken: 0,
+    damageDealt: 0,
+    kills: 0,
+    killStats: {},
+  };
+  const floorState = {
+    traps: [],
+    enemies: [],
+    visible,
+  };
+
+  const trapsApi = createTrapsApi({
+    randomInt: (min, max) => min,
+    randomChance,
+    getState: () => state,
+    getCurrentFloorState: () => floorState,
+    addMessage: (text, tone = '') => messages.push({ text, tone }),
+    showFloatingText: (...args) => floatingTexts.push(args),
+    healPlayer: () => {},
+    refreshNutritionState: () => {},
+    grantExperience: () => {},
+    createDeathCause: () => 'test',
+    saveHighscoreIfNeeded: () => null,
+    showDeathModal: () => {},
+    playDeathSound: () => {},
+  });
+
+  return {
+    trapsApi,
+    state,
+    floorState,
+    messages,
+    floatingTexts,
+  };
+}
+
+test('enemy-triggered traps stay silent outside the player view', () => {
+  const harness = createTrapPerceptionHarness({
+    visible: Array.from({ length: 5 }, () => Array(5).fill(false)),
+  });
+  const trap = {
+    id: 'hidden-floor-trap',
+    name: 'Testfalle',
+    visibility: 'hidden',
+    state: 'active',
+    trigger: 'on_enter',
+    resetMode: 'single_use',
+    affectsPlayer: true,
+    affectsEnemies: true,
+    x: 3,
+    y: 3,
+    reactDifficulty: null,
+    effect: { damage: 4 },
+  };
+  const enemy = { id: 'enemy', name: 'Testgegner', x: 3, y: 3, hp: 10 };
+
+  harness.floorState.traps.push(trap);
+  harness.floorState.enemies.push(enemy);
+
+  const triggered = harness.trapsApi.handleActorEnterTile(enemy, harness.floorState);
+
+  assert.equal(triggered, true);
+  assert.equal(harness.messages.length, 0);
+  assert.equal(harness.floatingTexts.length, 0);
+});
+
+test('enemy-triggered traps remain visible in the log and on the board when in sight', () => {
+  const visible = Array.from({ length: 5 }, () => Array(5).fill(false));
+  visible[3][3] = true;
+  const harness = createTrapPerceptionHarness({ visible });
+  const trap = {
+    id: 'visible-floor-trap',
+    name: 'Testfalle',
+    visibility: 'hidden',
+    state: 'active',
+    trigger: 'on_enter',
+    resetMode: 'single_use',
+    affectsPlayer: true,
+    affectsEnemies: true,
+    x: 3,
+    y: 3,
+    reactDifficulty: null,
+    effect: { damage: 4 },
+  };
+  const enemy = { id: 'enemy', name: 'Testgegner', x: 3, y: 3, hp: 10 };
+
+  harness.floorState.traps.push(trap);
+  harness.floorState.enemies.push(enemy);
+
+  const triggered = harness.trapsApi.handleActorEnterTile(enemy, harness.floorState);
+
+  assert.equal(triggered, true);
+  assert.equal(harness.messages.length, 1);
+  assert.match(harness.messages[0].text, /Schaden durch Testfalle/);
+  assert.equal(harness.floatingTexts.length, 1);
+  assert.equal(harness.floatingTexts[0][0], 3);
+  assert.equal(harness.floatingTexts[0][1], 3);
+});

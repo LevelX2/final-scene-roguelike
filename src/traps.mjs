@@ -258,6 +258,28 @@ export function createTrapsApi(context) {
     });
   }
 
+  function isTileVisibleToPlayer(x, y, floorState = getCurrentFloorState()) {
+    if (x == null || y == null) {
+      return false;
+    }
+
+    const visibleMask = floorState?.visible;
+    if (!Array.isArray(visibleMask)) {
+      return true;
+    }
+
+    return Boolean(visibleMask[y]?.[x]);
+  }
+
+  function canPlayerPerceiveTrapEvent(actor, trap, floorState = getCurrentFloorState()) {
+    const state = getState();
+    if (actor === state.player) {
+      return true;
+    }
+
+    return isTileVisibleToPlayer(trap?.x ?? actor?.x, trap?.y ?? actor?.y, floorState);
+  }
+
   function getTrapAt(x, y, floorState = getCurrentFloorState()) {
     return floorState?.traps?.find((trap) => trap.x === x && trap.y === y) ?? null;
   }
@@ -364,7 +386,7 @@ export function createTrapsApi(context) {
     return detected;
   }
 
-  function handleTrapDeath(actor, trap) {
+  function handleTrapDeath(actor, trap, { perceived = true } = {}) {
     const state = getState();
     const floorState = getCurrentFloorState();
 
@@ -383,13 +405,16 @@ export function createTrapsApi(context) {
     state.kills += 1;
     state.killStats = recordKillStat(state.killStats, actor);
     grantExperience(actor.xpReward ?? 0, formatMonsterLabel(actor, 'accusative'));
-    addMessage(`${formatMonsterLabel(actor, 'nominative', true)} geht in ${trap.name} zugrunde.`, "important");
+    if (perceived) {
+      addMessage(`${formatMonsterLabel(actor, 'nominative', true)} geht in ${trap.name} zugrunde.`, "important");
+    }
   }
 
   function applyTrapEffect(trap, actor, { reduced = false, isContinuous = false } = {}) {
     const state = getState();
     const floorState = getCurrentFloorState();
     const isPlayer = actor === state.player;
+    const perceived = canPlayerPerceiveTrapEvent(actor, trap, floorState);
 
     if (trap.effect.damage) {
       if (!isPlayer) {
@@ -406,23 +431,25 @@ export function createTrapsApi(context) {
       } else {
         state.damageDealt = (state.damageDealt ?? 0) + damage;
       }
-      showFloatingText(actor.x, actor.y, `-${damage}`, "taken");
-      addMessage(
+      if (perceived) {
+        showFloatingText(actor.x, actor.y, `-${damage}`, "taken");
+        addMessage(
         isPlayer
           ? `${trap.name} trifft dich für ${damage} Schaden.`
           : `${formatMonsterLabel(actor, 'nominative', true)} erleidet ${damage} Schaden durch ${trap.name}.`,
         "danger",
       );
+      }
       if (isPlayer && classMitigation > 0) {
         addMessage(`${actor.classPassiveName} federt einen Teil der Set-Gefahr ab.`, "important");
       }
       if (actor.hp <= 0) {
-        handleTrapDeath(actor, trap);
+        handleTrapDeath(actor, trap, { perceived });
         return;
       }
     }
 
-    if (trap.effect.slow) {
+    if (trap.effect.slow && perceived) {
       addMessage(
         isPlayer
           ? `${trap.name} bringt dich kurz aus dem Tritt.`
@@ -471,12 +498,14 @@ export function createTrapsApi(context) {
         : randomChance() * 100 <= getAvoidChance(actor, trap, !hidden);
 
       if (avoided) {
-        addMessage(
-          isPlayer
-            ? `Du reagierst rechtzeitig auf ${trap.name}.`
-            : `${formatMonsterLabel(actor, 'nominative', true)} entgeht ${trap.name}.`,
-          "important",
-        );
+        if (canPlayerPerceiveTrapEvent(actor, trap)) {
+          addMessage(
+            isPlayer
+              ? `Du reagierst rechtzeitig auf ${trap.name}.`
+              : `${formatMonsterLabel(actor, 'nominative', true)} entgeht ${trap.name}.`,
+            "important",
+          );
+        }
       } else {
         applyTrapEffect(trap, actor, { reduced: false, isContinuous: false });
       }

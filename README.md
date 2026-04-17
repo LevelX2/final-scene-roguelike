@@ -67,7 +67,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 - `npm run check:js`
   Führt Syntax-Prüfungen für den aktuell konfigurierten Satz an Kernmodulen aus.
 - `npm run start:test`
-  Startet den lokalen Test-/App-Server auf Port `4173`.
+  Startet den lokalen Test-/App-Server auf Port `4173` und deaktiviert im ausgelieferten Browser-Testmodus Studio-Sprachausgaben automatisch vor dem App-Start.
 - `npm run start:app`
   Baut das Bundle und startet den lokalen App-Server auf Port `4173`.
 - `npm run test:e2e`

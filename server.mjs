@@ -1,6 +1,7 @@
 import http from "node:http";
 import path from "node:path";
 import { promises as fs, readFileSync } from "node:fs";
+import { injectTestModeBootstrap } from "./server-test-mode.mjs";
 
 const ROOT_DIR = process.cwd();
 const DEFAULT_PORT = 4173;
@@ -40,6 +41,7 @@ loadEnvFile(ROOT_DIR);
 const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL ?? "gpt-4o-mini-tts";
 const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE ?? "cedar";
 const OPENAI_TTS_RESPONSE_FORMAT = process.env.OPENAI_TTS_RESPONSE_FORMAT ?? "mp3";
+const TEST_MODE_ENABLED = process.env.DUNGEON_ROGUE_TEST_MODE === "1";
 const OPENAI_TTS_INSTRUCTIONS = process.env.OPENAI_TTS_INSTRUCTIONS
   ?? "Sprich auf Deutsch, cineastisch, ruhig, bedeutungsvoll und leicht geheimnisvoll. Klinge wie eine stilvolle Trailer-Stimme, aber natürlich und nicht übertrieben.";
 
@@ -148,7 +150,9 @@ async function handleStaticRequest(pathname, response) {
     }
 
     const extension = path.extname(filePath).toLowerCase();
-    const contents = await fs.readFile(filePath);
+    const contents = extension === ".html" && TEST_MODE_ENABLED
+      ? Buffer.from(injectTestModeBootstrap(await fs.readFile(filePath, "utf8")), "utf8")
+      : await fs.readFile(filePath);
     response.writeHead(200, {
       "Cache-Control": "no-store",
       "Content-Type": MIME_TYPES[extension] ?? "application/octet-stream",

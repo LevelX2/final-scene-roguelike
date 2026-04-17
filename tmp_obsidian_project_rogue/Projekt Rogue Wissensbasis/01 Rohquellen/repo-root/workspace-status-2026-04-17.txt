@@ -1,0 +1,43 @@
+ M src/ai/awareness.mjs
+ M src/ai/enemy-turns.mjs
+ M src/app/app-config.mjs
+ M src/app/core-assembly.mjs
+ M src/app/gameplay-assembly.mjs
+ M src/application/item-equipment.mjs
+ M src/application/item-floor-state.mjs
+ M src/application/shield-generation-service.mjs
+ M src/application/state-blueprint.mjs
+ M src/application/state-persistence.mjs
+ M src/application/status-effect-service.mjs
+ M src/application/test-api-mutators.mjs
+ M src/application/test-api-snapshots.mjs
+ M src/balance.mjs
+ M src/combat/combat-progression.mjs
+ M src/combat/combat-resolution.mjs
+ M src/content/catalogs/monster-phase-one.mjs
+ M src/content/catalogs/monsters.mjs
+ M src/content/catalogs/weapon-effects.mjs
+ M src/dungeon.mjs
+ M src/dungeon/branch-layout.mjs
+ M src/dungeon/enemy-factory.mjs
+ M src/dungeon/pickup-factory.mjs
+ M src/equipment-helpers.mjs
+ M src/itemization.mjs
+ M src/nutrition.mjs
+ M src/state.mjs
+ M src/traps.mjs
+ M src/ui/board-view.mjs
+ M src/ui/hud-view.mjs
+ M src/ui/inventory-view.mjs
+ M src/ui/tooltip-view.mjs
+ M tests/app.spec.js
+ M tests/modules/branch-layout.test.mjs
+?? docs/balancing-bestandsaufnahme-2026-04-17.md
+?? src/ai/enemy-profile-helpers.mjs
+?? src/application/derived-actor-stats.mjs
+?? src/enemy-balance-groups.mjs
+?? src/item-balance-groups.mjs
+?? src/weapon-runtime-effects.mjs
+?? tests/modules/monster-special-pools.test.mjs
+?? tmp_obsidian_project_rogue/
+?? tmp_obsidian_template/

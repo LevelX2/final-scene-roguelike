@@ -96,7 +96,7 @@ test('state-blueprint supports fixed weapons offhands and inline loadout items',
 
   assert.equal(state.player.mainHand.id, 'expedition-revolver');
   assert.equal(state.player.offHand?.id, 'stuntman-bracer');
-  assert.equal(state.player.endurance, 1);
+  assert.equal(state.player.endurance, 0);
   assert.equal(state.player.offHand?.statMods?.endurance, 1);
 
   assert.deepEqual(

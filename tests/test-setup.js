@@ -19,8 +19,6 @@ test.beforeEach(async ({ page }) => {
       tooltipScale: 1,
       enemyPanelMode: "detailed",
       ...existingOptions,
-      voiceAnnouncements: false,
-      showcaseAnnouncementMode: "floating-text",
     }));
     window.__speechCalls = [];
 

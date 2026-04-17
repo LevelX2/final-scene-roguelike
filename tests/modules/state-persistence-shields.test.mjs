@@ -124,8 +124,8 @@ test('state-persistence normalisiert Schilde in Inventar, Boden-Pickups und Gegn
   const { storage, getState, persistence } = createPersistenceHarness();
 
   storage.set('savegame', JSON.stringify({
-    version: 4,
-    entries: [{
+    version: 2,
+    slots: [{
       id: 'save-1',
       savedAt: 123,
       snapshotVersion: 4,
@@ -183,7 +183,6 @@ test('state-persistence normalisiert Schilde in Inventar, Boden-Pickups und Gegn
         },
       },
     }],
-    consumedIds: {},
   }));
 
   const result = persistence.loadSavedGame();

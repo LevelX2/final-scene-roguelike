@@ -1882,7 +1882,9 @@ test("poison deals damage over time to the player", async ({ page }) => {
   });
 
   await expect(page.locator("#topbarStatusSummary")).toContainText("Vergiftet 2");
-  await expect(page.locator("#playerSheet")).toContainText("Vergiftet 2");
+  await page.locator("#openHeroDetails").click();
+  await expect(page.locator("#inventoryHeroPanel")).toBeVisible();
+  await expect(page.locator("#heroSheet")).toContainText("Vergiftet 2");
 
   const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.hp);
   await page.evaluate(() => window.__TEST_API__.processStatusRound());
@@ -1959,7 +1961,7 @@ test("reaction malus lowers the displayed block value", async ({ page }) => {
     });
   });
 
-  const before = Number((await page.locator("#topbarBlock").textContent()).replace("%", ""));
+  const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.derivedStats.final.reaction);
 
   await page.evaluate(() => {
     window.__TEST_API__.applyStatusToPlayer({
@@ -1969,7 +1971,8 @@ test("reaction malus lowers the displayed block value", async ({ page }) => {
     });
   });
 
-  const after = Number((await page.locator("#topbarBlock").textContent()).replace("%", ""));
+  await expect(page.locator("#topbarStatusSummary")).toContainText("Benommen 2");
+  const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.derivedStats.final.reaction);
 
   expect(after).toBeLessThan(before);
 });

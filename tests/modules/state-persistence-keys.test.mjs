@@ -112,8 +112,8 @@ test('state-persistence normalizes key inventory items and floor key pickups', (
   });
 
   storage.set('savegame', JSON.stringify({
-    version: 4,
-    entries: [{
+    version: 2,
+    slots: [{
       id: 'save-keys',
       savedAt: 123,
       snapshotVersion: 4,
@@ -134,7 +134,6 @@ test('state-persistence normalizes key inventory items and floor key pickups', (
         },
       },
     }],
-    consumedIds: {},
   }));
 
   const result = persistence.loadSavedGame();

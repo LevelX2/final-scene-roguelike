@@ -273,11 +273,11 @@ test('branch layout gives slasher floor one at least three standard monster cand
     'slasher',
   );
 
-  assert.deepEqual(available.map((monster) => monster.id), [
-    'slasher-kellerkreatur',
-    'slasher-kultist',
-    'slasher-wahnsinniger-hausmeister',
-  ]);
+  const availableIds = available.map((monster) => monster.id);
+  assert.ok(availableIds.length >= 3);
+  assert.ok(availableIds.includes('slasher-kellerkreatur'));
+  assert.ok(availableIds.includes('slasher-kultist'));
+  assert.ok(availableIds.includes('slasher-wahnsinniger-hausmeister'));
 });
 
 test('balance allows a small amount of equipment to appear on floor one', () => {

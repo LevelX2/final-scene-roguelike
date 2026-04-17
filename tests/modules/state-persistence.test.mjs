@@ -103,8 +103,8 @@ test('state-persistence normalizes transient modal state on load', () => {
   });
 
   storage.set('savegame', JSON.stringify({
-    version: 4,
-    entries: [{
+    version: 2,
+    slots: [{
       id: 'save-1',
       savedAt: 123,
       snapshotVersion: 4,
@@ -118,7 +118,6 @@ test('state-persistence normalizes transient modal state on load', () => {
         floors: { 1: { studioArchetypeId: 'slasher', grid: [['.']], visible: [[true]], enemies: [] } },
       },
     }],
-    consumedIds: {},
   }));
 
   const result = persistence.loadSavedGame();

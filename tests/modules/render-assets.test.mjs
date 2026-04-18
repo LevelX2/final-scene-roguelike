@@ -271,3 +271,113 @@ test('render asset helpers route legacy monsters into the enemies directory', ()
     './assets/enemies/legacy-kellerkriecher.svg',
   );
 });
+
+test('render asset helpers derive player and enemy weapon overlays from equipped weapons', () => {
+  const { getPlayerWeaponOverlay, getEnemyWeaponOverlay } = createRenderAssetHelpers({
+    getHeroClassAssets: () => ({ iconUrl: null, spriteUrl: null }),
+  });
+
+  assert.deepEqual(
+    getPlayerWeaponOverlay({
+      mainHand: {
+        type: 'weapon',
+        id: 'combat-knife',
+        attackMode: 'melee',
+        handedness: 'one-handed',
+      },
+    }),
+    {
+      imageUrl: './assets/weapons/combat-knife.svg',
+      poseClass: 'melee-light',
+      scale: 1.02,
+      offsetX: 10,
+      offsetY: 3,
+      rotation: -34,
+    },
+  );
+
+  assert.deepEqual(
+    getPlayerWeaponOverlay({
+      mainHand: {
+        type: 'weapon',
+        id: 'woodcutter-axe',
+        attackMode: 'melee',
+        handedness: 'two-handed',
+      },
+    }),
+    {
+      imageUrl: './assets/weapons/woodcutter-axe.svg',
+      poseClass: 'melee-heavy',
+      scale: 1.16,
+      offsetX: 10,
+      offsetY: -3,
+      rotation: -30,
+    },
+  );
+
+  assert.deepEqual(
+    getPlayerWeaponOverlay({
+      mainHand: {
+        type: 'weapon',
+        id: 'sport-bow',
+        attackMode: 'ranged',
+        handedness: 'two-handed',
+      },
+    }),
+    {
+      imageUrl: './assets/weapons/sport-bow.svg',
+      poseClass: 'ranged-bow',
+      scale: 1.18,
+      offsetX: 10,
+      offsetY: -2,
+      rotation: -18,
+    },
+  );
+
+  assert.deepEqual(
+    getPlayerWeaponOverlay({
+      mainHand: {
+        type: 'weapon',
+        id: 'expedition-revolver',
+        attackMode: 'ranged',
+        handedness: 'one-handed',
+      },
+    }),
+    {
+      imageUrl: './assets/weapons/expedition-revolver.svg',
+      poseClass: 'ranged-gun',
+      scale: 1.08,
+      offsetX: 10,
+      offsetY: 2,
+      rotation: -10,
+    },
+  );
+
+  assert.deepEqual(
+    getEnemyWeaponOverlay({
+      mainHand: {
+        id: 'revolver',
+        attackMode: 'ranged',
+        handedness: 'one-handed',
+      },
+    }),
+    {
+      imageUrl: './assets/weapons/revolver.svg',
+      poseClass: 'ranged-gun',
+      scale: 1.08,
+      offsetX: 10,
+      offsetY: 2,
+      rotation: -10,
+    },
+  );
+
+  assert.equal(
+    getPlayerWeaponOverlay({
+      mainHand: {
+        type: 'weapon',
+        id: 'bare-hands',
+      },
+    }),
+    null,
+  );
+});

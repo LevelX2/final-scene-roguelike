@@ -16,6 +16,12 @@ export function createTooltipView(context) {
     getActorStatusDisplay = () => [],
     clamp,
   } = context;
+  const TOOLTIP_SHOW_DELAY_MS = 220;
+  const boundTooltipFactories = new WeakMap();
+  let pendingShowTimer = null;
+  let pendingTooltipElement = null;
+  let currentTooltipElement = null;
+  let lastPointerPosition = null;
 
   function escapeHtml(text) {
     return String(text)
@@ -173,9 +179,61 @@ export function createTooltipView(context) {
     };
   }
 
-  function showTooltip(tooltip, event) {
+  function rememberPointerPosition(event) {
+    if (!event || typeof event.clientX !== "number" || typeof event.clientY !== "number") {
+      return;
+    }
+
+    lastPointerPosition = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+    };
+  }
+
+  function getLastPointerEvent() {
+    if (!lastPointerPosition) {
+      return null;
+    }
+
+    return {
+      clientX: lastPointerPosition.clientX,
+      clientY: lastPointerPosition.clientY,
+    };
+  }
+
+  function clearPendingTooltip() {
+    if (pendingShowTimer !== null) {
+      window.clearTimeout(pendingShowTimer);
+      pendingShowTimer = null;
+    }
+
+    pendingTooltipElement = null;
+  }
+
+  function getTooltipBoundElementAtPointer() {
+    if (!lastPointerPosition) {
+      return null;
+    }
+
+    const hoveredElement = document.elementFromPoint(
+      lastPointerPosition.clientX,
+      lastPointerPosition.clientY,
+    );
+
+    return hoveredElement?.closest?.("[data-tooltip-bound='true']") ?? null;
+  }
+
+  function showTooltip(tooltip, event, options = {}) {
+    rememberPointerPosition(event);
+    clearPendingTooltip();
+    currentTooltipElement = options.anchorElement ?? null;
     hoverTooltipElement.innerHTML = `
-      ${tooltip.imageUrl ? `<div class="tooltip-art ${tooltip.imageClass ?? ""}" style="background-image: url('${tooltip.imageUrl}')"></div>` : ""}
+      ${(tooltip.imageUrl || tooltip.secondaryImageUrl) ? `
+        <div class="tooltip-art-row">
+          ${tooltip.imageUrl ? `<div class="tooltip-art ${tooltip.imageClass ?? ""}" style="background-image: url('${tooltip.imageUrl}')"></div>` : ""}
+          ${tooltip.secondaryImageUrl ? `<div class="${tooltip.secondaryImageClass ?? "tooltip-art tooltip-art-secondary"}" style="background-image: url('${tooltip.secondaryImageUrl}')" aria-label="${escapeHtml(tooltip.secondaryImageLabel ?? "")}"></div>` : ""}
+        </div>
+      ` : ""}
       <p class="tooltip-title">${tooltip.title}</p>
       <p class="tooltip-copy">${tooltip.lines.join("<br>")}</p>
     `;
@@ -185,6 +243,8 @@ export function createTooltipView(context) {
   }
 
   function moveTooltip(event) {
+    rememberPointerPosition(event);
+
     if (!event || hoverTooltipElement.classList.contains("hidden")) {
       return;
     }
@@ -213,8 +273,41 @@ export function createTooltipView(context) {
   }
 
   function hideTooltip() {
+    clearPendingTooltip();
+    currentTooltipElement = null;
     hoverTooltipElement.classList.add("hidden");
     hoverTooltipElement.setAttribute("aria-hidden", "true");
+    hoverTooltipElement.innerHTML = "";
+  }
+
+  function scheduleTooltip(element, tooltipFactory, event) {
+    rememberPointerPosition(event);
+    clearPendingTooltip();
+    pendingTooltipElement = element;
+    pendingShowTimer = window.setTimeout(() => {
+      pendingShowTimer = null;
+
+      if (pendingTooltipElement !== element) {
+        return;
+      }
+
+      const hoveredElement = getTooltipBoundElementAtPointer();
+      pendingTooltipElement = null;
+      if (hoveredElement !== element) {
+        if (currentTooltipElement === element) {
+          hideTooltip();
+        }
+        return;
+      }
+
+      const tooltip = tooltipFactory?.();
+      if (!tooltip) {
+        hideTooltip();
+        return;
+      }
+
+      showTooltip(tooltip, getLastPointerEvent() ?? event, { anchorElement: element });
+    }, TOOLTIP_SHOW_DELAY_MS);
   }
 
   function bindTooltip(element, tooltipFactory) {
@@ -222,9 +315,51 @@ export function createTooltipView(context) {
       return;
     }
 
-    element.addEventListener("mouseenter", (event) => showTooltip(tooltipFactory(), event));
-    element.addEventListener("mousemove", (event) => moveTooltip(event));
-    element.addEventListener("mouseleave", () => hideTooltip());
+    boundTooltipFactories.set(element, tooltipFactory);
+    element.dataset.tooltipBound = "true";
+
+    element.addEventListener("mouseenter", (event) => {
+      scheduleTooltip(element, tooltipFactory, event);
+    });
+    element.addEventListener("mousemove", (event) => {
+      rememberPointerPosition(event);
+      if (currentTooltipElement === element) {
+        moveTooltip(event);
+      }
+    });
+    element.addEventListener("mouseleave", () => {
+      if (pendingTooltipElement === element || currentTooltipElement === element) {
+        hideTooltip();
+      }
+    });
+  }
+
+  function syncTooltipTarget() {
+    const hoveredElement = getTooltipBoundElementAtPointer();
+    const tooltipFactory = hoveredElement ? boundTooltipFactories.get(hoveredElement) : null;
+
+    if (!hoveredElement || !tooltipFactory) {
+      hideTooltip();
+      return;
+    }
+
+    if (currentTooltipElement === hoveredElement) {
+      moveTooltip(getLastPointerEvent());
+      return;
+    }
+
+    if (!hoverTooltipElement.classList.contains("hidden")) {
+      const tooltip = tooltipFactory();
+      if (!tooltip) {
+        hideTooltip();
+        return;
+      }
+
+      showTooltip(tooltip, getLastPointerEvent(), { anchorElement: hoveredElement });
+      return;
+    }
+
+    scheduleTooltip(hoveredElement, tooltipFactory, getLastPointerEvent());
   }
 
   return {
@@ -235,5 +370,6 @@ export function createTooltipView(context) {
     moveTooltip,
     hideTooltip,
     bindTooltip,
+    syncTooltipTarget,
   };
 }

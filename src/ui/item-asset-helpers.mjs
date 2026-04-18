@@ -1,6 +1,7 @@
 export function getWeaponIconAssetUrl(item) {
   const assetId = item?.iconAssetId ?? item?.id ?? null;
-  if (!item || item.type !== "weapon" || !assetId) {
+  const looksLikeWeapon = item?.type === "weapon" || item?.attackMode || item?.weaponRole || item?.profileId;
+  if (!item || !looksLikeWeapon || !assetId) {
     return null;
   }
 
@@ -19,4 +20,3 @@ export function getOffHandIconAssetUrl(item) {
 export function getItemRarityClass(item) {
   return `rarity-${item?.rarity ?? "common"}`;
 }
-

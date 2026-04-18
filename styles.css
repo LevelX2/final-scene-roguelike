@@ -712,7 +712,7 @@ kbd {
 .board {
   position: relative;
   display: grid;
-  gap: 2px;
+  gap: 0;
   justify-content: start;
   align-content: start;
   caret-color: transparent;
@@ -1123,6 +1123,13 @@ kbd {
   }
 }
 
+.tile-cell {
+  width: 28px;
+  height: 28px;
+  position: relative;
+  user-select: none;
+}
+
 .tile {
   width: 28px;
   height: 28px;
@@ -1136,24 +1143,88 @@ kbd {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 22px 22px;
-  isolation: isolate;
 }
 
-.tile.has-decorative-overlay::before {
-  content: "";
+.tile-base {
   position: absolute;
   inset: 0;
-  background-image: var(--decorative-overlay-image);
-  background-repeat: no-repeat;
-  background-size: var(--decorative-overlay-size);
-  background-position: var(--decorative-overlay-position);
-  pointer-events: none;
-  opacity: 0.96;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
   z-index: 0;
 }
 
-.tile.decorative-overlay-debug-mask {
+.tile-foreground-layer {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  z-index: 2;
+}
+
+.tile-player-weapon {
+  --player-weapon-image: none;
+  --player-weapon-offset-x: 10px;
+  --player-weapon-offset-y: 2px;
+  --player-weapon-rotation: -18deg;
+  --player-weapon-scale: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%)
+    translate(var(--player-weapon-offset-x), var(--player-weapon-offset-y))
+    rotate(var(--player-weapon-rotation))
+    scale(var(--player-weapon-scale));
+  transform-origin: center;
+  background-image: var(--player-weapon-image);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter:
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.22));
+  opacity: 0.98;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.tile-player-weapon-ranged-bow {
+  width: 22px;
+  height: 22px;
+}
+
+.tile-player-weapon-ranged-heavy,
+.tile-player-weapon-melee-heavy {
+  width: 21px;
+  height: 21px;
+}
+
+.board-decorative-overlays {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.decorative-overlay-instance {
+  position: absolute;
+}
+
+.decorative-overlay-fragment {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.decorative-overlay-art {
+  position: absolute;
+  inset: 0 auto auto 0;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+.decorative-overlay-fragment-debug {
   box-shadow:
     inset 0 0 0 1px rgba(91, 208, 255, 0.9),
     inset 0 0 0 3px rgba(91, 208, 255, 0.22);
@@ -1205,14 +1276,14 @@ kbd {
 }
 
 .tile.floor {
-  width: 30px;
-  height: 30px;
-  margin: -1px;
+  width: 28px;
+  height: 28px;
+  margin: 0;
   border-radius: 0;
   background:
     linear-gradient(180deg, rgba(71, 108, 83, 0.08) 0%, rgba(18, 31, 24, 0.05) 100%),
     linear-gradient(180deg, #294134 0%, #253d31 100%);
-  background-size: 100% 100%;
+  background-size: calc(100% + 2px) calc(100% + 2px);
   background-position: center;
   box-shadow: none;
 }
@@ -1225,7 +1296,7 @@ kbd {
   background:
     linear-gradient(180deg, rgba(8, 12, 10, 0.44) 0%, rgba(6, 9, 8, 0.56) 100%),
     linear-gradient(180deg, #1a261f 0%, #16211b 100%);
-  background-size: 100% 100%;
+  background-size: calc(100% + 2px) calc(100% + 2px);
   background-position: center;
   opacity: 0.94;
 }
@@ -1354,10 +1425,10 @@ kbd {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(18, 28, 20, 0.12) 100%),
     url("./assets/tiles/wall-tile.svg");
-  width: 30px;
-  height: 30px;
-  margin: -1px;
-  background-size: 100% 100%;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  background-size: calc(100% + 2px) calc(100% + 2px);
   background-position: center;
   color: transparent;
   border-radius: 0;
@@ -1373,7 +1444,7 @@ kbd {
   width: 30px;
   height: 30px;
   margin: -1px;
-  background-size: 100% 100%;
+  background-size: calc(100% + 2px) calc(100% + 2px);
   background-position: center;
   color: transparent;
   border-radius: 0;
@@ -1385,9 +1456,12 @@ kbd {
 }
 
 .tile.unknown {
-  background:
-    linear-gradient(180deg, #0b100d 0%, #070b08 100%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  background: #000;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .tile.player {
@@ -2807,21 +2881,44 @@ kbd {
   cursor: crosshair;
 }
 
-.board.targeting-mode .tile.targeting-clickable {
+.board.targeting-mode .tile-cell.targeting-clickable {
   cursor: crosshair;
 }
 
-.tile.target-cursor {
+.tile-cell.target-cursor {
+  z-index: 4;
   box-shadow: inset 0 0 0 2px rgba(250, 232, 167, 0.95), 0 0 12px rgba(250, 232, 167, 0.35);
 }
 
-.tile.target-cursor-valid {
+.tile-cell.target-cursor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: inset 0 0 0 2px rgba(250, 232, 167, 0.95), 0 0 12px rgba(250, 232, 167, 0.35);
+}
+
+.tile-cell.target-cursor-valid {
   box-shadow:
     inset 0 0 0 2px rgba(125, 220, 138, 0.96),
     0 0 14px rgba(125, 220, 138, 0.38);
 }
 
-.tile.target-cursor-invalid {
+.tile-cell.target-cursor-valid::after {
+  box-shadow:
+    inset 0 0 0 2px rgba(125, 220, 138, 0.96),
+    0 0 14px rgba(125, 220, 138, 0.38);
+}
+
+.tile-cell.target-cursor-invalid {
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 125, 102, 0.96),
+    0 0 14px rgba(255, 125, 102, 0.34);
+}
+
+.tile-cell.target-cursor-invalid::after {
   box-shadow:
     inset 0 0 0 2px rgba(255, 125, 102, 0.96),
     0 0 14px rgba(255, 125, 102, 0.34);
@@ -2829,6 +2926,13 @@ kbd {
 
 .hover-tooltip.hidden {
   display: none;
+}
+
+.tooltip-art-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px;
 }
 
 .tooltip-art {
@@ -3016,6 +3120,24 @@ kbd {
 .tooltip-art.tooltip-art-offhand {
   --tooltip-frame: rgba(236, 243, 238, 0.28);
   --tooltip-glow: rgba(236, 243, 238, 0.1);
+}
+
+.tooltip-art.tooltip-art-weapon-equipped,
+.tooltip-art.tooltip-art-secondary {
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  align-self: center;
+  background-size: 54px 54px, cover;
+}
+
+.tooltip-art.tooltip-art-weapon-overlay {
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  box-shadow:
+    inset 0 0 0 1px var(--tooltip-frame),
+    0 0 18px var(--tooltip-glow),
+    0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 .tooltip-art.rarity-common {

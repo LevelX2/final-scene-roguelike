@@ -274,6 +274,7 @@ export function assembleGameplayModules(context) {
     canPlayerOpenDoor,
     getDoorColorLabels,
     manhattanDistance: aiApi.manhattanDistance,
+    chebyshevDistance: aiApi.chebyshevDistance,
     addMessage,
     attackEnemy: combatApi.attackEnemy,
     tryPickupLoot: itemsApi.tryPickupLoot,

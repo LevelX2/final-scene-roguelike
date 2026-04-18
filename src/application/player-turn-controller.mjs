@@ -28,7 +28,7 @@ export function createPlayerTurnController(context) {
     moveEnemies,
     canActorMove,
     hasLineOfSight,
-    isStraightShot,
+    chebyshevDistance,
     getCombatWeapon,
     processRoundStatusEffects,
     processContinuousTraps,
@@ -36,6 +36,31 @@ export function createPlayerTurnController(context) {
     applyPlayerNutritionTurnCost,
     renderSelf,
   } = context;
+
+  function isMovementBlockingTile(x, y, floorState) {
+    if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+      return true;
+    }
+
+    if (floorState.grid[y][x] === TILE.WALL) {
+      return true;
+    }
+
+    if (getShowcaseAt(x, y, floorState)) {
+      return true;
+    }
+
+    const door = getDoorAt(x, y, floorState);
+    return Boolean(door && !door.isOpen);
+  }
+
+  function isOrthogonallyAdjacent(left, right) {
+    return manhattanDistance(left, right) === 1;
+  }
+
+  function isDiagonalStep(dx, dy) {
+    return dx !== 0 && dy !== 0;
+  }
 
   function endTurn({ skipEnemyMove = false, actionType = "other" } = {}) {
     const state = getState();
@@ -73,7 +98,7 @@ export function createPlayerTurnController(context) {
     const floorState = getCurrentFloorState();
     const adjacentDoors = (floorState.doors ?? []).filter((door) =>
       door.isOpen &&
-      manhattanDistance(door, state.player) === 1
+      isOrthogonallyAdjacent(door, state.player)
     );
 
     if (adjacentDoors.length === 0) {
@@ -107,6 +132,17 @@ export function createPlayerTurnController(context) {
       return;
     }
 
+    if (
+      dx !== 0 &&
+      dy !== 0 &&
+      isMovementBlockingTile(state.player.x + dx, state.player.y, floorState) &&
+      isMovementBlockingTile(state.player.x, state.player.y + dy, floorState)
+    ) {
+      addMessage("Die Ecke ist zu eng, um dich diagonal hindurchzuzwängen.");
+      renderSelf();
+      return;
+    }
+
     if (floorState.grid[targetY][targetX] === TILE.WALL) {
       addMessage("Nur kalter Stein. Dort kommst du nicht durch.");
       renderSelf();
@@ -115,6 +151,12 @@ export function createPlayerTurnController(context) {
 
     const door = getDoorAt(targetX, targetY, floorState);
     if (door && !door.isOpen) {
+      if (isDiagonalStep(dx, dy)) {
+        addMessage("Eine Tür kannst du nicht diagonal aufdrücken.");
+        renderSelf();
+        return;
+      }
+
       if (!canPlayerOpenDoor(door)) {
         playLockedDoorSound();
         const hasWrongFloorKey = state.inventory.some((item) =>
@@ -219,8 +261,7 @@ export function createPlayerTurnController(context) {
         state,
         floorState,
         weapon,
-        manhattanDistance,
-        isStraightShot,
+        rangeDistance: chebyshevDistance,
         hasLineOfSight,
       }),
     };
@@ -346,8 +387,7 @@ export function createPlayerTurnController(context) {
       weapon,
       x: state.targeting.cursorX,
       y: state.targeting.cursorY,
-      manhattanDistance,
-      isStraightShot,
+      rangeDistance: chebyshevDistance,
       hasLineOfSight,
     });
 
@@ -358,7 +398,7 @@ export function createPlayerTurnController(context) {
     }
 
     if (!targetSelection.valid) {
-      addMessage('Dieses Ziel liegt nicht sauber in gerader Linie, Reichweite oder Sichtlinie.', 'danger');
+      addMessage('Dieses Ziel liegt nicht sauber in Reichweite oder Sichtlinie.', 'danger');
       renderSelf();
       return;
     }

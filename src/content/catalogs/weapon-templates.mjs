@@ -3,7 +3,7 @@ import { getWeaponEffectDefinition } from './weapon-effects.mjs';
 export const WEAPON_PROFILES = {
   light_melee: { id: "light_melee", damageWeight: 0.8, hitWeight: 1.25, critWeight: 1.25 },
   heavy_melee: { id: "heavy_melee", damageWeight: 1.25, hitWeight: 0.75, critWeight: 0.75 },
-  precise_ranged: { id: "precise_ranged", damageWeight: 1.0, hitWeight: 1.25, critWeight: 1.0 },
+  precise_ranged: { id: "precise_ranged", damageWeight: 1.0, hitWeight: 1.0, critWeight: 1.0 },
   special_improv: { id: "special_improv", damageWeight: 0.9, hitWeight: 1.0, critWeight: 0.75 },
 };
 
@@ -52,7 +52,7 @@ export const ARCHETYPE_WEAPON_TEMPLATES = {
   adventure: [
     createTemplate({ id: "relic-dagger", name: "Relikt-Dolch", source: "Abenteuer-Set", archetypeId: "adventure", weaponRole: "oneHanded", profileId: "light_melee", baseDamage: 2, baseHit: 1, baseCrit: 1 }),
     createTemplate({ id: "temple-spear", name: "Tempelspeer", source: "Abenteuer-Set", archetypeId: "adventure", weaponRole: "twoHanded", handedness: "two-handed", profileId: "heavy_melee", baseDamage: 4, baseHit: 0, baseCrit: 0 }),
-    createTemplate({ id: "expedition-revolver", name: "Expeditionsrevolver", source: "Abenteuer-Set", archetypeId: "adventure", weaponRole: "ranged", attackMode: "ranged", range: 6, profileId: "precise_ranged", meleePenaltyHit: 0, baseDamage: 2, baseHit: 1, baseCrit: 1 }),
+    createTemplate({ id: "expedition-revolver", name: "Expeditionsrevolver", source: "Abenteuer-Set", archetypeId: "adventure", weaponRole: "ranged", attackMode: "ranged", range: 6, profileId: "precise_ranged", meleePenaltyHit: -1, baseDamage: 2, baseHit: 1, baseCrit: 1 }),
     createTemplate({ id: "torch-spear", name: "Fackelspeer", source: "Abenteuer-Set", archetypeId: "adventure", weaponRole: "special", handedness: "two-handed", profileId: "special_improv", baseDamage: 2, baseHit: 0, baseCrit: 0, weight: 10, signatureEffect: { type: "light_bonus", tier: 1 } }),
   ],
   space_opera: [
@@ -76,7 +76,7 @@ export const ARCHETYPE_WEAPON_TEMPLATES = {
   noir: [
     createTemplate({ id: "cane-blade", name: "Gehstockklinge", source: "Noir-Set", archetypeId: "noir", weaponRole: "oneHanded", profileId: "light_melee", baseDamage: 2, baseHit: 1, baseCrit: 1 }),
     createTemplate({ id: "fire-axe", name: "Feuerwehraxt", source: "Noir-Set", archetypeId: "noir", weaponRole: "twoHanded", handedness: "two-handed", profileId: "heavy_melee", baseDamage: 4, baseHit: 0, baseCrit: 0 }),
-    createTemplate({ id: "pocket-revolver", name: "Taschenrevolver", source: "Noir-Set", archetypeId: "noir", weaponRole: "ranged", attackMode: "ranged", range: 5, profileId: "precise_ranged", meleePenaltyHit: 0, baseDamage: 2, baseHit: 2, baseCrit: 1 }),
+    createTemplate({ id: "pocket-revolver", name: "Taschenrevolver", source: "Noir-Set", archetypeId: "noir", weaponRole: "ranged", attackMode: "ranged", range: 5, profileId: "precise_ranged", meleePenaltyHit: -1, baseDamage: 2, baseHit: 2, baseCrit: 1 }),
     createTemplate({ id: "blackjack", name: "Blackjack", source: "Noir-Set", archetypeId: "noir", weaponRole: "special", profileId: "special_improv", baseDamage: 2, baseHit: 1, baseCrit: 0, weight: 10, signatureEffect: { type: "reaction_malus", tier: 1 } }),
   ],
   romcom: [
@@ -94,13 +94,13 @@ export const ARCHETYPE_WEAPON_TEMPLATES = {
   action: [
     createTemplate({ id: "combat-knife", name: "Kampfmesser", source: "Action-Set", archetypeId: "action", weaponRole: "oneHanded", profileId: "light_melee", baseDamage: 2, baseHit: 1, baseCrit: 0 }),
     createTemplate({ id: "breach-axe", name: "Taktische Brechaxt", source: "Action-Set", archetypeId: "action", weaponRole: "twoHanded", handedness: "two-handed", profileId: "heavy_melee", baseDamage: 4, baseHit: -1, baseCrit: 0 }),
-    createTemplate({ id: "service-pistol", name: "Dienstpistole", source: "Action-Set", archetypeId: "action", weaponRole: "ranged", attackMode: "ranged", range: 6, profileId: "precise_ranged", meleePenaltyHit: 0, baseDamage: 2, baseHit: 2, baseCrit: 0 }),
+    createTemplate({ id: "service-pistol", name: "Dienstpistole", source: "Action-Set", archetypeId: "action", weaponRole: "ranged", attackMode: "ranged", range: 6, profileId: "precise_ranged", meleePenaltyHit: -1, baseDamage: 2, baseHit: 2, baseCrit: 0 }),
     createTemplate({ id: "taser-baton", name: "Taserstab", source: "Action-Set", archetypeId: "action", weaponRole: "special", profileId: "special_improv", baseDamage: 2, baseHit: 1, baseCrit: 0, weight: 10, signatureEffect: { type: "stun", tier: 1 } }),
   ],
   western: [
     createTemplate({ id: "bowie-knife", name: "Bowie-Messer", source: "Western-Set", archetypeId: "western", weaponRole: "oneHanded", profileId: "light_melee", baseDamage: 2, baseHit: 1, baseCrit: 1 }),
     createTemplate({ id: "ranch-shotgun", name: "Rancherflinte", source: "Western-Set", archetypeId: "western", weaponRole: "twoHanded", handedness: "two-handed", attackMode: "ranged", range: 4, profileId: "heavy_melee", meleePenaltyHit: -1, baseDamage: 4, baseHit: 0, baseCrit: 0 }),
-    createTemplate({ id: "revolver", name: "Revolver", source: "Western-Set", archetypeId: "western", weaponRole: "ranged", attackMode: "ranged", range: 6, profileId: "precise_ranged", meleePenaltyHit: 0, baseDamage: 2, baseHit: 2, baseCrit: 1 }),
+    createTemplate({ id: "revolver", name: "Revolver", source: "Western-Set", archetypeId: "western", weaponRole: "ranged", attackMode: "ranged", range: 6, profileId: "precise_ranged", meleePenaltyHit: -1, baseDamage: 2, baseHit: 2, baseCrit: 1 }),
     createTemplate({ id: "barbed-wire-lasso", name: "Stacheldraht-Lasso", source: "Western-Set", archetypeId: "western", weaponRole: "special", attackMode: "ranged", range: 4, profileId: "special_improv", meleePenaltyHit: -2, baseDamage: 2, baseHit: 1, baseCrit: 0, weight: 10, signatureEffect: { type: "root", tier: 1 } }),
   ],
 };
@@ -129,7 +129,7 @@ export const ICONIC_WEAPON_TEMPLATES = [
   createTemplate({ id: "acid-tail", name: "Säureschweif", source: "Alien", archetypeId: "creature_feature", weaponRole: "twoHanded", handedness: "two-handed", profileId: "heavy_melee", baseDamage: 5, baseHit: 0, baseCrit: 1, signatureEffect: { type: "poison", tier: 1 } }),
   createTemplate({ id: "wrist-blades", name: "Handgelenksklingen", source: "Predator", archetypeId: "action", weaponRole: "oneHanded", profileId: "light_melee", baseDamage: 5, baseHit: 1, baseCrit: 1, signatureEffect: { type: "crit_bonus", tier: 1 } }),
   createTemplate({ id: "lightsaber", name: "Lichtschwert", source: "Star Wars", archetypeId: "space_opera", weaponRole: "special", handedness: "two-handed", profileId: "special_improv", baseDamage: 6, baseHit: 0, baseCrit: 2, signatureEffect: { type: "light_bonus", tier: 2 } }),
-  createTemplate({ id: "sawed-off-shotgun", name: "Abgesägte Schrotflinte", source: "The Terminator", archetypeId: "action", weaponRole: "ranged", handedness: "two-handed", attackMode: "ranged", range: 4, profileId: "precise_ranged", meleePenaltyHit: 0, baseDamage: 6, baseHit: 0, baseCrit: 1, signatureEffect: { type: "reaction_malus", tier: 1 } }),
+  createTemplate({ id: "sawed-off-shotgun", name: "Abgesägte Schrotflinte", source: "The Terminator", archetypeId: "action", weaponRole: "ranged", handedness: "two-handed", attackMode: "ranged", range: 4, profileId: "precise_ranged", meleePenaltyHit: -1, baseDamage: 6, baseHit: 0, baseCrit: 1, signatureEffect: { type: "reaction_malus", tier: 1 } }),
 ];
 
 export const ALL_WEAPON_TEMPLATES = [

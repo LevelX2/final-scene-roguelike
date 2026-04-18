@@ -13,7 +13,7 @@ import { createRuntimeActionsApi } from './app/runtime-actions.mjs';
 import { createRuntimeContext } from './app/runtime-context.mjs';
 import { createRuntimeRandomApi } from './app/runtime-random.mjs';
 import { createRenderCycleApi } from './app/render-cycle.mjs';
-import { createShowcaseAmbienceApi } from './app/showcase-ambience.mjs';
+import { createShowcaseAmbienceApi } from './ambience/narration/showcase-ambience.mjs';
 import { createStartFlowApi } from './app/start-flow.mjs';
 import { createRuntimeSupportApi } from './app/runtime-support.mjs';
 import { createUiPreferencesApi } from './app/ui-preferences.mjs';
@@ -251,6 +251,7 @@ const {
   grantExperience,
   attackEnemy,
   manhattanDistance,
+  chebyshevDistance,
   hasNearbyEnemy,
   processSafeRegeneration,
   moveEnemies,
@@ -291,6 +292,7 @@ const renderCycleApi = createRenderCycleApi({
   getCurrentFloorState: runtimeSupportApi.getCurrentFloorState,
   getCombatWeapon,
   updateVisibility,
+  hideTooltip: interfaceApi.hideTooltip,
   renderBoard: interfaceApi.renderBoard,
   formatStudioWithArchetype: appConfig.formatStudioWithArchetype,
   depthTitleElement: appUi.depthTitleElement,
@@ -345,6 +347,9 @@ const renderCycleApi = createRenderCycleApi({
   toggleStepSoundElement: appUi.toggleStepSoundElement,
   toggleDeathSoundElement: appUi.toggleDeathSoundElement,
   toggleVoiceAnnouncementsElement: appUi.toggleVoiceAnnouncementsElement,
+  toggleDecorativeOverlaysElement: appUi.toggleDecorativeOverlaysElement,
+  toggleDecorativeOverlayDebugLogElement: appUi.toggleDecorativeOverlayDebugLogElement,
+  toggleDecorativeOverlayDebugMaskElement: appUi.toggleDecorativeOverlayDebugMaskElement,
   showcaseAnnouncementModeElement: appUi.showcaseAnnouncementModeElement,
   uiScaleRangeElement: appUi.uiScaleRangeElement,
   uiScaleValueElement: appUi.uiScaleValueElement,
@@ -360,7 +365,7 @@ const renderCycleApi = createRenderCycleApi({
   updateSavegameControls,
   collapsibleCards: appUi.collapsibleCards,
   updatePotionChoiceSelection,
-  manhattanDistance,
+  chebyshevDistance,
   hasLineOfSight,
   isStraightShot,
 });
@@ -452,6 +457,9 @@ const { bindAppControls } = createUiBindingsApi({
   toggleStepSoundElement: appUi.toggleStepSoundElement,
   toggleDeathSoundElement: appUi.toggleDeathSoundElement,
   toggleVoiceAnnouncementsElement: appUi.toggleVoiceAnnouncementsElement,
+  toggleDecorativeOverlaysElement: appUi.toggleDecorativeOverlaysElement,
+  toggleDecorativeOverlayDebugLogElement: appUi.toggleDecorativeOverlayDebugLogElement,
+  toggleDecorativeOverlayDebugMaskElement: appUi.toggleDecorativeOverlayDebugMaskElement,
   showcaseAnnouncementModeElement: appUi.showcaseAnnouncementModeElement,
   enemyPanelModeElement: appUi.enemyPanelModeElement,
   toggleEnemyPanelModeButtonElement: appUi.toggleEnemyPanelModeButtonElement,

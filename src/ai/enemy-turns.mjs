@@ -34,6 +34,17 @@ const CARDINAL_STEPS = Object.freeze([
   { x: 0, y: -1 },
 ]);
 
+const EIGHT_WAY_STEPS = Object.freeze([
+  { x: 1, y: 0 },
+  { x: -1, y: 0 },
+  { x: 0, y: 1 },
+  { x: 0, y: -1 },
+  { x: 1, y: 1 },
+  { x: 1, y: -1 },
+  { x: -1, y: 1 },
+  { x: -1, y: -1 },
+]);
+
 const RECENT_ROOM_LIMIT = 4;
 const RECENT_DOOR_LIMIT = 5;
 const RECENT_AGGRO_POSITION_LIMIT = 6;
@@ -56,7 +67,6 @@ export function createEnemyTurnApi(context) {
     resolveCombatAttack,
     resolveBlock,
     hasLineOfSight,
-    isStraightShot,
     canActorMove,
     tryApplyWeaponEffects,
     addMessage,
@@ -75,6 +85,42 @@ export function createEnemyTurnApi(context) {
     manhattanDistance,
     randomChance = Math.random,
   } = context;
+
+  function chebyshevDistance(left, right) {
+    return Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y));
+  }
+
+  function isDiagonalStep(step) {
+    return Boolean(step) && step.x !== 0 && step.y !== 0;
+  }
+
+  function isMovementBlockingTile(enemy, x, y, floorState) {
+    if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT) {
+      return true;
+    }
+
+    if (floorState.grid[y]?.[x] !== TILE.FLOOR) {
+      return true;
+    }
+
+    if (floorState.showcases?.some((entry) => entry.x === x && entry.y === y)) {
+      return true;
+    }
+
+    const door = getDoorAt(x, y, floorState);
+    return Boolean(door && !door.isOpen);
+  }
+
+  function canTraverseDiagonal(enemy, currentX, currentY, step, floorState) {
+    if (!isDiagonalStep(step)) {
+      return true;
+    }
+
+    return !(
+      isMovementBlockingTile(enemy, currentX + step.x, currentY, floorState) &&
+      isMovementBlockingTile(enemy, currentX, currentY + step.y, floorState)
+    );
+  }
 
   function createPositionKey(position) {
     return `${position.x},${position.y}`;
@@ -238,7 +284,7 @@ export function createEnemyTurnApi(context) {
     return estimateEnemyBaseStrikeDamage(enemy, weaponDamage, rangedDamagePenalty);
   }
 
-  function shouldEnemyRetreat(enemy, player, distanceToPlayer = manhattanDistance(enemy, player)) {
+  function shouldEnemyRetreat(enemy, player, distanceToPlayer = chebyshevDistance(enemy, player)) {
     const retreatProfile = getEnemyRetreatProfile(enemy);
     if (retreatProfile === 'none' || !enemy.aggro) {
       return false;
@@ -400,7 +446,12 @@ export function createEnemyTurnApi(context) {
       return false;
     }
 
-    if (manhattanDistance({ x, y }, { x: enemy.originX, y: enemy.originY }) > getEnemyMobilityLeash(enemy)) {
+    if (chebyshevDistance({ x, y }, { x: enemy.originX, y: enemy.originY }) > getEnemyMobilityLeash(enemy)) {
+      return false;
+    }
+
+    const step = { x: x - enemy.x, y: y - enemy.y };
+    if (!canTraverseDiagonal(enemy, enemy.x, enemy.y, step, floorState)) {
       return false;
     }
 
@@ -411,6 +462,10 @@ export function createEnemyTurnApi(context) {
     }
 
     if (door && !door.isOpen) {
+      if (isDiagonalStep(step)) {
+        return false;
+      }
+
       if (door.doorType === DOOR_TYPE.LOCKED) {
         return false;
       }
@@ -449,7 +504,11 @@ export function createEnemyTurnApi(context) {
       floorState.enemies.some((other) => other !== enemy && other.x === nextX && other.y === nextY) ||
       (state.player.x === nextX && state.player.y === nextY);
 
-    if (manhattanDistance({ x: nextX, y: nextY }, { x: enemy.originX, y: enemy.originY }) > getEnemyMobilityLeash(enemy)) {
+    if (chebyshevDistance({ x: nextX, y: nextY }, { x: enemy.originX, y: enemy.originY }) > getEnemyMobilityLeash(enemy)) {
+      return false;
+    }
+
+    if (!canTraverseDiagonal(enemy, enemy.x, enemy.y, step, floorState)) {
       return false;
     }
 
@@ -458,6 +517,10 @@ export function createEnemyTurnApi(context) {
     }
 
     if (door && !door.isOpen && enemy.canOpenDoors) {
+      if (isDiagonalStep(step)) {
+        return false;
+      }
+
       const doorPerception = canPlayerPerceiveDoorAction(floorState, state.player, nextX, nextY);
       door.isOpen = true;
       if (doorPerception) {
@@ -493,9 +556,9 @@ export function createEnemyTurnApi(context) {
       firstStep: null,
     }];
     const seen = new Set([startKey]);
-    const directions = [...CARDINAL_STEPS].sort((left, right) => {
-      const leftDistance = Math.abs(target.x - (enemy.x + left.x)) + Math.abs(target.y - (enemy.y + left.y));
-      const rightDistance = Math.abs(target.x - (enemy.x + right.x)) + Math.abs(target.y - (enemy.y + right.y));
+    const directions = [...EIGHT_WAY_STEPS].sort((left, right) => {
+      const leftDistance = chebyshevDistance(target, { x: enemy.x + left.x, y: enemy.y + left.y });
+      const rightDistance = chebyshevDistance(target, { x: enemy.x + right.x, y: enemy.y + right.y });
       return leftDistance - rightDistance;
     });
 
@@ -542,7 +605,7 @@ export function createEnemyTurnApi(context) {
     while (queue.length > 0) {
       const current = queue.shift();
 
-      for (const direction of CARDINAL_STEPS) {
+      for (const direction of EIGHT_WAY_STEPS) {
         const nextX = current.x + direction.x;
         const nextY = current.y + direction.y;
         const key = `${nextX},${nextY}`;
@@ -602,19 +665,19 @@ export function createEnemyTurnApi(context) {
     const seed = seedPosition ?? candidates[0];
 
     remaining.sort((left, right) =>
-      manhattanDistance(seed, right) - manhattanDistance(seed, left)
+      chebyshevDistance(seed, right) - chebyshevDistance(seed, left)
     );
     selected.push(remaining.shift());
 
     while (remaining.length > 0 && selected.length < count) {
       remaining.sort((left, right) => {
-        const leftSpread = selected.reduce((sum, point) => sum + manhattanDistance(point, left), 0);
-        const rightSpread = selected.reduce((sum, point) => sum + manhattanDistance(point, right), 0);
+        const leftSpread = selected.reduce((sum, point) => sum + chebyshevDistance(point, left), 0);
+        const rightSpread = selected.reduce((sum, point) => sum + chebyshevDistance(point, right), 0);
         if (rightSpread !== leftSpread) {
           return rightSpread - leftSpread;
         }
 
-        return manhattanDistance(seed, right) - manhattanDistance(seed, left);
+        return chebyshevDistance(seed, right) - chebyshevDistance(seed, left);
       });
       selected.push(remaining.shift());
     }
@@ -648,7 +711,7 @@ export function createEnemyTurnApi(context) {
 
         return true;
       })
-      .filter((tile) => manhattanDistance(seedPosition, tile) >= 2);
+      .filter((tile) => chebyshevDistance(seedPosition, tile) >= 2);
 
     const patrolPointCount = patrolCandidates.length >= 8 ? 4 : patrolCandidates.length >= 4 ? 3 : 2;
     const route = chooseSpreadTiles(patrolCandidates, patrolPointCount, seedPosition);
@@ -708,7 +771,7 @@ export function createEnemyTurnApi(context) {
           ...tile,
           roomId: room?.id ?? null,
           sameRoom: room?.id != null && room.id === currentRoom?.id,
-          distance: manhattanDistance(enemy, tile),
+          distance: chebyshevDistance(enemy, tile),
           isCorridor: !room,
           changesLane: preferPerpendicularStep ? tile.y !== enemy.y : tile.x !== enemy.x,
         };
@@ -813,7 +876,7 @@ export function createEnemyTurnApi(context) {
     const corridorCandidates = reachableTiles
       .filter((tile) => !getRoomAtPosition(floorState, tile) && !doorKeys.has(createPositionKey(tile)))
       .sort((left, right) =>
-        manhattanDistance(enemy, right) - manhattanDistance(enemy, left)
+        chebyshevDistance(enemy, right) - chebyshevDistance(enemy, left)
       );
 
     if (corridorCandidates.length > 0) {
@@ -837,7 +900,7 @@ export function createEnemyTurnApi(context) {
         return {
           ...tile,
           roomId: room?.id ?? null,
-          distance: manhattanDistance(enemy, tile),
+          distance: chebyshevDistance(enemy, tile),
           isDoor: doorKeys.has(createPositionKey(tile)),
         };
       })
@@ -873,7 +936,7 @@ export function createEnemyTurnApi(context) {
     const recentRooms = new Set(enemy.recentRoomHistory ?? []);
     const recentDoors = new Set(enemy.recentDoorHistory ?? []);
     const sameRoom = anchor.roomId != null && currentRoom?.id === anchor.roomId;
-    const distance = manhattanDistance(enemy, anchor);
+    const distance = chebyshevDistance(enemy, anchor);
     let score = 1;
 
     if (enemy.behavior === 'dormant') {
@@ -987,7 +1050,7 @@ export function createEnemyTurnApi(context) {
     const scoredAnchors = anchors.map((anchor) => ({
       entry: anchor,
       score: scoreIdleAnchor(enemy, floorState, anchor),
-      distance: manhattanDistance(enemy, anchor),
+      distance: chebyshevDistance(enemy, anchor),
     }));
 
     return selectScoredEntry(scoredAnchors, temperament, 2.5);
@@ -1029,14 +1092,14 @@ export function createEnemyTurnApi(context) {
   }
 
   function buildMovementCandidates(enemy, floorState, target, pathStep, mode) {
-    const currentDistance = manhattanDistance(enemy, target);
+    const currentDistance = chebyshevDistance(enemy, target);
     const currentRoom = getRoomAtPosition(floorState, enemy);
 
-    const candidates = CARDINAL_STEPS
+    const candidates = EIGHT_WAY_STEPS
       .filter((step) => isEnemyPathTileOpen(enemy, enemy.x + step.x, enemy.y + step.y, floorState))
       .map((step) => {
         const nextPosition = { x: enemy.x + step.x, y: enemy.y + step.y };
-        const nextDistance = manhattanDistance(nextPosition, target);
+        const nextDistance = chebyshevDistance(nextPosition, target);
         const nextDoor = getDoorAt(nextPosition.x, nextPosition.y, floorState);
         const nextRoom = getRoomAtPosition(floorState, nextPosition);
         const recentAggroPenalty = (enemy.recentAggroPositions ?? []).some((position) => isSamePosition(position, nextPosition))
@@ -1170,9 +1233,9 @@ export function createEnemyTurnApi(context) {
   function fleeFromTarget(enemy, target, floorState) {
     const recentMovePositions = enemy.recentMovePositions ?? [];
     const immediateBacktrack = recentMovePositions[recentMovePositions.length - 2] ?? null;
-    const currentDistance = manhattanDistance(enemy, target);
+    const currentDistance = chebyshevDistance(enemy, target);
 
-    const candidates = [...CARDINAL_STEPS, { x: 0, y: 0 }]
+    const candidates = [...EIGHT_WAY_STEPS, { x: 0, y: 0 }]
       .filter((step) =>
         step.x === 0 && step.y === 0
           ? true
@@ -1180,7 +1243,7 @@ export function createEnemyTurnApi(context) {
       )
       .map((step) => {
         const nextPosition = { x: enemy.x + step.x, y: enemy.y + step.y };
-        const nextDistance = manhattanDistance(nextPosition, target);
+        const nextDistance = chebyshevDistance(nextPosition, target);
         const nextRoom = getRoomAtPosition(floorState, nextPosition);
         let score = nextDistance * 5;
 
@@ -1314,7 +1377,7 @@ export function createEnemyTurnApi(context) {
       enemy.turnsSinceHit += 1;
 
       const playerPosition = { x: state.player.x, y: state.player.y };
-      const distance = manhattanDistance(enemy, playerPosition);
+      const distance = chebyshevDistance(enemy, playerPosition);
       const detectsPlayer = (rangeBonus = 0) =>
         canEnemyDetectPlayer(enemy, playerPosition, floorState, distance, rangeBonus);
       const weapon = enemy.mainHand;
@@ -1324,7 +1387,7 @@ export function createEnemyTurnApi(context) {
         weapon.attackMode === 'ranged' &&
         distance > 1 &&
         distance <= weaponRange &&
-        isStraightShot?.(enemy.x, enemy.y, state.player.x, state.player.y) &&
+        hasLineOfSight?.(floorState, enemy.x, enemy.y, state.player.x, state.player.y) &&
         detectsPlayer(getEnemyRangedDetectionBonus(enemy, weapon)),
       );
       tryEnemyRegeneration(enemy, distance, floorState);

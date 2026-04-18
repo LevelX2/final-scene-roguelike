@@ -815,7 +815,7 @@ test("loading a legacy ranged weapon save restores target mode support", async (
   await page.evaluate(() => window.__TEST_API__.enterTargetMode());
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
-  await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
+  await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
 });
 
 test("loaded save slots are consumed and leave the slot empty", async ({ page }) => {
@@ -905,7 +905,7 @@ test("fresh starts allow target mode with a newly equipped expedition revolver",
   await page.evaluate(() => window.__TEST_API__.enterTargetMode());
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
-  await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
+  await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
 });
 
 test("weapon tooltips show the inflected combat-log form", async ({ page }) => {
@@ -946,6 +946,39 @@ test("weapon tooltips show the inflected combat-log form", async ({ page }) => {
 
   await page.locator(".tile.weapon-drop").hover();
   await expect(page.locator("#hoverTooltip")).toContainText("Kampflog: mit dem leuchtenden Expeditionsrevolver der Flamme");
+});
+
+test("board tooltips hide again when the hovered entity disappears during a rerender", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 4, y: 2 },
+      enemy: {
+        name: "Wegtester",
+        description: "Verschwindet fuer den Tooltip-Test.",
+      },
+    });
+  });
+
+  const enemyTile = page.locator(".tile.enemy").first();
+  const enemyBox = await enemyTile.boundingBox();
+  expect(enemyBox).not.toBeNull();
+
+  await page.mouse.move(
+    enemyBox.x + (enemyBox.width / 2),
+    enemyBox.y + (enemyBox.height / 2),
+  );
+  await expect(page.locator("#hoverTooltip")).toContainText("Verschwindet fuer den Tooltip-Test.");
+
+  await page.evaluate(() => {
+    window.__TEST_API__.clearFloorEntities();
+  });
+
+  await expect(page.locator("#hoverTooltip")).toBeHidden();
 });
 
 test("monster tooltips expose debug AI details after F8 reveal", async ({ page }) => {
@@ -1127,7 +1160,7 @@ test("ranged weapons enter target mode and mark a valid target", async ({ page }
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
   await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
-  await expect(page.locator(".tile.target-cursor-valid.enemy")).toHaveCount(1);
+  await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
   await expect(page.locator("#enemySheet")).toContainText("Aktiv markiert");
 });
 
@@ -1360,6 +1393,62 @@ test("pressing T cycles through multiple valid targets and then exits target mod
   await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
 });
 
+test("target cursor renders above tile overlays in target mode", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        id: "overlay-target",
+        name: "Overlayziel",
+      },
+      enemyPosition: { x: 4, y: 2 },
+    });
+  });
+
+  await page.keyboard.press("t");
+
+  const cursorStyles = await page.evaluate(() => {
+    const cell = document.querySelector(".tile-cell.target-cursor");
+    if (!(cell instanceof HTMLElement)) {
+      return null;
+    }
+
+    const pseudo = window.getComputedStyle(cell, "::after");
+    return {
+      cellZIndex: window.getComputedStyle(cell).zIndex,
+      pseudoContent: pseudo.content,
+      pseudoZIndex: pseudo.zIndex,
+      pseudoBoxShadow: pseudo.boxShadow,
+    };
+  });
+
+  expect(cursorStyles).not.toBeNull();
+  expect(cursorStyles.cellZIndex).toBe("4");
+  expect(cursorStyles.pseudoContent).toBe('""');
+  expect(cursorStyles.pseudoZIndex).toBe("5");
+  expect(cursorStyles.pseudoBoxShadow).not.toBe("none");
+});
+
 test("pressing F fires at the currently selected target", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -1556,17 +1645,17 @@ test("blocked sight lines show an invalid target cursor and prevent the shot", a
   expect(targeting.active).toBeTruthy();
   expect(targeting.cursorX).toBe(5);
   expect(targeting.cursorY).toBe(2);
-  await expect(page.locator(".tile.target-cursor-invalid")).toHaveCount(1);
+  await expect(page.locator(".tile-cell.target-cursor-invalid")).toHaveCount(1);
 
   await page.evaluate(() => window.__TEST_API__.confirmTargetAttack());
 
   const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
 
   expect(after).toBe(before);
-  await expect(page.locator("#messageLog")).toContainText("nicht sauber in gerader Linie");
+  await expect(page.locator("#messageLog")).toContainText("nicht sauber in Reichweite oder Sichtlinie");
 });
 
-test("diagonal targets stay invalid for ranged attacks", async ({ page }) => {
+test("diagonal targets are valid for ranged attacks with clear sight", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -1603,14 +1692,64 @@ test("diagonal targets stay invalid for ranged attacks", async ({ page }) => {
     window.__TEST_API__.enterTargetMode();
   });
 
-  await expect(page.locator(".tile.target-cursor-invalid.enemy")).toHaveCount(1);
+  await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
+
+  const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0]));
+  await page.evaluate(() => window.__TEST_API__.confirmTargetAttack());
+  const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+
+  expect(after).toBeLessThan(before);
+  await expect(page.locator("#messageLog")).toContainText("Diagonalziel");
+});
+
+test("ranged targeting uses chebyshev range for free-angle shots", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 4,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Winkelziel",
+        hp: 18,
+        maxHp: 18,
+      },
+      enemyPosition: { x: 6, y: 6 },
+    });
+    window.__TEST_API__.setRandomSequence([0, 0]);
+    window.__TEST_API__.enterTargetMode();
+  });
+
+  const targeting = await page.evaluate(() => window.__TEST_API__.getSnapshot().targeting);
+  expect(targeting.active).toBeTruthy();
+  expect(targeting.cursorX).toBe(6);
+  expect(targeting.cursorY).toBe(6);
+  await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
+  await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
 
   const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
   await page.evaluate(() => window.__TEST_API__.confirmTargetAttack());
   const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
 
-  expect(after).toBe(before);
-  await expect(page.locator("#messageLog")).toContainText("nicht sauber in gerader Linie");
+  expect(after).toBeLessThan(before);
 });
 
 test("enemy ranged hits show explicit shot feedback", async ({ page }) => {
@@ -1661,7 +1800,7 @@ test("enemy ranged hits show explicit shot feedback", async ({ page }) => {
   await expect(page.locator("#messageLog")).toContainText("Testgewehr");
 });
 
-test("enemies do not fire ranged attacks diagonally", async ({ page }) => {
+test("enemies can fire ranged attacks diagonally with clear sight", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -1673,7 +1812,7 @@ test("enemies do not fire ranged attacks diagonally", async ({ page }) => {
         maxHp: 20,
       },
       playerPosition: { x: 2, y: 2 },
-      enemyPosition: { x: 3, y: 3 },
+      enemyPosition: { x: 4, y: 4 },
       enemy: {
         name: "Diagonal-Schuetze",
         aggro: true,
@@ -1703,8 +1842,8 @@ test("enemies do not fire ranged attacks diagonally", async ({ page }) => {
   await page.keyboard.press(" ");
   const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.hp);
 
-  expect(after).toBe(before);
-  await expect(page.locator("#messageLog")).not.toContainText("aus der Distanz");
+  expect(after).toBeLessThan(before);
+  await expect(page.locator("#messageLog")).toContainText("aus der Distanz");
 });
 
 test("inventory weapon details include range melee penalty and light bonus", async ({ page }) => {

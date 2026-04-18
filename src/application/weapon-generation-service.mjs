@@ -41,9 +41,9 @@ export function createWeaponGenerationService(context) {
         if (isRangedTemplate) {
           if (options.sourceType === 'monster') {
             if (floorNumber <= 2) {
-              weight *= prefersRanged ? 0.9 : 0.12;
+              weight *= prefersRanged ? 0.65 : 0.08;
             } else if (floorNumber <= 4) {
-              weight *= prefersRanged ? 0.7 : 0.35;
+              weight *= prefersRanged ? 0.5 : 0.22;
             }
           } else if (floorNumber <= 2) {
             weight *= 0.35;

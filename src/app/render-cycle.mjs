@@ -1,4 +1,5 @@
 import { evaluateTargetSelection, getTargetHintLabel } from '../application/targeting-service.mjs';
+import { areVoiceAnnouncementsForcedOff } from '../application/test-mode.mjs';
 
 export function createRenderCycleApi(context) {
   const {
@@ -9,6 +10,7 @@ export function createRenderCycleApi(context) {
     getCurrentFloorState,
     getCombatWeapon,
     updateVisibility,
+    hideTooltip,
     renderBoard,
     formatStudioWithArchetype,
     depthTitleElement,
@@ -63,6 +65,9 @@ export function createRenderCycleApi(context) {
     toggleStepSoundElement,
     toggleDeathSoundElement,
     toggleVoiceAnnouncementsElement,
+    toggleDecorativeOverlaysElement,
+    toggleDecorativeOverlayDebugLogElement,
+    toggleDecorativeOverlayDebugMaskElement,
     showcaseAnnouncementModeElement,
     uiScaleRangeElement,
     uiScaleValueElement,
@@ -78,7 +83,7 @@ export function createRenderCycleApi(context) {
     updateSavegameControls,
     collapsibleCards,
     updatePotionChoiceSelection,
-    manhattanDistance,
+    chebyshevDistance,
     hasLineOfSight,
     isStraightShot,
   } = context;
@@ -260,6 +265,7 @@ export function createRenderCycleApi(context) {
 
   function render() {
     const state = getState();
+    hideTooltip?.();
     syncTestApi();
     syncViewportZoom(state);
     const combatSummary = getPlayerCombatSummary();
@@ -303,8 +309,7 @@ export function createRenderCycleApi(context) {
           weapon: targetingWeapon,
           x: state.targeting.cursorX,
           y: state.targeting.cursorY,
-          manhattanDistance,
-          isStraightShot,
+          rangeDistance: chebyshevDistance,
           hasLineOfSight,
         })
       : null;
@@ -373,7 +378,18 @@ export function createRenderCycleApi(context) {
       toggleDeathSoundElement.checked = state.options.deathSound;
     }
     if (toggleVoiceAnnouncementsElement) {
-      toggleVoiceAnnouncementsElement.checked = state.options.voiceAnnouncements;
+      const voiceAnnouncementsForcedOff = areVoiceAnnouncementsForcedOff();
+      toggleVoiceAnnouncementsElement.checked = !voiceAnnouncementsForcedOff && state.options.voiceAnnouncements;
+      toggleVoiceAnnouncementsElement.disabled = voiceAnnouncementsForcedOff;
+    }
+    if (toggleDecorativeOverlaysElement) {
+      toggleDecorativeOverlaysElement.checked = state.options.decorativeOverlaysEnabled ?? true;
+    }
+    if (toggleDecorativeOverlayDebugLogElement) {
+      toggleDecorativeOverlayDebugLogElement.checked = Boolean(state.options.decorativeOverlayDebugLog);
+    }
+    if (toggleDecorativeOverlayDebugMaskElement) {
+      toggleDecorativeOverlayDebugMaskElement.checked = Boolean(state.options.decorativeOverlayDebugMask);
     }
     if (showcaseAnnouncementModeElement) {
       showcaseAnnouncementModeElement.value = state.options.showcaseAnnouncementMode ?? "floating-text";

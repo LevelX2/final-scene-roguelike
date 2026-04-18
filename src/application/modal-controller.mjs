@@ -48,10 +48,10 @@ export function createModalController(context) {
     const state = getState();
     const currentFloor = state.floors?.[state.floor];
     const deathCopyElement = deathModalElement.querySelector(".modal-copy");
-    const deathLead = `Die Hauptrolle ${state.player.name} ${state.deathCause ?? "verschwand im letzten Akt aus dem Bild."}`;
+    const deathLead = `Der Filmstar ${state.player.name} ${state.deathCause ?? "verschwand im letzten Akt aus dem Bild."}`;
     deathSummaryElement.innerHTML = [
       `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
-      createSheetRow("Hauptrolle", state.player.name),
+      createSheetRow("Filmstar", state.player.name),
       createSheetRow("Klasse", state.player.classLabel ?? "Unbekannt"),
       createSheetRow("Level", state.player.level),
       createSheetRow("Gestorben in", formatStudioLabel(state.floor)),
@@ -213,7 +213,7 @@ export function createModalController(context) {
   function updatePotionChoiceSelection() {
     const state = getState();
     const selected = state?.pendingChoice?.selectedAction;
-    choiceDrinkButton.classList.toggle("selected", selected === "drink" || selected === "equip" || selected === "eat");
+    choiceDrinkButton.classList.toggle("selected", selected === "drink" || selected === "use" || selected === "equip" || selected === "eat");
     choiceStoreButton.classList.toggle("selected", selected === "store");
     choiceLeaveButton.classList.toggle("selected", selected === "leave");
   }

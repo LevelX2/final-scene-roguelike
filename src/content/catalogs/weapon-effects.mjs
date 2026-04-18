@@ -207,6 +207,8 @@ export function getEffectStateLabel(effectType) {
       return "Betäubt";
     case "root":
       return "Gefesselt";
+    case "healing_over_time":
+      return "Regeneration";
     default:
       return getWeaponEffectDefinition(effectType)?.label ?? effectType;
   }

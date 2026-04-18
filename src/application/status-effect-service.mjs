@@ -1,6 +1,7 @@
 import { recordKillStat } from '../kill-stats.mjs';
 import { formatMonsterReference } from '../text/combat-phrasing.mjs';
 import { getWeaponOnHitEffects } from '../weapon-runtime-effects.mjs';
+import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
 export function createStatusEffectService(context) {
   const {
@@ -108,6 +109,7 @@ export function createStatusEffectService(context) {
       existing.duration = Math.max(existing.duration ?? 0, payload.duration);
       existing.penalty = Math.max(existing.penalty ?? 0, payload.penalty ?? 0);
       existing.dotDamage = Math.max(existing.dotDamage ?? 0, payload.dotDamage ?? 0);
+      existing.healPerTurn = Math.max(existing.healPerTurn ?? 0, payload.healPerTurn ?? 0);
       return true;
     }
 
@@ -171,6 +173,16 @@ export function createStatusEffectService(context) {
     let dead = false;
 
     for (const effect of effects) {
+      if ((effect.healPerTurn ?? 0) > 0) {
+        const maxHp = actor === state.player ? getActorDerivedMaxHp(actor) : (actor.maxHp ?? 0);
+        const previousHp = actor.hp;
+        actor.hp = Math.min(maxHp, actor.hp + effect.healPerTurn);
+        const healed = actor.hp - previousHp;
+        if (healed > 0) {
+          showFloatingText(actor.x, actor.y, `+${healed}`, 'heal');
+        }
+      }
+
       if ((effect.dotDamage ?? 0) > 0) {
         actor.hp = Math.max(0, actor.hp - effect.dotDamage);
         if (actor === state.player) {

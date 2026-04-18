@@ -56,7 +56,8 @@ export function createTestApiMutators(context) {
     const state = getState();
     const floorState = getCurrentFloorState();
     floorState.enemies = [];
-    floorState.potions = [];
+    floorState.consumables = [];
+    floorState.potions = floorState.consumables;
     floorState.weapons = [];
     floorState.offHands = [];
     floorState.foods = [];
@@ -74,7 +75,7 @@ export function createTestApiMutators(context) {
   function placePotion(position, potion = {}) {
     const floorState = getCurrentFloorState();
     floorState.grid[position.y][position.x] = TILE.FLOOR;
-    floorState.potions.push(createPotionPickup({
+    floorState.consumables.push(createPotionPickup({
       ...(cloneItemDef("healing-potion") ?? {}),
       ...potion,
     }, position.x, position.y));
@@ -268,7 +269,8 @@ export function createTestApiMutators(context) {
     }
 
     floorState.enemies = [];
-    floorState.potions = [];
+    floorState.consumables = [];
+    floorState.potions = floorState.consumables;
     floorState.weapons = [];
     floorState.offHands = [];
     floorState.chests = [];

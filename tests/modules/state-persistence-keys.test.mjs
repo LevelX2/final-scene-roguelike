@@ -5,7 +5,7 @@ import { createStatePersistenceApi } from '../../src/application/state-persisten
 test('state-persistence normalizes key inventory items and floor key pickups', () => {
   const storage = new Map();
   const HERO_CLASSES = {
-    lead: { label: 'Hauptrolle', passiveName: 'Test', passiveSummary: 'Test', passiveDescription: 'Test' },
+    filmstar: { label: 'Filmstar', passiveName: 'Test', passiveSummary: 'Test', passiveDescription: 'Test' },
   };
   let state = null;
 
@@ -92,7 +92,7 @@ test('state-persistence normalizes key inventory items and floor key pickups', (
     removeStorage: (key) => storage.delete(key),
     getState: () => state,
     setState: (nextState) => { state = nextState; },
-    loadHeroClassId: () => 'lead',
+    loadHeroClassId: () => 'filmstar',
     createFreshState,
     createDefaultModals,
     createDefaultCollapsedCards,

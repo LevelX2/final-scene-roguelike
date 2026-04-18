@@ -168,7 +168,7 @@ export function createStateApi(context) {
 
   function createDeathCause(enemy, options = {}) {
     const enemyName = enemy?.baseName ?? enemy?.name ?? "etwas Unbekanntem";
-    const victimName = options.victimName ?? 'die Hauptrolle';
+    const victimName = options.victimName ?? 'den Filmstar';
     const weapon = options.weapon ?? enemy?.mainHand ?? enemy?.weapon ?? null;
     const rangedSuffix = options.ranged ? " aus der Distanz" : "";
     const criticalSuffix = options.critical ? " mit einem kritischen Treffer" : "";

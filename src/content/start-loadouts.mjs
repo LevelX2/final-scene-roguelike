@@ -1,4 +1,4 @@
-export const DEFAULT_START_LOADOUT_ID = "lead_opening";
+export const DEFAULT_START_LOADOUT_ID = "filmstar_opening";
 
 function createLoadout(config) {
   const inventory = (config.inventory ?? []).map((entry) => ({ ...entry }));
@@ -9,12 +9,20 @@ function createLoadout(config) {
 }
 
 export const START_LOADOUTS = {
-  lead_opening: createLoadout({
-    id: "lead_opening",
-    label: "Hauptrolle",
+  filmstar_opening: createLoadout({
+    id: "filmstar_opening",
+    label: "Filmstar",
     mainHandId: "expedition-revolver",
     inventory: [
-      { type: "potion", itemId: "healing-potion", count: 2 },
+      { type: "healingConsumable", itemId: "heal_set_medkit_standard", count: 2 },
+    ],
+  }),
+  lead_opening: createLoadout({
+    id: "filmstar_opening",
+    label: "Filmstar",
+    mainHandId: "expedition-revolver",
+    inventory: [
+      { type: "healingConsumable", itemId: "heal_set_medkit_standard", count: 2 },
     ],
   }),
   stuntman_kit: createLoadout({
@@ -22,7 +30,7 @@ export const START_LOADOUTS = {
     label: "Stuntman",
     mainHandPool: ["combat-knife", "woodcutter-axe", "breach-axe", "bowie-knife"],
     inventory: [
-      { type: "potion", itemId: "healing-potion", count: 1 },
+      { type: "healingConsumable", itemId: "heal_set_medkit_standard", count: 1 },
       { type: "food", itemId: "sandwich", count: 1 },
     ],
   }),
@@ -31,7 +39,7 @@ export const START_LOADOUTS = {
     label: "Regisseur",
     mainHandPool: ["cane-blade", "electro-scalpel"],
     inventory: [
-      { type: "potion", itemId: "healing-potion", count: 1 },
+      { type: "healingConsumable", itemId: "heal_set_medkit_standard", count: 1 },
       { type: "food", itemId: "energy_bar", count: 2 },
     ],
   }),

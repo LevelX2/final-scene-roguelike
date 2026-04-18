@@ -5,7 +5,7 @@ import { createStatePersistenceApi } from '../../src/application/state-persisten
 test('state-persistence normalizes transient modal state on load', () => {
   const storage = new Map();
   const HERO_CLASSES = {
-    lead: { label: 'Hauptrolle', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
+    filmstar: { label: 'Filmstar', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
   };
   let state = null;
 
@@ -83,7 +83,7 @@ test('state-persistence normalizes transient modal state on load', () => {
     removeStorage: (key) => storage.delete(key),
     getState: () => state,
     setState: (nextState) => { state = nextState; },
-    loadHeroClassId: () => 'lead',
+    loadHeroClassId: () => 'filmstar',
     createFreshState,
     createDefaultModals,
     createDefaultCollapsedCards,
@@ -136,7 +136,7 @@ test('state-persistence normalizes transient modal state on load', () => {
 test('state-persistence ranks final scenes by studio, level, kills, then turns', () => {
   const storage = new Map();
   const HERO_CLASSES = {
-    lead: { label: 'Hauptrolle', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
+    filmstar: { label: 'Filmstar', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
   };
   let state = {
     floor: 7,
@@ -151,8 +151,8 @@ test('state-persistence ranks final scenes by studio, level, kills, then turns',
     },
     player: {
       name: 'Ripley',
-      classId: 'lead',
-      classLabel: HERO_CLASSES.lead.label,
+      classId: 'filmstar',
+      classLabel: HERO_CLASSES.filmstar.label,
       level: 4,
       hp: 2,
       maxHp: 18,
@@ -173,7 +173,7 @@ test('state-persistence ranks final scenes by studio, level, kills, then turns',
     removeStorage: (key) => storage.delete(key),
     getState: () => state,
     setState: (nextState) => { state = nextState; },
-    loadHeroClassId: () => 'lead',
+    loadHeroClassId: () => 'filmstar',
     createFreshState: () => state,
     createDefaultModals: () => ({}),
     createDefaultCollapsedCards: () => ({}),
@@ -197,8 +197,8 @@ test('state-persistence ranks final scenes by studio, level, kills, then turns',
     {
       marker: 'same-studio-more-turns',
       heroName: 'Casey',
-      heroClassId: 'lead',
-      heroClass: 'Hauptrolle',
+      heroClassId: 'filmstar',
+      heroClass: 'Filmstar',
       date: '13.04.2026, 12:00:00',
       deathFloor: 7,
       deathStudioArchetypeId: 'noir',
@@ -214,8 +214,8 @@ test('state-persistence ranks final scenes by studio, level, kills, then turns',
     {
       marker: 'same-studio-less-level',
       heroName: 'Billy',
-      heroClassId: 'lead',
-      heroClass: 'Hauptrolle',
+      heroClassId: 'filmstar',
+      heroClass: 'Filmstar',
       date: '13.04.2026, 12:00:01',
       deathFloor: 7,
       deathStudioArchetypeId: 'noir',
@@ -231,8 +231,8 @@ test('state-persistence ranks final scenes by studio, level, kills, then turns',
     {
       marker: 'higher-studio',
       heroName: 'Sidney',
-      heroClassId: 'lead',
-      heroClass: 'Hauptrolle',
+      heroClassId: 'filmstar',
+      heroClass: 'Filmstar',
       date: '13.04.2026, 12:00:02',
       deathFloor: 8,
       deathStudioArchetypeId: 'slasher',

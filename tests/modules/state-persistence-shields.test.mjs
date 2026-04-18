@@ -5,7 +5,7 @@ import { createStatePersistenceApi } from '../../src/application/state-persisten
 function createPersistenceHarness() {
   const storage = new Map();
   const HERO_CLASSES = {
-    lead: { label: 'Hauptrolle', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
+    filmstar: { label: 'Filmstar', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
   };
   let state = null;
 
@@ -94,7 +94,7 @@ function createPersistenceHarness() {
     setState: (nextState) => {
       state = nextState;
     },
-    loadHeroClassId: () => 'lead',
+    loadHeroClassId: () => 'filmstar',
     createFreshState,
     createDefaultModals,
     createDefaultCollapsedCards: () => ({}),

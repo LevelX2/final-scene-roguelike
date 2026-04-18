@@ -114,23 +114,25 @@ export const ITEM_RARITY_MODIFIER_COUNTS = {
 const EQUIPMENT_RARITY_ORDER = ["common", "uncommon", "rare", "veryRare"];
 
 export const HERO_CLASS_ALIASES = {
-  survivor: "lead",
+  survivor: "filmstar",
+  lead: "filmstar",
   slayer: "stuntman",
   medium: "director",
 };
 
 export const HERO_CLASS_LABEL_ALIASES = {
-  Survivor: "lead",
+  Survivor: "filmstar",
+  Hauptrolle: "filmstar",
   Slayer: "stuntman",
   Medium: "director",
 };
 
 export const HERO_CLASSES = {
-  lead: {
-    id: "lead",
-    startLoadoutId: "lead_opening",
-    label: "Hauptrolle",
-    assetSlug: "hauptrolle",
+  filmstar: {
+    id: "filmstar",
+    startLoadoutId: "filmstar_opening",
+    label: "Filmstar",
+    assetSlug: "filmstar",
     tagline: "Kämpft über Timing, Präsenz und den ersten sauberen Moment.",
     passiveName: "Triff deine Marke",
     passiveSummary: "Der erste Angriff gegen einen Gegner erhält Bonus auf Treffer und Krit.",
@@ -185,7 +187,7 @@ export const HERO_CLASSES = {
   },
 };
 
-export function resolveHeroClassId(classId, fallback = "lead") {
+export function resolveHeroClassId(classId, fallback = "filmstar") {
   if (HERO_CLASSES[classId]) {
     return classId;
   }
@@ -197,7 +199,7 @@ export function resolveHeroClassId(classId, fallback = "lead") {
   return fallback;
 }
 
-export function resolveHeroClassReference(reference, fallback = "lead") {
+export function resolveHeroClassReference(reference, fallback = "filmstar") {
   if (typeof reference !== "string" || !reference.trim()) {
     return fallback;
   }
@@ -219,7 +221,7 @@ export function resolveHeroClassReference(reference, fallback = "lead") {
   return fallback;
 }
 
-export function getHeroClassAssets(reference, fallback = "lead") {
+export function getHeroClassAssets(reference, fallback = "filmstar") {
   const resolvedClassId = resolveHeroClassReference(reference, fallback);
   const heroClass = HERO_CLASSES[resolvedClassId] ?? HERO_CLASSES[fallback];
   const assetSlug = heroClass?.assetSlug;
@@ -278,7 +280,7 @@ export function getMonsterVariantWeights(floorNumber) {
   };
 }
 
-export function getPotionCountForFloor(floorNumber) {
+export function getHealingConsumableCountForFloor(floorNumber) {
   return 2 + Math.floor(floorNumber / 2);
 }
 

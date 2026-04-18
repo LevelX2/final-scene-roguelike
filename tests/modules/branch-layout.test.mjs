@@ -1015,3 +1015,44 @@ test('branch layout scatters fallback showcases across ordinary rooms when no sh
     room.overlayRole == null
   ));
 });
+
+test('generated showcases keep at least one interior tile of distance from room exits', () => {
+  const chanceValues = [0.18, 0.27, 0.41, 0.58];
+  let levelWithShowcases = null;
+
+  for (const chanceValue of chanceValues) {
+    const { generator } = createStudioGeneratorHarness({
+      randomChance: () => chanceValue,
+      randomInt: (min, max) => Math.floor((min + max) / 2),
+    });
+    const level = generator.createDungeonLevel(5, {
+      layoutId: 'hub',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: 5,
+        position: { x: 0, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher', 'slasher'],
+    });
+
+    if (level.showcases.length > 0) {
+      levelWithShowcases = level;
+      break;
+    }
+  }
+
+  assert.ok(levelWithShowcases);
+
+  levelWithShowcases.showcases.forEach((showcase) => {
+    const room = levelWithShowcases.rooms.find((entry) => entry.id === showcase.roomId);
+    assert.ok(room);
+    const tooCloseToDoor = room.doorTiles.some((door) =>
+      Math.abs(door.x - showcase.x) + Math.abs(door.y - showcase.y) <= 1
+    );
+    assert.equal(tooCloseToDoor, false);
+  });
+});

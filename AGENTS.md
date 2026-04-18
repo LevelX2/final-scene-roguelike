@@ -13,7 +13,7 @@ Bei neuen Threads, neuen Aufgaben und Projektfragen ist diese Wissensbasis prim�
 Zu Beginn projektbezogener Arbeit zuerst diese Dateien lesen:
 
 1. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\00 Projektstart.md`
-2. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\00 Übersichten\Index.md`
+2. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\00 Uebersichten\Index.md`
 3. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\Prozesse\Arbeitsworkflow Wissenspflege und Projektanfragen.md`
 4. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\00 Steuerung\Regeldatei KI-Wissenspflege.md`
 
@@ -51,7 +51,7 @@ Wenn neue Projektquellen hinzukommen:
 
 ## Wichtige Wissensbasis-Dateien
 
-- Einstieg: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\00 Übersichten\Index.md`
+- Einstieg: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\00 Uebersichten\Index.md`
 - Workflow: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\Prozesse\Arbeitsworkflow Wissenspflege und Projektanfragen.md`
 - Log: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\03 Betrieb\Log.md`
 - Qualitätsprüfung: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\03 Betrieb\Qualitätsprüfung.md`

@@ -51,7 +51,7 @@ Aktuell gibt es drei Klassen.
 
 | Klasse | Max HP | Stärke | Präzision | Reaktion | Nerven | Intelligenz | Ausdauer | Passive |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| Hauptrolle | 20 | 4 | 5 | 4 | 3 | 2 | 2 | Erster Angriff gegen einen Gegner: `+6 Trefferchance`, `+8 Krit-Chance` |
+| Filmstar | 20 | 4 | 5 | 4 | 3 | 2 | 2 | Erster Angriff gegen einen Gegner: `+6 Trefferchance`, `+8 Krit-Chance` |
 | Stuntman | 22 | 5 | 3 | 3 | 2 | 1 | 3 | `-1` Schaden durch Fallen/Gefahrenfelder, `+5%` Schild-Blockchance |
 | Regisseur | 17 | 2 | 4 | 3 | 4 | 5 | 3 | `+20%` Fallenentdeckung, `+15%` Fallenvermeidung |
 
@@ -65,7 +65,7 @@ Zusätzliche Startregeln:
 
 Startwaffenpools:
 
-- Hauptrolle: `relic-dagger`, `rune-sword`, `service-pistol`, `expedition-revolver`
+- Filmstar: `relic-dagger`, `rune-sword`, `service-pistol`, `expedition-revolver`
 - Stuntman: `combat-knife`, `woodcutter-axe`, `breach-axe`, `bowie-knife`
 - Regisseur: `pocket-revolver`, `cane-blade`, `electro-scalpel`, `serum-launcher`
 
@@ -112,7 +112,7 @@ Formeln:
 
 Beispiele:
 
-- Hauptrolle mit `Ausdauer 2`: `Start 700`, `Max 900`
+- Filmstar mit `Ausdauer 2`: `Start 700`, `Max 900`
 - Stuntman mit `Ausdauer 3`: `Start 800`, `Max 1000`
 - Regisseur mit `Ausdauer 3`: `Start 800`, `Max 1000`
 
@@ -523,7 +523,7 @@ Geblockter Schaden:
 
 Schildblock wirkt nur, wenn tatsächlich ein Schild in der Nebenhand ausgerüstet ist.
 
-### Eröffnungsbonus der Hauptrolle
+### Eröffnungsbonus des Filmstars
 
 Der Bonus gilt für den ersten Angriff gegen einen konkreten Gegner.
 

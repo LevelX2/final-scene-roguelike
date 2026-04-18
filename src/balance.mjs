@@ -122,7 +122,6 @@ export const HERO_CLASS_ALIASES = {
 
 export const HERO_CLASS_LABEL_ALIASES = {
   Survivor: "filmstar",
-  Hauptrolle: "filmstar",
   Slayer: "stuntman",
   Medium: "director",
 };

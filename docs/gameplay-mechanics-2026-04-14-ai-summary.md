@@ -105,7 +105,7 @@ Funktion im Gesamtsystem:
 
 ## Klassenprofil in Kurzform
 
-### Hauptrolle
+### Filmstar
 
 - bester Auftaktkämpfer
 - erster Angriff gegen jeden Gegner erhält `+6 Trefferchance` und `+8 Krit-Chance`

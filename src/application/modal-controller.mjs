@@ -48,11 +48,11 @@ export function createModalController(context) {
     const state = getState();
     const currentFloor = state.floors?.[state.floor];
     const deathCopyElement = deathModalElement.querySelector(".modal-copy");
-    const deathLead = `Der Filmstar ${state.player.name} ${state.deathCause ?? "verschwand im letzten Akt aus dem Bild."}`;
+    const deathLead = `${state.player.name} ${state.deathCause ?? "verschwand im letzten Akt aus dem Bild."}`;
     deathSummaryElement.innerHTML = [
       `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
-      createSheetRow("Filmstar", state.player.name),
-      createSheetRow("Klasse", state.player.classLabel ?? "Unbekannt"),
+      createSheetRow("Name", state.player.name),
+      createSheetRow("Beruf", state.player.classLabel ?? "Unbekannt"),
       createSheetRow("Level", state.player.level),
       createSheetRow("Gestorben in", formatStudioLabel(state.floor)),
       createSheetRow("Archetyp", getStudioArchetypeLabel(currentFloor?.studioArchetypeId) ?? "Unbekannt"),

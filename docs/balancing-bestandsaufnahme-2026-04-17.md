@@ -108,7 +108,7 @@ Aktuelle Klassen:
 
 Vorhandene Klassenpassiven:
 
-- Hauptrolle:
+- Filmstar:
   erster Angriff gegen einen Gegner mit `+6 Hit`, `+8 Krit`
 - Stuntman:
   `-1` Fallenschaden, `+5` Schildblockchance

@@ -1,0 +1,14 @@
+[
+  { "id": "cons_vision_scan_cart_t1", "displayName": "Scan-Kartusche", "effectFamily": "vision_boost", "tier": 1, "theme": "scifi", "svgAsset": "./assets/items/consumables/cons_vision_scan_cart.svg" },
+  { "id": "cons_vision_starseer_phial_t1", "displayName": "Sternenseher-Phiole", "effectFamily": "vision_boost", "tier": 1, "theme": "fantasy", "svgAsset": "./assets/items/consumables/cons_vision_starseer_phial.svg" },
+  { "id": "cons_precision_deadeye_vial_t1", "displayName": "Deadeye-Fläschchen", "effectFamily": "precision_boost", "tier": 1, "theme": "western", "svgAsset": "./assets/items/consumables/cons_precision_deadeye_vial.svg" },
+  { "id": "cons_reaction_stunt_syringe_t1", "displayName": "Stunt-Spritze", "effectFamily": "reaction_boost", "tier": 1, "theme": "action", "svgAsset": "./assets/items/consumables/cons_reaction_stunt_syringe.svg" },
+  { "id": "cons_nerves_last_applause_pastille_t1", "displayName": "Pastille des letzten Applauses", "effectFamily": "nerves_boost", "tier": 1, "theme": "romance", "svgAsset": "./assets/items/consumables/cons_nerves_last_applause_pastille.svg" },
+  { "id": "cons_traps_threat_scanner_chip_t1", "displayName": "Gefahrenscanner-Chip", "effectFamily": "trap_focus", "tier": 1, "theme": "scifi", "svgAsset": "./assets/items/consumables/cons_traps_threat_scanner_chip.svg" },
+  { "id": "cons_escape_smoke_capsule_t1", "displayName": "Flucht-Rauchkapsel", "effectFamily": "stealth_window", "tier": 1, "theme": "action", "svgAsset": "./assets/items/consumables/cons_escape_smoke_capsule.svg" },
+  { "id": "cons_rest_dressing_room_drops_t1", "displayName": "Garderobentropfen", "effectFamily": "safe_rest_boost", "tier": 1, "theme": "drama", "svgAsset": "./assets/items/consumables/cons_rest_dressing_room_drops.svg" },
+  { "id": "cons_resist_crash_gel_t1", "displayName": "Crash-Gel", "effectFamily": "trap_resist", "tier": 1, "theme": "action", "svgAsset": "./assets/items/consumables/cons_resist_crash_gel.svg" },
+  { "id": "cons_teleport_blink_rune_t1", "displayName": "Blink-Rune", "effectFamily": "blink_teleport", "tier": 1, "theme": "fantasy", "svgAsset": "./assets/items/consumables/cons_teleport_blink_rune.svg" },
+  { "id": "cons_floorwarp_jump_cassette_t1", "displayName": "Jump-Kassette", "effectFamily": "advance_floorwarp", "tier": 1, "theme": "scifi", "svgAsset": "./assets/items/consumables/cons_floorwarp_jump_cassette.svg" },
+  { "id": "cons_retreat_cold_feet_ticket_t1", "displayName": "Kalte-Füße-Ticket", "effectFamily": "retreat_floorwarp", "tier": 1, "theme": "romance", "svgAsset": "./assets/items/consumables/cons_retreat_cold_feet_ticket.svg" }
+]

@@ -32,7 +32,7 @@ import {
   getUnlockedMonsterRank,
   getEnemyCountForFloor,
   getLegacySpecialMonsterSpawnChance,
-  getPotionCountForFloor,
+  getHealingConsumableCountForFloor,
   shouldSpawnFloorWeapon,
   shouldSpawnFloorShield,
   shouldSpawnChest,
@@ -69,9 +69,10 @@ const OPTIONS_KEY = 'dungeon-rogue-options';
 const HERO_NAME_KEY = 'movieverse-hero-name';
 const HERO_CLASS_KEY = 'movieverse-hero-class';
 const DEFAULT_HERO_NAME = 'Final Girl';
-const DEFAULT_HERO_CLASS = 'lead';
+const DEFAULT_HERO_CLASS = 'filmstar';
 const CHOICE_ACTIONS = {
-  potion: ['drink', 'store', 'leave'],
+  healingConsumable: ['use', 'store', 'leave'],
+  consumable: ['use', 'store', 'leave'],
   food: ['eat', 'store', 'leave'],
   weapon: ['equip', 'store', 'leave'],
   offhand: ['equip', 'store', 'leave'],
@@ -111,7 +112,7 @@ export function createAppConfig({ runtimeRandomApi, foodLootPipeline }) {
     getUnlockedMonsterRank,
     getEnemyCountForFloor,
     getLegacySpecialMonsterSpawnChance,
-    getPotionCountForFloor,
+    getHealingConsumableCountForFloor,
     shouldSpawnFloorWeapon: (floorNumber) => shouldSpawnFloorWeapon(floorNumber, runtimeRandomApi.randomChance()),
     shouldSpawnFloorShield: (floorNumber) => shouldSpawnFloorShield(floorNumber, runtimeRandomApi.randomChance()),
     shouldSpawnChest: (floorNumber) => shouldSpawnChest(floorNumber, runtimeRandomApi.randomChance()),

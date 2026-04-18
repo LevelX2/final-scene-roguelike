@@ -86,16 +86,25 @@ export function getActorStatusStatMods(actor) {
   }, {});
 }
 
+export function getActorConsumableStatMods(actor) {
+  const bonuses = actor?.consumableBonuses ?? {};
+  return DERIVED_STATS.reduce((mods, stat) => {
+    mods[stat] = getNumericStat(bonuses, stat);
+    return mods;
+  }, {});
+}
+
 export function getActorDerivedStats(actor) {
   const progression = getActorProgressionStatMods(actor);
   const equipment = getActorEquipmentStatMods(actor);
   const status = getActorStatusStatMods(actor);
+  const consumables = getActorConsumableStatMods(actor);
   const base = {};
   const final = {};
 
   DERIVED_STATS.forEach((stat) => {
     base[stat] = getNumericStat(actor, stat);
-    final[stat] = base[stat] + (progression[stat] ?? 0) + (equipment[stat] ?? 0) + (status[stat] ?? 0);
+    final[stat] = base[stat] + (progression[stat] ?? 0) + (equipment[stat] ?? 0) + (status[stat] ?? 0) + (consumables[stat] ?? 0);
   });
 
   return {
@@ -103,6 +112,7 @@ export function getActorDerivedStats(actor) {
     progression,
     equipment,
     status,
+    consumables,
     final,
     equipmentStatsAppliedToBase: areEquipmentStatsAppliedToBase(actor),
   };

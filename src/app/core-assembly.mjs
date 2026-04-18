@@ -30,7 +30,7 @@ export function assembleCoreModules(context) {
     getUnlockedMonsterRank,
     getEnemyCountForFloor,
     getLegacySpecialMonsterSpawnChance,
-    getPotionCountForFloor,
+    getHealingConsumableCountForFloor,
     shouldSpawnFloorWeapon,
     shouldSpawnFloorShield,
     shouldSpawnChest,
@@ -121,6 +121,7 @@ export function assembleCoreModules(context) {
     saveHighscoreIfNeeded,
     showDeathModal,
     playDeathSound: () => audioService.playDeathSound(),
+    playTrapTriggerSound: (options) => audioService.playTrapTriggerSound(options),
   });
 
   const dungeonApi = createDungeonApi({
@@ -141,7 +142,7 @@ export function assembleCoreModules(context) {
     getUnlockedMonsterRank,
     getEnemyCountForFloor,
     getLegacySpecialMonsterSpawnChance,
-    getPotionCountForFloor,
+    getHealingConsumableCountForFloor,
     shouldSpawnFloorWeapon,
     shouldSpawnFloorShield,
     shouldSpawnChest,
@@ -172,7 +173,7 @@ export function assembleCoreModules(context) {
     getDoorAt: doorService.getDoorAt,
     isDoorClosed: doorService.isDoorClosed,
     createGrid,
-    getEquippedLightBonus: (actor) => actor?.mainHand?.lightBonus ?? 0,
+    getEquippedLightBonus: (actor) => (actor?.mainHand?.lightBonus ?? 0) + (actor?.consumableBonuses?.lightBonus ?? 0),
   });
 
   const stateApi = createStateApi({

@@ -4,6 +4,7 @@ export function createDungeonEquipmentRolls(context) {
     randomChance = Math.random,
     createLootWeapon,
     createLootShield,
+    rollConsumableLootDefinition,
   } = context;
 
   function chooseWeightedWeapon(player = null, options = {}) {
@@ -30,7 +31,22 @@ export function createDungeonEquipmentRolls(context) {
   function rollChestContent(floorNumber, player = null, dropContext = {}) {
     const roll = randomChance();
 
-    if (floorNumber >= 2 && roll < 0.1) {
+    if (roll < 0.3) {
+      const consumable = rollConsumableLootDefinition?.({
+        floorNumber,
+        sourceType: dropContext.dropSourceTag === 'locked-room-chest' ? 'special' : 'chest',
+        archetypeId: dropContext.preferredArchetypeId ?? null,
+        allowedPhase: 3,
+      });
+      if (consumable) {
+        return {
+          type: 'consumable',
+          item: consumable,
+        };
+      }
+    }
+
+    if (floorNumber >= 2 && roll < 0.38) {
       const shield = chooseWeightedShield(player ?? getState()?.player, {
         floorNumber,
         dropSourceTag: dropContext.dropSourceTag ?? 'chest',

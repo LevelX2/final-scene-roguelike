@@ -27,8 +27,11 @@ export function createItemsApi(context) {
     endTurn,
     healPlayer,
     restoreNutrition,
+    useConsumable,
     refreshNutritionState,
     renderSelf,
+    applyStatusEffect,
+    randomChance,
   } = context;
 
   const { buildEquipmentCompareModel } = createItemUiHelpers({
@@ -48,8 +51,11 @@ export function createItemsApi(context) {
     endTurn,
     healPlayer,
     restoreNutrition,
+    useConsumable,
     refreshNutritionState,
     renderSelf,
+    applyStatusEffect,
+    randomChance,
   });
 
   const lootApi = createItemLootApi({
@@ -73,6 +79,8 @@ export function createItemsApi(context) {
     endTurn,
     healPlayer,
     restoreNutrition,
+    useConsumable,
+    applyHealingConsumableEffect: equipmentApi.applyHealingConsumableEffect,
     renderSelf,
     buildEquipmentCompareModel,
     equipWeapon: equipmentApi.equipWeapon,
@@ -88,6 +96,15 @@ export function createItemsApi(context) {
     resolvePotionChoice: lootApi.resolvePotionChoice,
     useInventoryItem: equipmentApi.useInventoryItem,
     quickUsePotion: equipmentApi.quickUsePotion,
+    getHealingConsumableGroups: equipmentApi.getHealingConsumableGroups,
+    getHealingOverlayState: equipmentApi.getHealingOverlayState,
+    openHealingOverlay: equipmentApi.openHealingOverlay,
+    closeHealingOverlay: equipmentApi.closeHealingOverlay,
+    toggleHealingOverlay: equipmentApi.toggleHealingOverlay,
+    cycleHealingOverlay: equipmentApi.cycleHealingOverlay,
+    selectHealingOverlayFamily: equipmentApi.selectHealingOverlayFamily,
+    useSelectedHealingConsumable: equipmentApi.useSelectedHealingConsumable,
+    useHealingConsumableByFamily: equipmentApi.useHealingConsumableByFamily,
     cloneWeapon,
   };
 }

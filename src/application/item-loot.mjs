@@ -22,8 +22,9 @@ export function createItemLootApi(context) {
     showChoiceModal,
     hideChoiceModal,
     endTurn,
-    healPlayer,
     restoreNutrition,
+    applyHealingConsumableEffect,
+    useConsumable,
     renderSelf,
     buildEquipmentCompareModel,
     equipWeapon,
@@ -41,8 +42,9 @@ export function createItemLootApi(context) {
     createFoodPickup,
     formatWeaponReference,
     addMessage,
-    healPlayer,
     restoreNutrition,
+    applyHealingConsumableEffect,
+    useConsumable,
   });
 
   const choiceConfigs = createItemChoiceConfigs({
@@ -81,7 +83,7 @@ export function createItemLootApi(context) {
 
     if (!equipOffHand(item)) {
       state.inventory.push(cloneOffHandItem(item));
-      addMessage(`${item.name} landet vorerst in deinem Inventar.`, "important");
+      addMessage(`${item.name} landet vorerst in deinem Inventar.`, 'important');
     }
   }
 
@@ -95,9 +97,14 @@ export function createItemLootApi(context) {
       return tryPickupLoot();
     }
 
-    const potionIndex = floorState.potions.findIndex((potion) => potion.x === state.player.x && potion.y === state.player.y);
-    if (potionIndex !== -1) {
-      showChoiceModal(choiceConfigs.buildPotionChoiceConfig(potionIndex));
+    const consumableIndex = floorState.consumables?.findIndex((entry) => entry.x === state.player.x && entry.y === state.player.y) ?? -1;
+    if (consumableIndex !== -1) {
+      const item = floorState.consumables[consumableIndex].item;
+      showChoiceModal(
+        item?.effectFamily
+          ? choiceConfigs.buildConsumableChoiceConfig(consumableIndex, item)
+          : choiceConfigs.buildPotionChoiceConfig(consumableIndex, item),
+      );
       renderSelf();
       return true;
     }
@@ -145,18 +152,18 @@ export function createItemLootApi(context) {
     const pending = state.pendingChoice;
     hideChoiceModal();
 
-    if (pending.kind === "potion") {
-      if (action === "drink" || action === "store") {
+    if (pending.kind === 'healingConsumable') {
+      if (action === 'use' || action === 'store') {
         state.preferences.potionAction = action;
       }
 
-      if (action === "store") {
+      if (action === 'store') {
         floorStateApi.storePotion(pending.potionIndex);
         endTurn();
         return;
       }
 
-      if (action === "drink") {
+      if (action === 'use') {
         if (floorStateApi.drinkPotionFromGround(pending.potionIndex)) {
           endTurn();
         } else {
@@ -166,61 +173,79 @@ export function createItemLootApi(context) {
       }
     }
 
-    if (pending.kind === "food") {
-      if (action === "eat" || action === "store") {
+    if (pending.kind === 'consumable') {
+      if (action === 'store') {
+        floorStateApi.storePotion(pending.consumableIndex);
+        endTurn();
+        return;
+      }
+
+      if (action === 'use') {
+        if (floorStateApi.useConsumableFromGround(pending.consumableIndex)) {
+          endTurn();
+        } else {
+          renderSelf();
+        }
+        return;
+      }
+    }
+
+    if (pending.kind === 'food') {
+      if (action === 'eat' || action === 'store') {
         state.preferences.foodAction = action;
       }
 
-      if (action === "store") {
+      if (action === 'store') {
         floorStateApi.storeFood(pending.foodIndex);
         endTurn();
         return;
       }
 
-      if (action === "eat") {
+      if (action === 'eat') {
         floorStateApi.eatFoodFromGround(pending.foodIndex);
         endTurn();
         return;
       }
     }
 
-    if (pending.kind === "weapon") {
-      if (action === "store") {
+    if (pending.kind === 'weapon') {
+      if (action === 'store') {
         floorStateApi.storeWeapon(pending.weaponIndex);
         endTurn();
         return;
       }
 
-      if (action === "equip") {
+      if (action === 'equip') {
         equipWeaponFromGround(pending.weaponIndex);
         endTurn();
         return;
       }
     }
 
-    if (pending.kind === "offhand") {
-      if (action === "store") {
+    if (pending.kind === 'offhand') {
+      if (action === 'store') {
         floorStateApi.storeOffHand(pending.offHandIndex);
         endTurn();
         return;
       }
 
-      if (action === "equip") {
+      if (action === 'equip') {
         equipOffHandFromGround(pending.offHandIndex);
         endTurn();
         return;
       }
     }
 
-    addMessage(
-      pending.kind === "weapon"
-        ? "Du lässt die Waffe vorerst liegen."
-        : pending.kind === "offhand"
-          ? "Du lässt das Nebenhand-Item vorerst liegen."
-          : pending.kind === "food"
-            ? "Du lässt das Essen vorerst liegen."
-            : "Du lässt den Heiltrank vorerst liegen.",
-    );
+    const leaveMessage = pending.kind === 'weapon'
+      ? 'Du lässt die Waffe vorerst liegen.'
+      : pending.kind === 'offhand'
+        ? 'Du lässt das Nebenhand-Item vorerst liegen.'
+        : pending.kind === 'food'
+          ? 'Du lässt das Essen vorerst liegen.'
+          : pending.kind === 'consumable'
+            ? 'Du lässt das Consumable vorerst liegen.'
+            : 'Du lässt das Heil-Consumable vorerst liegen.';
+    addMessage(leaveMessage);
     renderSelf();
   }
 

@@ -7,6 +7,7 @@ import { createRenderAssetHelpers } from './ui/render-assets.mjs';
 import { createStudioTopologyView } from './ui/studio-topology-view.mjs';
 import { createTooltipView } from './ui/tooltip-view.mjs';
 import { getWeaponEffectDefinition, getEffectStateLabel } from './content/catalogs/weapon-effects.mjs';
+import { getConsumableEffectLabel } from './content/catalogs/consumables.mjs';
 
 export function createRenderApi(context) {
   const {
@@ -83,14 +84,21 @@ export function createRenderApi(context) {
   }
 
   function getActorStatusDisplay(actor) {
-    const effects = actor?.statusEffects ?? [];
+    const effects = [
+      ...(actor?.statusEffects ?? []),
+      ...(actor?.activeConsumableBuffs ?? []).map((buff) => ({
+        type: buff.effectFamily,
+        duration: buff.remainingTurns,
+        label: buff.label ?? getConsumableEffectLabel(buff.effectFamily),
+      })),
+    ];
     if (!effects.length) {
       return [];
     }
 
     return effects.map((effect) => ({
       type: effect.type,
-      label: getEffectStateLabel(effect.type) ?? getWeaponEffectDefinition(effect.type)?.label ?? effect.type,
+      label: effect.label ?? getEffectStateLabel(effect.type) ?? getWeaponEffectDefinition(effect.type)?.label ?? getConsumableEffectLabel(effect.type) ?? effect.type,
       duration: effect.duration ?? 0,
     }));
   }
@@ -134,6 +142,7 @@ export function createRenderApi(context) {
     getWeaponIconAssetUrl,
     getOffHandIconAssetUrl,
     getPotionIconAssetUrl,
+    getConsumableIconAssetUrl,
     getKeyIconAssetUrl,
     getShowcaseIconAssetUrl,
     getPlayerIconAssetUrl,
@@ -250,6 +259,7 @@ export function createRenderApi(context) {
     getWeaponIconAssetUrl,
     getOffHandIconAssetUrl,
     getPotionIconAssetUrl,
+    getConsumableIconAssetUrl,
     getKeyIconAssetUrl,
     getShowcaseIconAssetUrl,
     getPlayerIconAssetUrl,

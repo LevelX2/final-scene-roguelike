@@ -1,4 +1,5 @@
 import { createStatusEffectService } from '../application/status-effect-service.mjs';
+import { createConsumableService } from '../application/consumable-service.mjs';
 import { getEffectStateLabel } from '../content/catalogs/weapon-effects.mjs';
 
 export function assembleGameplayModules(context) {
@@ -44,6 +45,9 @@ export function assembleGameplayModules(context) {
     setResolvePotionChoice,
     setUseInventoryItem,
     setQuickUsePotion,
+    setCycleHealingOverlay,
+    setCloseHealingOverlay,
+    setUseSelectedHealingConsumable,
     maybeTriggerShowcaseAmbience,
     getShowcaseAt,
     applyPlayerNutritionTurnCost,
@@ -211,6 +215,41 @@ export function assembleGameplayModules(context) {
     tryApplyWeaponEffects: statusEffectService.tryApplyWeaponEffects,
   });
 
+  const floorTransitionService = createFloorTransitionService({
+    getState,
+    getCurrentFloorState,
+    createDungeonLevel,
+    randomInt,
+    detectNearbyTraps,
+    maybeTriggerShowcaseAmbience,
+    manhattanDistance: aiApi.manhattanDistance,
+    addMessage,
+    formatStudioLabel,
+    formatArchetypeLabel,
+    buildStudioAnnouncement,
+    getArchetypeForFloor,
+    playStudioAnnouncement: core.playStudioAnnouncement,
+    showStairChoice,
+    renderSelf,
+  });
+
+  const consumableService = createConsumableService({
+    getState,
+    getCurrentFloorState,
+    getDoorAt,
+    getShowcaseAt,
+    detectNearbyTraps,
+    maybeTriggerShowcaseAmbience,
+    handleActorEnterTile,
+    moveToFloor: floorTransitionService.moveToFloor,
+    addMessage,
+    renderSelf,
+    createRuntimeId: runtime.createRuntimeId,
+    randomChance,
+  });
+  consumableService.ensureConsumableState();
+  consumableService.rebuildPlayerConsumableState();
+
   const itemsApi = createItemsApi({
     getState,
     getCurrentFloorState,
@@ -235,30 +274,18 @@ export function assembleGameplayModules(context) {
     endTurn,
     healPlayer: combatApi.healPlayer,
     restoreNutrition,
+    useConsumable: consumableService.useConsumable,
     refreshNutritionState,
     renderSelf,
+    applyStatusEffect: statusEffectService.applyStatusEffect,
+    randomChance,
   });
   setResolvePotionChoice(itemsApi.resolvePotionChoice);
   setUseInventoryItem(itemsApi.useInventoryItem);
   setQuickUsePotion(itemsApi.quickUsePotion);
-
-  const floorTransitionService = createFloorTransitionService({
-    getState,
-    getCurrentFloorState,
-    createDungeonLevel,
-    randomInt,
-    detectNearbyTraps,
-    maybeTriggerShowcaseAmbience,
-    manhattanDistance: aiApi.manhattanDistance,
-    addMessage,
-    formatStudioLabel,
-    formatArchetypeLabel,
-    buildStudioAnnouncement,
-    getArchetypeForFloor,
-    playStudioAnnouncement: core.playStudioAnnouncement,
-    showStairChoice,
-    renderSelf,
-  });
+  setCycleHealingOverlay(itemsApi.cycleHealingOverlay);
+  setCloseHealingOverlay(itemsApi.closeHealingOverlay);
+  setUseSelectedHealingConsumable(itemsApi.useSelectedHealingConsumable);
 
   const playerTurnController = createPlayerTurnController({
     WIDTH,
@@ -293,6 +320,7 @@ export function assembleGameplayModules(context) {
     processRoundStatusEffects: statusEffectService.processRoundStatusEffects,
     processContinuousTraps,
     processSafeRegeneration: aiApi.processSafeRegeneration,
+    processConsumableBuffs: consumableService.processConsumableBuffs,
     applyPlayerNutritionTurnCost,
     renderSelf,
   });
@@ -350,6 +378,7 @@ export function assembleGameplayModules(context) {
     ...floorTransitionService,
     ...playerTurnController,
     ...statusEffectService,
+    ...consumableService,
     ...testApi,
   };
 }

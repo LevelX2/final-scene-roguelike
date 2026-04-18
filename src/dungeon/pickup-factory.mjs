@@ -1,5 +1,6 @@
 import { createKeyItem } from '../item-defs.mjs';
 import { getItemBalanceGroups } from '../item-balance-groups.mjs';
+import { normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 
 export function createDungeonPickupFactory(context) {
@@ -42,14 +43,14 @@ export function createDungeonPickupFactory(context) {
     return {
       x,
       y,
-      item: {
-        type: item?.type ?? "potion",
+      item: normalizeLegacyConsumableItem({
+        type: item?.type ?? "consumable",
         id: item?.id ?? null,
-        name: item?.name ?? "Heiltrank",
+        name: item?.name ?? "Set-Sanitätskit",
         description: item?.description ?? "Stellt 8 Lebenspunkte wieder her.",
         heal: item?.heal ?? 8,
         ...(item ?? {}),
-      },
+      }),
     };
   }
 
@@ -61,6 +62,19 @@ export function createDungeonPickupFactory(context) {
         ...item,
         type: item.type ?? "food",
       },
+    };
+  }
+
+  function createConsumablePickup(item, x, y) {
+    return {
+      x,
+      y,
+      item: normalizeLegacyConsumableItem({
+        ...(item ?? {}),
+        type: item?.type ?? 'consumable',
+        itemType: item?.itemType ?? 'consumable',
+        magnitude: item?.magnitude && typeof item.magnitude === 'object' ? { ...item.magnitude } : item?.magnitude,
+      }),
     };
   }
 
@@ -120,6 +134,7 @@ export function createDungeonPickupFactory(context) {
     createChestPickup,
     createPotionPickup,
     createFoodPickup,
+    createConsumablePickup,
     createShowcase,
     cloneWeapon,
     createDoor,

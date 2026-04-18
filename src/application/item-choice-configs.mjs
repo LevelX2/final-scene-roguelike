@@ -11,15 +11,26 @@ export function createItemChoiceConfigs(context) {
     buildEquipmentCompareModel,
   } = context;
 
-  function buildPotionChoiceConfig(potionIndex) {
+  function buildPotionChoiceConfig(potionIndex, consumable) {
     const state = getState();
     return {
-      kind: "potion",
+      kind: "healingConsumable",
       potionIndex,
       selectedAction: state.preferences.potionAction,
-      title: "Heiltrank gefunden",
-      text: "Möchtest du den Trank direkt trinken, ins Inventar legen oder vorerst liegen lassen?",
-      labels: ["Direkt trinken", "Ins Inventar", "Liegen lassen"],
+      title: `${consumable?.name ?? "Healing-Consumable"} gefunden`,
+      text: `${consumable?.description ?? "Schnelle Heilung für einen schlechten Moment."} Möchtest du es sofort benutzen, ins Inventar legen oder es vorerst liegen lassen?`,
+      labels: ["Jetzt benutzen", "Ins Inventar", "Liegen lassen"],
+    };
+  }
+
+  function buildConsumableChoiceConfig(consumableIndex, item) {
+    return {
+      kind: "consumable",
+      consumableIndex,
+      selectedAction: "store",
+      title: `${item.name} gefunden`,
+      text: `${item.description} Möchtest du das Consumable sofort benutzen, ins Inventar legen oder es vorerst liegen lassen?`,
+      labels: ["Jetzt benutzen", "Ins Inventar", "Liegen lassen"],
     };
   }
 
@@ -63,6 +74,7 @@ export function createItemChoiceConfigs(context) {
 
   return {
     buildPotionChoiceConfig,
+    buildConsumableChoiceConfig,
     buildFoodChoiceConfig,
     buildWeaponChoiceConfig,
     buildOffHandChoiceConfig,

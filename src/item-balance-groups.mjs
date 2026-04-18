@@ -14,6 +14,10 @@ function addGroups(target, values) {
 }
 
 function getItemKind(item) {
+  if (item?.type === 'consumable' || item?.itemType === 'consumable' || item?.effectFamily) {
+    return 'consumable';
+  }
+
   if (item?.type === 'offhand' || item?.itemType === 'shield' || item?.subtype === 'shield') {
     return 'shield';
   }
@@ -180,6 +184,12 @@ export function getItemBalanceGroups(item) {
     addGroups(groups, deriveWeaponGroups(item));
   } else if (kind === 'shield') {
     addGroups(groups, deriveShieldGroups(item));
+  } else if (kind === 'consumable') {
+    addGroups(groups, [
+      `consumable-family:${item?.effectFamily ?? 'unknown'}`,
+      `consumable-tier:${item?.tier ?? 0}`,
+      `consumable-theme:${item?.theme ?? 'unknown'}`,
+    ]);
   }
 
   return groups;

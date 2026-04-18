@@ -248,6 +248,7 @@ export function createTrapsApi(context) {
     saveHighscoreIfNeeded,
     showDeathModal,
     playDeathSound,
+    playTrapTriggerSound = () => {},
   } = context;
 
   function formatMonsterLabel(actor, grammaticalCase, capitalize = false) {
@@ -352,7 +353,7 @@ export function createTrapsApi(context) {
 
   function getDetectionChance(actor, trap) {
     return clamp(
-      25 + (getActorDerivedStat(actor, 'precision') - (trap.detectDifficulty ?? 0)) * 15 + (actor.trapDetectionBonus ?? 0),
+      25 + (getActorDerivedStat(actor, 'precision') - (trap.detectDifficulty ?? 0)) * 15 + (actor.trapDetectionBonus ?? 0) + (actor.consumableBonuses?.trapDetectionBonus ?? 0),
       5,
       95,
     );
@@ -361,7 +362,7 @@ export function createTrapsApi(context) {
   function getAvoidChance(actor, trap, trapVisible = false) {
     const visibleBonus = trapVisible ? 15 : 0;
     return clamp(
-      20 + (getActorDerivedStat(actor, 'reaction') - (trap.reactDifficulty ?? 0)) * 15 + visibleBonus + (actor.trapAvoidBonus ?? 0),
+      20 + (getActorDerivedStat(actor, 'reaction') - (trap.reactDifficulty ?? 0)) * 15 + visibleBonus + (actor.trapAvoidBonus ?? 0) + (actor.consumableBonuses?.trapAvoidBonus ?? 0),
       5,
       95,
     );
@@ -423,7 +424,9 @@ export function createTrapsApi(context) {
       const enduranceMitigation = isPlayer
         ? Math.floor(getActorDerivedStat(actor, 'endurance') / (isContinuous ? 2 : 3))
         : Math.floor(getActorDerivedStat(actor, 'endurance') / 4);
-      const classMitigation = isPlayer ? (actor.trapDamageReduction ?? 0) : 0;
+      const classMitigation = isPlayer
+        ? (actor.trapDamageReduction ?? 0) + (actor.consumableBonuses?.trapDamageReduction ?? 0)
+        : 0;
       const damage = Math.max(1, trap.effect.damage - enduranceMitigation - classMitigation - (reduced ? 1 : 0));
       actor.hp = Math.max(0, actor.hp - damage);
       if (isPlayer) {
@@ -432,6 +435,9 @@ export function createTrapsApi(context) {
         state.damageDealt = (state.damageDealt ?? 0) + damage;
       }
       if (perceived) {
+        if (isPlayer) {
+          playTrapTriggerSound({ trapType: trap.type, avoided: false });
+        }
         showFloatingText(actor.x, actor.y, `-${damage}`, "taken");
         addMessage(
         isPlayer
@@ -499,6 +505,9 @@ export function createTrapsApi(context) {
 
       if (avoided) {
         if (canPlayerPerceiveTrapEvent(actor, trap)) {
+          if (isPlayer) {
+            playTrapTriggerSound({ trapType: trap.type, avoided: true });
+          }
           addMessage(
             isPlayer
               ? `Du reagierst rechtzeitig auf ${trap.name}.`

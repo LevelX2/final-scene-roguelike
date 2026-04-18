@@ -128,6 +128,13 @@ export function createTestApiSnapshots(context) {
         id: entry.item.id,
         nutritionRestore: entry.item.nutritionRestore,
       })),
+      consumables: (floorState.consumables ?? []).map((entry) => ({
+        x: entry.x,
+        y: entry.y,
+        id: entry.item.id,
+        effectFamily: entry.item.effectFamily ?? null,
+        tier: entry.item.tier ?? null,
+      })),
       doors: (floorState.doors ?? []).map((door) => ({
         x: door.x,
         y: door.y,

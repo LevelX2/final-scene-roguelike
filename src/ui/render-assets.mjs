@@ -1,4 +1,5 @@
 import { getItemRarityClass, getOffHandIconAssetUrl, getWeaponIconAssetUrl } from './item-asset-helpers.mjs';
+import { isHealingConsumable } from '../content/catalogs/consumables.mjs';
 import { MONSTER_ASSET_OVERRIDES } from '../content/catalogs/enemy-asset-manifest.mjs';
 
 export function createRenderAssetHelpers(context) {
@@ -23,11 +24,19 @@ export function createRenderAssetHelpers(context) {
   }
 
   function getPotionIconAssetUrl(item) {
-    if (!item || item.type !== "potion") {
+    if (!isHealingConsumable(item)) {
       return null;
     }
 
-    return "./assets/consumables/potion.svg";
+    return item.iconAssetPath || "./assets/consumables/potion.svg";
+  }
+
+  function getConsumableIconAssetUrl(item) {
+    if (!item || item.type !== 'consumable') {
+      return null;
+    }
+
+    return item.svgAsset ?? item.iconAssetPath ?? null;
   }
 
   function getKeyIconAssetUrl(item) {
@@ -183,6 +192,7 @@ export function createRenderAssetHelpers(context) {
       getWeaponIconAssetUrl(item) ||
       getOffHandIconAssetUrl(item) ||
       getPotionIconAssetUrl(item) ||
+      getConsumableIconAssetUrl(item) ||
       getKeyIconAssetUrl(item);
   }
 
@@ -193,6 +203,7 @@ export function createRenderAssetHelpers(context) {
     getWeaponIconAssetUrl,
     getOffHandIconAssetUrl,
     getPotionIconAssetUrl,
+    getConsumableIconAssetUrl,
     getKeyIconAssetUrl,
     getShowcaseIconAssetUrl,
     getPlayerIconAssetUrl,

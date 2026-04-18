@@ -1,4 +1,5 @@
 import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
+import { isFoodConsumable, isHealingConsumable } from '../content/catalogs/consumables.mjs';
 import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
 export function createItemFloorStateApi(context) {
@@ -13,12 +14,13 @@ export function createItemFloorStateApi(context) {
     createFoodPickup,
     formatWeaponReference,
     addMessage,
-    healPlayer,
     restoreNutrition,
+    applyHealingConsumableEffect,
+    useConsumable,
   } = context;
 
   function removePotionAt(index) {
-    getCurrentFloorState().potions.splice(index, 1);
+    getCurrentFloorState().consumables.splice(index, 1);
   }
 
   function removeWeaponAt(index) {
@@ -43,14 +45,14 @@ export function createItemFloorStateApi(context) {
 
   function storePotion(index) {
     const state = getState();
-    const pickup = getCurrentFloorState().potions[index];
+    const pickup = getCurrentFloorState().consumables[index];
     if (!pickup) {
       return;
     }
 
     removePotionAt(index);
     state.inventory.push({ ...pickup.item });
-    addMessage("Du verstaust den Heiltrank in deinem Inventar.", "important");
+    addMessage(`${pickup.item.name} wandert in dein Inventar.`, "important");
   }
 
   function storeWeapon(index) {
@@ -124,7 +126,7 @@ export function createItemFloorStateApi(context) {
 
   function drinkPotionFromGround(index) {
     const state = getState();
-    const pickup = getCurrentFloorState().potions[index];
+    const pickup = getCurrentFloorState().consumables[index];
     if (!pickup) {
       return false;
     }
@@ -135,10 +137,22 @@ export function createItemFloorStateApi(context) {
     }
 
     removePotionAt(index);
-    state.safeRestTurns = 0;
-    state.consumedPotions = (state.consumedPotions ?? 0) + 1;
-    healPlayer(pickup.item.heal);
-    addMessage("Du trinkst den Heiltrank sofort und fuehlst dich besser.", "important");
+    applyHealingConsumableEffect(pickup.item);
+    return true;
+  }
+
+  function useConsumableFromGround(index) {
+    const pickup = getCurrentFloorState().consumables[index];
+    if (!pickup) {
+      return false;
+    }
+
+    removePotionAt(index);
+    const used = useConsumable?.(pickup.item);
+    if (!used) {
+      getCurrentFloorState().consumables.splice(index, 0, pickup);
+      return false;
+    }
     return true;
   }
 
@@ -167,9 +181,9 @@ export function createItemFloorStateApi(context) {
       return false;
     }
 
-    if (content.type === "potion") {
-      floorState.potions.push(createPotionPickup(content.item, state.player.x, state.player.y));
-      addMessage(`In der ${containerName} klirrt ein Heiltrank gegen morsches Holz.`, "important");
+    if (content.type === "healingConsumable" || content.type === "consumable" || isHealingConsumable(content.item)) {
+      floorState.consumables.push(createPotionPickup(content.item, state.player.x, state.player.y));
+      addMessage(`In der ${containerName} wartet ${content.item.name}.`, "important");
       return true;
     }
 
@@ -185,7 +199,7 @@ export function createItemFloorStateApi(context) {
       return true;
     }
 
-    if (content.type === "food") {
+    if (content.type === "food" || isFoodConsumable(content.item)) {
       floorState.foods.push(createFoodPickup(content.item, state.player.x, state.player.y));
       addMessage(`${content.item.name} steckt in der ${containerName} zwischen altem Schrott.`, "important");
       return true;
@@ -204,6 +218,7 @@ export function createItemFloorStateApi(context) {
     takeWeaponFromGround,
     takeOffHandFromGround,
     drinkPotionFromGround,
+    useConsumableFromGround,
     eatFoodFromGround,
     spawnChestContentAtPlayer,
   };

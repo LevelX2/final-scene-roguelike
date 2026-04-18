@@ -294,6 +294,79 @@ export function createAudioService(context) {
     oscillator.stop(now + 0.11);
   }
 
+  function playTrapTriggerSound({ trapType = "floor", avoided = false } = {}) {
+    if (!isStepSoundEnabled()) {
+      return;
+    }
+
+    const context = getAudioContext();
+    if (!context) {
+      return;
+    }
+
+    const now = context.currentTime;
+
+    if (avoided) {
+      const sweep = context.createOscillator();
+      const gain = context.createGain();
+      sweep.type = "triangle";
+      sweep.frequency.setValueAtTime(540, now);
+      sweep.frequency.exponentialRampToValueAtTime(980, now + 0.05);
+      sweep.frequency.exponentialRampToValueAtTime(760, now + 0.12);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.03, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      sweep.connect(gain);
+      gain.connect(context.destination);
+      sweep.start(now);
+      sweep.stop(now + 0.14);
+      return;
+    }
+
+    if (trapType === "alarm") {
+      const shriek = context.createOscillator();
+      const gain = context.createGain();
+      shriek.type = "square";
+      shriek.frequency.setValueAtTime(920, now);
+      shriek.frequency.exponentialRampToValueAtTime(680, now + 0.08);
+      shriek.frequency.exponentialRampToValueAtTime(840, now + 0.16);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.035, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+      shriek.connect(gain);
+      gain.connect(context.destination);
+      shriek.start(now);
+      shriek.stop(now + 0.2);
+      return;
+    }
+
+    const body = context.createOscillator();
+    const bodyGain = context.createGain();
+    body.type = trapType === "hazard" ? "sawtooth" : "square";
+    body.frequency.setValueAtTime(trapType === "hazard" ? 240 : 150, now);
+    body.frequency.exponentialRampToValueAtTime(trapType === "hazard" ? 110 : 70, now + 0.18);
+    bodyGain.gain.setValueAtTime(0.0001, now);
+    bodyGain.gain.exponentialRampToValueAtTime(0.05, now + 0.012);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+    body.connect(bodyGain);
+    bodyGain.connect(context.destination);
+    body.start(now);
+    body.stop(now + 0.2);
+
+    const snap = context.createOscillator();
+    const snapGain = context.createGain();
+    snap.type = "triangle";
+    snap.frequency.setValueAtTime(trapType === "hazard" ? 420 : 300, now + 0.015);
+    snap.frequency.exponentialRampToValueAtTime(trapType === "hazard" ? 180 : 140, now + 0.09);
+    snapGain.gain.setValueAtTime(0.0001, now);
+    snapGain.gain.exponentialRampToValueAtTime(0.024, now + 0.018);
+    snapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+    snap.connect(snapGain);
+    snapGain.connect(context.destination);
+    snap.start(now + 0.015);
+    snap.stop(now + 0.11);
+  }
+
   function playDoorOpenSound() {
     if (!isStepSoundEnabled()) {
       return;
@@ -592,6 +665,7 @@ export function createAudioService(context) {
     playEnemyHitSound,
     playPlayerHitSound,
     playDodgeSound,
+    playTrapTriggerSound,
     playDoorOpenSound,
     playDoorCloseSound,
     playLockedDoorSound,

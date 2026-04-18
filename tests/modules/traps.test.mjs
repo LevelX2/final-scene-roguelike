@@ -17,6 +17,7 @@ function createTrapApiHarness(randomChance = () => 0.5) {
     saveHighscoreIfNeeded: () => null,
     showDeathModal: () => {},
     playDeathSound: () => {},
+    playTrapTriggerSound: () => {},
   });
 }
 
@@ -89,6 +90,7 @@ function createTrapPerceptionHarness({
 } = {}) {
   const messages = [];
   const floatingTexts = [];
+  const trapSounds = [];
   const state = {
     player: { x: 1, y: 1, hp: 10 },
     damageTaken: 0,
@@ -116,6 +118,7 @@ function createTrapPerceptionHarness({
     saveHighscoreIfNeeded: () => null,
     showDeathModal: () => {},
     playDeathSound: () => {},
+    playTrapTriggerSound: (options) => trapSounds.push(options),
   });
 
   return {
@@ -124,6 +127,7 @@ function createTrapPerceptionHarness({
     floorState,
     messages,
     floatingTexts,
+    trapSounds,
   };
 }
 
@@ -155,6 +159,7 @@ test('enemy-triggered traps stay silent outside the player view', () => {
   assert.equal(triggered, true);
   assert.equal(harness.messages.length, 0);
   assert.equal(harness.floatingTexts.length, 0);
+  assert.equal(harness.trapSounds.length, 0);
 });
 
 test('enemy-triggered traps remain visible in the log and on the board when in sight', () => {
@@ -188,4 +193,63 @@ test('enemy-triggered traps remain visible in the log and on the board when in s
   assert.equal(harness.floatingTexts.length, 1);
   assert.equal(harness.floatingTexts[0][0], 3);
   assert.equal(harness.floatingTexts[0][1], 3);
+  assert.equal(harness.trapSounds.length, 0);
+});
+
+test('player-triggered traps play an audible cue on hit', () => {
+  const harness = createTrapPerceptionHarness();
+  const trap = {
+    id: 'player-floor-trap',
+    name: 'Verdeckte Falltür',
+    type: 'floor',
+    visibility: 'hidden',
+    state: 'active',
+    trigger: 'on_enter',
+    resetMode: 'single_use',
+    affectsPlayer: true,
+    affectsEnemies: true,
+    x: 1,
+    y: 1,
+    reactDifficulty: null,
+    effect: { damage: 5 },
+  };
+
+  harness.floorState.traps.push(trap);
+
+  const triggered = harness.trapsApi.handleActorEnterTile(harness.state.player, harness.floorState);
+
+  assert.equal(triggered, true);
+  assert.equal(harness.trapSounds.length, 1);
+  assert.deepEqual(harness.trapSounds[0], { trapType: 'floor', avoided: false });
+});
+
+test('player-triggered traps play an audible cue on avoidance', () => {
+  const harness = createTrapPerceptionHarness({
+    randomChance: () => 0,
+  });
+  harness.state.player.reaction = 10;
+  const trap = {
+    id: 'player-avoid-trap',
+    name: 'Testfalle',
+    type: 'floor',
+    visibility: 'hidden',
+    state: 'active',
+    trigger: 'on_enter',
+    resetMode: 'single_use',
+    affectsPlayer: true,
+    affectsEnemies: true,
+    x: 1,
+    y: 1,
+    detectDifficulty: 99,
+    reactDifficulty: 0,
+    effect: { damage: 4 },
+  };
+
+  harness.floorState.traps.push(trap);
+
+  const triggered = harness.trapsApi.handleActorEnterTile(harness.state.player, harness.floorState);
+
+  assert.equal(triggered, true);
+  assert.equal(harness.trapSounds.length, 1);
+  assert.deepEqual(harness.trapSounds[0], { trapType: 'floor', avoided: true });
 });

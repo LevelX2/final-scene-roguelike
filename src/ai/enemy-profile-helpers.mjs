@@ -107,11 +107,13 @@ export function getEnemyAggroRule(enemy) {
 
 export function getEnemyAggroBreakDistance(enemy) {
   const mobilityRule = MOBILITY_AGGRO_RULES[getEnemyMobility(enemy)];
-  if (!mobilityRule?.aggroBreakPadding) {
+  const healingFallbackPadding = getEnemyHealingProfile(enemy) === 'lurking' ? 6 : null;
+  const aggroBreakPadding = mobilityRule?.aggroBreakPadding ?? healingFallbackPadding;
+  if (!aggroBreakPadding) {
     return Number.POSITIVE_INFINITY;
   }
 
-  return Math.max(0, (enemy?.aggroRadius ?? 0) + mobilityRule.aggroBreakPadding);
+  return Math.max(0, (enemy?.aggroRadius ?? 0) + aggroBreakPadding);
 }
 
 export function getEnemyAggroPursuitDetectionBonus(enemy) {

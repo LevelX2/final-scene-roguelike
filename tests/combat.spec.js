@@ -85,7 +85,7 @@ test("player attacks can miss and be logged as dodged", async ({ page }) => {
 
 test("variant monster prefixes are rendered as proper adjectives in miss logs", async ({ page }) => {
   await page.goto("/");
-  await startRun(page, { classLabel: "Hauptrolle" });
+  await startRun(page, { classLabel: "Filmstar" });
 
   await setupCombat(page, {
     player: {
@@ -132,9 +132,9 @@ test("variant monster prefixes are rendered as proper adjectives in miss logs", 
   expect(markedNames).toContain("Der brutale Motel-Schlurfer");
 });
 
-test("Hauptrolle gets a boosted opening strike against a fresh enemy", async ({ page }) => {
+test("Filmstar gets a boosted opening strike against a fresh enemy", async ({ page }) => {
   await page.goto("/");
-  await startRun(page, { classLabel: "Hauptrolle" });
+  await startRun(page, { classLabel: "Filmstar" });
 
   await setupCombat(page, {
     player: {
@@ -355,6 +355,10 @@ test("stalker enemies actively pursue once roaming aggro has latched", async ({ 
     clearGrid: true,
     playerPosition: { x: 2, y: 2 },
     enemyPosition: { x: 5, y: 2 },
+    walls: [
+      { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 4, y: 1 }, { x: 5, y: 1 }, { x: 6, y: 1 },
+      { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 3, y: 3 }, { x: 4, y: 3 }, { x: 5, y: 3 }, { x: 6, y: 3 },
+    ],
     enemy: {
       behavior: "stalker",
       behaviorLabel: "Verfolger",
@@ -474,6 +478,10 @@ test("enemies without door handling stop at closed doors", async ({ page }) => {
     clearGrid: true,
     playerPosition: { x: 2, y: 2 },
     enemyPosition: { x: 5, y: 2 },
+    walls: [
+      { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 4, y: 1 }, { x: 5, y: 1 }, { x: 6, y: 1 },
+      { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 3, y: 3 }, { x: 4, y: 3 }, { x: 5, y: 3 }, { x: 6, y: 3 },
+    ],
     enemy: {
       behavior: "hunter",
       behaviorLabel: "Jäger",

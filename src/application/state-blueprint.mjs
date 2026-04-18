@@ -2,6 +2,7 @@ import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
 import { getShieldTemplate } from '../content/catalogs/shields.mjs';
 import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { getStartLoadout } from '../content/start-loadouts.mjs';
+import { cloneConsumableDefinition, normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
 import { cloneItemDef, createKeyItem } from '../item-defs.mjs';
 import { cloneOffHandItem } from '../equipment-helpers.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
@@ -33,6 +34,9 @@ export function createStateBlueprintApi(context) {
     deathSound: true,
     voiceAnnouncements: true,
     showcaseAnnouncementMode: "floating-text",
+    decorativeOverlaysEnabled: true,
+    decorativeOverlayDebugLog: false,
+    decorativeOverlayDebugMask: false,
     uiScale: 1,
     studioZoom: 1,
     tooltipScale: 1,
@@ -191,16 +195,28 @@ export function createStateBlueprintApi(context) {
       return null;
     }
 
-    if (entry.type === "food" || entry.type === "potion") {
+    if (entry.type === "food" || entry.type === "potion" || entry.type === "healingConsumable") {
       const item = entry.itemId ? cloneItemDef(entry.itemId) : null;
       if (!item && !entry.item) {
         return null;
       }
 
-      return {
+      return normalizeLegacyConsumableItem({
         ...(item ?? {}),
         ...(entry.item ?? {}),
-      };
+      });
+    }
+
+    if (entry.type === "consumable") {
+      const item = entry.itemId ? cloneConsumableDefinition(entry.itemId) : null;
+      if (!item && !entry.item) {
+        return null;
+      }
+
+      return normalizeLegacyConsumableItem({
+        ...(item ?? {}),
+        ...(entry.item ?? {}),
+      });
     }
 
     if (entry.type === "weapon") {
@@ -321,6 +337,8 @@ export function createStateBlueprintApi(context) {
       offHand: startingOffHand,
       equipmentStatsApplied: false,
       statusEffects: [],
+      consumableBonuses: {},
+      activeConsumableBuffs: [],
     };
 
     return player;
@@ -349,7 +367,7 @@ export function createStateBlueprintApi(context) {
 
   function createDefaultPreferences() {
     return {
-      potionAction: "drink",
+      potionAction: "use",
       foodAction: "eat",
       inventoryFilter: "all",
       inventoryView: "items",
@@ -388,6 +406,8 @@ export function createStateBlueprintApi(context) {
       openedChests: 0,
       consumedPotions: 0,
       consumedFoods: 0,
+      activeConsumableBuffs: [],
+      consumableLogMemory: {},
       knownMonsterTypes: {},
       seenMonsterCounts: {},
       visitedFloors: [],
@@ -399,6 +419,10 @@ export function createStateBlueprintApi(context) {
       options: { ...initialOptions },
       floors: {},
       preferences: createDefaultPreferences(),
+      healOverlay: {
+        open: false,
+        selectedFamilyId: null,
+      },
       targeting: {
         active: false,
         cursorX: 0,

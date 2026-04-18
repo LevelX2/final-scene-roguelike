@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+
+<path d="M12 28 C18 17, 36 12, 54 15 C67 10, 92 13, 102 28 C113 35, 117 57, 106 80 C95 98, 69 111, 42 103 C20 96, 9 66, 12 28 Z" fill="#4d9c49" opacity="0.9"/>
+<path d="M12 28 C18 17, 36 12, 54 15 C67 10, 92 13, 102 28 C113 35, 117 57, 106 80 C95 98, 69 111, 42 103 C20 96, 9 66, 12 28 Z" fill="none" stroke="#83c96b" stroke-width="2.2" opacity="0.5"/>
+<path d="M28 82 l4 -10 l4 10" stroke="#a6df85" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+<path d="M40 72 l4 -10 l4 10" stroke="#a6df85" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+<path d="M54 86 l4 -10 l4 10" stroke="#a6df85" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+<path d="M68 70 l4 -10 l4 10" stroke="#a6df85" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+<path d="M78 85 l4 -10 l4 10" stroke="#a6df85" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+<path d="M30 56 l4 -10 l4 10" stroke="#a6df85" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+<path d="M88 54 l4 -10 l4 10" stroke="#a6df85" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round"/>
+</svg>

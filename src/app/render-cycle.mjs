@@ -1,5 +1,6 @@
 import { evaluateTargetSelection, getTargetHintLabel } from '../application/targeting-service.mjs';
 import { areVoiceAnnouncementsForcedOff } from '../application/test-mode.mjs';
+import { getHealingFamily, getHealingOverlayLabel, getHealingTypeLabel } from '../content/catalogs/consumables.mjs';
 
 export function createRenderCycleApi(context) {
   const {
@@ -26,6 +27,11 @@ export function createRenderCycleApi(context) {
     topbarFoodElement,
     topbarStatusSummaryElement,
     targetModeHintElement,
+    healOverlayElement,
+    healOverlayItemsElement,
+    healOverlayNameElement,
+    healOverlayTypeElement,
+    healOverlayEffectElement,
     openTargetModeButton,
     confirmTargetModeButton,
     xpLabelElement,
@@ -34,6 +40,10 @@ export function createRenderCycleApi(context) {
     playerStatusSummaryElement,
     topbarFoodCardElement,
     getActorStatusDisplay,
+    getHealingConsumableGroups,
+    getHealingOverlayState,
+    selectHealingOverlayFamily,
+    useHealingConsumableByFamily,
     getHungerStateLabel,
     HUNGER_STATE,
     renderPlayerSheet,
@@ -315,17 +325,65 @@ export function createRenderCycleApi(context) {
       : null;
     const targetIsValid = Boolean(targetSelection?.valid);
     const targetHint = targetingActive ? getTargetHintLabel(targetSelection) : "";
-    targetModeHintElement.innerHTML = targetingActive
-      ? `<span>Zielmodus</span><strong>${targetHint}</strong>`
-      : `<span>Zielmodus</span><strong>-</strong>`;
-    targetModeHintElement.classList.toggle("ui-hidden", !targetingActive);
     openTargetModeButton.textContent = "Zielen";
     openTargetModeButton.setAttribute("aria-pressed", String(targetingActive));
     openTargetModeButton.classList.toggle("targeting-active", targetingActive);
     confirmTargetModeButton.classList.toggle("ui-hidden", !targetingActive);
     confirmTargetModeButton.disabled = !targetIsValid;
     confirmTargetModeButton.textContent = targetIsValid ? "Schießen" : "Kein Schuss";
+    if (healOverlayElement && healOverlayItemsElement && healOverlayNameElement && healOverlayTypeElement && healOverlayEffectElement) {
+      const healOverlayState = getHealingOverlayState?.() ?? { open: false, selectedFamilyId: null };
+      const healingGroups = getHealingConsumableGroups?.() ?? [];
+      const showHealOverlay = Boolean(healOverlayState.open && healingGroups.length > 0);
+      const healHintActive = showHealOverlay && !targetingActive;
+      targetModeHintElement.innerHTML = targetingActive
+        ? `<span>Zielmodus</span><strong>${targetHint}</strong>`
+        : healHintActive
+          ? `<span>Heilauswahl</span><strong>Enter benutzt · Esc/H schließt</strong>`
+          : `<span>Zielmodus</span><strong>-</strong>`;
+      targetModeHintElement.classList.toggle("ui-hidden", !(targetingActive || healHintActive));
+      targetModeHintElement.classList.toggle("heal-selection-pill", healHintActive);
+      boardViewportElement?.classList.toggle("heal-overlay-active", showHealOverlay);
+      healOverlayElement.classList.toggle("ui-hidden", !showHealOverlay);
+      healOverlayElement.setAttribute("aria-hidden", String(!showHealOverlay));
+      healOverlayItemsElement.innerHTML = "";
 
+      const selectedGroup = healingGroups.find((group) => group.familyId === healOverlayState.selectedFamilyId) ?? healingGroups[0] ?? null;
+      healingGroups.forEach((group) => {
+        const button = document.createElement("button");
+        button.className = "heal-overlay-item";
+        button.type = "button";
+        if (group.familyId === selectedGroup?.familyId) {
+          button.classList.add("selected");
+        }
+        button.addEventListener("mouseenter", () => selectHealingOverlayFamily?.(group.familyId, { render: true }));
+        button.addEventListener("click", () => useHealingConsumableByFamily?.(group.familyId));
+
+        const icon = document.createElement("span");
+        icon.className = "heal-overlay-icon";
+        icon.style.backgroundImage = `url("${group.item.iconAssetPath || "./assets/consumables/potion.svg"}")`;
+
+        const count = document.createElement("span");
+        count.className = "heal-overlay-count";
+        count.textContent = `x${group.count}`;
+
+        button.appendChild(icon);
+        button.appendChild(count);
+        healOverlayItemsElement.appendChild(button);
+      });
+
+      const selectedFamily = getHealingFamily(selectedGroup?.familyId);
+      healOverlayNameElement.textContent = getHealingOverlayLabel(selectedGroup?.item ?? null);
+      healOverlayTypeElement.textContent = getHealingTypeLabel(selectedGroup?.item?.healType ?? selectedFamily?.healType);
+      healOverlayEffectElement.textContent = selectedGroup?.item?.effectDescriptionDe ?? selectedFamily?.effectDescriptionDe ?? "";
+    } else {
+      targetModeHintElement.innerHTML = targetingActive
+        ? `<span>Zielmodus</span><strong>${targetHint}</strong>`
+        : `<span>Zielmodus</span><strong>-</strong>`;
+      targetModeHintElement.classList.toggle("ui-hidden", !targetingActive);
+      targetModeHintElement.classList.remove("heal-selection-pill");
+      boardViewportElement?.classList.remove("heal-overlay-active");
+    }
 
     renderPlayerSheet();
     renderEnemySheet();

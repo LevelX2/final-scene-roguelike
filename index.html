@@ -113,6 +113,14 @@
             <div id="boardScaler" class="board-scaler">
               <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
             </div>
+            <section id="healOverlay" class="heal-overlay ui-hidden" aria-hidden="true" aria-label="Heil-Consumables">
+              <div id="healOverlayItems" class="heal-overlay-items"></div>
+              <div class="heal-overlay-detail">
+                <strong id="healOverlayName">Heil-Consumable</strong>
+                <span id="healOverlayType">Sofortheilung</span>
+                <span id="healOverlayEffect">Stellt 8 HP wieder her.</span>
+              </div>
+            </section>
           </div>
         </div>
       </section>
@@ -199,7 +207,8 @@
           <button class="mini-btn inventory-filter-btn active" type="button" data-filter="all">Alle</button>
           <button class="mini-btn inventory-filter-btn" type="button" data-filter="weapon">Waffen</button>
           <button class="mini-btn inventory-filter-btn" type="button" data-filter="offhand">Schilde</button>
-          <button class="mini-btn inventory-filter-btn" type="button" data-filter="potion">Tr&auml;nke</button>
+          <button class="mini-btn inventory-filter-btn" type="button" data-filter="potion">Heilung</button>
+          <button class="mini-btn inventory-filter-btn" type="button" data-filter="consumable">Verbrauchbar</button>
           <button class="mini-btn inventory-filter-btn" type="button" data-filter="food">Essen</button>
           <button class="mini-btn inventory-filter-btn" type="button" data-filter="key">Schl&uuml;ssel</button>
         </div>
@@ -327,6 +336,18 @@
             <option value="voice">KI-/Sprachausgabe</option>
           </select>
         </label>
+        <label class="option-row">
+          <span>Deko-Overlays</span>
+          <input id="toggleDecorativeOverlays" type="checkbox">
+        </label>
+        <label class="option-row">
+          <span>Overlay-Debuglog</span>
+          <input id="toggleDecorativeOverlayDebugLog" type="checkbox">
+        </label>
+        <label class="option-row">
+          <span>Overlay-Masken zeigen</span>
+          <input id="toggleDecorativeOverlayDebugMask" type="checkbox">
+        </label>
       </div>
     </div>
   </div>
@@ -386,12 +407,12 @@
         </section>
         <section id="helpControlsPanel" class="help-panel ui-hidden" aria-hidden="true">
           <div class="help-list">
-            <div class="help-row"><span><kbd>WASD</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen</strong></div>
+            <div class="help-row"><span><kbd>QWE</kbd> / <kbd>A D</kbd> / <kbd>YXC</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen, auch diagonal</strong></div>
             <div class="help-row"><span><kbd>Leertaste</kbd></span><strong>Warten</strong></div>
             <div class="help-row"><span><kbd>T</kbd> oder <kbd>Zielen</kbd></span><strong>G&uuml;ltige Fernkampfziele durchschalten</strong></div>
             <div class="help-row"><span class="help-keys"><kbd>F</kbd><span class="help-key-sep">oder</span><kbd>Schie&szlig;en</kbd></span><strong>Auf das gr&uuml;n markierte Ziel feuern</strong></div>
             <div class="help-row"><span><kbd>H</kbd></span><strong>Schnell Heiltrank trinken</strong></div>
-            <div class="help-row"><span><kbd>C</kbd></span><strong>Benachbarte offene T&uuml;r schlie&szlig;en</strong></div>
+            <div class="help-row"><span><kbd>V</kbd></span><strong>Benachbarte offene T&uuml;r schlie&szlig;en</strong></div>
             <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>
             <div class="help-row"><span><kbd>O</kbd></span><strong>Optionen anzeigen</strong></div>
             <div class="help-row"><span><kbd>F8</kbd></span><strong>Aktuelles Studio komplett aufdecken oder ins n&auml;chste Debug-Studio springen</strong></div>

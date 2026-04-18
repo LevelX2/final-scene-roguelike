@@ -33,6 +33,7 @@ export function createPlayerTurnController(context) {
     processRoundStatusEffects,
     processContinuousTraps,
     processSafeRegeneration,
+    processConsumableBuffs,
     applyPlayerNutritionTurnCost,
     renderSelf,
   } = context;
@@ -79,6 +80,9 @@ export function createPlayerTurnController(context) {
     }
     if (!state.gameOver) {
       processSafeRegeneration(actionType);
+    }
+    if (!state.gameOver) {
+      processConsumableBuffs?.();
     }
     renderSelf();
   }
@@ -293,7 +297,7 @@ export function createPlayerTurnController(context) {
   function cycleTargetMode() {
     const state = getState();
     if (!canEnterTargetMode()) {
-      addMessage('Mit dieser Waffe kannst du gerade keinen Zielmodus Ã¶ffnen.', 'danger');
+      addMessage('Mit dieser Waffe kannst du gerade keinen Zielmodus öffnen.', 'danger');
       renderSelf();
       return;
     }

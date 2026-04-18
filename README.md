@@ -155,10 +155,10 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 
 ## Steuerung
 
-- `WASD` oder Pfeiltasten: bewegen
+- `QWE / A D / YXC` oder Pfeiltasten: bewegen, auch diagonal
 - `Leertaste`: warten
 - `H`: Heiltrank aus dem Inventar trinken
-- `C`: benachbarte offene Tür schließen
+- `V`: benachbarte offene Tür schließen
 - `I`: Inventar öffnen
 - `O`: Optionen öffnen
 - `R`: neuen Lauf starten

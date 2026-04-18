@@ -1,11 +1,13 @@
 import { getShieldTemplate } from '../content/catalogs/shields.mjs';
 import { getWeaponTemplate } from '../content/catalogs/weapon-templates.mjs';
+import { cloneConsumableDefinition, normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
 import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { createKeyItem } from '../item-defs.mjs';
 import { normalizeKillStats } from '../kill-stats.mjs';
 import { createTimestampedId } from '../utils/id-tools.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 import { createEmptyProgressionBonuses, getActorDerivedMaxHp } from './derived-actor-stats.mjs';
+import { areVoiceAnnouncementsForcedOff } from './test-mode.mjs';
 
 export function createStatePersistenceApi(context) {
   const {
@@ -80,11 +82,17 @@ export function createStatePersistenceApi(context) {
     nextOptions.stepSound = Boolean(nextOptions.stepSound);
     nextOptions.deathSound = Boolean(nextOptions.deathSound);
     nextOptions.voiceAnnouncements = Boolean(nextOptions.voiceAnnouncements);
+    nextOptions.decorativeOverlaysEnabled = Boolean(nextOptions.decorativeOverlaysEnabled);
+    nextOptions.decorativeOverlayDebugLog = Boolean(nextOptions.decorativeOverlayDebugLog);
+    nextOptions.decorativeOverlayDebugMask = Boolean(nextOptions.decorativeOverlayDebugMask);
     nextOptions.showcaseAnnouncementMode = normalizeShowcaseAnnouncementMode(nextOptions.showcaseAnnouncementMode);
     nextOptions.uiScale = normalizeScale(nextOptions.uiScale, DEFAULT_OPTIONS.uiScale, 0.85, 1.3);
     nextOptions.studioZoom = normalizeScale(nextOptions.studioZoom, DEFAULT_OPTIONS.studioZoom, 0.6, 2.4);
     nextOptions.tooltipScale = normalizeScale(nextOptions.tooltipScale, DEFAULT_OPTIONS.tooltipScale, 0.85, 1.5);
     nextOptions.enemyPanelMode = normalizeEnemyPanelMode(nextOptions.enemyPanelMode);
+    if (areVoiceAnnouncementsForcedOff()) {
+      nextOptions.voiceAnnouncements = false;
+    }
     return nextOptions;
   }
 
@@ -510,7 +518,22 @@ export function createStatePersistenceApi(context) {
       return normalizeKeyItem(item);
     }
 
-    return { ...item };
+    if (item.type === "consumable" || item.itemType === "consumable" || item.effectFamily) {
+      const definition = cloneConsumableDefinition(item.id);
+      if (definition) {
+        return {
+          ...definition,
+          ...item,
+          magnitude: item.magnitude && typeof item.magnitude === 'object' ? { ...item.magnitude } : definition.magnitude,
+          useLogTexts: Array.isArray(item.useLogTexts) ? [...item.useLogTexts] : [...(definition.useLogTexts ?? [])],
+          expireLogTexts: Array.isArray(item.expireLogTexts) ? [...item.expireLogTexts] : [...(definition.expireLogTexts ?? [])],
+          resultLogTexts: Array.isArray(item.resultLogTexts) ? [...item.resultLogTexts] : [...(definition.resultLogTexts ?? [])],
+          balanceGroups: Array.isArray(item.balanceGroups) ? [...item.balanceGroups] : getItemBalanceGroups(item),
+        };
+      }
+    }
+
+    return normalizeLegacyConsumableItem({ ...item });
   }
 
   function normalizeLogMessageEntry(entry) {
@@ -539,6 +562,18 @@ export function createStatePersistenceApi(context) {
       return floorState;
     }
 
+    floorState.consumables = Array.isArray(floorState.consumables)
+      ? floorState.consumables.map((entry) => ({
+          ...entry,
+          item: normalizeLegacyConsumableItem(entry.item),
+        }))
+      : Array.isArray(floorState.potions)
+        ? floorState.potions.map((entry) => ({
+            ...entry,
+            item: normalizeLegacyConsumableItem(entry.item),
+          }))
+        : [];
+    floorState.potions = floorState.consumables;
     floorState.weapons = Array.isArray(floorState.weapons)
       ? floorState.weapons.map(normalizeWeaponPickup)
       : [];
@@ -619,6 +654,15 @@ export function createStatePersistenceApi(context) {
     normalizedState.openedChests = Math.max(0, Number(savedState.openedChests) || 0);
     normalizedState.consumedPotions = Math.max(0, Number(savedState.consumedPotions) || 0);
     normalizedState.consumedFoods = Math.max(0, Number(savedState.consumedFoods) || 0);
+    normalizedState.activeConsumableBuffs = Array.isArray(savedState.activeConsumableBuffs)
+      ? savedState.activeConsumableBuffs.map((buff) => ({
+          ...buff,
+          magnitude: buff?.magnitude && typeof buff.magnitude === 'object' ? { ...buff.magnitude } : buff?.magnitude,
+        }))
+      : [];
+    normalizedState.consumableLogMemory = savedState.consumableLogMemory && typeof savedState.consumableLogMemory === 'object'
+      ? { ...savedState.consumableLogMemory }
+      : {};
     normalizedState.knownMonsterTypes = savedState.knownMonsterTypes ?? {};
     normalizedState.seenMonsterCounts = savedState.seenMonsterCounts ?? {};
     normalizedState.lastScoreRank = savedState.lastScoreRank ?? null;
@@ -655,6 +699,10 @@ export function createStatePersistenceApi(context) {
     normalizedState.preferences = {
       ...createDefaultPreferences(),
       ...(savedState.preferences ?? {}),
+    };
+    normalizedState.healOverlay = {
+      open: false,
+      selectedFamilyId: savedState.healOverlay?.selectedFamilyId ?? null,
     };
     normalizedState.targeting = {
       active: false,
@@ -701,6 +749,12 @@ export function createStatePersistenceApi(context) {
     normalizedState.player.equipmentStatsApplied = false;
     normalizedState.player.statusEffects = Array.isArray(savedState.player?.statusEffects)
       ? savedState.player.statusEffects
+      : [];
+    normalizedState.player.consumableBonuses = savedState.player?.consumableBonuses && typeof savedState.player.consumableBonuses === 'object'
+      ? { ...savedState.player.consumableBonuses }
+      : {};
+    normalizedState.player.activeConsumableBuffs = Array.isArray(savedState.player?.activeConsumableBuffs)
+      ? savedState.player.activeConsumableBuffs.map((buff) => ({ ...buff }))
       : [];
     normalizedState.player.xpToNext = Number(savedState.player?.xpToNext) || xpForNextLevel(normalizedState.player.level);
     normalizedState.player.nutritionMax = getNutritionMax(normalizedState.player);

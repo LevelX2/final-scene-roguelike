@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+
+<defs>
+  <filter id="s"><feGaussianBlur stdDeviation="1.2"/></filter>
+</defs>
+<path d="M14 28 C12 18, 20 9, 33 10 C48 11, 54 20, 51 32 C48 43, 38 52, 24 49 C18 48, 14 40, 14 28 Z" fill="#70c9de" opacity="0.55"/>
+<path d="M14 28 C12 18, 20 9, 33 10 C48 11, 54 20, 51 32 C48 43, 38 52, 24 49 C18 48, 14 40, 14 28 Z" fill="none" stroke="#aeeaf3" stroke-width="3" opacity="0.45"/>
+<path d="M21 22 C25 18, 33 17, 37 22 C34 24, 28 25, 21 22 Z" fill="#e8fbff" opacity="0.55" filter="url(#s)"/>
+
+</svg>

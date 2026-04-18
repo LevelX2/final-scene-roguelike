@@ -30,3 +30,60 @@ test('ai-awareness grants showcase healing bonus and logs the showcase message',
   assert.equal(state.safeRestTurns, 0);
   assert.ok(messages.some((entry) => entry.includes('Nähe der Vitrine')));
 });
+
+test('ai-awareness treats diagonal showcase adjacency and enemy proximity as nearby in 8 directions', () => {
+  const state = {
+    player: { x: 5, y: 5, hp: 10, maxHp: 12 },
+    safeRestTurns: 3.5,
+  };
+  const floorState = {
+    enemies: [{ x: 8, y: 8 }],
+    showcases: [{ x: 6, y: 6 }],
+  };
+  const messages = [];
+
+  const api = createAiAwarenessApi({
+    getState: () => state,
+    getCurrentFloorState: () => floorState,
+    healPlayer: (amount) => {
+      const previous = state.player.hp;
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount);
+      return state.player.hp - previous;
+    },
+    addMessage: (text) => messages.push(text),
+  });
+
+  assert.equal(api.hasNearbyEnemy(), true);
+  api.processSafeRegeneration('move');
+
+  assert.equal(state.player.hp, 10);
+  assert.equal(state.safeRestTurns, 0);
+  assert.deepEqual(messages, []);
+});
+
+test('ai-awareness includes consumable rest bonus in safe rest progress', () => {
+  const state = {
+    player: { x: 5, y: 5, hp: 8, maxHp: 12, consumableBonuses: { safeRestProgressBonus: 1 } },
+    safeRestTurns: 2.5,
+  };
+  const floorState = {
+    enemies: [],
+    showcases: [],
+  };
+
+  const api = createAiAwarenessApi({
+    getState: () => state,
+    getCurrentFloorState: () => floorState,
+    healPlayer: (amount) => {
+      const previous = state.player.hp;
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount);
+      return state.player.hp - previous;
+    },
+    addMessage: () => {},
+  });
+
+  api.processSafeRegeneration('wait');
+
+  assert.equal(state.player.hp, 9);
+  assert.equal(state.safeRestTurns, 0);
+});

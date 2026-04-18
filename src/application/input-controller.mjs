@@ -19,12 +19,35 @@ export function createInputController(context) {
     debugRevealOrAdvanceStudio,
     tryCloseAdjacentDoor,
     quickUsePotion,
+    cycleHealingOverlay,
+    closeHealingOverlay,
+    useSelectedHealingConsumable,
     cycleTargetMode,
     enterTargetMode,
     cancelTargetMode,
     moveTargetCursor,
     confirmTargetAttack,
   } = context;
+
+  function getMovementFromShortcut(matchesShortcut) {
+    return matchesShortcut(["q"], ["KeyQ", "Numpad7"])
+      ? [-1, -1]
+      : matchesShortcut(["w", "arrowup"], ["KeyW", "ArrowUp", "Numpad8"])
+        ? [0, -1]
+        : matchesShortcut(["e"], ["KeyE", "Numpad9"])
+          ? [1, -1]
+          : matchesShortcut(["a", "arrowleft"], ["KeyA", "ArrowLeft", "Numpad4"])
+            ? [-1, 0]
+            : matchesShortcut(["d", "arrowright"], ["KeyD", "ArrowRight", "Numpad6"])
+              ? [1, 0]
+              : matchesShortcut(["y", "z", "numpad1"], ["KeyY", "KeyZ", "Numpad1"])
+                ? [-1, 1]
+                : matchesShortcut(["x", "s", "arrowdown"], ["KeyX", "KeyS", "ArrowDown", "Numpad2"])
+                  ? [0, 1]
+                  : matchesShortcut(["c"], ["KeyC", "Numpad3"])
+                    ? [1, 1]
+                    : null;
+  }
 
   function handleInput(event) {
     if (event.__rogueHandled) {
@@ -120,6 +143,34 @@ export function createInputController(context) {
       return;
     }
 
+    if (state.healOverlay?.open) {
+      if (matchesShortcut(["enter"], ["Enter"])) {
+        event.preventDefault();
+        useSelectedHealingConsumable();
+        return;
+      }
+
+      if (matchesShortcut(["escape", "h"], ["Escape", "KeyH"])) {
+        event.preventDefault();
+        closeHealingOverlay();
+        return;
+      }
+
+      if (matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])) {
+        event.preventDefault();
+        cycleHealingOverlay(-1);
+        return;
+      }
+
+      if (matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])) {
+        event.preventDefault();
+        cycleHealingOverlay(1);
+        return;
+      }
+
+      return;
+    }
+
     if (state.targeting?.active) {
       if (matchesShortcut(["enter", "f"], ["Enter", "KeyF"])) {
         event.preventDefault();
@@ -139,15 +190,7 @@ export function createInputController(context) {
         return;
       }
 
-      const targetingMovement = matchesShortcut(["arrowup", "w"], ["ArrowUp", "KeyW"])
-        ? [0, -1]
-        : matchesShortcut(["arrowdown", "s"], ["ArrowDown", "KeyS"])
-          ? [0, 1]
-          : matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])
-            ? [-1, 0]
-            : matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])
-              ? [1, 0]
-              : null;
+      const targetingMovement = getMovementFromShortcut(matchesShortcut);
 
       if (targetingMovement) {
         event.preventDefault();
@@ -205,15 +248,7 @@ export function createInputController(context) {
       return;
     }
 
-    const movement = matchesShortcut(["arrowup", "w"], ["ArrowUp", "KeyW"])
-      ? [0, -1]
-      : matchesShortcut(["arrowdown", "s"], ["ArrowDown", "KeyS"])
-        ? [0, 1]
-        : matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])
-          ? [-1, 0]
-          : matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])
-            ? [1, 0]
-            : null;
+    const movement = getMovementFromShortcut(matchesShortcut);
 
     if (movement) {
       event.preventDefault();
@@ -227,7 +262,7 @@ export function createInputController(context) {
       return;
     }
 
-    if (matchesShortcut(["c"], ["KeyC"])) {
+    if (matchesShortcut(["v"], ["KeyV"])) {
       event.preventDefault();
       tryCloseAdjacentDoor();
       return;

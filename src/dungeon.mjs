@@ -18,9 +18,12 @@ import {
 } from './balance.mjs';
 import { createDungeonEquipmentRolls } from './dungeon/equipment-rolls.mjs';
 import { createDungeonEnemyFactory } from './dungeon/enemy-factory.mjs';
+import { createDecorativeOverlayPlacementApi } from './ambience/visual/decorative-overlay-placement.mjs';
 import { createDungeonPickupFactory } from './dungeon/pickup-factory.mjs';
 import { createDungeonSpatialApi } from './dungeon/spatial-helpers.mjs';
 import { createStudioLayoutGenerator } from './dungeon/branch-layout.mjs';
+import { rollConsumableLootDefinition } from './application/consumable-service.mjs';
+import { createHealingConsumableDefinition } from './content/catalogs/consumables.mjs';
 import { createWeaponGenerationService } from './application/weapon-generation-service.mjs';
 import { createShieldGenerationService } from './application/shield-generation-service.mjs';
 import { getContainerConfigForArchetype } from './content/catalogs/studio-archetypes.mjs';
@@ -60,6 +63,7 @@ export function createDungeonApi(context) {
     createChestPickup,
     createPotionPickup,
     createFoodPickup,
+    createConsumablePickup,
     createShowcase,
     cloneWeapon,
     createDoor,
@@ -88,6 +92,14 @@ export function createDungeonApi(context) {
     randomChance,
     createLootWeapon: (...args) => weaponGenerationService.createLootWeapon(...args),
     createLootShield: (...args) => shieldGenerationService.createLootShield(...args),
+    rollConsumableLootDefinition: (options) => rollConsumableLootDefinition(options, randomChance),
+  });
+
+  const {
+    placeDecorativeOverlays,
+  } = createDecorativeOverlayPlacementApi({
+    randomChance,
+    getState,
   });
 
   const {
@@ -147,6 +159,7 @@ export function createDungeonApi(context) {
     createChestPickup,
     createPotionPickup,
     createFoodPickup,
+    createConsumablePickup,
     createShowcase,
     createDoor,
     createKeyPickup,
@@ -155,7 +168,7 @@ export function createDungeonApi(context) {
     rollChestContent,
     getFloorWeaponSpawnCount: (...args) => weaponGenerationService.getFloorWeaponSpawnCount(...args),
     getEnemyCountForFloor: (...args) => context.getEnemyCountForFloor(...args),
-    getPotionCountForFloor: (...args) => context.getPotionCountForFloor(...args),
+    getHealingConsumableCountForFloor: (...args) => context.getHealingConsumableCountForFloor(...args),
     getUnlockedMonsterRank: (...args) => context.getUnlockedMonsterRank(...args),
     shouldSpawnFloorWeapon: (...args) => context.shouldSpawnFloorWeapon(...args),
     shouldSpawnFloorShield: (...args) => shouldSpawnFloorShield(...args),
@@ -171,7 +184,10 @@ export function createDungeonApi(context) {
     getContainerConfigForArchetype,
     collectUsedShowcasePropIds,
     computeReachableTilesWithBlockedPositions,
+    placeDecorativeOverlays,
     cloneItemDef,
+    createHealingConsumableDefinition,
+    rollConsumableLootDefinition: (options) => rollConsumableLootDefinition(options, randomChance),
   });
 
   return {
@@ -181,6 +197,7 @@ export function createDungeonApi(context) {
     createChestPickup,
     createPotionPickup,
     createFoodPickup,
+    createConsumablePickup,
     createShowcase,
     createKeyPickup,
     createDoor,

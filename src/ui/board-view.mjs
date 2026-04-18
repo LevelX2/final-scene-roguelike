@@ -1,6 +1,7 @@
 import { evaluateTargetSelection } from '../application/targeting-service.mjs';
 import { getActorDerivedMaxHp, getActorDerivedStats } from '../application/derived-actor-stats.mjs';
 import { getDecorativeOverlayPreset } from '../ambience/visual/decorative-overlay-presets.mjs';
+import { isHealingConsumable } from '../content/catalogs/consumables.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 
 export function createBoardView(context) {
@@ -37,6 +38,7 @@ export function createBoardView(context) {
     getWeaponIconAssetUrl,
     getOffHandIconAssetUrl,
     getPotionIconAssetUrl,
+    getConsumableIconAssetUrl,
     getKeyIconAssetUrl,
     getShowcaseIconAssetUrl,
     getPlayerIconAssetUrl,
@@ -426,20 +428,26 @@ export function createBoardView(context) {
     }
 
     const potionPickup = isVisible
-      ? floorState.potions?.find((potion) => potion.x === x && potion.y === y)
+      ? floorState.consumables?.find((potion) => potion.x === x && potion.y === y)
       : null;
     if (potionPickup) {
+      const isHealingItem = isHealingConsumable(potionPickup.item);
+      const imageUrl = isHealingItem
+        ? getPotionIconAssetUrl(potionPickup.item)
+        : getConsumableIconAssetUrl(potionPickup.item);
       return {
-        type: `floor studio-${studioArchetypeId} potion`,
+        type: `floor studio-${studioArchetypeId} ${isHealingItem ? 'potion' : 'consumable'}`,
         glyph: TILE.POTION,
-        overlayImageUrl: getPotionIconAssetUrl(potionPickup.item),
+        overlayImageUrl: imageUrl,
         tooltip: {
           title: potionPickup.item.name,
-          imageUrl: getPotionIconAssetUrl(potionPickup.item),
-          imageClass: "tooltip-art-potion",
+          imageUrl,
+          imageClass: isHealingItem ? 'tooltip-art-potion' : 'tooltip-art-item',
           lines: [
             potionPickup.item.description,
-            "Kann direkt getrunken oder ins Inventar gelegt werden.",
+            isHealingItem
+              ? 'Kann direkt benutzt oder ins Inventar gelegt werden.'
+              : 'Kann direkt benutzt oder ins Inventar gelegt werden.',
           ],
         },
       };

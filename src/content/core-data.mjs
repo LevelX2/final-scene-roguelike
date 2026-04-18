@@ -1,7 +1,7 @@
 ﻿export const WIDTH = 50;
 export const HEIGHT = 36;
 export const TILE_SIZE = 28;
-export const TILE_GAP = 2;
+export const TILE_GAP = 0;
 export const BOARD_PADDING = 8;
 export const LOG_LIMIT = 20;
 export const HIGHSCORE_KEY = "dungeon-rogue-highscores";

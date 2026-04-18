@@ -451,7 +451,7 @@ test("player can close an adjacent open door when the tile is empty", async ({ p
   await setupDoorAtPlayerStep(page, { doorType: "normal", isOpen: false });
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowLeft");
-  await page.keyboard.press("c");
+  await page.keyboard.press("v");
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
 
@@ -935,11 +935,11 @@ test("placed doors stay on valid choke-point slots in the final generated layout
     const result = await page.evaluate(() => {
       const snapshot = window.__TEST_API__.getSnapshot();
       const invalidDoor = snapshot.doors.find((door) => {
-        const leftWall = snapshot.grid[door.y]?.[door.x - 1] === "#";
-        const rightWall = snapshot.grid[door.y]?.[door.x + 1] === "#";
-        const upWall = snapshot.grid[door.y - 1]?.[door.x] === "#";
-        const downWall = snapshot.grid[door.y + 1]?.[door.x] === "#";
-        return !((leftWall && rightWall) || (upWall && downWall));
+        const leftFloor = snapshot.grid[door.y]?.[door.x - 1] === ".";
+        const rightFloor = snapshot.grid[door.y]?.[door.x + 1] === ".";
+        const upFloor = snapshot.grid[door.y - 1]?.[door.x] === ".";
+        const downFloor = snapshot.grid[door.y + 1]?.[door.x] === ".";
+        return !((leftFloor && rightFloor) || (upFloor && downFloor));
       });
 
       return invalidDoor
@@ -967,6 +967,31 @@ test("generated showcases stay off doors and stairs and only occupy floor tiles"
       const onStairsDown = snapshot.stairsDown?.x === showcase.x && snapshot.stairsDown?.y === showcase.y;
       const onStairsUp = snapshot.stairsUp?.x === showcase.x && snapshot.stairsUp?.y === showcase.y;
       return onDoor || onStairsDown || onStairsUp || snapshot.grid[showcase.y]?.[showcase.x] !== ".";
+    });
+
+    return invalidShowcase
+      ? { ok: false, showcase: invalidShowcase }
+      : { ok: true, count: snapshot.showcases.length };
+  });
+
+  expect(result.ok).toBeTruthy();
+});
+
+test("generated showcases keep the tiles directly in front of room exits clear", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const result = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const invalidShowcase = (snapshot.showcases ?? []).find((showcase) => {
+      const room = (snapshot.rooms ?? []).find((entry) => entry.id === showcase.roomId);
+      if (!room) {
+        return false;
+      }
+
+      return (room.doorTiles ?? []).some((door) =>
+        Math.abs(door.x - showcase.x) + Math.abs(door.y - showcase.y) <= 1
+      );
     });
 
     return invalidShowcase

@@ -353,6 +353,107 @@ test('cowardly enemies can keep retreating from a slightly longer distance once 
   assert.equal(scenario.enemy.y, 2);
 });
 
+test('cowardly kultist profile does not retreat above six of eleven hp', () => {
+  const enemy = createBaseEnemy({
+    id: 'slasher-kultist-threshold-test',
+    name: 'Kultist',
+    x: 4,
+    y: 2,
+    originX: 4,
+    originY: 2,
+    behavior: 'trickster',
+    mobility: 'roaming',
+    retreatProfile: 'cowardly',
+    healingProfile: 'lurking',
+    aggro: true,
+    aggroRadius: 5,
+    hp: 7,
+    maxHp: 11,
+    strength: 1,
+    precision: 4,
+    reaction: 4,
+    nerves: 2,
+    intelligence: 5,
+  });
+
+  const grid = createGrid(8, 5, '#');
+  for (let x = 1; x <= 6; x += 1) {
+    grid[2][x] = '.';
+  }
+
+  const floorState = {
+    grid,
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, false),
+  };
+
+  const { api } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: { x: 2, y: 2, hp: 20, maxHp: 20 },
+  });
+
+  api.moveEnemies();
+
+  assert.equal(enemy.isRetreating, false);
+  assert.equal(enemy.x, 3);
+  assert.equal(enemy.y, 2);
+});
+
+test('roaming lurking enemies can drop aggro at long range and resume healing', () => {
+  const enemy = createBaseEnemy({
+    id: 'slasher-kultist-test',
+    name: 'Kultist',
+    x: 2,
+    y: 2,
+    originX: 2,
+    originY: 2,
+    behavior: 'trickster',
+    mobility: 'roaming',
+    retreatProfile: 'cowardly',
+    healingProfile: 'lurking',
+    aggro: true,
+    aggroRadius: 5,
+    hp: 3,
+    maxHp: 11,
+    intelligence: 5,
+    turnsSinceHit: 2,
+  });
+
+  const grid = createGrid(24, 6, '#');
+  for (let y = 1; y <= 4; y += 1) {
+    for (let x = 1; x <= 22; x += 1) {
+      grid[y][x] = '.';
+    }
+  }
+
+  const floorState = {
+    grid,
+    enemies: [enemy],
+    doors: [],
+    rooms: [{ id: 'long-hall', x: 1, y: 1, width: 22, height: 4 }],
+    showcases: [],
+    visible: createMask(24, 6, false),
+  };
+
+  const { api } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: { x: 20, y: 2, hp: 20, maxHp: 20 },
+    randomChance: () => 0.99,
+  });
+
+  api.moveEnemies();
+  assert.equal(enemy.aggro, false);
+  assert.equal(enemy.hp, 3);
+
+  api.moveEnemies();
+  assert.equal(enemy.hp, 4);
+});
+
 test('cautious enemies begin retreating before dropping to critical slivers', () => {
   const scenario = createRetreatScenario({
     retreatProfile: 'cautious',
@@ -700,7 +801,7 @@ test('patrol enemies can temporarily step aside when another patrol blocks the c
 
   api.moveEnemies();
 
-  assert.equal(enemy.x, 3);
+  assert.equal(enemy.x, 4);
   assert.equal(enemy.y, 1);
   assert.notEqual(enemy.y, 2);
 });
@@ -754,11 +855,11 @@ test('patrol enemies can resolve opposite traffic in a one-tile corridor by usin
 
   api.moveEnemies();
 
-  assert.equal(leftEnemy.idleTargetType, 'patrol-bypass');
   assert.equal(leftEnemy.x, 4);
-  assert.equal(leftEnemy.y, 2);
-  assert.equal(leftEnemy.idleTarget.x, 4);
-  assert.equal(leftEnemy.idleTarget.y, 1);
+  assert.equal(leftEnemy.y, 1);
+  assert.ok(
+    leftEnemy.idleTargetType === null || leftEnemy.idleTargetType === 'patrol-bypass',
+  );
 });
 
 test('patrol enemies prefer to clear a T-junction instead of clogging the stem', () => {

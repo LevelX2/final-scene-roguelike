@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="256" viewBox="0 0 64 256">
+
+<g opacity="0.95">
+  <rect x="24" y="5" width="16" height="246" rx="3" fill="#f3d447"/>
+  <g fill="#1f1f1f" opacity="0.92">
+<polygon points="24,11 40,11 40,19 24,27"/>
+<polygon points="24,27 40,27 40,35 24,43"/>
+<polygon points="24,43 40,43 40,51 24,59"/>
+<polygon points="24,59 40,59 40,67 24,75"/>
+<polygon points="24,75 40,75 40,83 24,91"/>
+<polygon points="24,91 40,91 40,99 24,107"/>
+<polygon points="24,107 40,107 40,115 24,123"/>
+<polygon points="24,123 40,123 40,131 24,139"/>
+<polygon points="24,139 40,139 40,147 24,155"/>
+<polygon points="24,155 40,155 40,163 24,171"/>
+<polygon points="24,171 40,171 40,179 24,187"/>
+<polygon points="24,187 40,187 40,195 24,203"/>
+<polygon points="24,203 40,203 40,211 24,219"/>
+<polygon points="24,219 40,219 40,227 24,235"/>
+  </g>
+</g>
+</svg>

@@ -162,7 +162,7 @@ test("opening the class modal moves focus into class selection so arrows do not 
 test("each hero class starts with its configured opening weapon setup", async ({ page }) => {
   const classExpectations = [
     {
-      classLabel: "Hauptrolle",
+      classLabel: "Filmstar",
       allowedIds: ["expedition-revolver"],
       attackMode: "ranged",
     },
@@ -195,7 +195,7 @@ test("each hero class starts with its configured opening weapon setup", async ({
 test("hero classes receive their configured starting loadouts", async ({ page }) => {
   const classExpectations = [
     {
-      classLabel: "Hauptrolle",
+      classLabel: "Filmstar",
       potionCount: 2,
       foodIds: [],
       equippedWeaponId: "expedition-revolver",
@@ -604,9 +604,9 @@ test("death screen opens the normal run history modal", async ({ page }) => {
   await expect(page.locator("#deathModal")).toBeVisible();
   await expect(page.locator("#deathModal .modal-eyebrow")).toContainText("Abspann");
   await expect(page.locator("#deathModal h2")).toContainText("Das war der letzte Take");
-  await expect(page.locator("#deathSummary")).toContainText("Die Hauptrolle");
+  await expect(page.locator("#deathSummary")).toContainText("Der Filmstar");
   await expect(page.locator("#deathSummary")).toContainText("Archivschrecken");
-  await expect(page.locator("#deathSummary")).toContainText("Hauptrolle");
+  await expect(page.locator("#deathSummary")).toContainText("Filmstar");
   await expect(page.locator("#deathSummary")).toContainText("Klasse");
   await page.locator("#deathModal").getByRole("button", { name: "Spielverlauf" }).click();
   await expect(page.locator("#runStatsModal")).toBeVisible();
@@ -869,7 +869,7 @@ test("a loaded run can be saved again into an empty slot", async ({ page }) => {
 
 test("fresh starts allow target mode with a newly equipped expedition revolver", async ({ page }) => {
   await page.goto("/");
-  await startRun(page, { name: "Freshshot", classLabel: "Hauptrolle" });
+  await startRun(page, { name: "Freshshot", classLabel: "Filmstar" });
 
   await page.evaluate(() => {
     window.__TEST_API__.setupCombatScenario({
@@ -978,6 +978,54 @@ test("board tooltips hide again when the hovered entity disappears during a rere
     window.__TEST_API__.clearFloorEntities();
   });
 
+  await expect(page.locator("#hoverTooltip")).toBeHidden();
+});
+
+test("board tooltips do not open when an object appears under a stationary mouse", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 12, y: 12 },
+    });
+  });
+
+  const targetPoint = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const width = snapshot.grid[0].length;
+    const x = 4;
+    const y = 2;
+    const cell = document.querySelectorAll(".tile-cell")[y * width + x];
+    const rect = cell?.getBoundingClientRect();
+
+    return rect ? {
+      x: rect.left + (rect.width / 2),
+      y: rect.top + (rect.height / 2),
+    } : null;
+  });
+
+  expect(targetPoint).not.toBeNull();
+
+  await page.mouse.move(targetPoint.x, targetPoint.y);
+  await page.waitForTimeout(500);
+  await expect(page.locator("#hoverTooltip")).toBeHidden();
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 4, y: 2 },
+      enemy: {
+        name: "Stillstehziel",
+        description: "Soll keinen Tooltip ohne Mausbewegung ausloesen.",
+      },
+    });
+  });
+
+  await page.waitForTimeout(700);
   await expect(page.locator("#hoverTooltip")).toBeHidden();
 });
 
@@ -1122,10 +1170,12 @@ test("pressing T with a melee weapon does not enter target mode", async ({ page 
     });
   });
 
-  await page.evaluate(() => window.__TEST_API__.enterTargetMode());
+  await page.keyboard.press("t");
 
   await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
-  await expect(page.locator("#messageLog")).toContainText("keinen Zielmodus");
+  await expect(page.locator("#messageLog")).toContainText(
+    "Mit dieser Waffe kannst du gerade keinen Zielmodus öffnen.",
+  );
 });
 
 test("ranged weapons enter target mode and mark a valid target", async ({ page }) => {

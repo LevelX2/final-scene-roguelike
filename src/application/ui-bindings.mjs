@@ -1,3 +1,5 @@
+import { areVoiceAnnouncementsForcedOff } from './test-mode.mjs';
+
 export function createUiBindingsApi(context) {
   const {
     choiceDrinkButton,
@@ -47,6 +49,9 @@ export function createUiBindingsApi(context) {
     toggleStepSoundElement,
     toggleDeathSoundElement,
     toggleVoiceAnnouncementsElement,
+    toggleDecorativeOverlaysElement,
+    toggleDecorativeOverlayDebugLogElement,
+    toggleDecorativeOverlayDebugMaskElement,
     showcaseAnnouncementModeElement,
     enemyPanelModeElement,
     toggleEnemyPanelModeButtonElement,
@@ -218,8 +223,30 @@ export function createUiBindingsApi(context) {
       saveOptions();
     });
     toggleVoiceAnnouncementsElement.addEventListener("change", () => {
+      if (areVoiceAnnouncementsForcedOff()) {
+        toggleVoiceAnnouncementsElement.checked = false;
+        getState().options.voiceAnnouncements = false;
+        saveOptions();
+        return;
+      }
+
       getState().options.voiceAnnouncements = toggleVoiceAnnouncementsElement.checked;
       saveOptions();
+    });
+    toggleDecorativeOverlaysElement.addEventListener("change", () => {
+      getState().options.decorativeOverlaysEnabled = toggleDecorativeOverlaysElement.checked;
+      saveOptions();
+      renderSelf();
+    });
+    toggleDecorativeOverlayDebugLogElement.addEventListener("change", () => {
+      getState().options.decorativeOverlayDebugLog = toggleDecorativeOverlayDebugLogElement.checked;
+      saveOptions();
+      renderSelf();
+    });
+    toggleDecorativeOverlayDebugMaskElement.addEventListener("change", () => {
+      getState().options.decorativeOverlayDebugMask = toggleDecorativeOverlayDebugMaskElement.checked;
+      saveOptions();
+      renderSelf();
     });
     showcaseAnnouncementModeElement.addEventListener("change", () => {
       getState().options.showcaseAnnouncementMode = showcaseAnnouncementModeElement.value;

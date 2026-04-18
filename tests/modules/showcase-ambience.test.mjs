@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createShowcaseAmbienceApi } from '../../src/app/showcase-ambience.mjs';
+import { createShowcaseAmbienceApi } from '../../src/ambience/narration/showcase-ambience.mjs';
 
 test('showcase ambience fires once per showcase and emits floating text metadata', () => {
   const state = {

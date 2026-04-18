@@ -12,17 +12,21 @@ export function createAiAwarenessApi(context) {
     return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
   }
 
+  function chebyshevDistance(a, b) {
+    return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+  }
+
   function hasNearbyEnemy(radius = 3) {
     const floorState = getCurrentFloorState();
     const state = getState();
-    return floorState.enemies.some((enemy) => manhattanDistance(enemy, state.player) <= radius);
+    return floorState.enemies.some((enemy) => chebyshevDistance(enemy, state.player) <= radius);
   }
 
   function isPlayerAdjacentToShowcase() {
     const floorState = getCurrentFloorState();
     const state = getState();
     return (floorState.showcases ?? []).some((showcase) =>
-      manhattanDistance(showcase, state.player) === 1
+      chebyshevDistance(showcase, state.player) === 1
     );
   }
 
@@ -40,7 +44,8 @@ export function createAiAwarenessApi(context) {
 
     const baseProgressGain = actionType === "move" ? 0.5 : actionType === "wait" ? 1 : 0;
     const showcaseBonus = baseProgressGain > 0 && isPlayerAdjacentToShowcase() ? 0.5 : 0;
-    const progressGain = baseProgressGain + showcaseBonus;
+    const consumableBonus = baseProgressGain > 0 ? (state.player.consumableBonuses?.safeRestProgressBonus ?? 0) : 0;
+    const progressGain = baseProgressGain + showcaseBonus + consumableBonus;
     state.safeRestTurns += progressGain;
     if (state.safeRestTurns >= 4) {
       const healed = healPlayer(1);
@@ -58,6 +63,7 @@ export function createAiAwarenessApi(context) {
 
   return {
     manhattanDistance,
+    chebyshevDistance,
     hasNearbyEnemy,
     processSafeRegeneration,
   };

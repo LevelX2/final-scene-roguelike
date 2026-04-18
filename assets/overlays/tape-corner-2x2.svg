@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+
+<g opacity="0.95">
+  <rect x="20" y="50" width="88" height="16" rx="3" fill="#f3d447"/>
+  <rect x="50" y="20" width="16" height="88" rx="3" fill="#f3d447"/>
+  <g fill="#1f1f1f" opacity="0.92">
+<polygon points="20,50 28,50 36,66 28,66"/>
+<polygon points="36,50 44,50 52,66 44,66"/>
+<polygon points="52,50 60,50 68,66 60,66"/>
+<polygon points="68,50 76,50 84,66 76,66"/>
+<polygon points="84,50 92,50 100,66 92,66"/>
+<polygon points="50,20 66,20 66,28 50,36"/>
+<polygon points="50,36 66,36 66,44 50,52"/>
+<polygon points="50,52 66,52 66,60 50,68"/>
+<polygon points="50,68 66,68 66,76 50,84"/>
+<polygon points="50,84 66,84 66,92 50,100"/>
+  </g>
+</g>
+</svg>

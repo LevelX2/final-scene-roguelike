@@ -1,14 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" fill="#27342f"/>
-  <rect width="32" height="32" fill="url(#grain)"/>
-  <defs>
-    <pattern id="grain" width="32" height="32" patternUnits="userSpaceOnUse">
-      <rect width="32" height="32" fill="#32423c"/>
-      <path d="M0 8H32M0 16H32M0 24H32" stroke="#1c2421" stroke-width="1.1" opacity=".75"/>
-      <path d="M7 0V32M17 0V32M27 0V32" stroke="#202925" stroke-width=".8" opacity=".35"/>
-      <path d="M4 5l5 2M19 11l6-2M9 21l4 3M21 25l6-1" stroke="#52635b" stroke-width=".7" opacity=".35"/>
-      <circle cx="24" cy="7" r="2.3" fill="#18201d" opacity=".4"/>
-      <circle cx="10" cy="27" r="2.8" fill="#1a2320" opacity=".36"/>
-    </pattern>
-  </defs>
+  <rect width="32" height="32" fill="#34433d" opacity=".82"/>
+  <path d="M0 10c8-1 14-1 22 0 4 1 7 1 10 0" stroke="#1f2825" stroke-width="1" opacity=".24"/>
+  <path d="M0 21c7-1 13-1 21 0 5 1 8 1 11 0" stroke="#202925" stroke-width="1" opacity=".2"/>
+  <path d="M4 5l5 2M19 11l6-2M9 21l4 3M21 25l6-1" stroke="#5a6c63" stroke-width=".7" opacity=".26"/>
+  <circle cx="24" cy="7" r="2.3" fill="#18201d" opacity=".28"/>
+  <circle cx="10" cy="27" r="2.8" fill="#1a2320" opacity=".26"/>
 </svg>

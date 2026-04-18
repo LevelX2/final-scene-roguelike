@@ -1,4 +1,5 @@
 import { shuffleList, weightedPick } from '../utils/random-tools.mjs';
+import { chooseHealingFamilyForFloor } from '../content/catalogs/consumables.mjs';
 
 const ROOM_TYPE_ORDER = [
   "weapon_room",
@@ -2837,6 +2838,12 @@ function chooseFreeRoomTile(state, room, options = {}) {
   return selected;
 }
 
+function isTileAdjacentToRoomDoor(room, tile) {
+  return room.doorTiles.some((door) =>
+    Math.abs(door.x - tile.x) + Math.abs(door.y - tile.y) <= 1
+  );
+}
+
 function findShowcasePlacementForRoom(state, room, blockedPositions = [], claimedTriggerKeys = new Set()) {
   const roomFloorKeys = buildTileKeySet(room.floorTiles);
   const candidateTiles = shuffleList(
@@ -2844,7 +2851,8 @@ function findShowcasePlacementForRoom(state, room, blockedPositions = [], claime
       const tileKey = keyOf(tile.x, tile.y);
       return !state.occupiedSpawnKeys.has(tileKey) &&
         !blockedPositions.some((entry) => entry.x === tile.x && entry.y === tile.y) &&
-        !room.doorTiles.some((door) => door.x === tile.x && door.y === tile.y);
+        !room.doorTiles.some((door) => door.x === tile.x && door.y === tile.y) &&
+        !isTileAdjacentToRoomDoor(room, tile);
     }),
     state.randomChance,
   );
@@ -2854,7 +2862,11 @@ function findShowcasePlacementForRoom(state, room, blockedPositions = [], claime
       .filter((neighbor) => roomFloorKeys.has(keyOf(neighbor.x, neighbor.y)));
     const triggerKeys = triggerNeighbors.map((neighbor) => keyOf(neighbor.x, neighbor.y));
 
-    if (triggerKeys.length === 0 || triggerKeys.some((triggerKey) => claimedTriggerKeys.has(triggerKey))) {
+    if (
+      triggerKeys.length === 0 ||
+      triggerKeys.some((triggerKey) => claimedTriggerKeys.has(triggerKey)) ||
+      triggerNeighbors.some((neighbor) => isTileAdjacentToRoomDoor(room, neighbor))
+    ) {
       continue;
     }
 
@@ -3242,14 +3254,38 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
     state.enemies.push(enemy);
   }
 
-  for (let index = 0; index < state.getPotionCountForFloor(floorNumber); index += 1) {
+  const healingConsumableCount = typeof state.getHealingConsumableCountForFloor === 'function'
+    ? state.getHealingConsumableCountForFloor(floorNumber)
+    : 0;
+  for (let index = 0; index < healingConsumableCount; index += 1) {
     const room = chooseWeightedRoom(state, "itemFactor", { excludeLockedBonus: true });
     const tile = room ? chooseFreeRoomTile(state, room, { reserveOnly: true }) : null;
     if (tile) {
-      const potion = state.cloneItemDef?.("healing-potion");
-      if (potion) {
-        state.potions.push(state.createPotionPickup(potion, tile.x, tile.y));
+      const familyId = chooseHealingFamilyForFloor(floorNumber, (entries) => weightedPick(entries, state.randomChance));
+      const healingItem = state.createHealingConsumableDefinition?.(familyId, {
+        studioArchetypeId,
+      });
+      if (healingItem) {
+        state.consumables.push(state.createPotionPickup(healingItem, tile.x, tile.y));
       }
+    }
+  }
+
+  const floorConsumableCount = floorNumber <= 2 ? 1 : floorNumber <= 5 ? 2 : 3;
+  for (let index = 0; index < floorConsumableCount; index += 1) {
+    const room = chooseWeightedRoom(state, "itemFactor", { excludeLockedBonus: true });
+    const tile = room ? chooseFreeRoomTile(state, room, { reserveOnly: true }) : null;
+    if (!tile) {
+      continue;
+    }
+    const consumable = state.rollConsumableLootDefinition?.({
+      floorNumber,
+      sourceType: 'floor',
+      archetypeId: studioArchetypeId,
+      allowedPhase: 3,
+    });
+    if (consumable) {
+      state.consumables.push(state.createPotionPickup(consumable, tile.x, tile.y));
     }
   }
 
@@ -3377,6 +3413,7 @@ function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode
     rooms: [],
     doors: [],
     enemies: [],
+    consumables: [],
     potions: [],
     foods: [],
     weapons: [],
@@ -3385,6 +3422,8 @@ function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode
     keys: [],
     traps: [],
     showcases: [],
+    decorativeOverlays: [],
+    decorativeOverlayOccupiedTiles: [],
     extraLoopConnections: [],
     roomBlockKeys: new Set(),
     roomInteriorKeys: new Set(),
@@ -3426,7 +3465,8 @@ function buildLayoutResult(state, layoutFailureReason = null) {
     gangBoundingBox: state.gangBoundingBox,
     topologyNode: state.topologyNode,
     enemies: state.enemies,
-    potions: state.potions,
+    consumables: state.consumables,
+    potions: state.consumables,
     foods: state.foods,
     weapons: state.weapons,
     offHands: state.offHands,
@@ -3434,6 +3474,8 @@ function buildLayoutResult(state, layoutFailureReason = null) {
     keys: state.keys,
     doors: state.doors,
     showcases: state.showcases,
+    decorativeOverlays: state.decorativeOverlays,
+    decorativeOverlayOccupiedTiles: state.decorativeOverlayOccupiedTiles,
     extraLoopConnections: state.extraLoopConnections,
     showcaseAmbienceSeen: {},
     traps: state.traps,
@@ -3611,6 +3653,7 @@ function buildFallbackDungeonLevel(context, floorNumber, studioArchetypeId, topo
 
   assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
   placeWorldContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
+  state.placeDecorativeOverlays?.(state);
 
   return buildLayoutResult(state);
 }
@@ -3696,6 +3739,7 @@ function createLayoutGenerator(context, resolveLayoutOptions) {
         placeFallbackShowcases(state, studioArchetypeId);
       }
       placeWorldContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
+      state.placeDecorativeOverlays?.(state);
       if (!validateDoorGeometryForLayout(state)) {
         lastFailureReason = "door-geometry-validation";
         options.onAttemptFailure?.({

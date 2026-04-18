@@ -357,7 +357,8 @@ export function createEnemyTurnApi(context) {
   }
 
   function canEnemyDetectPlayer(enemy, playerPosition, floorState, distanceToPlayer, rangeBonus = 0) {
-    const detectionRadius = Math.max(0, (enemy.aggroRadius ?? 0) + rangeBonus);
+    const stealthModifier = playerPosition?.consumableBonuses?.enemyAggroRadiusMod ?? 0;
+    const detectionRadius = Math.max(0, (enemy.aggroRadius ?? 0) + rangeBonus + stealthModifier);
     if (distanceToPlayer > detectionRadius) {
       return false;
     }

@@ -1,15 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#495752"/>
-  <g fill="#64736c" stroke="#31403a" stroke-width=".9">
-    <rect x="1" y="1" width="10" height="10"/>
-    <rect x="11" y="1" width="10" height="10"/>
-    <rect x="21" y="1" width="10" height="10"/>
-    <rect x="1" y="11" width="10" height="10"/>
-    <rect x="11" y="11" width="10" height="10"/>
-    <rect x="21" y="11" width="10" height="10"/>
-    <rect x="1" y="21" width="10" height="10"/>
-    <rect x="11" y="21" width="10" height="10"/>
-    <rect x="21" y="21" width="10" height="10"/>
-  </g>
-  <path d="M16 6l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM8 22l1 1 1 1-1 1-1 1-1-1-1-1 1-1zM24 22l1 1 1 1-1 1-1 1-1-1-1-1 1-1z" fill="#aeb2bb" opacity=".18"/>
+  <rect width="32" height="32" fill="#4d5b56"/>
+  <rect width="32" height="32" fill="#65746d" opacity=".8"/>
+  <path d="M3 8c4-4 9-4 13-1 4 2 8 2 13-1" stroke="#33423c" stroke-width=".95" opacity=".18"/>
+  <path d="M5 19c5-3 11-3 16 0 3 2 6 2 8 1" stroke="#364740" stroke-width=".95" opacity=".16"/>
+  <path d="M6 27c4-2 8-2 12 0" stroke="#31423c" stroke-width=".85" opacity=".14"/>
+  <path d="M16 7l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM8 22l1 1 1 1-1 1-1 1-1-1-1-1 1-1zM24 22l1 1 1 1-1 1-1 1-1-1-1-1 1-1z" fill="#c4c8cf" opacity=".12"/>
 </svg>

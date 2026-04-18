@@ -3,7 +3,7 @@ import { buildCombatEnemyReference, formatPlayerAttackLog } from '../text/combat
 import { formatWeaponDativePhrase, formatWeaponReference } from '../text/combat-phrasing.mjs';
 
 const OPENING_STRIKE_LOGS = {
-  lead: {
+  filmstar: {
     hit: (enemy) => `Triff deine Marke gibt dir den perfekten Auftakt gegen ${enemy.object}.`,
     miss: (enemy) => `Triff deine Marke setzt den ersten Beat, aber ${enemy.subject} entkommt knapp.`,
   },

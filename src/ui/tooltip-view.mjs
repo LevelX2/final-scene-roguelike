@@ -16,7 +16,7 @@ export function createTooltipView(context) {
     getActorStatusDisplay = () => [],
     clamp,
   } = context;
-  const TOOLTIP_SHOW_DELAY_MS = 220;
+  const TOOLTIP_SHOW_DELAY_MS = 380;
   const boundTooltipFactories = new WeakMap();
   let pendingShowTimer = null;
   let pendingTooltipElement = null;
@@ -319,13 +319,16 @@ export function createTooltipView(context) {
     element.dataset.tooltipBound = "true";
 
     element.addEventListener("mouseenter", (event) => {
-      scheduleTooltip(element, tooltipFactory, event);
+      rememberPointerPosition(event);
     });
     element.addEventListener("mousemove", (event) => {
       rememberPointerPosition(event);
       if (currentTooltipElement === element) {
         moveTooltip(event);
+        return;
       }
+
+      scheduleTooltip(element, tooltipFactory, event);
     });
     element.addEventListener("mouseleave", () => {
       if (pendingTooltipElement === element || currentTooltipElement === element) {
@@ -348,18 +351,7 @@ export function createTooltipView(context) {
       return;
     }
 
-    if (!hoverTooltipElement.classList.contains("hidden")) {
-      const tooltip = tooltipFactory();
-      if (!tooltip) {
-        hideTooltip();
-        return;
-      }
-
-      showTooltip(tooltip, getLastPointerEvent(), { anchorElement: hoveredElement });
-      return;
-    }
-
-    scheduleTooltip(hoveredElement, tooltipFactory, getLastPointerEvent());
+    hideTooltip();
   }
 
   return {

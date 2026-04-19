@@ -14,8 +14,6 @@ export function createStartFlowApi(context) {
     renderSelf,
     focusGameSurface,
   } = context;
-  let lastClassClickId = null;
-  let lastClassClickAt = 0;
 
   function resetStartIdentityFeedback() {
     saveHeroNameButtonElement.textContent = "Ins erste Studio";
@@ -87,19 +85,11 @@ export function createStartFlowApi(context) {
         selectOption(nextOption, { focus: true });
       };
 
-      label.addEventListener("click", () => {
-        const now = Date.now();
-        const isDoubleActivation =
-          lastClassClickId === heroClass.id &&
-          now - lastClassClickAt <= 400;
-
+      label.addEventListener("click", () => applySelection({ focus: true }));
+      label.addEventListener("dblclick", (event) => {
+        event.preventDefault();
         applySelection({ focus: true });
-        lastClassClickId = heroClass.id;
-        lastClassClickAt = now;
-
-        if (isDoubleActivation) {
-          applyStartProfile();
-        }
+        applyStartProfile();
       });
       label.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -127,14 +117,11 @@ export function createStartFlowApi(context) {
       }
     });
 
-    classOptionsElement.ondblclick = null;
   }
 
   function syncStartModalControls() {
     const fallbackName = getState()?.player?.name ?? loadHeroName();
     const fallbackClassId = getState()?.player?.classId ?? loadHeroClassId();
-    lastClassClickId = null;
-    lastClassClickAt = 0;
     heroNameInputElement.value = fallbackName;
     resetStartIdentityFeedback();
     renderClassOptions(fallbackClassId);

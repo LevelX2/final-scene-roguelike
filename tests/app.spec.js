@@ -162,6 +162,20 @@ test("double-clicking a hero class card starts the run into the first studio", a
   expect(snapshot.player.classId).toBe("stuntman");
 });
 
+test("single-clicking a hero class card only selects it and does not start the run", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
+  await expect(page.locator("#startModal")).toBeVisible();
+
+  await page.locator("#heroNameInput").fill("Singletake");
+  await page.locator("#classOptions .class-option").filter({ hasText: "Stuntman" }).click();
+
+  await expect(page.locator("#startModal")).toBeVisible();
+  await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
+  await expect(page.locator("#gameShell")).toHaveClass(/prestart-hidden/);
+});
+
 test("hero class cards support arrow-key selection on the start screen", async ({ page }) => {
   await page.goto("/");
 

@@ -130,13 +130,14 @@ select {
 
 .start-screen-title {
   margin: 0 0 12px;
-  max-width: 18ch;
+  max-width: none;
   color: #d8c38a;
-  font-size: clamp(1.35rem, 1.95vw, 1.82rem);
+  font-size: clamp(1rem, 1.35vw, 1.32rem);
   line-height: 1.06;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  text-wrap: balance;
+  text-wrap: normal;
+  white-space: nowrap;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.26);
 }
 

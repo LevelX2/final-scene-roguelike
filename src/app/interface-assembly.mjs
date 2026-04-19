@@ -188,6 +188,7 @@ export function assembleInterfaceModules(context) {
     getState,
     createSheetRow: renderApi.createSheetRow,
     updateSavegameControls,
+    getCurrentFloorState,
     returnToStartScreen: runtime.returnToStartScreen,
     renderSelf,
     addMessage,
@@ -208,6 +209,9 @@ export function assembleInterfaceModules(context) {
     stairsStayButton,
     deathModalElement,
     deathSummaryElement,
+    debugInfoModalElement: ui.debugInfoModalElement,
+    debugInfoTextElement: ui.debugInfoTextElement,
+    debugInfoStatusElement: ui.debugInfoStatusElement,
   });
   setShowDeathModal(modalController.showDeathModal);
   setShowChoiceModal(modalController.showChoiceModal);
@@ -227,6 +231,7 @@ export function assembleInterfaceModules(context) {
     toggleSavegames: modalController.toggleSavegames,
     toggleHelp: modalController.toggleHelp,
     toggleHighscores: modalController.toggleHighscores,
+    toggleDebugInfo: modalController.toggleDebugInfo,
     closeStartModal: runtime.closeStartModal,
     movePlayer,
     handleWait,

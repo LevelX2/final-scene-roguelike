@@ -7,6 +7,7 @@ export function createModalController(context) {
     getState,
     createSheetRow,
     updateSavegameControls,
+    getCurrentFloorState,
     returnToStartScreen,
     renderSelf,
     addMessage,
@@ -27,7 +28,82 @@ export function createModalController(context) {
     stairsStayButton,
     deathModalElement,
     deathSummaryElement,
+    debugInfoModalElement,
+    debugInfoTextElement,
+    debugInfoStatusElement,
   } = context;
+
+  function formatPosition(position) {
+    if (!position || typeof position.x !== "number" || typeof position.y !== "number") {
+      return "-";
+    }
+
+    return `${position.x}, ${position.y}`;
+  }
+
+  function formatTopologyPosition(position) {
+    if (
+      !position ||
+      typeof position.x !== "number" ||
+      typeof position.y !== "number" ||
+      typeof position.z !== "number"
+    ) {
+      return "-";
+    }
+
+    return `${position.x}, ${position.y}, ${position.z}`;
+  }
+
+  function formatAnchorDetails(anchor) {
+    if (!anchor) {
+      return "-";
+    }
+
+    return [
+      anchor.label ?? "Anker",
+      `Implementierung: ${anchor.implementation ?? "-"}`,
+      `Raumpunkt: ${formatPosition(anchor.position)}`,
+      `Übergang: ${formatPosition(anchor.transitionPosition)}`,
+      `Korridor: ${formatPosition(anchor.corridorPosition)}`,
+      `Richtung: ${anchor.direction ?? "-"}`,
+      `Stil: ${anchor.transitionStyle ?? "-"}`,
+    ].join(" | ");
+  }
+
+  function buildDebugInfoText() {
+    const state = getState();
+    const floorState = getCurrentFloorState?.() ?? null;
+    const topologyNode = state.runStudioTopology?.nodes?.[state.floor] ?? null;
+
+    return [
+      `Studio: ${state.floor}`,
+      `Run-Seed: ${state.runSeed ?? "-"}`,
+      `Studio-Seed: ${floorState?.generationSeed ?? "-"}`,
+      `Archetyp: ${getStudioArchetypeLabel(floorState?.studioArchetypeId) ?? floorState?.studioArchetypeId ?? "-"}`,
+      `Layout: ${floorState?.layoutId ?? "-"}`,
+      `Variante: ${floorState?.layoutVariant ?? "-"}`,
+      `Layout-Fehlerpfad: ${floorState?.layoutFailureReason ?? "-"}`,
+      `Gangbreite: ${floorState?.corridorWidth ?? "-"}`,
+      `Spielerposition: ${formatPosition(getState().player)}`,
+      `Eingangsanker: ${formatAnchorDetails(floorState?.entryAnchor)}`,
+      `Ausgangsanker: ${formatAnchorDetails(floorState?.exitAnchor)}`,
+      `Topologieposition: ${formatTopologyPosition(topologyNode?.position)}`,
+      `Topologie Eingang: ${topologyNode?.entryDirection ?? "-"} | ${topologyNode?.entryTransitionStyle ?? "-"}`,
+      `Topologie Ausgang: ${topologyNode?.exitDirection ?? "-"} | ${topologyNode?.exitTransitionStyle ?? "-"}`,
+      `Topologie Eingangshinweis: ${formatPosition(topologyNode?.entryTransitionHint)}`,
+      `Topologie Ausgangshinweis: ${formatPosition(topologyNode?.exitTransitionHint)}`,
+      `Züge: ${state.turn ?? 0}`,
+    ].join("\n");
+  }
+
+  function syncDebugInfoContent(statusText = "Bereit zum Kopieren.") {
+    if (debugInfoTextElement) {
+      debugInfoTextElement.value = buildDebugInfoText();
+    }
+    if (debugInfoStatusElement) {
+      debugInfoStatusElement.textContent = statusText;
+    }
+  }
 
   function setDeathModalVisibility(visible) {
     deathModalElement.classList.toggle("hidden", !visible);
@@ -42,6 +118,7 @@ export function createModalController(context) {
     toggleSavegames(false);
     toggleHelp(false);
     toggleHighscores(false);
+    toggleDebugInfo(false);
   }
 
   function showDeathModal(rank) {
@@ -80,6 +157,7 @@ export function createModalController(context) {
     state.modals.inventoryOpen = forceOpen ?? !state.modals.inventoryOpen;
     if (state.modals.inventoryOpen) {
       state.modals.studioTopologyOpen = false;
+      state.modals.debugInfoOpen = false;
     }
     renderSelf();
   }
@@ -94,6 +172,7 @@ export function createModalController(context) {
       state.modals.savegamesOpen = false;
       state.modals.helpOpen = false;
       state.modals.highscoresOpen = false;
+      state.modals.debugInfoOpen = false;
     }
     renderSelf();
   }
@@ -104,6 +183,7 @@ export function createModalController(context) {
     if (state.modals.runStatsOpen) {
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
+      state.modals.debugInfoOpen = false;
     }
     if (!state.modals.runStatsOpen && state.gameOver && deathModalElement.classList.contains("hidden")) {
       setDeathModalVisibility(true);
@@ -117,6 +197,7 @@ export function createModalController(context) {
     if (state.modals.optionsOpen) {
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
+      state.modals.debugInfoOpen = false;
     }
     renderSelf();
   }
@@ -131,6 +212,7 @@ export function createModalController(context) {
       state.modals.helpOpen = false;
       state.modals.highscoresOpen = false;
       state.modals.studioTopologyOpen = false;
+      state.modals.debugInfoOpen = false;
     }
     renderSelf();
   }
@@ -141,6 +223,7 @@ export function createModalController(context) {
     if (state.modals.helpOpen) {
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
+      state.modals.debugInfoOpen = false;
     }
     renderSelf();
   }
@@ -151,8 +234,72 @@ export function createModalController(context) {
     if (state.modals.highscoresOpen) {
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
+      state.modals.debugInfoOpen = false;
     }
     renderSelf();
+  }
+
+  function toggleDebugInfo(forceOpen) {
+    const state = getState();
+    const floorState = getCurrentFloorState?.() ?? null;
+    const shouldOpen = forceOpen ?? !state.modals.debugInfoOpen;
+
+    if (shouldOpen && !floorState?.debugReveal) {
+      return;
+    }
+
+    state.modals.debugInfoOpen = shouldOpen;
+    if (state.modals.debugInfoOpen) {
+      state.modals.inventoryOpen = false;
+      state.modals.studioTopologyOpen = false;
+      state.modals.runStatsOpen = false;
+      state.modals.optionsOpen = false;
+      state.modals.savegamesOpen = false;
+      state.modals.helpOpen = false;
+      state.modals.highscoresOpen = false;
+      syncDebugInfoContent();
+    }
+    renderSelf();
+  }
+
+  async function copyDebugInfo() {
+    const text = buildDebugInfoText();
+    let copied = false;
+
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      } catch {
+        copied = false;
+      }
+    }
+
+    if (!copied && debugInfoTextElement) {
+      debugInfoTextElement.focus({ preventScroll: true });
+      debugInfoTextElement.select();
+      debugInfoTextElement.setSelectionRange(0, text.length);
+      try {
+        copied = document.execCommand("copy");
+      } catch {
+        copied = false;
+      }
+    }
+
+    syncDebugInfoContent(copied ? "Debugdaten in die Zwischenablage kopiert." : "Kopieren fehlgeschlagen. Der Text bleibt markierbar.");
+    if (debugInfoTextElement) {
+      debugInfoTextElement.focus({ preventScroll: true });
+      debugInfoTextElement.select();
+    }
+  }
+
+  function refreshDebugInfoModal() {
+    const state = getState();
+    if (!state.modals.debugInfoOpen || !debugInfoModalElement) {
+      return;
+    }
+
+    syncDebugInfoContent(debugInfoStatusElement?.textContent || "Bereit zum Kopieren.");
   }
 
   function showChoiceModal(config) {
@@ -342,5 +489,8 @@ export function createModalController(context) {
     toggleHelp,
     toggleHighscores,
     toggleStudioTopology,
+    toggleDebugInfo,
+    copyDebugInfo,
+    refreshDebugInfoModal,
   };
 }

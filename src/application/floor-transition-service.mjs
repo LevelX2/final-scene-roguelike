@@ -1,5 +1,6 @@
 import { formatMonsterReference } from '../text/combat-phrasing.mjs';
 import { ensureRunStudioTopology, getStudioTopologyNode } from '../studio-topology.mjs';
+import { createSeededRandomApi, mixSeed } from '../utils/seeded-random.mjs';
 
 export function createFloorTransitionService(context) {
   const {
@@ -54,6 +55,16 @@ export function createFloorTransitionService(context) {
     return anchor?.position ?? fallback ?? null;
   }
 
+  function createStudioGenerationOptions(runSeed, floorNumber) {
+    const generationSeed = mixSeed("studio-layout", runSeed, floorNumber);
+    const seededRandomApi = createSeededRandomApi(generationSeed);
+    return {
+      generationSeed,
+      randomChance: seededRandomApi.randomChance,
+      randomInt: seededRandomApi.randomInt,
+    };
+  }
+
   function ensureFloorExists(floorNumber) {
     const state = getState();
     state.runStudioTopology = ensureRunStudioTopology(
@@ -62,10 +73,12 @@ export function createFloorTransitionService(context) {
       randomInt,
     );
     if (!state.floors[floorNumber]) {
+      const generationOptions = createStudioGenerationOptions(state.runSeed, floorNumber);
       state.floors[floorNumber] = createDungeonLevel(floorNumber, {
         studioArchetypeId: getArchetypeForFloor(state.runArchetypeSequence, floorNumber),
         runArchetypeSequence: state.runArchetypeSequence,
         studioTopologyNode: getStudioTopologyNode(state.runStudioTopology, floorNumber),
+        ...generationOptions,
       });
       syncTopologyAnchorHints(state.runStudioTopology, floorNumber, state.floors[floorNumber]);
     }

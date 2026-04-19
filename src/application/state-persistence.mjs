@@ -5,6 +5,7 @@ import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { createKeyItem } from '../item-defs.mjs';
 import { normalizeKillStats } from '../kill-stats.mjs';
 import { createTimestampedId } from '../utils/id-tools.mjs';
+import { normalizeSeed } from '../utils/seeded-random.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 import { createEmptyProgressionBonuses, getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 import { areVoiceAnnouncementsForcedOff } from './test-mode.mjs';
@@ -666,6 +667,7 @@ export function createStatePersistenceApi(context) {
     normalizedState.knownMonsterTypes = savedState.knownMonsterTypes ?? {};
     normalizedState.seenMonsterCounts = savedState.seenMonsterCounts ?? {};
     normalizedState.lastScoreRank = savedState.lastScoreRank ?? null;
+    normalizedState.runSeed = normalizeSeed(savedState.runSeed ?? normalizedState.runSeed, normalizedState.runSeed);
     normalizedState.runArchetypeSequence = Array.isArray(savedState.runArchetypeSequence) && savedState.runArchetypeSequence.length > 0
       ? savedState.runArchetypeSequence
       : createRunArchetypeSequence(randomInt);

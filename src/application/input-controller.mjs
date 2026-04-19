@@ -13,6 +13,7 @@ export function createInputController(context) {
     toggleSavegames,
     toggleHelp,
     toggleHighscores,
+    toggleDebugInfo,
     closeStartModal,
     movePlayer,
     handleWait,
@@ -235,7 +236,7 @@ export function createInputController(context) {
       return;
     }
 
-    if (state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen || state.modals.debugInfoOpen) {
       if (matchesShortcut(["escape"], ["Escape"])) {
         toggleInventory(false);
         toggleStudioTopology(false);
@@ -244,6 +245,7 @@ export function createInputController(context) {
         toggleSavegames(false);
         toggleHelp(false);
         toggleHighscores(false);
+        toggleDebugInfo(false);
       }
       return;
     }

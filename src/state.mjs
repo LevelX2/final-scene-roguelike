@@ -6,6 +6,7 @@ import { getNutritionMax, getNutritionStart, getHungerState } from './nutrition.
 import { createRunArchetypeSequence, getArchetypeForFloor } from './studio-theme.mjs';
 import { createRunStudioTopology, ensureRunStudioTopology, getStudioTopologyNode } from './studio-topology.mjs';
 import { formatMonsterKillerLabel, formatWeaponDativePhrase } from './text/combat-phrasing.mjs';
+import { createSeededRandomApi, mixSeed } from './utils/seeded-random.mjs';
 
 export function createStateApi(context) {
   const {
@@ -188,6 +189,16 @@ export function createStateApi(context) {
     return quips[randomInt(0, quips.length - 1)];
   }
 
+  function createStudioGenerationOptions(runSeed, floorNumber) {
+    const generationSeed = mixSeed("studio-layout", runSeed, floorNumber);
+    const seededRandomApi = createSeededRandomApi(generationSeed);
+    return {
+      generationSeed,
+      randomChance: seededRandomApi.randomChance,
+      randomInt: seededRandomApi.randomInt,
+    };
+  }
+
   function initializeGame(profile = {}, options = {}) {
     const currentState = getState();
     const heroName = profile.heroName ? saveHeroName(profile.heroName) : loadHeroName();
@@ -234,11 +245,13 @@ export function createStateApi(context) {
       nextState.player.y = currentState.player.y;
     } else {
       ensureRunStudioTopology(nextState.runStudioTopology, 10, randomInt);
+      const generationOptions = createStudioGenerationOptions(nextState.runSeed, 1);
       nextState.floors[1] = createDungeonLevel(1, {
         stairsUp: null,
         studioArchetypeId: getArchetypeForFloor(nextState.runArchetypeSequence, 1),
         runArchetypeSequence: nextState.runArchetypeSequence,
         studioTopologyNode: getStudioTopologyNode(nextState.runStudioTopology, 1),
+        ...generationOptions,
       });
       const topologyNode = nextState.runStudioTopology?.nodes?.[1];
       if (topologyNode) {

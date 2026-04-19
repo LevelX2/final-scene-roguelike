@@ -1349,6 +1349,12 @@ kbd {
   z-index: 0;
 }
 
+.tile-base.floor,
+.tile-base.wall {
+  /* Let later tiles cover shared seams when the whole board is downscaled. */
+  inset: -1px 0 0 -1px;
+}
+
 .tile-foreground-layer {
   position: absolute;
   inset: 0;
@@ -3380,6 +3386,37 @@ kbd {
 .modal-card {
   width: min(560px, 100%);
   padding: 24px;
+}
+
+.debug-info-modal-card {
+  width: min(640px, 100%);
+}
+
+.debug-info-text {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  padding: 14px 16px;
+  border: 1px solid rgba(125, 220, 138, 0.22);
+  border-radius: 14px;
+  background: rgba(7, 11, 10, 0.86);
+  color: var(--text);
+  line-height: 1.5;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.9rem;
+}
+
+.debug-info-text:focus {
+  outline: none;
+  border-color: rgba(125, 220, 138, 0.6);
+  box-shadow: 0 0 0 3px rgba(125, 220, 138, 0.14);
+}
+
+.debug-info-status {
+  min-height: 1.4em;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .scroll-modal-card {

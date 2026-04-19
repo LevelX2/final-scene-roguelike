@@ -4,6 +4,7 @@ import { getHealingFamily, getHealingOverlayLabel, getHealingTypeLabel } from '.
 
 export function createRenderCycleApi(context) {
   const {
+    TILE_SIZE = 28,
     getState,
     syncTestApi,
     getPlayerCombatSummary,
@@ -64,6 +65,7 @@ export function createRenderCycleApi(context) {
     inventoryHeroPanelElement,
     studioTopologyModalElement,
     runStatsModalElement,
+    debugInfoModalElement,
     optionsModalElement,
     savegamesModalElement,
     helpModalElement,
@@ -90,9 +92,11 @@ export function createRenderCycleApi(context) {
     toggleEnemyPanelModeButtonElement,
     inventoryItemsTabButtonElement,
     inventoryHeroTabButtonElement,
+    openDebugInfoButtonElement,
     updateSavegameControls,
     collapsibleCards,
     updatePotionChoiceSelection,
+    refreshDebugInfoModal,
     chebyshevDistance,
     hasLineOfSight,
     isStraightShot,
@@ -108,6 +112,23 @@ export function createRenderCycleApi(context) {
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
+  }
+
+  function snapBoardZoom(rawZoom) {
+    if (!(rawZoom > 0)) {
+      return rawZoom;
+    }
+
+    const devicePixelRatio = typeof window !== "undefined"
+      ? Math.max(1, window.devicePixelRatio || 1)
+      : 1;
+    const zoomUnit = 1 / (TILE_SIZE * devicePixelRatio);
+    if (rawZoom <= zoomUnit) {
+      return rawZoom;
+    }
+
+    const snappedZoom = Math.floor(rawZoom / zoomUnit) * zoomUnit;
+    return snappedZoom > 0 ? snappedZoom : rawZoom;
   }
 
   function getBoardMetrics(state) {
@@ -129,7 +150,8 @@ export function createRenderCycleApi(context) {
       viewportHeight / naturalBoardHeight,
     );
     const relativeZoom = state.options?.studioZoom ?? 1;
-    const effectiveZoom = fitScale * relativeZoom;
+    const desiredZoom = fitScale * relativeZoom;
+    const effectiveZoom = snapBoardZoom(desiredZoom);
 
     return {
       naturalBoardWidth,
@@ -138,6 +160,7 @@ export function createRenderCycleApi(context) {
       viewportHeight,
       fitScale,
       relativeZoom,
+      desiredZoom,
       effectiveZoom,
       scaledBoardWidth: naturalBoardWidth * effectiveZoom,
       scaledBoardHeight: naturalBoardHeight * effectiveZoom,
@@ -394,6 +417,10 @@ export function createRenderCycleApi(context) {
     renderLog();
     const inventoryView = state.preferences?.inventoryView === "hero" ? "hero" : "items";
     const showInventoryItems = inventoryView === "items";
+    const debugRevealActive = Boolean(floorState?.debugReveal);
+    if (!debugRevealActive && state.modals.debugInfoOpen) {
+      state.modals.debugInfoOpen = false;
+    }
     startScreenElement?.classList.toggle("ui-hidden", inGameView);
     gameHeaderElement?.classList.toggle("ui-hidden", !inGameView);
     startFreshRunButton?.classList.toggle("ui-hidden", !state.gameOver);
@@ -411,6 +438,12 @@ export function createRenderCycleApi(context) {
     studioTopologyModalElement?.setAttribute("aria-hidden", String(!state.modals.studioTopologyOpen));
     runStatsModalElement?.classList.toggle("hidden", !state.modals.runStatsOpen);
     runStatsModalElement?.setAttribute("aria-hidden", String(!state.modals.runStatsOpen));
+    openDebugInfoButtonElement?.classList.toggle("ui-hidden", !(inGameView && debugRevealActive));
+    debugInfoModalElement?.classList.toggle("hidden", !state.modals.debugInfoOpen);
+    debugInfoModalElement?.setAttribute("aria-hidden", String(!state.modals.debugInfoOpen));
+    if (state.modals.debugInfoOpen) {
+      refreshDebugInfoModal?.();
+    }
     optionsModalElement?.classList.toggle("hidden", !state.modals.optionsOpen);
     optionsModalElement?.setAttribute("aria-hidden", String(!state.modals.optionsOpen));
     savegamesModalElement?.classList.toggle("hidden", !state.modals.savegamesOpen);

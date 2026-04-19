@@ -17,6 +17,7 @@ export function createUiBindingsApi(context) {
     zoomOutBoardButtonElement,
     zoomResetBoardButtonElement,
     zoomInBoardButtonElement,
+    openDebugInfoButtonElement,
     closeInventoryButton,
     openRunStatsButton,
     closeRunStatsButton,
@@ -35,6 +36,8 @@ export function createUiBindingsApi(context) {
     showOverviewHelpButtonElement,
     openDeathKillsButton,
     closeDeathButton,
+    copyDebugInfoButtonElement,
+    closeDebugInfoButtonElement,
     startNewGameButton,
     loadGameFromLandingButtonElement,
     openHighscoresLandingButton,
@@ -75,6 +78,8 @@ export function createUiBindingsApi(context) {
     toggleSavegames,
     toggleHelp,
     toggleHighscores,
+    toggleDebugInfo,
+    copyDebugInfo,
     restartRun,
     leaveToStartScreen,
     openRunStatsFromDeath,
@@ -169,6 +174,11 @@ export function createUiBindingsApi(context) {
       adjustStudioZoom(10);
       saveOptions();
     });
+    openDebugInfoButtonElement?.addEventListener("click", () => toggleDebugInfo?.(true));
+    copyDebugInfoButtonElement?.addEventListener("click", () => {
+      copyDebugInfo?.();
+    });
+    closeDebugInfoButtonElement?.addEventListener("click", () => toggleDebugInfo?.(false));
     toggleEnemyPanelModeButtonElement.addEventListener("click", () => {
       toggleEnemyPanelMode();
       saveOptions();

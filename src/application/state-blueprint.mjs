@@ -6,6 +6,7 @@ import { cloneConsumableDefinition, normalizeLegacyConsumableItem } from '../con
 import { cloneItemDef, createKeyItem } from '../item-defs.mjs';
 import { cloneOffHandItem } from '../equipment-helpers.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
+import { createSeededRandomApi, normalizeSeed } from '../utils/seeded-random.mjs';
 import { createEmptyProgressionBonuses } from './derived-actor-stats.mjs';
 
 export function createStateBlueprintApi(context) {
@@ -349,6 +350,7 @@ export function createStateBlueprintApi(context) {
       inventoryOpen: false,
       studioTopologyOpen: false,
       runStatsOpen: false,
+      debugInfoOpen: false,
       optionsOpen: false,
       savegamesOpen: false,
       helpOpen: false,
@@ -378,6 +380,8 @@ export function createStateBlueprintApi(context) {
     const openStartModal = options.openStartModal ?? true;
     const view = options.view ?? (openStartModal ? "start" : "game");
     const initialOptions = options.initialOptions ?? DEFAULT_OPTIONS;
+    const runSeed = normalizeSeed(options.runSeed ?? randomInt(1, 0x7fffffff), 1);
+    const runRandomApi = createSeededRandomApi(runSeed);
     const player = createPlayerFromProfile(heroName, heroClassId);
     player.nutritionMax = getNutritionMax(player);
     player.nutrition = getNutritionStart(player);
@@ -412,8 +416,9 @@ export function createStateBlueprintApi(context) {
       seenMonsterCounts: {},
       visitedFloors: [],
       lastScoreRank: null,
-      runArchetypeSequence: createRunArchetypeSequence(randomInt),
-      runStudioTopology: createRunStudioTopology(randomInt, 10),
+      runSeed,
+      runArchetypeSequence: createRunArchetypeSequence(runRandomApi.randomInt),
+      runStudioTopology: createRunStudioTopology(runRandomApi.randomInt, 10),
       modals: createDefaultModals(openStartModal),
       collapsedCards: createDefaultCollapsedCards(),
       options: { ...initialOptions },

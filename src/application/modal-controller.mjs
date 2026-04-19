@@ -1,4 +1,5 @@
 import { formatStudioLabel, getStudioArchetypeLabel } from '../studio-theme.mjs';
+import { deriveStudioGenerationSeed } from '../utils/seeded-random.mjs';
 
 export function createModalController(context) {
   const {
@@ -74,11 +75,12 @@ export function createModalController(context) {
     const state = getState();
     const floorState = getCurrentFloorState?.() ?? null;
     const topologyNode = state.runStudioTopology?.nodes?.[state.floor] ?? null;
+    const generationSeed = floorState?.generationSeed ?? deriveStudioGenerationSeed(state.runSeed, state.floor);
 
     return [
       `Studio: ${state.floor}`,
       `Run-Seed: ${state.runSeed ?? "-"}`,
-      `Studio-Seed: ${floorState?.generationSeed ?? "-"}`,
+      `Studio-Seed: ${generationSeed ?? "-"}`,
       `Archetyp: ${getStudioArchetypeLabel(floorState?.studioArchetypeId) ?? floorState?.studioArchetypeId ?? "-"}`,
       `Layout: ${floorState?.layoutId ?? "-"}`,
       `Variante: ${floorState?.layoutVariant ?? "-"}`,

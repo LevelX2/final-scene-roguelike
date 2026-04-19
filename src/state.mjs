@@ -6,7 +6,7 @@ import { getNutritionMax, getNutritionStart, getHungerState } from './nutrition.
 import { createRunArchetypeSequence, getArchetypeForFloor } from './studio-theme.mjs';
 import { createRunStudioTopology, ensureRunStudioTopology, getStudioTopologyNode } from './studio-topology.mjs';
 import { formatMonsterKillerLabel, formatWeaponDativePhrase } from './text/combat-phrasing.mjs';
-import { createSeededRandomApi, mixSeed } from './utils/seeded-random.mjs';
+import { createSeededRandomApi, deriveStudioGenerationSeed } from './utils/seeded-random.mjs';
 
 export function createStateApi(context) {
   const {
@@ -190,7 +190,7 @@ export function createStateApi(context) {
   }
 
   function createStudioGenerationOptions(runSeed, floorNumber) {
-    const generationSeed = mixSeed("studio-layout", runSeed, floorNumber);
+    const generationSeed = deriveStudioGenerationSeed(runSeed, floorNumber);
     const seededRandomApi = createSeededRandomApi(generationSeed);
     return {
       generationSeed,
@@ -204,11 +204,6 @@ export function createStateApi(context) {
     const heroName = profile.heroName ? saveHeroName(profile.heroName) : loadHeroName();
     const heroClassId = profile.heroClassId ? saveHeroClassId(profile.heroClassId) : loadHeroClassId();
     const nextView = options.view ?? (options.openStartModal ? "start" : "game");
-    const nextState = createFreshState(heroName, heroClassId, {
-      ...options,
-      view: nextView,
-      initialOptions: loadOptions(),
-    });
     const reusableInitialStudio = Boolean(
       options.reuseExistingFloor &&
       currentState &&
@@ -222,6 +217,12 @@ export function createStateApi(context) {
       !currentState.pendingStairChoice &&
       currentState.floors?.[1]
     );
+    const nextState = createFreshState(heroName, heroClassId, {
+      ...options,
+      runSeed: options.runSeed ?? (reusableInitialStudio ? currentState?.runSeed : undefined),
+      view: nextView,
+      initialOptions: loadOptions(),
+    });
 
     nextState.player.nutritionMax = getNutritionMax(nextState.player);
     nextState.player.nutrition = getNutritionStart(nextState.player);
@@ -241,6 +242,9 @@ export function createStateApi(context) {
         randomInt,
       );
       nextState.floors[1] = currentState.floors[1];
+      if (nextState.floors[1] && nextState.floors[1].generationSeed == null) {
+        nextState.floors[1].generationSeed = deriveStudioGenerationSeed(nextState.runSeed, 1);
+      }
       nextState.player.x = currentState.player.x;
       nextState.player.y = currentState.player.y;
     } else {

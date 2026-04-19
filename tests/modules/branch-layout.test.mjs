@@ -82,6 +82,76 @@ function classifyAdjacentDoorArea(level, position) {
   return 'open';
 }
 
+function createSeededRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (1664525 * state + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+}
+
+function findParallelDoorBypass(level) {
+  const doorKeys = new Set(level.doors.map((door) => `${door.x},${door.y}`));
+
+  for (const door of level.doors) {
+    const north = classifyAdjacentDoorArea(level, { x: door.x, y: door.y - 1 });
+    const south = classifyAdjacentDoorArea(level, { x: door.x, y: door.y + 1 });
+    const west = classifyAdjacentDoorArea(level, { x: door.x - 1, y: door.y });
+    const east = classifyAdjacentDoorArea(level, { x: door.x + 1, y: door.y });
+
+    let axis = null;
+    let pair = null;
+    let parallelNeighbors = [];
+    if (north && south && north !== south) {
+      axis = 'ns';
+      pair = [north, south].sort().join('|');
+      parallelNeighbors = [
+        { x: door.x - 1, y: door.y },
+        { x: door.x + 1, y: door.y },
+      ];
+    } else if (west && east && west !== east) {
+      axis = 'we';
+      pair = [west, east].sort().join('|');
+      parallelNeighbors = [
+        { x: door.x, y: door.y - 1 },
+        { x: door.x, y: door.y + 1 },
+      ];
+    } else {
+      continue;
+    }
+
+    for (const neighbor of parallelNeighbors) {
+      const neighborKey = `${neighbor.x},${neighbor.y}`;
+      if (doorKeys.has(neighborKey) || level.grid[neighbor.y]?.[neighbor.x] !== '.') {
+        continue;
+      }
+
+      if (axis === 'ns') {
+        const neighborNorth = classifyAdjacentDoorArea(level, { x: neighbor.x, y: neighbor.y - 1 });
+        const neighborSouth = classifyAdjacentDoorArea(level, { x: neighbor.x, y: neighbor.y + 1 });
+        if (neighborNorth && neighborSouth && neighborNorth !== neighborSouth) {
+          const neighborPair = [neighborNorth, neighborSouth].sort().join('|');
+          if (neighborPair === pair) {
+            return { door, neighbor, axis, pair };
+          }
+        }
+        continue;
+      }
+
+      const neighborWest = classifyAdjacentDoorArea(level, { x: neighbor.x - 1, y: neighbor.y });
+      const neighborEast = classifyAdjacentDoorArea(level, { x: neighbor.x + 1, y: neighbor.y });
+      if (neighborWest && neighborEast && neighborWest !== neighborEast) {
+        const neighborPair = [neighborWest, neighborEast].sort().join('|');
+        if (neighborPair === pair) {
+          return { door, neighbor, axis, pair };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 function createGeneratorHarness(options = {}) {
   const TILE = {
     WALL: '#',
@@ -707,6 +777,71 @@ test('generated doors separate exactly two local area classes without corner amb
       assert.equal(uniqueAreaIds.length, 2);
     });
   });
+});
+
+test('branch layout does not leave a parallel open bypass next to a door choke point', () => {
+  for (const seed of [1, 2, 6, 10, 24]) {
+    const random = createSeededRandom(seed);
+    const { generator } = createStudioGeneratorHarness({
+      randomChance: () => random(),
+      randomInt: (min, max) => min + Math.floor(random() * (max - min + 1)),
+    });
+
+    const level = generator.createDungeonLevel(4, {
+      layoutId: 'branch',
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: {
+        floorNumber: 4,
+        position: { x: 0, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'right',
+        exitTransitionStyle: 'passage',
+      },
+      runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher'],
+    });
+
+    assert.equal(
+      findParallelDoorBypass(level),
+      null,
+      `seed ${seed} generated a door next to an equally open parallel passage`,
+    );
+  }
+});
+
+test('branch layout keeps entry and exit transition tiles distinct', () => {
+  for (let seed = 1; seed <= 40; seed += 1) {
+    const random = createSeededRandom(seed);
+    const { generator } = createStudioGeneratorHarness({
+      randomChance: () => random(),
+      randomInt: (min, max) => min + Math.floor(random() * (max - min + 1)),
+    });
+
+    const level = generator.createDungeonLevel(2, {
+      layoutId: 'branch',
+      studioArchetypeId: 'action',
+      studioTopologyNode: {
+        floorNumber: 2,
+        position: { x: 1, y: 0, z: 0 },
+        entryDirection: 'left',
+        entryTransitionStyle: 'passage',
+        exitDirection: 'up',
+        exitTransitionStyle: 'lift',
+      },
+      runArchetypeSequence: ['action', 'action'],
+    });
+
+    assert.notDeepEqual(
+      level.entryAnchor.transitionPosition ?? level.entryAnchor.position,
+      level.exitAnchor.transitionPosition ?? level.exitAnchor.position,
+      `seed ${seed} generated overlapping entry/exit transition tiles`,
+    );
+    assert.notDeepEqual(
+      level.entryAnchor.position,
+      level.exitAnchor.position,
+      `seed ${seed} generated overlapping entry/exit anchor positions`,
+    );
+  }
 });
 
 test('branch layout can place second-row rooms off an already connected side room', () => {

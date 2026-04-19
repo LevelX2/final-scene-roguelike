@@ -44,3 +44,7 @@ export function mixSeed(...parts) {
 
   return normalizeSeed(hash, 1);
 }
+
+export function deriveStudioGenerationSeed(runSeed, floorNumber) {
+  return mixSeed("studio-layout", normalizeSeed(runSeed, 1), Math.max(1, Number(floorNumber) || 1));
+}

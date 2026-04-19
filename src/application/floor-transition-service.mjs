@@ -1,6 +1,6 @@
 import { formatMonsterReference } from '../text/combat-phrasing.mjs';
 import { ensureRunStudioTopology, getStudioTopologyNode } from '../studio-topology.mjs';
-import { createSeededRandomApi, mixSeed } from '../utils/seeded-random.mjs';
+import { createSeededRandomApi, deriveStudioGenerationSeed } from '../utils/seeded-random.mjs';
 
 export function createFloorTransitionService(context) {
   const {
@@ -56,7 +56,7 @@ export function createFloorTransitionService(context) {
   }
 
   function createStudioGenerationOptions(runSeed, floorNumber) {
-    const generationSeed = mixSeed("studio-layout", runSeed, floorNumber);
+    const generationSeed = deriveStudioGenerationSeed(runSeed, floorNumber);
     const seededRandomApi = createSeededRandomApi(generationSeed);
     return {
       generationSeed,
@@ -81,6 +81,8 @@ export function createFloorTransitionService(context) {
         ...generationOptions,
       });
       syncTopologyAnchorHints(state.runStudioTopology, floorNumber, state.floors[floorNumber]);
+    } else if (state.floors[floorNumber].generationSeed == null) {
+      state.floors[floorNumber].generationSeed = deriveStudioGenerationSeed(state.runSeed, floorNumber);
     }
   }
 

@@ -648,6 +648,71 @@ function classifyDoorAdjacentArea(state, position) {
   return null;
 }
 
+function classifyNavigableArea(state, position) {
+  const classifiedArea = classifyDoorAdjacentArea(state, position);
+  if (classifiedArea != null) {
+    return classifiedArea;
+  }
+
+  return state.grid[position.y]?.[position.x] === state.TILE.FLOOR
+    ? "floor"
+    : null;
+}
+
+function getPassageAxisInfo(state, position) {
+  const northArea = classifyNavigableArea(state, { x: position.x, y: position.y - 1 });
+  const southArea = classifyNavigableArea(state, { x: position.x, y: position.y + 1 });
+  const westArea = classifyNavigableArea(state, { x: position.x - 1, y: position.y });
+  const eastArea = classifyNavigableArea(state, { x: position.x + 1, y: position.y });
+
+  if (northArea && southArea && northArea !== southArea) {
+    return {
+      axis: "ns",
+      pair: [northArea, southArea].sort().join("|"),
+    };
+  }
+
+  if (westArea && eastArea && westArea !== eastArea) {
+    return {
+      axis: "we",
+      pair: [westArea, eastArea].sort().join("|"),
+    };
+  }
+
+  return null;
+}
+
+function hasDoorAt(state, position) {
+  return state.doors.some((door) => door.x === position.x && door.y === position.y);
+}
+
+function hasParallelOpenPassageBesideDoor(state, door) {
+  const axisInfo = getPassageAxisInfo(state, door);
+  if (!axisInfo) {
+    return false;
+  }
+
+  const parallelNeighbors = axisInfo.axis === "ns"
+    ? [
+        { x: door.x - 1, y: door.y },
+        { x: door.x + 1, y: door.y },
+      ]
+    : [
+        { x: door.x, y: door.y - 1 },
+        { x: door.x, y: door.y + 1 },
+      ];
+
+  return parallelNeighbors.some((neighbor) => {
+    if (state.grid[neighbor.y]?.[neighbor.x] !== state.TILE.FLOOR || hasDoorAt(state, neighbor)) {
+      return false;
+    }
+
+    const neighborAxisInfo = getPassageAxisInfo(state, neighbor);
+    return neighborAxisInfo?.axis === axisInfo.axis &&
+      neighborAxisInfo?.pair === axisInfo.pair;
+  });
+}
+
 function areDirectionsPerpendicular(directionA, directionB) {
   return (directionA === "north" || directionA === "south")
     ? (directionB === "east" || directionB === "west")
@@ -709,6 +774,10 @@ function validateDoorGeometry(state, door) {
         }
       }
     }
+  }
+
+  if (hasParallelOpenPassageBesideDoor(state, door)) {
+    return false;
   }
 
   return true;
@@ -1766,8 +1835,7 @@ function placeAnchor(state, direction, transitionStyle, reservedKeys, isEntry, p
     return null;
   }
 
-  reservedKeys.add(keyOf(corridorPosition.x, corridorPosition.y));
-  return {
+  const anchor = {
     position: geometry.position,
     transitionPosition: geometry.transitionPosition,
     corridorPosition,
@@ -1777,6 +1845,57 @@ function placeAnchor(state, direction, transitionStyle, reservedKeys, isEntry, p
     roomId: geometry.roomId ?? null,
     label: createAnchorLabel(direction, transitionStyle ?? "passage", isEntry),
   };
+  registerAnchorReservedKeys(reservedKeys, anchor);
+  return anchor;
+}
+
+function registerAnchorReservedKeys(reservedKeys, anchor) {
+  if (!reservedKeys || !anchor) {
+    return;
+  }
+
+  [
+    anchor.position,
+    anchor.transitionPosition,
+    anchor.corridorPosition,
+  ].forEach((tile) => {
+    if (!tile) {
+      return;
+    }
+    reservedKeys.add(keyOf(tile.x, tile.y));
+  });
+}
+
+function getAnchorInteractionPosition(anchor) {
+  return anchor?.transitionPosition ?? anchor?.position ?? null;
+}
+
+function anchorsHaveDistinctTraversalPoints(entryAnchor, exitAnchor) {
+  if (!entryAnchor || !exitAnchor) {
+    return true;
+  }
+
+  const entryInteraction = getAnchorInteractionPosition(entryAnchor);
+  const exitInteraction = getAnchorInteractionPosition(exitAnchor);
+  if (
+    entryInteraction &&
+    exitInteraction &&
+    entryInteraction.x === exitInteraction.x &&
+    entryInteraction.y === exitInteraction.y
+  ) {
+    return false;
+  }
+
+  if (
+    entryAnchor.position &&
+    exitAnchor.position &&
+    entryAnchor.position.x === exitAnchor.position.x &&
+    entryAnchor.position.y === exitAnchor.position.y
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function protectAnchor(state, anchor) {
@@ -3403,9 +3522,12 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
 function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode, options = {}) {
   return {
     ...context,
+    randomChance: options.randomChance ?? context.randomChance,
+    randomInt: options.randomInt ?? context.randomInt,
     floorNumber,
     studioArchetypeId,
     topologyNode,
+    generationSeed: options.generationSeed ?? null,
     layoutId: options.layoutId ?? "branch",
     layoutVariant: options.layoutVariant ?? null,
     layoutMetadata: null,
@@ -3448,6 +3570,7 @@ function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode
 
 function buildLayoutResult(state, layoutFailureReason = null) {
   return {
+    generationSeed: state.generationSeed,
     layoutId: state.layoutId,
     layoutVariant: state.layoutVariant,
     layoutFailureReason,
@@ -3540,6 +3663,26 @@ function placeAnchorsForState(state, topologyNode, options, attempt, onFailure) 
     return false;
   }
 
+  if (!anchorsHaveDistinctTraversalPoints(state.entryAnchor, state.exitAnchor)) {
+    onFailure?.({
+      attempt,
+      reason: "anchor-overlap",
+      layoutId: state.layoutId,
+      layoutVariant: state.layoutVariant,
+      entryAnchor: state.entryAnchor ? {
+        ...state.entryAnchor,
+        position: { ...state.entryAnchor.position },
+        transitionPosition: state.entryAnchor.transitionPosition ? { ...state.entryAnchor.transitionPosition } : null,
+      } : null,
+      exitAnchor: state.exitAnchor ? {
+        ...state.exitAnchor,
+        position: { ...state.exitAnchor.position },
+        transitionPosition: state.exitAnchor.transitionPosition ? { ...state.exitAnchor.transitionPosition } : null,
+      } : null,
+    });
+    return false;
+  }
+
   protectAnchor(state, state.entryAnchor);
   protectAnchor(state, state.exitAnchor);
   state.startPosition = clonePosition(state.entryAnchor.position);
@@ -3618,6 +3761,9 @@ function buildFallbackDungeonLevel(context, floorNumber, studioArchetypeId, topo
     implementation: "direct",
     label: createAnchorLabel(topologyNode?.exitDirection ?? "right", topologyNode?.exitTransitionStyle ?? "passage", false),
   };
+  if (!anchorsHaveDistinctTraversalPoints(state.entryAnchor, state.exitAnchor)) {
+    return buildLayoutResult(state, "anchor-overlap");
+  }
   state.startPosition = clonePosition(state.entryAnchor.position);
   state.stairsUp = clonePosition(state.entryAnchor.transitionPosition ?? state.entryAnchor.position);
   state.stairsDown = clonePosition(state.exitAnchor.transitionPosition ?? state.exitAnchor.position);

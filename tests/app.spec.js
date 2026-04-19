@@ -144,6 +144,24 @@ test("hero class cards can be selected from the start screen", async ({ page }) 
   expect(heroVisuals.titleIcon).toContain("class-stuntman.svg");
 });
 
+test("double-clicking a hero class card starts the run into the first studio", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
+  await expect(page.locator("#startModal")).toBeVisible();
+
+  await page.locator("#heroNameInput").fill("Doubletake");
+  await page.locator("#classOptions .class-option").filter({ hasText: "Stuntman" }).dblclick();
+
+  await expect(page.locator("#startModal")).toBeHidden();
+  await expect(page.locator("#gameShell")).not.toHaveClass(/prestart-hidden/);
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshot.floor).toBe(1);
+  expect(snapshot.player.name).toBe("Doubletake");
+  expect(snapshot.player.classId).toBe("stuntman");
+});
+
 test("hero class cards support arrow-key selection on the start screen", async ({ page }) => {
   await page.goto("/");
 
@@ -410,6 +428,32 @@ test("player sidebar stays compact and opens hero details in the inventory modal
   await expect(page.locator("#inventoryHeroPanel")).toBeHidden();
 });
 
+test("hero details show speed categories and split current speed from the base value", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.locator("#openHeroDetails").click();
+  await expect(page.locator("#inventoryHeroPanel")).toBeVisible();
+  await expect(page.locator("#heroSheet")).toContainText("Geschwindigkeit");
+  await expect(page.locator("#heroSheet")).toContainText("Normal (0 %)");
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setPlayerSpeed({
+      baseSpeed: 90,
+      speedIntervalModifiers: [
+        { label: "Verletzung", value: 10 },
+      ],
+    });
+  });
+
+  await expect(page.locator("#heroSheet")).toContainText("Grundgeschwindigkeit");
+  await expect(page.locator("#heroSheet")).toContainText("Schnell (+10 %)");
+  await expect(page.locator("#heroSheet")).toContainText("Aktuelle Geschwindigkeit");
+  await expect(page.locator("#heroSheet")).toContainText("Normal (0 %)");
+  await expect(page.locator("#heroSheet")).toContainText("Modifikatoren");
+  await expect(page.locator("#heroSheet")).toContainText("Verletzung -10 %");
+});
+
 test("sidebar icon buttons expose tooltips for details and collapsing", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -474,6 +518,35 @@ test("enemy sidebar omits portrait art and scrolls long detail content", async (
   expect(enemyPanel.hasPortrait).toBeFalsy();
   expect(enemyPanel.overflowY).toBe("auto");
   expect(enemyPanel.canScroll).toBeTruthy();
+});
+
+test("enemy sidebar only reveals speed after first combat and shows the categorized value", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    clearGrid: true,
+    player: {
+      strength: 4,
+      precision: 9,
+    },
+    enemy: {
+      name: "Tempotest",
+      description: "Nur fuer Tempotests.",
+      baseSpeed: 108,
+      hp: 18,
+      maxHp: 18,
+    },
+  });
+
+  await expect(page.locator("#enemySheet")).not.toContainText("Geschwindigkeit");
+  await expect(page.locator("#enemySheet")).toContainText("Mehr Details nach dem ersten Kampf.");
+
+  await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99, 0]));
+  await page.keyboard.press("ArrowRight");
+
+  await expect(page.locator("#enemySheet")).toContainText("Geschwindigkeit");
+  await expect(page.locator("#enemySheet")).toContainText("Langsam (-8 %)");
 });
 
 test("enemy sidebar scroll area expands when other sidebar panels are collapsed", async ({ page }) => {

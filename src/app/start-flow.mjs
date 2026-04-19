@@ -14,6 +14,8 @@ export function createStartFlowApi(context) {
     renderSelf,
     focusGameSurface,
   } = context;
+  let lastClassClickId = null;
+  let lastClassClickAt = 0;
 
   function resetStartIdentityFeedback() {
     saveHeroNameButtonElement.textContent = "Ins erste Studio";
@@ -21,6 +23,27 @@ export function createStartFlowApi(context) {
 
   function renderClassOptions(selectedClassId) {
     classOptionsElement.innerHTML = "";
+    const getOptions = () => Array.from(classOptionsElement.querySelectorAll(".class-option"));
+    const syncOptionFocusability = (activeOption) => {
+      getOptions().forEach((option) => {
+        option.tabIndex = option === activeOption ? 0 : -1;
+      });
+    };
+    const selectOption = (option, { focus = false } = {}) => {
+      const input = option?.querySelector('input[name="heroClass"]');
+      if (!input) {
+        return;
+      }
+
+      input.checked = true;
+      getOptions().forEach((entry) => {
+        entry.classList.toggle("selected", entry === option);
+      });
+      syncOptionFocusability(option);
+      if (focus) {
+        option.focus();
+      }
+    };
 
     Object.values(HERO_CLASSES).forEach((heroClass) => {
       const label = document.createElement("label");
@@ -44,25 +67,8 @@ export function createStartFlowApi(context) {
       `;
 
       const input = label.querySelector('input[name="heroClass"]');
-      const getOptions = () => Array.from(classOptionsElement.querySelectorAll(".class-option"));
-      const syncOptionFocusability = (activeOption) => {
-        getOptions().forEach((option) => {
-          option.tabIndex = option === activeOption ? 0 : -1;
-        });
-      };
       const applySelection = ({ focus = false } = {}) => {
-        if (!input) {
-          return;
-        }
-
-        input.checked = true;
-        getOptions().forEach((option) => {
-          option.classList.toggle("selected", option === label);
-        });
-        syncOptionFocusability(label);
-        if (focus) {
-          label.focus();
-        }
+        selectOption(label, { focus });
       };
       const moveSelection = (direction) => {
         const options = getOptions();
@@ -78,15 +84,23 @@ export function createStartFlowApi(context) {
           return;
         }
 
-        nextInput.checked = true;
-        options.forEach((option) => {
-          option.classList.toggle("selected", option === nextOption);
-        });
-        syncOptionFocusability(nextOption);
-        nextOption.focus();
+        selectOption(nextOption, { focus: true });
       };
 
-      label.addEventListener("click", () => applySelection({ focus: true }));
+      label.addEventListener("click", () => {
+        const now = Date.now();
+        const isDoubleActivation =
+          lastClassClickId === heroClass.id &&
+          now - lastClassClickAt <= 400;
+
+        applySelection({ focus: true });
+        lastClassClickId = heroClass.id;
+        lastClassClickAt = now;
+
+        if (isDoubleActivation) {
+          applyStartProfile();
+        }
+      });
       label.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
@@ -112,11 +126,15 @@ export function createStartFlowApi(context) {
         syncOptionFocusability(label);
       }
     });
+
+    classOptionsElement.ondblclick = null;
   }
 
   function syncStartModalControls() {
     const fallbackName = getState()?.player?.name ?? loadHeroName();
     const fallbackClassId = getState()?.player?.classId ?? loadHeroClassId();
+    lastClassClickId = null;
+    lastClassClickAt = 0;
     heroNameInputElement.value = fallbackName;
     resetStartIdentityFeedback();
     renderClassOptions(fallbackClassId);

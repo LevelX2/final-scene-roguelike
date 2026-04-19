@@ -1,0 +1,640 @@
+{
+  "pack_id": "healing_consumables_archetype_icons_v1",
+  "version": "1.0.0",
+  "canvas": {
+    "width": 128,
+    "height": 128,
+    "format": "svg"
+  },
+  "notes": [
+    "Prepared as a first archetype-aware healing consumables pack.",
+    "Internal IDs are unique per archetype and share effect family IDs for gameplay mapping.",
+    "Archetype set is an assumed working set and can be extended without breaking the file structure."
+  ],
+  "effect_families": [
+    {
+      "family_id": "heal_bandage_small",
+      "base_name": "Verbandspäckchen",
+      "heal_type": "instant",
+      "effect": "4 HP sofort"
+    },
+    {
+      "family_id": "heal_set_medkit_standard",
+      "base_name": "Set-Sanitätskit",
+      "heal_type": "instant",
+      "effect": "8 HP sofort"
+    },
+    {
+      "family_id": "heal_stunt_emergency_kit",
+      "base_name": "Stunt-Notfallkit",
+      "heal_type": "instant",
+      "effect": "14 HP sofort"
+    },
+    {
+      "family_id": "heal_cool_gel_pack",
+      "base_name": "Kühlgel-Pack",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge"
+    },
+    {
+      "family_id": "heal_recovery_inhaler",
+      "base_name": "Recovery-Inhalator",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge"
+    }
+  ],
+  "archetypes": [
+    {
+      "id": "action",
+      "name": "Action"
+    },
+    {
+      "id": "scifi",
+      "name": "Sci-Fi"
+    },
+    {
+      "id": "fantasy",
+      "name": "Fantasy"
+    },
+    {
+      "id": "horror",
+      "name": "Horror"
+    },
+    {
+      "id": "western",
+      "name": "Western"
+    },
+    {
+      "id": "noir",
+      "name": "Noir"
+    },
+    {
+      "id": "romcom",
+      "name": "RomCom"
+    },
+    {
+      "id": "mystery",
+      "name": "Mystery"
+    },
+    {
+      "id": "adventure",
+      "name": "Adventure"
+    },
+    {
+      "id": "historical",
+      "name": "Historical"
+    }
+  ],
+  "assets": [
+    {
+      "id": "action__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "action",
+      "display_name": "Impact Wrap",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "action/action__heal_bandage_small.svg"
+    },
+    {
+      "id": "action__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "action",
+      "display_name": "Set Trauma Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "action/action__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "action__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "action",
+      "display_name": "Stunt Crash Kit",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "action/action__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "action__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "action",
+      "display_name": "Bruise-Cool Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "action/action__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "action__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "action",
+      "display_name": "Second Wind Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "action/action__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "scifi__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "scifi",
+      "display_name": "Nano Patch Pack",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "scifi/scifi__heal_bandage_small.svg"
+    },
+    {
+      "id": "scifi__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "scifi",
+      "display_name": "Field Med Module",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "scifi/scifi__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "scifi__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "scifi",
+      "display_name": "Trauma Repair Case",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "scifi/scifi__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "scifi__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "scifi",
+      "display_name": "Cryo Gel Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "scifi/scifi__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "scifi__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "scifi",
+      "display_name": "Oxy-Recovery Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "scifi/scifi__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "fantasy__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "fantasy",
+      "display_name": "Runenverband",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "fantasy/fantasy__heal_bandage_small.svg"
+    },
+    {
+      "id": "fantasy__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "fantasy",
+      "display_name": "Heilerbeutel",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "fantasy/fantasy__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "fantasy__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "fantasy",
+      "display_name": "Notfall-Siegelkoffer",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "fantasy/fantasy__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "fantasy__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "fantasy",
+      "display_name": "Mondgel-Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "fantasy/fantasy__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "fantasy__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "fantasy",
+      "display_name": "Atemelixier-Zerstäuber",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "fantasy/fantasy__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "horror__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "horror",
+      "display_name": "Suture Wrap",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "horror/horror__heal_bandage_small.svg"
+    },
+    {
+      "id": "horror__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "horror",
+      "display_name": "Backroom Med Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "horror/horror__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "horror__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "horror",
+      "display_name": "Last Chance Trauma Case",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "horror/horror__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "horror__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "horror",
+      "display_name": "Cold Morgue Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "horror/horror__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "horror__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "horror",
+      "display_name": "Pale Breath Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "horror/horror__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "western__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "western",
+      "display_name": "Trail Bandage Roll",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "western/western__heal_bandage_small.svg"
+    },
+    {
+      "id": "western__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "western",
+      "display_name": "Saddlebag Med Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "western/western__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "western__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "western",
+      "display_name": "Rough Rider Trauma Case",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "western/western__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "western__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "western",
+      "display_name": "Prairie Cool Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "western/western__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "western__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "western",
+      "display_name": "Dust-Lung Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "western/western__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "noir__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "noir",
+      "display_name": "Pocket Dressing",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "noir/noir__heal_bandage_small.svg"
+    },
+    {
+      "id": "noir__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "noir",
+      "display_name": "Backroom Aid Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "noir/noir__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "noir__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "noir",
+      "display_name": "Hardboiled Trauma Case",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "noir/noir__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "noir__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "noir",
+      "display_name": "Night-Chill Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "noir/noir__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "noir__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "noir",
+      "display_name": "Smoke-Eater Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "noir/noir__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "romcom__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "romcom",
+      "display_name": "Heart Patch Pack",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "romcom/romcom__heal_bandage_small.svg"
+    },
+    {
+      "id": "romcom__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "romcom",
+      "display_name": "Meet-Cute Med Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "romcom/romcom__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "romcom__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "romcom",
+      "display_name": "Grand Gesture Rescue Case",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "romcom/romcom__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "romcom__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "romcom",
+      "display_name": "Calm-Down Gel Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "romcom/romcom__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "romcom__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "romcom",
+      "display_name": "Deep Breath Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "romcom/romcom__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "mystery__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "mystery",
+      "display_name": "Casefile Dressing",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "mystery/mystery__heal_bandage_small.svg"
+    },
+    {
+      "id": "mystery__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "mystery",
+      "display_name": "Inspector Aid Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "mystery/mystery__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "mystery__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "mystery",
+      "display_name": "Evidence Lock Trauma Case",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "mystery/mystery__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "mystery__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "mystery",
+      "display_name": "Clue-Chill Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "mystery/mystery__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "mystery__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "mystery",
+      "display_name": "Steady Hand Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "mystery/mystery__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "adventure__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "adventure",
+      "display_name": "Expedition Wrap",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "adventure/adventure__heal_bandage_small.svg"
+    },
+    {
+      "id": "adventure__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "adventure",
+      "display_name": "Trailblazer Med Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "adventure/adventure__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "adventure__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "adventure",
+      "display_name": "Survival Trauma Case",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "adventure/adventure__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "adventure__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "adventure",
+      "display_name": "Canopy Cool Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "adventure/adventure__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "adventure__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "adventure",
+      "display_name": "Altitude Recovery Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "adventure/adventure__heal_recovery_inhaler.svg"
+    },
+    {
+      "id": "historical__heal_bandage_small",
+      "family_id": "heal_bandage_small",
+      "archetype_id": "historical",
+      "display_name": "Apothecary Wrap",
+      "base_name_de": "Verbandspäckchen",
+      "description_de": "Kleine Sofortheilung. Stellt 4 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "4 HP sofort",
+      "file": "historical/historical__heal_bandage_small.svg"
+    },
+    {
+      "id": "historical__heal_set_medkit_standard",
+      "family_id": "heal_set_medkit_standard",
+      "archetype_id": "historical",
+      "display_name": "Field Surgeon Kit",
+      "base_name_de": "Set-Sanitätskit",
+      "description_de": "Standard-Sofortheilung. Stellt 8 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "8 HP sofort",
+      "file": "historical/historical__heal_set_medkit_standard.svg"
+    },
+    {
+      "id": "historical__heal_stunt_emergency_kit",
+      "family_id": "heal_stunt_emergency_kit",
+      "archetype_id": "historical",
+      "display_name": "Campaign Trauma Chest",
+      "base_name_de": "Stunt-Notfallkit",
+      "description_de": "Starke Sofortheilung. Stellt 14 HP wieder her.",
+      "heal_type": "instant",
+      "effect": "14 HP sofort",
+      "file": "historical/historical__heal_stunt_emergency_kit.svg"
+    },
+    {
+      "id": "historical__heal_cool_gel_pack",
+      "family_id": "heal_cool_gel_pack",
+      "archetype_id": "historical",
+      "display_name": "Herbal Compress Pack",
+      "base_name_de": "Kühlgel-Pack",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 3 Züge. Gesamt: 6 HP.",
+      "heal_type": "hot",
+      "effect": "6 HP über 3 Züge",
+      "file": "historical/historical__heal_cool_gel_pack.svg"
+    },
+    {
+      "id": "historical__heal_recovery_inhaler",
+      "family_id": "heal_recovery_inhaler",
+      "archetype_id": "historical",
+      "display_name": "Restorative Vapour Inhaler",
+      "base_name_de": "Recovery-Inhalator",
+      "description_de": "Regeneration. Heilt 2 HP pro Zug für 5 Züge. Gesamt: 10 HP.",
+      "heal_type": "hot",
+      "effect": "10 HP über 5 Züge",
+      "file": "historical/historical__heal_recovery_inhaler.svg"
+    }
+  ]
+}

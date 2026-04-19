@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MONSTER_ASSET_OVERRIDES } from '../../src/content/catalogs/enemy-asset-manifest.mjs';
+import { createHealingConsumableDefinition } from '../../src/content/catalogs/consumables.mjs';
 import { createRenderAssetHelpers } from '../../src/ui/render-assets.mjs';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -270,6 +271,40 @@ test('render asset helpers route legacy monsters into the enemies directory', ()
     getMonsterIconAssetUrl({ id: 'kellerkriecher' }),
     './assets/enemies/legacy-kellerkriecher.svg',
   );
+});
+
+test('render asset helpers resolve board icons for every healing consumable family', () => {
+  const { getPotionIconAssetUrl } = createRenderAssetHelpers({
+    getHeroClassAssets: () => ({ iconUrl: null, spriteUrl: null }),
+  });
+  const studioArchetypes = [
+    'action',
+    'space_opera',
+    'fantasy',
+    'slasher',
+    'western',
+    'noir',
+    'romcom',
+    'adventure',
+    'social_drama',
+    'creature_feature',
+  ];
+  const familyIds = [
+    'heal_bandage_small',
+    'heal_set_medkit_standard',
+    'heal_stunt_emergency_kit',
+    'heal_cool_gel_pack',
+    'heal_recovery_inhaler',
+  ];
+
+  for (const studioArchetypeId of studioArchetypes) {
+    for (const familyId of familyIds) {
+      const item = createHealingConsumableDefinition(familyId, { studioArchetypeId });
+      const iconUrl = getPotionIconAssetUrl(item);
+      assert.ok(iconUrl, `${studioArchetypeId}/${familyId} should resolve an icon url`);
+      expectLocalAsset(iconUrl);
+    }
+  }
 });
 
 test('render asset helpers derive player and enemy weapon overlays from equipped weapons', () => {

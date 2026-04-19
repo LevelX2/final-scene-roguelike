@@ -1,0 +1,51 @@
+id,family_id,archetype_id,display_name,base_name_de,effect,file
+action__heal_bandage_small,heal_bandage_small,action,Impact Wrap,Verbandspäckchen,4 HP sofort,action/action__heal_bandage_small.svg
+action__heal_set_medkit_standard,heal_set_medkit_standard,action,Set Trauma Kit,Set-Sanitätskit,8 HP sofort,action/action__heal_set_medkit_standard.svg
+action__heal_stunt_emergency_kit,heal_stunt_emergency_kit,action,Stunt Crash Kit,Stunt-Notfallkit,14 HP sofort,action/action__heal_stunt_emergency_kit.svg
+action__heal_cool_gel_pack,heal_cool_gel_pack,action,Bruise-Cool Pack,Kühlgel-Pack,6 HP über 3 Züge,action/action__heal_cool_gel_pack.svg
+action__heal_recovery_inhaler,heal_recovery_inhaler,action,Second Wind Inhaler,Recovery-Inhalator,10 HP über 5 Züge,action/action__heal_recovery_inhaler.svg
+scifi__heal_bandage_small,heal_bandage_small,scifi,Nano Patch Pack,Verbandspäckchen,4 HP sofort,scifi/scifi__heal_bandage_small.svg
+scifi__heal_set_medkit_standard,heal_set_medkit_standard,scifi,Field Med Module,Set-Sanitätskit,8 HP sofort,scifi/scifi__heal_set_medkit_standard.svg
+scifi__heal_stunt_emergency_kit,heal_stunt_emergency_kit,scifi,Trauma Repair Case,Stunt-Notfallkit,14 HP sofort,scifi/scifi__heal_stunt_emergency_kit.svg
+scifi__heal_cool_gel_pack,heal_cool_gel_pack,scifi,Cryo Gel Pack,Kühlgel-Pack,6 HP über 3 Züge,scifi/scifi__heal_cool_gel_pack.svg
+scifi__heal_recovery_inhaler,heal_recovery_inhaler,scifi,Oxy-Recovery Inhaler,Recovery-Inhalator,10 HP über 5 Züge,scifi/scifi__heal_recovery_inhaler.svg
+fantasy__heal_bandage_small,heal_bandage_small,fantasy,Runenverband,Verbandspäckchen,4 HP sofort,fantasy/fantasy__heal_bandage_small.svg
+fantasy__heal_set_medkit_standard,heal_set_medkit_standard,fantasy,Heilerbeutel,Set-Sanitätskit,8 HP sofort,fantasy/fantasy__heal_set_medkit_standard.svg
+fantasy__heal_stunt_emergency_kit,heal_stunt_emergency_kit,fantasy,Notfall-Siegelkoffer,Stunt-Notfallkit,14 HP sofort,fantasy/fantasy__heal_stunt_emergency_kit.svg
+fantasy__heal_cool_gel_pack,heal_cool_gel_pack,fantasy,Mondgel-Pack,Kühlgel-Pack,6 HP über 3 Züge,fantasy/fantasy__heal_cool_gel_pack.svg
+fantasy__heal_recovery_inhaler,heal_recovery_inhaler,fantasy,Atemelixier-Zerstäuber,Recovery-Inhalator,10 HP über 5 Züge,fantasy/fantasy__heal_recovery_inhaler.svg
+horror__heal_bandage_small,heal_bandage_small,horror,Suture Wrap,Verbandspäckchen,4 HP sofort,horror/horror__heal_bandage_small.svg
+horror__heal_set_medkit_standard,heal_set_medkit_standard,horror,Backroom Med Kit,Set-Sanitätskit,8 HP sofort,horror/horror__heal_set_medkit_standard.svg
+horror__heal_stunt_emergency_kit,heal_stunt_emergency_kit,horror,Last Chance Trauma Case,Stunt-Notfallkit,14 HP sofort,horror/horror__heal_stunt_emergency_kit.svg
+horror__heal_cool_gel_pack,heal_cool_gel_pack,horror,Cold Morgue Pack,Kühlgel-Pack,6 HP über 3 Züge,horror/horror__heal_cool_gel_pack.svg
+horror__heal_recovery_inhaler,heal_recovery_inhaler,horror,Pale Breath Inhaler,Recovery-Inhalator,10 HP über 5 Züge,horror/horror__heal_recovery_inhaler.svg
+western__heal_bandage_small,heal_bandage_small,western,Trail Bandage Roll,Verbandspäckchen,4 HP sofort,western/western__heal_bandage_small.svg
+western__heal_set_medkit_standard,heal_set_medkit_standard,western,Saddlebag Med Kit,Set-Sanitätskit,8 HP sofort,western/western__heal_set_medkit_standard.svg
+western__heal_stunt_emergency_kit,heal_stunt_emergency_kit,western,Rough Rider Trauma Case,Stunt-Notfallkit,14 HP sofort,western/western__heal_stunt_emergency_kit.svg
+western__heal_cool_gel_pack,heal_cool_gel_pack,western,Prairie Cool Pack,Kühlgel-Pack,6 HP über 3 Züge,western/western__heal_cool_gel_pack.svg
+western__heal_recovery_inhaler,heal_recovery_inhaler,western,Dust-Lung Inhaler,Recovery-Inhalator,10 HP über 5 Züge,western/western__heal_recovery_inhaler.svg
+noir__heal_bandage_small,heal_bandage_small,noir,Pocket Dressing,Verbandspäckchen,4 HP sofort,noir/noir__heal_bandage_small.svg
+noir__heal_set_medkit_standard,heal_set_medkit_standard,noir,Backroom Aid Kit,Set-Sanitätskit,8 HP sofort,noir/noir__heal_set_medkit_standard.svg
+noir__heal_stunt_emergency_kit,heal_stunt_emergency_kit,noir,Hardboiled Trauma Case,Stunt-Notfallkit,14 HP sofort,noir/noir__heal_stunt_emergency_kit.svg
+noir__heal_cool_gel_pack,heal_cool_gel_pack,noir,Night-Chill Pack,Kühlgel-Pack,6 HP über 3 Züge,noir/noir__heal_cool_gel_pack.svg
+noir__heal_recovery_inhaler,heal_recovery_inhaler,noir,Smoke-Eater Inhaler,Recovery-Inhalator,10 HP über 5 Züge,noir/noir__heal_recovery_inhaler.svg
+romcom__heal_bandage_small,heal_bandage_small,romcom,Heart Patch Pack,Verbandspäckchen,4 HP sofort,romcom/romcom__heal_bandage_small.svg
+romcom__heal_set_medkit_standard,heal_set_medkit_standard,romcom,Meet-Cute Med Kit,Set-Sanitätskit,8 HP sofort,romcom/romcom__heal_set_medkit_standard.svg
+romcom__heal_stunt_emergency_kit,heal_stunt_emergency_kit,romcom,Grand Gesture Rescue Case,Stunt-Notfallkit,14 HP sofort,romcom/romcom__heal_stunt_emergency_kit.svg
+romcom__heal_cool_gel_pack,heal_cool_gel_pack,romcom,Calm-Down Gel Pack,Kühlgel-Pack,6 HP über 3 Züge,romcom/romcom__heal_cool_gel_pack.svg
+romcom__heal_recovery_inhaler,heal_recovery_inhaler,romcom,Deep Breath Inhaler,Recovery-Inhalator,10 HP über 5 Züge,romcom/romcom__heal_recovery_inhaler.svg
+mystery__heal_bandage_small,heal_bandage_small,mystery,Casefile Dressing,Verbandspäckchen,4 HP sofort,mystery/mystery__heal_bandage_small.svg
+mystery__heal_set_medkit_standard,heal_set_medkit_standard,mystery,Inspector Aid Kit,Set-Sanitätskit,8 HP sofort,mystery/mystery__heal_set_medkit_standard.svg
+mystery__heal_stunt_emergency_kit,heal_stunt_emergency_kit,mystery,Evidence Lock Trauma Case,Stunt-Notfallkit,14 HP sofort,mystery/mystery__heal_stunt_emergency_kit.svg
+mystery__heal_cool_gel_pack,heal_cool_gel_pack,mystery,Clue-Chill Pack,Kühlgel-Pack,6 HP über 3 Züge,mystery/mystery__heal_cool_gel_pack.svg
+mystery__heal_recovery_inhaler,heal_recovery_inhaler,mystery,Steady Hand Inhaler,Recovery-Inhalator,10 HP über 5 Züge,mystery/mystery__heal_recovery_inhaler.svg
+adventure__heal_bandage_small,heal_bandage_small,adventure,Expedition Wrap,Verbandspäckchen,4 HP sofort,adventure/adventure__heal_bandage_small.svg
+adventure__heal_set_medkit_standard,heal_set_medkit_standard,adventure,Trailblazer Med Kit,Set-Sanitätskit,8 HP sofort,adventure/adventure__heal_set_medkit_standard.svg
+adventure__heal_stunt_emergency_kit,heal_stunt_emergency_kit,adventure,Survival Trauma Case,Stunt-Notfallkit,14 HP sofort,adventure/adventure__heal_stunt_emergency_kit.svg
+adventure__heal_cool_gel_pack,heal_cool_gel_pack,adventure,Canopy Cool Pack,Kühlgel-Pack,6 HP über 3 Züge,adventure/adventure__heal_cool_gel_pack.svg
+adventure__heal_recovery_inhaler,heal_recovery_inhaler,adventure,Altitude Recovery Inhaler,Recovery-Inhalator,10 HP über 5 Züge,adventure/adventure__heal_recovery_inhaler.svg
+historical__heal_bandage_small,heal_bandage_small,historical,Apothecary Wrap,Verbandspäckchen,4 HP sofort,historical/historical__heal_bandage_small.svg
+historical__heal_set_medkit_standard,heal_set_medkit_standard,historical,Field Surgeon Kit,Set-Sanitätskit,8 HP sofort,historical/historical__heal_set_medkit_standard.svg
+historical__heal_stunt_emergency_kit,heal_stunt_emergency_kit,historical,Campaign Trauma Chest,Stunt-Notfallkit,14 HP sofort,historical/historical__heal_stunt_emergency_kit.svg
+historical__heal_cool_gel_pack,heal_cool_gel_pack,historical,Herbal Compress Pack,Kühlgel-Pack,6 HP über 3 Züge,historical/historical__heal_cool_gel_pack.svg
+historical__heal_recovery_inhaler,heal_recovery_inhaler,historical,Restorative Vapour Inhaler,Recovery-Inhalator,10 HP über 5 Züge,historical/historical__heal_recovery_inhaler.svg

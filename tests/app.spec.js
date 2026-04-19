@@ -288,6 +288,44 @@ test("inventory modal toggles with keyboard controls", async ({ page }) => {
   await startRun(page);
 
   await page.evaluate(() => {
+    window.__TEST_API__.addInventoryItem({
+      type: "food",
+      id: "compact-layout-snack-a",
+      name: "Kompakt A",
+      nutritionRestore: 5,
+      description: "Kurz.",
+    });
+    window.__TEST_API__.addInventoryItem({
+      type: "food",
+      id: "compact-layout-snack-b",
+      name: "Kompakt B",
+      nutritionRestore: 5,
+      description: "Kurz.",
+    });
+  });
+
+  await page.keyboard.press("i");
+  await expect(page.locator("#inventoryModal")).toBeVisible();
+  await page.locator('[data-filter="food"]').click();
+
+  const compactLayout = await page.evaluate(() => {
+    return [...document.querySelectorAll("#inventoryList .inventory-item")]
+      .map((node) => ({
+        name: node.querySelector("strong")?.textContent?.trim() ?? "",
+        height: node.getBoundingClientRect().height,
+      }))
+      .filter((entry) => entry.name === "Kompakt A" || entry.name === "Kompakt B");
+  });
+
+  expect(compactLayout).toHaveLength(2);
+  compactLayout.forEach((entry) => {
+    expect(entry.height).toBeLessThan(120);
+  });
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#inventoryModal")).toBeHidden();
+
+  await page.evaluate(() => {
     for (let index = 0; index < 18; index += 1) {
       window.__TEST_API__.addInventoryItem({
         type: "food",

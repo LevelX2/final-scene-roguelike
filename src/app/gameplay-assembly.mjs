@@ -1,5 +1,6 @@
 import { createStatusEffectService } from '../application/status-effect-service.mjs';
 import { createConsumableService } from '../application/consumable-service.mjs';
+import { createActionScheduler } from '../application/action-scheduler.mjs';
 import { getEffectStateLabel } from '../content/catalogs/weapon-effects.mjs';
 
 export function assembleGameplayModules(context) {
@@ -250,6 +251,11 @@ export function assembleGameplayModules(context) {
   consumableService.ensureConsumableState();
   consumableService.rebuildPlayerConsumableState();
 
+  const actionScheduler = createActionScheduler({
+    getState,
+    getCurrentFloorState,
+  });
+
   const itemsApi = createItemsApi({
     getState,
     getCurrentFloorState,
@@ -312,14 +318,15 @@ export function assembleGameplayModules(context) {
     playStepSound,
     playLockedDoorSound,
     hasNearbyEnemy: aiApi.hasNearbyEnemy,
-    moveEnemies: aiApi.moveEnemies,
+    takeEnemyTurn: aiApi.takeEnemyTurn,
     hasLineOfSight: core.hasLineOfSight,
     isStraightShot: core.isStraightShot,
     getCombatWeapon,
     canActorMove: statusEffectService.canActorMove,
-    processRoundStatusEffects: statusEffectService.processRoundStatusEffects,
-    processContinuousTraps,
-    processSafeRegeneration: aiApi.processSafeRegeneration,
+    ...actionScheduler,
+    processActorStatusEffects: statusEffectService.processActorStatusEffects,
+    processActorContinuousTraps: core.processActorContinuousTraps,
+    processActorSafeRegeneration: aiApi.processActorSafeRegeneration,
     processConsumableBuffs: consumableService.processConsumableBuffs,
     applyPlayerNutritionTurnCost,
     renderSelf,
@@ -354,6 +361,8 @@ export function assembleGameplayModules(context) {
     setRandomSequence,
     clearRandomSequence,
     tryUseStairs,
+    movePlayer: playerTurnController.movePlayer,
+    openChest: itemsApi.openChest,
     renderSelf,
   });
 

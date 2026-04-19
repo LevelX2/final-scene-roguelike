@@ -7,6 +7,7 @@ import { cloneItemDef, createKeyItem } from '../item-defs.mjs';
 import { cloneOffHandItem } from '../equipment-helpers.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 import { createSeededRandomApi, normalizeSeed } from '../utils/seeded-random.mjs';
+import { NORMAL_SPEED_INTERVAL } from './actor-speed.mjs';
 import { createEmptyProgressionBonuses } from './derived-actor-stats.mjs';
 
 export function createStateBlueprintApi(context) {
@@ -334,12 +335,16 @@ export function createStateBlueprintApi(context) {
       trapDetectionBonus: heroClass.trapDetectionBonus ?? 0,
       trapAvoidBonus: heroClass.trapAvoidBonus ?? 0,
       shieldBlockBonus: heroClass.shieldBlockBonus ?? 0,
+      baseSpeed: NORMAL_SPEED_INTERVAL,
+      speedIntervalModifier: 0,
+      speedIntervalModifiers: [],
       mainHand: createStartingWeapon(heroClass, loadout),
       offHand: startingOffHand,
       equipmentStatsApplied: false,
       statusEffects: [],
       consumableBonuses: {},
       activeConsumableBuffs: [],
+      nextActionTime: 0,
     };
 
     return player;
@@ -392,6 +397,7 @@ export function createStateBlueprintApi(context) {
       deepestFloor: 1,
       view,
       turn: 0,
+      timelineTime: 0,
       messages: [],
       inventory: [],
       floatingTexts: [],
@@ -400,6 +406,7 @@ export function createStateBlueprintApi(context) {
       safeRestTurns: 0,
       pendingChoice: null,
       pendingStairChoice: null,
+      pendingContainerLoot: null,
       deathCause: null,
       scoreSaved: false,
       kills: 0,

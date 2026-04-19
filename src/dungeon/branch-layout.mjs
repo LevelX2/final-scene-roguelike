@@ -1782,6 +1782,10 @@ function createVerticalAnchorGeometry(state, corridorPosition, preferredTransiti
     return preferredGeometry;
   }
 
+  if (preferredTransitionHint) {
+    return null;
+  }
+
   const axis = resolveVerticalAnchorAxis(state, corridorPosition);
   const preferredDirections = axis === "horizontal"
     ? ["north", "south", "west", "east"]
@@ -3314,13 +3318,21 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
       const chestTile = chooseFreeRoomTile(state, lockedRoom, { reserveOnly: true });
       if (chestTile) {
         const containerConfig = state.getContainerConfigForArchetype(studioArchetypeId);
+        const chestContents = typeof state.rollChestContents === 'function'
+          ? state.rollChestContents(floorNumber + 1, playerState, {
+              dropSourceTag: "locked-room-chest",
+              preferredArchetypeId: studioArchetypeId,
+              boostSpecial: true,
+              runArchetypeSequence,
+            })
+          : [state.rollChestContent(floorNumber + 1, playerState, {
+              dropSourceTag: "locked-room-chest",
+              preferredArchetypeId: studioArchetypeId,
+              boostSpecial: true,
+              runArchetypeSequence,
+            })].filter((entry) => entry?.item);
         state.chests.push(state.createChestPickup(
-          state.rollChestContent(floorNumber + 1, playerState, {
-            dropSourceTag: "locked-room-chest",
-            preferredArchetypeId: studioArchetypeId,
-            boostSpecial: true,
-            runArchetypeSequence,
-          }),
+          chestContents,
           chestTile.x,
           chestTile.y,
           {
@@ -3454,18 +3466,26 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
 
   if (state.shouldSpawnChest(floorNumber)) {
     const containerConfig = state.getContainerConfigForArchetype(studioArchetypeId);
+    const worldChestStartIndex = state.chests.length;
     for (let index = 0; index < state.getChestCountForFloor(floorNumber); index += 1) {
       const room = chooseWeightedRoom(state, "itemFactor", { excludeLockedBonus: true });
       const tile = room ? chooseFreeRoomTile(state, room, { reserveOnly: true }) : null;
       if (!tile) {
         continue;
       }
+      const chestContents = typeof state.rollChestContents === 'function'
+        ? state.rollChestContents(floorNumber, playerState, {
+            dropSourceTag: "chest",
+            preferredArchetypeId: studioArchetypeId,
+            runArchetypeSequence,
+          })
+        : [state.rollChestContent(floorNumber, playerState, {
+            dropSourceTag: "chest",
+            preferredArchetypeId: studioArchetypeId,
+            runArchetypeSequence,
+          })].filter((entry) => entry?.item);
       state.chests.push(state.createChestPickup(
-        state.rollChestContent(floorNumber, playerState, {
-          dropSourceTag: "chest",
-          preferredArchetypeId: studioArchetypeId,
-          runArchetypeSequence,
-        }),
+        chestContents,
         tile.x,
         tile.y,
         {
@@ -3475,12 +3495,27 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
       ));
     }
 
-    for (const foodItem of state.buildFoodItemsForBudget(foodBudget.containers)) {
-      const room = chooseWeightedRoom(state, "foodFactor", { excludeLockedBonus: true });
-      const tile = room ? chooseFreeRoomTile(state, room, { reserveOnly: true }) : null;
-      if (tile) {
+    const containerFoodItems = state.buildFoodItemsForBudget(foodBudget.containers);
+    const worldChests = state.chests.slice(worldChestStartIndex);
+    if (worldChests.length > 0) {
+      containerFoodItems.forEach((foodItem, index) => {
+        const targetChest = worldChests[index % worldChests.length];
+        targetChest.contents = Array.isArray(targetChest.contents) ? targetChest.contents : [];
+        targetChest.contents.push({ type: "food", item: foodItem });
+        targetChest.content = targetChest.contents[0] ?? null;
+      });
+    } else {
+      for (let index = 0; index < containerFoodItems.length; index += 3) {
+        const room = chooseWeightedRoom(state, "foodFactor", { excludeLockedBonus: true });
+        const tile = room ? chooseFreeRoomTile(state, room, { reserveOnly: true }) : null;
+        if (!tile) {
+          continue;
+        }
+
         state.chests.push(state.createChestPickup(
-          { type: "food", item: foodItem },
+          containerFoodItems
+            .slice(index, index + 3)
+            .map((foodItem) => ({ type: "food", item: foodItem })),
           tile.x,
           tile.y,
           {

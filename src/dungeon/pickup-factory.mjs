@@ -28,11 +28,25 @@ export function createDungeonPickupFactory(context) {
     };
   }
 
+  function normalizeChestContents(contentOrContents) {
+    if (Array.isArray(contentOrContents)) {
+      return contentOrContents.filter(Boolean).map((entry) => ({ ...entry }));
+    }
+
+    if (!contentOrContents) {
+      return [];
+    }
+
+    return [{ ...contentOrContents }];
+  }
+
   function createChestPickup(content, x, y, options = {}) {
+    const contents = normalizeChestContents(content);
     return {
       x,
       y,
-      content,
+      content: contents[0] ?? null,
+      contents,
       opened: false,
       containerName: options.containerName ?? 'Requisitenkiste',
       containerAssetId: options.containerAssetId ?? 'requisite-crate',

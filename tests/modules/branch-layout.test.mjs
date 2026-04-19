@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildAvailableMonsterPool, createBranchLayoutGenerator, createStudioLayoutGenerator } from '../../src/dungeon/branch-layout.mjs';
+import { createRunStudioTopology, getStudioTopologyNode } from '../../src/studio-topology.mjs';
 import { shouldSpawnFloorShield, shouldSpawnFloorWeapon } from '../../src/balance.mjs';
 import { MONSTER_CATALOG } from '../../src/content/catalogs/monsters.mjs';
 
@@ -90,6 +91,73 @@ function createSeededRandom(seed) {
   };
 }
 
+function createSeededRandomInt(random) {
+  return (min, max) => min + Math.floor(random() * (max - min + 1));
+}
+
+function transitionsShareCorrespondingPosition(source, target, direction, level) {
+  if (!source || !target || !level?.grid?.length || !level.grid[0]?.length) {
+    return false;
+  }
+
+  const width = level.grid[0].length;
+  const height = level.grid.length;
+
+  if (direction === 'left') {
+    return source.x === 0 && target.x === width - 1 && source.y === target.y;
+  }
+  if (direction === 'right') {
+    return source.x === width - 1 && target.x === 0 && source.y === target.y;
+  }
+  if (direction === 'front') {
+    return source.y === 0 && target.y === height - 1 && source.x === target.x;
+  }
+  if (direction === 'back') {
+    return source.y === height - 1 && target.y === 0 && source.x === target.x;
+  }
+
+  return source.x === target.x && source.y === target.y;
+}
+
+function buildSequentialStudioRun(seed, floorCount = 12) {
+  const topologyRandom = createSeededRandom(seed);
+  const topology = createRunStudioTopology(createSeededRandomInt(topologyRandom), floorCount);
+
+  const generationRandom = createSeededRandom(seed * 17);
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => generationRandom(),
+    randomInt: createSeededRandomInt(generationRandom),
+  });
+
+  const levels = {};
+  const runArchetypeSequence = Array.from({ length: floorCount }, () => 'slasher');
+  for (let floorNumber = 1; floorNumber <= floorCount; floorNumber += 1) {
+    const level = generator.createDungeonLevel(floorNumber, {
+      studioArchetypeId: 'slasher',
+      studioTopologyNode: getStudioTopologyNode(topology, floorNumber),
+      runArchetypeSequence,
+    });
+    levels[floorNumber] = level;
+
+    const topologyNode = topology.nodes[floorNumber];
+    if (topologyNode) {
+      topologyNode.entryTransitionHint = level.entryAnchor?.transitionPosition
+        ? { ...level.entryAnchor.transitionPosition }
+        : null;
+      topologyNode.exitTransitionHint = level.exitAnchor?.transitionPosition
+        ? { ...level.exitAnchor.transitionPosition }
+        : null;
+    }
+
+    const nextTopologyNode = topology.nodes[floorNumber + 1];
+    if (nextTopologyNode && level.exitAnchor?.transitionPosition) {
+      nextTopologyNode.entryTransitionHint = { ...level.exitAnchor.transitionPosition };
+    }
+  }
+
+  return levels;
+}
+
 function findParallelDoorBypass(level) {
   const doorKeys = new Set(level.doors.map((door) => `${door.x},${door.y}`));
 
@@ -177,7 +245,12 @@ function createGeneratorHarness(options = {}) {
     chooseWeightedMonster: options.chooseWeightedMonster ?? (() => null),
     createWeaponPickup: (item, x, y) => ({ item, x, y }),
     createOffHandPickup: (item, x, y) => ({ item, x, y }),
-    createChestPickup: (content, x, y) => ({ content, x, y }),
+    createChestPickup: (content, x, y) => ({
+      content: Array.isArray(content) ? content[0] ?? null : content,
+      contents: Array.isArray(content) ? content : [content].filter(Boolean),
+      x,
+      y,
+    }),
     createFoodPickup: (item, x, y) => ({ item, x, y }),
     createShowcase: (item, x, y) => ({ item, x, y }),
     createDoor: (x, y, config = {}) => ({ x, y, ...config, doorType: config.doorType ?? 'normal', isOpen: config.isOpen ?? false }),
@@ -185,19 +258,20 @@ function createGeneratorHarness(options = {}) {
     chooseWeightedWeapon: () => null,
     chooseWeightedShield: () => null,
     rollChestContent: () => null,
+    rollChestContents: options.rollChestContents ?? null,
     getFloorWeaponSpawnCount: () => 0,
     getEnemyCountForFloor: () => 0,
     getPotionCountForFloor: () => 0,
     getUnlockedMonsterRank: () => 0,
-    shouldSpawnFloorWeapon: () => false,
-    shouldSpawnFloorShield: () => false,
-    shouldSpawnChest: () => false,
-    getChestCountForFloor: () => 0,
+    shouldSpawnFloorWeapon: options.shouldSpawnFloorWeapon ?? (() => false),
+    shouldSpawnFloorShield: options.shouldSpawnFloorShield ?? (() => false),
+    shouldSpawnChest: options.shouldSpawnChest ?? (() => false),
+    getChestCountForFloor: options.getChestCountForFloor ?? (() => 0),
     shouldPlaceLockedRoomChest: () => false,
     getLockedDoorCountForFloor: options.getLockedDoorCountForFloor ?? (() => 0),
-    buildFoodItemsForBudget: () => [],
-    rollFoodBudget: () => ({ totalBudget: 0 }),
-    splitFoodBudget: () => ({ direct: 0, reserve: 0, containers: 0 }),
+    buildFoodItemsForBudget: options.buildFoodItemsForBudget ?? (() => []),
+    rollFoodBudget: options.rollFoodBudget ?? (() => ({ totalBudget: 0 })),
+    splitFoodBudget: options.splitFoodBudget ?? (() => ({ direct: 0, reserve: 0, containers: 0 })),
     rollMonsterPlannedDrop: () => null,
     buildTrapsForFloor: options.buildTrapsForFloor ?? (() => []),
     getContainerConfigForArchetype: () => ({ name: 'Kiste', assetId: 'crate' }),
@@ -233,7 +307,12 @@ function createStudioGeneratorHarness(options = {}) {
     chooseWeightedMonster: options.chooseWeightedMonster ?? (() => null),
     createWeaponPickup: (item, x, y) => ({ item, x, y }),
     createOffHandPickup: (item, x, y) => ({ item, x, y }),
-    createChestPickup: (content, x, y) => ({ content, x, y }),
+    createChestPickup: (content, x, y) => ({
+      content: Array.isArray(content) ? content[0] ?? null : content,
+      contents: Array.isArray(content) ? content : [content].filter(Boolean),
+      x,
+      y,
+    }),
     createFoodPickup: (item, x, y) => ({ item, x, y }),
     createPotionPickup: (item, x, y) => ({ item, x, y }),
     createShowcase: (item, x, y) => ({ item, x, y }),
@@ -242,19 +321,20 @@ function createStudioGeneratorHarness(options = {}) {
     chooseWeightedWeapon: () => null,
     chooseWeightedShield: () => null,
     rollChestContent: () => null,
+    rollChestContents: options.rollChestContents ?? null,
     getFloorWeaponSpawnCount: () => 0,
     getEnemyCountForFloor: () => 0,
     getPotionCountForFloor: () => 0,
     getUnlockedMonsterRank: () => 0,
-    shouldSpawnFloorWeapon: () => false,
-    shouldSpawnFloorShield: () => false,
-    shouldSpawnChest: () => false,
-    getChestCountForFloor: () => 0,
+    shouldSpawnFloorWeapon: options.shouldSpawnFloorWeapon ?? (() => false),
+    shouldSpawnFloorShield: options.shouldSpawnFloorShield ?? (() => false),
+    shouldSpawnChest: options.shouldSpawnChest ?? (() => false),
+    getChestCountForFloor: options.getChestCountForFloor ?? (() => 0),
     shouldPlaceLockedRoomChest: options.shouldPlaceLockedRoomChest ?? (() => false),
     getLockedDoorCountForFloor: options.getLockedDoorCountForFloor ?? (() => 0),
-    buildFoodItemsForBudget: () => [],
-    rollFoodBudget: () => ({ totalBudget: 0 }),
-    splitFoodBudget: () => ({ direct: 0, reserve: 0, containers: 0, monsters: 0, world: 0 }),
+    buildFoodItemsForBudget: options.buildFoodItemsForBudget ?? (() => []),
+    rollFoodBudget: options.rollFoodBudget ?? (() => ({ totalBudget: 0 })),
+    splitFoodBudget: options.splitFoodBudget ?? (() => ({ direct: 0, reserve: 0, containers: 0, monsters: 0, world: 0 })),
     rollMonsterPlannedDrop: () => null,
     buildTrapsForFloor: options.buildTrapsForFloor ?? (() => []),
     getContainerConfigForArchetype: () => ({ name: 'Kiste', assetId: 'crate' }),
@@ -355,6 +435,51 @@ test('balance allows a small amount of equipment to appear on floor one', () => 
   assert.equal(shouldSpawnFloorWeapon(1, 0.8), false);
   assert.equal(shouldSpawnFloorShield(1, 0.1), true);
   assert.equal(shouldSpawnFloorShield(1, 0.3), false);
+});
+
+test('branch layout can bundle multiple items into the same spawned chest', () => {
+  const { generator } = createStudioGeneratorHarness({
+    shouldSpawnChest: () => true,
+    getChestCountForFloor: () => 1,
+    rollChestContents: () => ([
+      {
+        type: 'weapon',
+        item: {
+          type: 'weapon',
+          id: 'bundle-blade',
+          name: 'Bündelklinge',
+          damage: 3,
+          hitBonus: 1,
+        },
+      },
+    ]),
+    buildFoodItemsForBudget: () => ([
+      {
+        type: 'food',
+        id: 'bundle-ration',
+        name: 'Bündelration',
+        nutritionRestore: 25,
+      },
+    ]),
+    rollFoodBudget: () => ({ totalBudget: 40 }),
+    splitFoodBudget: () => ({ direct: 0, reserve: 0, containers: 40, monsters: 0, world: 0 }),
+  });
+
+  const level = generator.createDungeonLevel(3, {
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 3,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher'],
+  });
+
+  assert.equal(level.chests.length, 1);
+  assert.deepEqual(level.chests[0].contents.map((entry) => entry.item?.name), ['Bündelklinge', 'Bündelration']);
 });
 
 test('branch layout keeps the main corridor bounding box horizontally dominant', () => {
@@ -841,6 +966,26 @@ test('branch layout keeps entry and exit transition tiles distinct', () => {
       level.exitAnchor.position,
       `seed ${seed} generated overlapping entry/exit anchor positions`,
     );
+  }
+});
+
+test('sequential studios keep adjacent transitions on the same corresponding position', () => {
+  for (let seed = 1; seed <= 12; seed += 1) {
+    const levels = buildSequentialStudioRun(seed, 12);
+
+    for (let floorNumber = 1; floorNumber < 12; floorNumber += 1) {
+      const sourceLevel = levels[floorNumber];
+      const targetLevel = levels[floorNumber + 1];
+      const sourceTransition = sourceLevel.exitAnchor?.transitionPosition ?? sourceLevel.stairsDown;
+      const targetTransition = targetLevel.entryAnchor?.transitionPosition ?? targetLevel.stairsUp;
+      const sourceDirection = sourceLevel.exitAnchor?.direction ?? null;
+
+      assert.equal(
+        transitionsShareCorrespondingPosition(sourceTransition, targetTransition, sourceDirection, sourceLevel),
+        true,
+        `run seed ${seed} floor ${floorNumber} lost transition correspondence for ${sourceDirection}: ${JSON.stringify(sourceTransition)} -> ${JSON.stringify(targetTransition)}`,
+      );
+    }
   }
 });
 

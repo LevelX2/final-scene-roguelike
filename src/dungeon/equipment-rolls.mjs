@@ -75,9 +75,36 @@ export function createDungeonEquipmentRolls(context) {
     };
   }
 
+  function rollChestContents(floorNumber, player = null, dropContext = {}) {
+    const contents = [];
+    const pushRoll = (nextFloorNumber = floorNumber) => {
+      const entry = rollChestContent(nextFloorNumber, player, dropContext);
+      if (entry?.item) {
+        contents.push(entry);
+      }
+    };
+
+    pushRoll();
+
+    const bonusRoll = randomChance();
+    if (dropContext.dropSourceTag === 'locked-room-chest') {
+      if (bonusRoll < 0.75) {
+        pushRoll(floorNumber);
+      }
+      if (bonusRoll < 0.28) {
+        pushRoll(floorNumber + 1);
+      }
+    } else if (bonusRoll < 0.35) {
+      pushRoll(floorNumber);
+    }
+
+    return contents;
+  }
+
   return {
     chooseWeightedWeapon,
     chooseWeightedShield,
     rollChestContent,
+    rollChestContents,
   };
 }

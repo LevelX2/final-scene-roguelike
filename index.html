@@ -118,15 +118,15 @@
           <div id="boardViewport" class="board-viewport">
             <div id="boardScaler" class="board-scaler">
               <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
+              <section id="healOverlay" class="heal-overlay ui-hidden" aria-hidden="true" aria-label="Heil-Consumables">
+                <div id="healOverlayItems" class="heal-overlay-items"></div>
+                <div class="heal-overlay-detail">
+                  <strong id="healOverlayName">Heil-Consumable</strong>
+                  <span id="healOverlayType">Sofortheilung</span>
+                  <span id="healOverlayEffect">Stellt 8 HP wieder her.</span>
+                </div>
+              </section>
             </div>
-            <section id="healOverlay" class="heal-overlay ui-hidden" aria-hidden="true" aria-label="Heil-Consumables">
-              <div id="healOverlayItems" class="heal-overlay-items"></div>
-              <div class="heal-overlay-detail">
-                <strong id="healOverlayName">Heil-Consumable</strong>
-                <span id="healOverlayType">Sofortheilung</span>
-                <span id="healOverlayEffect">Stellt 8 HP wieder her.</span>
-              </div>
-            </section>
           </div>
         </div>
       </section>
@@ -182,6 +182,28 @@
         <button id="choiceDrink" class="choice-btn accent" type="button">Direkt trinken</button>
         <button id="choiceStore" class="choice-btn" type="button">Ins Inventar</button>
         <button id="choiceLeave" class="choice-btn ghost" type="button">Liegen lassen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="containerLootModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel scroll-modal-card container-loot-modal-card">
+      <div class="inventory-inline-head container-loot-head">
+        <div class="container-loot-title-wrap">
+          <img id="containerLootImage" class="container-loot-image" alt="" />
+          <div>
+            <p class="modal-eyebrow">Container</p>
+            <h2 id="containerLootTitle">Requisitenkiste</h2>
+            <p id="containerLootSummary" class="modal-copy">W&auml;hle aus, was du mitnehmen willst.</p>
+          </div>
+        </div>
+        <button id="containerLootCloseHead" class="mini-btn" type="button">Schlie&szlig;en</button>
+      </div>
+      <div id="containerLootList" class="inventory-list modal-list container-loot-list"></div>
+      <div class="modal-actions container-loot-actions">
+        <button id="containerLootTakeSelected" class="choice-btn accent" type="button">Ausgew&auml;hlte aufnehmen</button>
+        <button id="containerLootTakeAll" class="choice-btn" type="button">Alles aufnehmen</button>
+        <button id="containerLootClose" class="choice-btn ghost" type="button">Schlie&szlig;en</button>
       </div>
     </div>
   </div>

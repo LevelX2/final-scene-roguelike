@@ -20,6 +20,9 @@ export function createInputController(context) {
     debugRevealOrAdvanceStudio,
     tryCloseAdjacentDoor,
     quickUsePotion,
+    closeContainerLoot,
+    takeSelectedContainerLoot,
+    takeAllContainerLoot,
     cycleHealingOverlay,
     closeHealingOverlay,
     useSelectedHealingConsumable,
@@ -138,6 +141,26 @@ export function createInputController(context) {
       if (matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])) {
         event.preventDefault();
         cyclePotionChoice(1);
+        return;
+      }
+
+      return;
+    }
+
+    if (state.pendingContainerLoot) {
+      if (matchesShortcut(["enter"], ["Enter"])) {
+        event.preventDefault();
+        if (Array.isArray(state.pendingContainerLoot.selectedItemIndices) && state.pendingContainerLoot.selectedItemIndices.length > 0) {
+          takeSelectedContainerLoot();
+        } else {
+          takeAllContainerLoot();
+        }
+        return;
+      }
+
+      if (matchesShortcut(["escape"], ["Escape"])) {
+        event.preventDefault();
+        closeContainerLoot();
         return;
       }
 

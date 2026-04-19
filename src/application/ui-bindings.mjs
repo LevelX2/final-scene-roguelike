@@ -5,6 +5,10 @@ export function createUiBindingsApi(context) {
     choiceDrinkButton,
     choiceStoreButton,
     choiceLeaveButton,
+    containerLootTakeSelectedButton,
+    containerLootTakeAllButton,
+    containerLootCloseButton,
+    containerLootCloseHeadButton,
     stairsConfirmButton,
     stairsStayButton,
     openInventoryButton,
@@ -70,6 +74,9 @@ export function createUiBindingsApi(context) {
     topbarBlockCardElement,
     getTopbarTooltipContent,
     resolveChoiceBySlot,
+    closeContainerLoot,
+    takeSelectedContainerLoot,
+    takeAllContainerLoot,
     resolveStairChoice,
     toggleInventory,
     toggleStudioTopology,
@@ -127,6 +134,10 @@ export function createUiBindingsApi(context) {
     choiceDrinkButton.addEventListener("click", () => resolveChoiceBySlot(0));
     choiceStoreButton.addEventListener("click", () => resolveChoiceBySlot(1));
     choiceLeaveButton.addEventListener("click", () => resolveChoiceBySlot(2));
+    containerLootTakeSelectedButton?.addEventListener("click", () => takeSelectedContainerLoot());
+    containerLootTakeAllButton?.addEventListener("click", () => takeAllContainerLoot());
+    containerLootCloseButton?.addEventListener("click", () => closeContainerLoot());
+    containerLootCloseHeadButton?.addEventListener("click", () => closeContainerLoot());
     stairsConfirmButton.addEventListener("click", () => resolveStairChoice("change-floor"));
     stairsStayButton.addEventListener("click", () => resolveStairChoice("stay"));
   }

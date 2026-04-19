@@ -1,5 +1,6 @@
 import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 import { cloneItemDef } from '../item-defs.mjs';
+import { NORMAL_SPEED_INTERVAL } from './actor-speed.mjs';
 
 export function createTestApiMutators(context) {
   const {
@@ -21,6 +22,8 @@ export function createTestApiMutators(context) {
     setRandomSequence,
     clearRandomSequence,
     tryUseStairs,
+    movePlayer,
+    openChest,
     enterTargetMode,
     cancelTargetMode,
     moveTargetCursor,
@@ -39,6 +42,24 @@ export function createTestApiMutators(context) {
 
   function promptCurrentStairs() {
     return tryUseStairs();
+  }
+
+  function stepPlayer(dx, dy) {
+    movePlayer?.(dx, dy);
+    renderSelf();
+  }
+
+  function openChestAtPlayer() {
+    const state = getState();
+    const floorState = getCurrentFloorState();
+    const chestIndex = floorState.chests?.findIndex((chest) => chest.x === state.player.x && chest.y === state.player.y) ?? -1;
+    if (chestIndex === -1) {
+      return false;
+    }
+
+    openChest?.(chestIndex);
+    renderSelf();
+    return true;
   }
 
   function addInventoryItem(item) {
@@ -69,6 +90,7 @@ export function createTestApiMutators(context) {
     state.messages = [];
     state.pendingChoice = null;
     state.pendingStairChoice = null;
+    state.pendingContainerLoot = null;
     renderSelf();
   }
 
@@ -219,6 +241,12 @@ export function createTestApiMutators(context) {
       originY: position.y,
       aggro: config.aggro ?? false,
       turnsSinceHit: 0,
+      nextActionTime: Number.isFinite(config.nextActionTime) ? Math.round(config.nextActionTime) : 0,
+      baseSpeed: Number.isFinite(config.baseSpeed) ? Math.round(config.baseSpeed) : NORMAL_SPEED_INTERVAL,
+      speedIntervalModifier: Number.isFinite(config.speedIntervalModifier) ? Math.round(config.speedIntervalModifier) : 0,
+      speedIntervalModifiers: Array.isArray(config.speedIntervalModifiers)
+        ? config.speedIntervalModifiers.map((entry) => ({ ...entry }))
+        : [],
       canOpenDoors: config.canOpenDoors ?? false,
       canChangeFloors: config.canChangeFloors ?? false,
       sourceArchetypeId: config.sourceArchetypeId ?? null,
@@ -260,6 +288,9 @@ export function createTestApiMutators(context) {
     state.player.hp = config.player?.hp ?? getActorDerivedMaxHp(state.player);
     if (config.player) {
       Object.assign(state.player, config.player);
+      if (Array.isArray(config.player.speedIntervalModifiers)) {
+        state.player.speedIntervalModifiers = config.player.speedIntervalModifiers.map((entry) => ({ ...entry }));
+      }
       if (config.player.weapon || config.player.mainHand) {
         state.player.mainHand = cloneWeapon(config.player.mainHand ?? config.player.weapon);
       }
@@ -289,8 +320,10 @@ export function createTestApiMutators(context) {
     state.messages = [];
     state.gameOver = false;
     state.safeRestTurns = 0;
+    state.timelineTime = 0;
     state.pendingChoice = null;
     state.pendingStairChoice = null;
+    state.pendingContainerLoot = null;
 
     const enemy = createTestEnemy(enemyPosition, config.enemy);
     floorState.enemies.push(enemy);
@@ -350,13 +383,80 @@ export function createTestApiMutators(context) {
     renderSelf();
   }
 
+  function setPlayerSpeed(config = {}) {
+    const state = getState();
+    if (config.nextActionTime !== undefined) {
+      state.player.nextActionTime = Number.isFinite(config.nextActionTime)
+        ? Math.round(config.nextActionTime)
+        : 0;
+    }
+    if (config.baseSpeed !== undefined) {
+      state.player.baseSpeed = Number.isFinite(config.baseSpeed)
+        ? Math.round(config.baseSpeed)
+        : NORMAL_SPEED_INTERVAL;
+    }
+    if (config.speedIntervalModifier !== undefined) {
+      state.player.speedIntervalModifier = Number.isFinite(config.speedIntervalModifier)
+        ? Math.round(config.speedIntervalModifier)
+        : 0;
+    }
+    if (config.speedIntervalModifierLabel !== undefined) {
+      state.player.speedIntervalModifierLabel = config.speedIntervalModifierLabel ?? null;
+    }
+    if (Array.isArray(config.speedIntervalModifiers)) {
+      state.player.speedIntervalModifiers = config.speedIntervalModifiers.map((entry) => ({ ...entry }));
+    }
+    renderSelf();
+  }
+
+  function setEnemySpeed(config = {}, enemyIndex = 0) {
+    const floorState = getCurrentFloorState();
+    const enemy = floorState.enemies?.[enemyIndex];
+    if (!enemy) {
+      return;
+    }
+
+    if (config.nextActionTime !== undefined) {
+      enemy.nextActionTime = Number.isFinite(config.nextActionTime)
+        ? Math.round(config.nextActionTime)
+        : 0;
+    }
+    if (config.baseSpeed !== undefined) {
+      enemy.baseSpeed = Number.isFinite(config.baseSpeed)
+        ? Math.round(config.baseSpeed)
+        : NORMAL_SPEED_INTERVAL;
+    }
+    if (config.speedIntervalModifier !== undefined) {
+      enemy.speedIntervalModifier = Number.isFinite(config.speedIntervalModifier)
+        ? Math.round(config.speedIntervalModifier)
+        : 0;
+    }
+    if (config.speedIntervalModifierLabel !== undefined) {
+      enemy.speedIntervalModifierLabel = config.speedIntervalModifierLabel ?? null;
+    }
+    if (Array.isArray(config.speedIntervalModifiers)) {
+      enemy.speedIntervalModifiers = config.speedIntervalModifiers.map((entry) => ({ ...entry }));
+    }
+    renderSelf();
+  }
+
   function processStatusRoundForTests() {
     processRoundStatusEffects?.();
     renderSelf();
   }
 
+  function setTimelineTime(nextTimelineTime = 0) {
+    const state = getState();
+    state.timelineTime = Number.isFinite(nextTimelineTime)
+      ? Math.max(0, Math.round(nextTimelineTime))
+      : 0;
+    renderSelf();
+  }
+
   return {
     teleportPlayer,
+    stepPlayer,
+    openChestAtPlayer,
     promptCurrentStairs,
     setRandomSequence,
     clearRandomSequence,
@@ -381,6 +481,9 @@ export function createTestApiMutators(context) {
     confirmTargetAttack: confirmTargetAttackForTests,
     applyStatusToPlayer,
     applyStatusToEnemy,
+    setPlayerSpeed,
+    setEnemySpeed,
+    setTimelineTime,
     processStatusRound: processStatusRoundForTests,
   };
 }

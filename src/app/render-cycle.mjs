@@ -96,6 +96,7 @@ export function createRenderCycleApi(context) {
     updateSavegameControls,
     collapsibleCards,
     updatePotionChoiceSelection,
+    refreshContainerLootModal,
     refreshDebugInfoModal,
     chebyshevDistance,
     hasLineOfSight,
@@ -242,6 +243,10 @@ export function createRenderCycleApi(context) {
       return;
     }
 
+    if (state.pendingContainerLoot) {
+      return;
+    }
+
     const metrics = getBoardMetrics(state);
     if (!metrics) {
       return;
@@ -355,6 +360,7 @@ export function createRenderCycleApi(context) {
     confirmTargetModeButton.disabled = !targetIsValid;
     confirmTargetModeButton.textContent = targetIsValid ? "Schießen" : "Kein Schuss";
     if (healOverlayElement && healOverlayItemsElement && healOverlayNameElement && healOverlayTypeElement && healOverlayEffectElement) {
+      const healOverlayAnchorElement = healOverlayElement.parentElement;
       const healOverlayState = getHealingOverlayState?.() ?? { open: false, selectedFamilyId: null };
       const healingGroups = getHealingConsumableGroups?.() ?? [];
       const showHealOverlay = Boolean(healOverlayState.open && healingGroups.length > 0);
@@ -366,7 +372,13 @@ export function createRenderCycleApi(context) {
           : `<span>Zielmodus</span><strong>-</strong>`;
       targetModeHintElement.classList.toggle("ui-hidden", !(targetingActive || healHintActive));
       targetModeHintElement.classList.toggle("heal-selection-pill", healHintActive);
-      boardViewportElement?.classList.toggle("heal-overlay-active", showHealOverlay);
+      if (showHealOverlay) {
+        boardViewportElement?.classList.add("heal-overlay-active");
+        healOverlayAnchorElement?.classList.add("heal-overlay-active");
+      } else {
+        boardViewportElement?.classList.remove("heal-overlay-active");
+        healOverlayAnchorElement?.classList.remove("heal-overlay-active");
+      }
       healOverlayElement.classList.toggle("ui-hidden", !showHealOverlay);
       healOverlayElement.setAttribute("aria-hidden", String(!showHealOverlay));
       healOverlayItemsElement.innerHTML = "";
@@ -406,6 +418,7 @@ export function createRenderCycleApi(context) {
       targetModeHintElement.classList.toggle("ui-hidden", !targetingActive);
       targetModeHintElement.classList.remove("heal-selection-pill");
       boardViewportElement?.classList.remove("heal-overlay-active");
+      healOverlayElement?.parentElement?.classList.remove("heal-overlay-active");
     }
 
     renderPlayerSheet();
@@ -486,6 +499,7 @@ export function createRenderCycleApi(context) {
       showcaseAnnouncementModeElement.value = state.options.showcaseAnnouncementMode ?? "floating-text";
     }
     updateSavegameControls();
+    refreshContainerLootModal?.();
     syncBoardViewport(state);
     (collapsibleCards ?? []).filter(Boolean).forEach((card) => {
       const key = card.dataset.collapsible;

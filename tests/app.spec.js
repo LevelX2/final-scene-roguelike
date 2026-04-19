@@ -1,6 +1,6 @@
 const { test, expect } = require("playwright/test");
 require("./test-setup");
-const { startRun, setupCombat, setupWeaponAtPlayerStep } = require("./helpers");
+const { startRun, setupChestAtPlayerStep, setupCombat, setupWeaponAtPlayerStep } = require("./helpers");
 
 async function sendGameKey(page, key) {
   await page.evaluate((nextKey) => {
@@ -417,6 +417,236 @@ test("inventory modal toggles with keyboard controls", async ({ page }) => {
   await expect(page.locator("#inventoryModal")).toBeHidden();
 });
 
+test("containers open a loot list with multiple items and keep remaining contents until emptied", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const target = { x: snapshot.player.x + 1, y: snapshot.player.y };
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeChest(target, [
+      {
+        type: "weapon",
+        item: {
+          type: "weapon",
+          id: "container-test-blade",
+          name: "Containerklinge",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "melee",
+          range: 1,
+          damage: 3,
+          hitBonus: 1,
+          critBonus: 0,
+          description: "Nur fuer den Container-Test.",
+        },
+      },
+      {
+        type: "food",
+        item: {
+          type: "food",
+          id: "container-test-ration",
+          name: "Requisitenration",
+          nutritionRestore: 40,
+          description: "Nur fuer den Container-Test.",
+        },
+      },
+    ]);
+  });
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const chest = snapshot.chests[0];
+    window.__TEST_API__.teleportPlayer({ x: chest.x, y: chest.y });
+    window.__TEST_API__.openChestAtPlayer();
+  });
+
+  await expect(page.locator("#containerLootModal")).toBeVisible();
+  await expect(page.locator("#containerLootTitle")).toContainText("Requisitenkiste");
+  await expect(page.locator("#containerLootList")).toContainText("Containerklinge");
+  await expect(page.locator("#containerLootList")).toContainText("Requisitenration");
+
+  const weaponRow = page.locator("#containerLootList .container-loot-item").filter({ hasText: "Containerklinge" });
+  await weaponRow.getByRole("button", { name: "Wählen" }).click();
+  await expect(page.locator("#containerLootTakeSelected")).toBeEnabled();
+  await page.locator("#containerLootTakeSelected").click();
+  await expect(page.locator("#containerLootModal")).toBeHidden();
+
+  const afterFirstPickup = await page.evaluate(() => ({
+    inventory: window.__TEST_API__.getInventorySnapshot(),
+    snapshot: window.__TEST_API__.getSnapshot(),
+  }));
+
+  expect(afterFirstPickup.inventory.items.some((item) => item.name === "Containerklinge")).toBeTruthy();
+  expect(afterFirstPickup.inventory.items.some((item) => item.name === "Requisitenration")).toBeFalsy();
+  expect(afterFirstPickup.snapshot.chests).toHaveLength(1);
+  expect(afterFirstPickup.snapshot.chests[0].opened).toBeTruthy();
+  expect(afterFirstPickup.snapshot.chests[0].contents.map((entry) => entry.name)).toEqual(["Requisitenration"]);
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const chest = snapshot.chests[0];
+    window.__TEST_API__.teleportPlayer({ x: chest.x, y: chest.y });
+    window.__TEST_API__.openChestAtPlayer();
+  });
+
+  await expect(page.locator("#containerLootModal")).toBeVisible();
+  await expect(page.locator("#containerLootList")).toContainText("Requisitenration");
+  await expect(page.locator("#containerLootList")).not.toContainText("Containerklinge");
+  await page.locator("#containerLootTakeAll").click();
+  await expect(page.locator("#containerLootModal")).toBeHidden();
+
+  const afterSecondPickup = await page.evaluate(() => ({
+    inventory: window.__TEST_API__.getInventorySnapshot(),
+    snapshot: window.__TEST_API__.getSnapshot(),
+  }));
+
+  expect(afterSecondPickup.inventory.items.some((item) => item.name === "Requisitenration")).toBeTruthy();
+  expect(afterSecondPickup.snapshot.chests).toHaveLength(0);
+});
+
+test("stepping onto a container opens the loot modal without hanging the application", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupChestAtPlayerStep(page, [
+    {
+      type: "food",
+      item: {
+        type: "food",
+        id: "step-test-ration",
+        name: "Schrittprobe",
+        nutritionRestore: 20,
+        description: "Nur fuer den Schritt-auf-Kiste-Test.",
+      },
+    },
+  ]);
+
+  await page.keyboard.press("ArrowRight");
+
+  await expect(page.locator("#containerLootModal")).toBeVisible();
+  await expect(page.locator("#containerLootList")).toContainText("Schrittprobe");
+  await expect(page.locator("#messageLog")).toContainText("Du öffnest");
+
+  const playerCellPresentation = await page.evaluate(() => {
+    const playerCell = document.querySelector(".tile.player")?.closest(".tile-cell");
+    const underlay = playerCell?.querySelector(".tile-transition-underlay");
+    return {
+      hasChestUnderlay: underlay?.className.includes("chest") ?? false,
+      underlayImage: underlay ? window.getComputedStyle(underlay).getPropertyValue("--tile-overlay-image") : "",
+    };
+  });
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(playerCellPresentation.hasChestUnderlay).toBeTruthy();
+  expect(playerCellPresentation.underlayImage).toContain("assets/containers");
+  expect(snapshot.pendingContainerLoot).not.toBeNull();
+  expect(snapshot.player.x).toBeGreaterThan(0);
+});
+
+test("empty containers show an empty state and disappear after closing", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const target = { x: snapshot.player.x + 1, y: snapshot.player.y };
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.placeChest(target, []);
+  });
+
+  await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const chest = snapshot.chests[0];
+    window.__TEST_API__.teleportPlayer({ x: chest.x, y: chest.y });
+    window.__TEST_API__.openChestAtPlayer();
+  });
+
+  await expect(page.locator("#containerLootModal")).toBeVisible();
+  await expect(page.locator("#containerLootSummary")).toContainText("leer");
+  await expect(page.locator("#containerLootList")).toContainText("Diese Kiste ist leer.");
+  await expect(page.locator("#containerLootTakeAll")).toBeDisabled();
+  await page.locator("#containerLootClose").click();
+  await expect(page.locator("#containerLootModal")).toBeHidden();
+
+  const snapshotAfterClose = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  expect(snapshotAfterClose.chests).toHaveLength(0);
+});
+
+test("heal overlay covers the studio and anchors the healing choices at the lower center", async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 768 });
+  await page.addInitScript(() => {
+    let existingOptions = {};
+    try {
+      existingOptions = JSON.parse(window.localStorage.getItem("dungeon-rogue-options") ?? "{}") ?? {};
+    } catch {
+      existingOptions = {};
+    }
+
+    window.localStorage.setItem("dungeon-rogue-options", JSON.stringify({
+      ...existingOptions,
+      uiScale: 1.3,
+    }));
+  });
+
+  await page.goto("/");
+  await startRun(page);
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      player: {
+        hp: 12,
+        maxHp: 20,
+      },
+    });
+  });
+
+  await page.keyboard.press("h");
+  await expect(page.locator("#healOverlay")).toBeVisible();
+  await expect(page.locator("#healOverlayItems .heal-overlay-item")).toHaveCount(1);
+
+  const alignment = await page.evaluate(() => {
+    const boardScaler = document.getElementById("boardScaler");
+    const overlay = document.getElementById("healOverlay");
+    const item = document.querySelector("#healOverlayItems .heal-overlay-item");
+    const scalerRect = boardScaler?.getBoundingClientRect();
+    const overlayRect = overlay?.getBoundingClientRect();
+    const itemRect = item?.getBoundingClientRect();
+    return {
+      scalerHasOverlayClass: boardScaler?.classList.contains("heal-overlay-active") ?? false,
+      scalerCenterX: scalerRect ? scalerRect.left + (scalerRect.width / 2) : 0,
+      overlayCenterX: overlayRect ? overlayRect.left + (overlayRect.width / 2) : 0,
+      scalerBottom: scalerRect?.bottom ?? 0,
+      overlayBottom: overlayRect?.bottom ?? 0,
+      itemBottom: itemRect?.bottom ?? 0,
+      overlayTop: overlayRect?.top ?? 0,
+      scalerTop: scalerRect?.top ?? 0,
+    };
+  });
+
+  expect(alignment.scalerHasOverlayClass).toBeTruthy();
+  expect(Math.abs(alignment.overlayCenterX - alignment.scalerCenterX)).toBeLessThan(2);
+  expect(alignment.scalerBottom - alignment.overlayBottom).toBeGreaterThanOrEqual(10);
+  expect(alignment.scalerBottom - alignment.itemBottom).toBeGreaterThanOrEqual(10);
+
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#healOverlay")).toBeHidden();
+
+  const healingResult = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const inventory = window.__TEST_API__.getInventorySnapshot();
+    return {
+      overlayOpen: snapshot.healOverlay?.open ?? null,
+      hp: snapshot.player.hp,
+      potionCount: inventory.potionCount,
+    };
+  });
+
+  expect(healingResult.overlayOpen).toBeFalsy();
+  expect(healingResult.hp).toBeGreaterThan(12);
+  expect(healingResult.potionCount).toBe(1);
+});
+
 test("player sidebar stays compact and opens hero details in the inventory modal", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -466,6 +696,31 @@ test("hero details show speed categories and split current speed from the base v
   await expect(page.locator("#heroSheet")).toContainText("Normal (0 %)");
   await expect(page.locator("#heroSheet")).toContainText("Modifikatoren");
   await expect(page.locator("#heroSheet")).toContainText("Verletzung -10 %");
+});
+
+test("hero details list attributes and explain their effects in tooltips", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.locator("#openHeroDetails").click();
+  await expect(page.locator("#inventoryHeroPanel")).toBeVisible();
+  await expect(page.locator("#heroSheet .inventory-hero-attribute")).toHaveCount(6);
+  await expect(page.locator("#heroSheet")).toContainText("Stärke");
+  await expect(page.locator("#heroSheet")).toContainText("Präzision");
+  await expect(page.locator("#heroSheet")).toContainText("Reaktion");
+  await expect(page.locator("#heroSheet")).toContainText("Nerven");
+  await expect(page.locator("#heroSheet")).toContainText("Intelligenz");
+  await expect(page.locator("#heroSheet")).toContainText("Ausdauer");
+
+  await page.locator("#heroSheet .inventory-hero-attribute", { hasText: "Präzision" }).hover();
+  await expect(page.locator("#hoverTooltip")).toContainText("Präzision");
+  await expect(page.locator("#hoverTooltip")).toContainText("Steigert Trefferwert, Krit-Chance und die Entdeckung versteckter Fallen.");
+  await expect(page.locator("body")).toHaveClass(/tooltip-open/);
+  await expect(page.locator("#heroSheet .inventory-hero-attribute", { hasText: "Präzision" })).toHaveCSS("cursor", "default");
+
+  await page.locator("#heroSheet .inventory-hero-attribute", { hasText: "Ausdauer" }).hover();
+  await expect(page.locator("#hoverTooltip")).toContainText("Ausdauer");
+  await expect(page.locator("#hoverTooltip")).toContainText("Reduziert erlittenen Fallenschaden und vergrößert dein Hungerpolster.");
 });
 
 test("sidebar icon buttons expose tooltips for details and collapsing", async ({ page }) => {
@@ -561,6 +816,40 @@ test("enemy sidebar only reveals speed after first combat and shows the categori
 
   await expect(page.locator("#enemySheet")).toContainText("Geschwindigkeit");
   await expect(page.locator("#enemySheet")).toContainText("Langsam (-8 %)");
+});
+
+test("enemy sidebar reflects fast normal and slow base speeds after the balancing pass", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const scenarios = [
+    { name: "Schnelltest", baseSpeed: 90, expected: "Schnell (+10 %)" },
+    { name: "Normaltest", baseSpeed: 100, expected: "Normal (0 %)" },
+    { name: "Langsamtest", baseSpeed: 125, expected: "Sehr langsam (-25 %)" },
+  ];
+
+  for (const scenario of scenarios) {
+    await setupCombat(page, {
+      clearGrid: true,
+      player: {
+        strength: 4,
+        precision: 9,
+      },
+      enemy: {
+        name: scenario.name,
+        description: "Nur fuer Tempotests.",
+        baseSpeed: scenario.baseSpeed,
+        hp: 18,
+        maxHp: 18,
+      },
+    });
+
+    await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99, 0]));
+    await page.keyboard.press("ArrowRight");
+
+    await expect(page.locator("#enemySheet")).toContainText("Geschwindigkeit");
+    await expect(page.locator("#enemySheet")).toContainText(scenario.expected);
+  }
 });
 
 test("enemy sidebar scroll area expands when other sidebar panels are collapsed", async ({ page }) => {

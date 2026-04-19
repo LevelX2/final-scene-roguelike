@@ -43,7 +43,9 @@ export function createBoardView(context) {
     getShowcaseIconAssetUrl,
     getPlayerIconAssetUrl,
     getPlayerWeaponOverlay,
+    getPlayerOffHandOverlay,
     getEnemyWeaponOverlay,
+    getEnemyOffHandOverlay,
     getMonsterIconAssetUrl,
     getEnemyTooltipImageClass,
     getDoorIconAssetUrl,
@@ -253,12 +255,14 @@ export function createBoardView(context) {
         return;
       }
 
-      const fullWidth = preset.widthTiles * TILE_SIZE + OVERLAY_TILE_BLEED * 2;
-      const fullHeight = preset.heightTiles * TILE_SIZE + OVERLAY_TILE_BLEED * 2;
+      const tileStep = TILE_SIZE + TILE_GAP;
+      const fullWidth = preset.widthTiles * TILE_SIZE + Math.max(0, preset.widthTiles - 1) * TILE_GAP + OVERLAY_TILE_BLEED * 2;
+      const fullHeight = preset.heightTiles * TILE_SIZE + Math.max(0, preset.heightTiles - 1) * TILE_GAP + OVERLAY_TILE_BLEED * 2;
+      const maskTileKeys = new Set(preset.mask.map((maskTile) => `${maskTile.x},${maskTile.y}`));
       const overlayElement = document.createElement('div');
       overlayElement.className = `decorative-overlay-instance decorative-family-${preset.family}`;
-      overlayElement.style.left = `${overlay.x * (TILE_SIZE + TILE_GAP) - OVERLAY_TILE_BLEED}px`;
-      overlayElement.style.top = `${overlay.y * (TILE_SIZE + TILE_GAP) - OVERLAY_TILE_BLEED}px`;
+      overlayElement.style.left = `${overlay.x * tileStep - OVERLAY_TILE_BLEED}px`;
+      overlayElement.style.top = `${overlay.y * tileStep - OVERLAY_TILE_BLEED}px`;
       overlayElement.style.width = `${fullWidth}px`;
       overlayElement.style.height = `${fullHeight}px`;
 
@@ -275,17 +279,23 @@ export function createBoardView(context) {
         if (decorativeOverlayDebugMask) {
           fragment.classList.add('decorative-overlay-fragment-debug');
         }
-        fragment.style.left = `${maskTile.x * (TILE_SIZE + TILE_GAP)}px`;
-        fragment.style.top = `${maskTile.y * (TILE_SIZE + TILE_GAP)}px`;
-        fragment.style.width = `${TILE_SIZE + OVERLAY_TILE_BLEED * 2}px`;
-        fragment.style.height = `${TILE_SIZE + OVERLAY_TILE_BLEED * 2}px`;
+        const bleedLeft = maskTileKeys.has(`${maskTile.x - 1},${maskTile.y}`) ? 0 : OVERLAY_TILE_BLEED;
+        const bleedRight = maskTileKeys.has(`${maskTile.x + 1},${maskTile.y}`) ? 0 : OVERLAY_TILE_BLEED;
+        const bleedTop = maskTileKeys.has(`${maskTile.x},${maskTile.y - 1}`) ? 0 : OVERLAY_TILE_BLEED;
+        const bleedBottom = maskTileKeys.has(`${maskTile.x},${maskTile.y + 1}`) ? 0 : OVERLAY_TILE_BLEED;
+        const fragmentLeft = OVERLAY_TILE_BLEED + maskTile.x * tileStep - bleedLeft;
+        const fragmentTop = OVERLAY_TILE_BLEED + maskTile.y * tileStep - bleedTop;
+        fragment.style.left = `${fragmentLeft}px`;
+        fragment.style.top = `${fragmentTop}px`;
+        fragment.style.width = `${TILE_SIZE + bleedLeft + bleedRight}px`;
+        fragment.style.height = `${TILE_SIZE + bleedTop + bleedBottom}px`;
 
         const art = document.createElement('div');
         art.className = 'decorative-overlay-art';
         art.style.width = `${fullWidth}px`;
         art.style.height = `${fullHeight}px`;
-        art.style.left = `${-(maskTile.x * TILE_SIZE) - OVERLAY_TILE_BLEED}px`;
-        art.style.top = `${-(maskTile.y * TILE_SIZE) - OVERLAY_TILE_BLEED}px`;
+        art.style.left = `${-fragmentLeft}px`;
+        art.style.top = `${-fragmentTop}px`;
         art.style.backgroundImage = `url("${preset.svgAsset}")`;
         art.style.backgroundSize = `${fullWidth}px ${fullHeight}px`;
 
@@ -299,12 +309,95 @@ export function createBoardView(context) {
     });
   }
 
+  function getTransitionTilePresentation({ x, y, floorState, studioArchetypeId, isVisible, isExplored }) {
+    if (floorState.stairsDown && floorState.stairsDown.x === x && floorState.stairsDown.y === y) {
+      const anchorPresentation = getAnchorPresentation(floorState.exitAnchor, false);
+      return {
+        type: isVisible
+          ? `floor studio-${studioArchetypeId} stairs-down ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim()
+          : `floor memory studio-${studioArchetypeId} stairs-down memory ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim(),
+        glyph: TILE.STAIRS_DOWN,
+        overlayImageUrl: anchorPresentation.iconAssetUrl,
+        tooltip: isVisible ? {
+          title: floorState.exitAnchor?.label ?? "Ausgang",
+          imageUrl: anchorPresentation.iconAssetUrl,
+          imageClass: anchorPresentation.imageClass,
+          lines: anchorPresentation.lines,
+        } : null,
+      };
+    }
+
+    if (floorState.stairsUp && floorState.stairsUp.x === x && floorState.stairsUp.y === y) {
+      const anchorPresentation = getAnchorPresentation(floorState.entryAnchor, true);
+      return {
+        type: isVisible
+          ? `floor studio-${studioArchetypeId} stairs-up ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim()
+          : `floor memory studio-${studioArchetypeId} stairs-up memory ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim(),
+        glyph: TILE.STAIRS_UP,
+        overlayImageUrl: anchorPresentation.iconAssetUrl,
+        tooltip: isVisible ? {
+          title: floorState.entryAnchor?.label ?? "Eingang",
+          imageUrl: anchorPresentation.iconAssetUrl,
+          imageClass: anchorPresentation.imageClass,
+          lines: anchorPresentation.lines,
+        } : null,
+      };
+    }
+
+    return null;
+  }
+
+  function getChestTilePresentation({ x, y, floorState, studioArchetypeId, isVisible }) {
+    if (!isVisible) {
+      return null;
+    }
+
+    const chestPickup = floorState.chests?.find((item) => item.x === x && item.y === y) ?? null;
+    if (!chestPickup) {
+      return null;
+    }
+
+    const chestImageUrl = chestPickup.containerAssetId
+      ? `./assets/containers/${chestPickup.containerAssetId}.svg`
+      : "./assets/fallbacks/chest.svg";
+
+    return {
+      type: `floor studio-${studioArchetypeId} chest`,
+      glyph: TILE.CHEST,
+      overlayImageUrl: chestImageUrl,
+      tooltip: {
+        title: chestPickup.containerName ?? "Requisitenkiste",
+        imageUrl: chestImageUrl,
+        imageClass: "tooltip-art-chest",
+        lines: [
+          "Ein thematischer Loot-Container dieses Studios.",
+          "Tritt darauf, um sie aufzubrechen.",
+        ],
+      },
+    };
+  }
+
   function tileAt(x, y) {
     const state = getState();
     const floorState = getCurrentFloorState();
     const studioArchetypeId = floorState?.studioArchetypeId ?? "slasher";
     const isVisible = Boolean(floorState.visible?.[y]?.[x]);
     const isExplored = Boolean(floorState.explored?.[y]?.[x]);
+    const transitionTile = getTransitionTilePresentation({
+      x,
+      y,
+      floorState,
+      studioArchetypeId,
+      isVisible,
+      isExplored,
+    });
+    const chestTile = getChestTilePresentation({
+      x,
+      y,
+      floorState,
+      studioArchetypeId,
+      isVisible,
+    });
 
     if (!isVisible && !isExplored) {
       return { type: "unknown", glyph: "" };
@@ -314,13 +407,18 @@ export function createBoardView(context) {
       const playerDerivedStats = getActorDerivedStats(state.player);
       const playerMaxHp = getActorDerivedMaxHp(state.player);
       const playerWeaponOverlay = getPlayerWeaponOverlay(state.player, state.gameOver);
+      const playerOffHandOverlay = getPlayerOffHandOverlay(state.player, state.gameOver);
       return {
         type: state.gameOver
           ? `floor studio-${studioArchetypeId} player dead`
           : `floor studio-${studioArchetypeId} player`,
         glyph: TILE.PLAYER,
         overlayImageUrl: getPlayerIconAssetUrl(state.player, state.gameOver),
+        underlayType: transitionTile?.type ?? chestTile?.type ?? "",
+        underlayGlyph: transitionTile?.glyph ?? chestTile?.glyph ?? "",
+        underlayOverlayImageUrl: transitionTile?.overlayImageUrl ?? chestTile?.overlayImageUrl ?? null,
         playerWeaponOverlay,
+        playerOffHandOverlay,
         hp: state.player.hp,
         maxHp: playerMaxHp,
         tooltip: {
@@ -355,6 +453,7 @@ export function createBoardView(context) {
       : null;
     if (enemy) {
       const enemyWeaponOverlay = getEnemyWeaponOverlay(enemy);
+      const enemyOffHandOverlay = getEnemyOffHandOverlay(enemy);
       const revealed = knowsMonster(enemy);
       const debugRevealActive = Boolean(floorState.debugReveal);
       const showFullMonsterDetails = revealed || debugRevealActive;
@@ -391,7 +490,11 @@ export function createBoardView(context) {
         type: `floor studio-${studioArchetypeId} enemy monster-${enemy.id}`,
         glyph: TILE.ENEMY,
         overlayImageUrl: getMonsterIconAssetUrl(enemy),
+        underlayType: transitionTile?.type ?? "",
+        underlayGlyph: transitionTile?.glyph ?? "",
+        underlayOverlayImageUrl: transitionTile?.overlayImageUrl ?? null,
         actorWeaponOverlay: enemyWeaponOverlay,
+        actorOffHandOverlay: enemyOffHandOverlay,
         hp: enemy.hp,
         maxHp: enemy.maxHp,
         tooltip: {
@@ -563,27 +666,8 @@ export function createBoardView(context) {
       };
     }
 
-    const chestPickup = isVisible
-      ? floorState.chests?.find((item) => item.x === x && item.y === y)
-      : null;
-    if (chestPickup) {
-      const chestImageUrl = chestPickup.containerAssetId
-        ? `./assets/containers/${chestPickup.containerAssetId}.svg`
-        : "./assets/fallbacks/chest.svg";
-      return {
-        type: `floor studio-${studioArchetypeId} chest`,
-        glyph: TILE.CHEST,
-        overlayImageUrl: chestImageUrl,
-        tooltip: {
-          title: chestPickup.containerName ?? "Requisitenkiste",
-          imageUrl: chestImageUrl,
-          imageClass: "tooltip-art-chest",
-          lines: [
-            "Ein thematischer Loot-Container dieses Studios.",
-            "Tritt darauf, um sie aufzubrechen.",
-          ],
-        },
-      };
+    if (chestTile) {
+      return chestTile;
     }
 
     const trap = floorState.traps?.find((entry) => entry.x === x && entry.y === y) ?? null;
@@ -636,7 +720,9 @@ export function createBoardView(context) {
     const showcase = floorState.showcases?.find((entry) => entry.x === x && entry.y === y) ?? null;
     if (showcase && (isVisible || isExplored)) {
       return {
-        type: `floor studio-${studioArchetypeId} showcase${isVisible ? "" : " memory"}`,
+        type: isVisible
+          ? `floor studio-${studioArchetypeId} showcase`
+          : `floor memory studio-${studioArchetypeId} showcase memory`,
         glyph: TILE.SHOWCASE,
         overlayImageUrl: getShowcaseIconAssetUrl(showcase.item),
         tooltip: isVisible ? {
@@ -652,38 +738,8 @@ export function createBoardView(context) {
       };
     }
 
-    if (floorState.stairsDown && floorState.stairsDown.x === x && floorState.stairsDown.y === y) {
-      const anchorPresentation = getAnchorPresentation(floorState.exitAnchor, false);
-      return {
-        type: isVisible
-          ? `floor studio-${studioArchetypeId} stairs-down ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim()
-          : `floor memory studio-${studioArchetypeId} stairs-down memory ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim(),
-        glyph: TILE.STAIRS_DOWN,
-        overlayImageUrl: anchorPresentation.iconAssetUrl,
-        tooltip: isVisible ? {
-          title: floorState.exitAnchor?.label ?? "Ausgang",
-          imageUrl: anchorPresentation.iconAssetUrl,
-          imageClass: anchorPresentation.imageClass,
-          lines: anchorPresentation.lines,
-        } : null,
-      };
-    }
-
-    if (floorState.stairsUp && floorState.stairsUp.x === x && floorState.stairsUp.y === y) {
-      const anchorPresentation = getAnchorPresentation(floorState.entryAnchor, true);
-      return {
-        type: isVisible
-          ? `floor studio-${studioArchetypeId} stairs-up ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim()
-          : `floor memory studio-${studioArchetypeId} stairs-up memory ${anchorPresentation.tileClasses?.join(" ") ?? ""}`.trim(),
-        glyph: TILE.STAIRS_UP,
-        overlayImageUrl: anchorPresentation.iconAssetUrl,
-        tooltip: isVisible ? {
-          title: floorState.entryAnchor?.label ?? "Eingang",
-          imageUrl: anchorPresentation.iconAssetUrl,
-          imageClass: anchorPresentation.imageClass,
-          lines: anchorPresentation.lines,
-        } : null,
-      };
+    if (transitionTile) {
+      return transitionTile;
     }
 
     if (floorState.grid[y][x] === TILE.WALL) {
@@ -744,6 +800,18 @@ export function createBoardView(context) {
         const base = document.createElement("div");
         base.className = `tile tile-base ${baseType}`;
         cell.appendChild(base);
+        const shouldRenderUnderlay = Boolean(tile.underlayType || tile.underlayOverlayImageUrl);
+        if (shouldRenderUnderlay) {
+          const underlay = document.createElement('div');
+          underlay.className = `tile tile-transition-underlay${tile.underlayType ? ` ${tile.underlayType}` : ''}`;
+          underlay.textContent = tile.underlayGlyph ?? "";
+          if (tile.underlayOverlayImageUrl) {
+            underlay.classList.add("has-overlay");
+            underlay.style.setProperty("--tile-overlay-image", `url("${tile.underlayOverlayImageUrl}")`);
+            underlay.style.color = "transparent";
+          }
+          cell.appendChild(underlay);
+        }
         if (state.targeting?.active && state.targeting.cursorX === x && state.targeting.cursorY === y) {
           cell.classList.add('target-cursor');
           cell.classList.add(`target-cursor-${getTargetCursorState(x, y, state, floorState) ?? "invalid"}`);
@@ -773,17 +841,24 @@ export function createBoardView(context) {
           cell.appendChild(foreground);
         }
 
-        const actorWeaponOverlay = tile.playerWeaponOverlay ?? tile.actorWeaponOverlay ?? null;
-        if (actorWeaponOverlay) {
+        const actorOverlays = [
+          { slot: 'offhand', overlay: tile.playerOffHandOverlay ?? tile.actorOffHandOverlay ?? null },
+          { slot: 'mainhand', overlay: tile.playerWeaponOverlay ?? tile.actorWeaponOverlay ?? null },
+        ];
+        actorOverlays.forEach(({ slot, overlay }) => {
+          if (!overlay) {
+            return;
+          }
+
           const weaponOverlay = document.createElement('div');
-          weaponOverlay.className = `tile-player-weapon tile-player-weapon-${actorWeaponOverlay.poseClass}`;
-          weaponOverlay.style.setProperty('--player-weapon-image', `url("${actorWeaponOverlay.imageUrl}")`);
-          weaponOverlay.style.setProperty('--player-weapon-offset-x', `${actorWeaponOverlay.offsetX ?? 0}px`);
-          weaponOverlay.style.setProperty('--player-weapon-offset-y', `${actorWeaponOverlay.offsetY ?? 0}px`);
-          weaponOverlay.style.setProperty('--player-weapon-rotation', `${actorWeaponOverlay.rotation ?? 0}deg`);
-          weaponOverlay.style.setProperty('--player-weapon-scale', `${actorWeaponOverlay.scale ?? 1}`);
+          weaponOverlay.className = `tile-player-weapon tile-player-weapon-${slot} tile-player-weapon-${overlay.poseClass}`;
+          weaponOverlay.style.setProperty('--player-weapon-image', `url("${overlay.imageUrl}")`);
+          weaponOverlay.style.setProperty('--player-weapon-offset-x', `${overlay.offsetX ?? 0}px`);
+          weaponOverlay.style.setProperty('--player-weapon-offset-y', `${overlay.offsetY ?? 0}px`);
+          weaponOverlay.style.setProperty('--player-weapon-rotation', `${overlay.rotation ?? 0}deg`);
+          weaponOverlay.style.setProperty('--player-weapon-scale', `${overlay.scale ?? 1}`);
           cell.appendChild(weaponOverlay);
-        }
+        });
 
         if (tile.tooltip) {
           bindTooltip?.(cell, () => tile.tooltip);

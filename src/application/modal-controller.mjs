@@ -1,5 +1,8 @@
 import { formatStudioLabel, getStudioArchetypeLabel } from '../studio-theme.mjs';
+import { getFoodSatietyEstimate } from '../nutrition.mjs';
 import { deriveStudioGenerationSeed } from '../utils/seeded-random.mjs';
+import { getActorSpeedState } from './actor-speed.mjs';
+import { getActorDerivedStat } from './derived-actor-stats.mjs';
 
 export function createModalController(context) {
   const {
@@ -22,6 +25,13 @@ export function createModalController(context) {
     choiceDrinkButton,
     choiceStoreButton,
     choiceLeaveButton,
+    containerLootModalElement,
+    containerLootImageElement,
+    containerLootTitleElement,
+    containerLootSummaryElement,
+    containerLootListElement,
+    containerLootTakeSelectedButton,
+    containerLootTakeAllButton,
     stairsModalElement,
     stairsTitleElement,
     stairsTextElement,
@@ -32,6 +42,9 @@ export function createModalController(context) {
     debugInfoModalElement,
     debugInfoTextElement,
     debugInfoStatusElement,
+    formatWeaponDisplayName,
+    formatWeaponStats,
+    formatOffHandStats,
   } = context;
 
   function formatPosition(position) {
@@ -71,11 +84,117 @@ export function createModalController(context) {
     ].join(" | ");
   }
 
+  function normalizeTimelineValue(value, fallback = 0) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return Math.max(0, Math.round(fallback) || 0);
+    }
+
+    return Math.max(0, Math.round(numeric));
+  }
+
+  function getAllFloorEntries(state) {
+    return Object.entries(state.floors ?? {})
+      .map(([floorNumber, floorState]) => ({
+        floorNumber: Number(floorNumber),
+        floorState,
+      }))
+      .filter((entry) => Number.isInteger(entry.floorNumber) && entry.floorState)
+      .sort((left, right) => left.floorNumber - right.floorNumber);
+  }
+
+  function getActorFloorNumber(actor, state) {
+    if (actor === state.player) {
+      return state.floor;
+    }
+
+    for (const entry of getAllFloorEntries(state)) {
+      if ((entry.floorState.enemies ?? []).includes(actor)) {
+        return entry.floorNumber;
+      }
+    }
+
+    return state.floor;
+  }
+
+  function getStableActorOrder(actor, state) {
+    if (actor === state.player) {
+      return -1;
+    }
+
+    const actorFloorNumber = getActorFloorNumber(actor, state);
+    const floorState = state.floors?.[actorFloorNumber] ?? null;
+    const enemyIndex = (floorState?.enemies ?? []).indexOf(actor);
+    return actorFloorNumber * 10000 + (enemyIndex >= 0 ? enemyIndex : Number.MAX_SAFE_INTEGER);
+  }
+
+  function compareActorsForDebugOrder(left, right, state) {
+    const timelineTime = normalizeTimelineValue(state.timelineTime, 0);
+    const leftTime = normalizeTimelineValue(left?.nextActionTime, timelineTime);
+    const rightTime = normalizeTimelineValue(right?.nextActionTime, timelineTime);
+    if (leftTime !== rightTime) {
+      return leftTime - rightTime;
+    }
+
+    const leftReaction = getActorDerivedStat(left, 'reaction');
+    const rightReaction = getActorDerivedStat(right, 'reaction');
+    if (leftReaction !== rightReaction) {
+      return rightReaction - leftReaction;
+    }
+
+    const leftIsPlayer = left === state.player;
+    const rightIsPlayer = right === state.player;
+    if (leftIsPlayer !== rightIsPlayer) {
+      return leftIsPlayer ? -1 : 1;
+    }
+
+    return getStableActorOrder(left, state) - getStableActorOrder(right, state);
+  }
+
+  function getDebugTimelineActors(state) {
+    return [
+      state.player,
+      ...getAllFloorEntries(state).flatMap((entry) => entry.floorState.enemies ?? []),
+    ].filter((actor) => actor && actor.hp > 0);
+  }
+
+  function formatActorDebugLabel(actor, state) {
+    if (actor === state.player) {
+      return `Spieler | Floor ${state.floor}`;
+    }
+
+    const floorNumber = getActorFloorNumber(actor, state);
+    const actorName = actor.name ?? actor.baseName ?? actor.id ?? 'Unbekannt';
+    return `${actorName} | Floor ${floorNumber}`;
+  }
+
+  function buildTimelinePreviewLines(state, limit = 6) {
+    const actors = getDebugTimelineActors(state)
+      .sort((left, right) => compareActorsForDebugOrder(left, right, state))
+      .slice(0, limit);
+
+    if (!actors.length) {
+      return ['Nächste Akteure: -'];
+    }
+
+    return [
+      'Nächste Akteure:',
+      ...actors.map((actor, index) => {
+        const speedState = getActorSpeedState(actor);
+        const nextActionTime = normalizeTimelineValue(actor?.nextActionTime, state.timelineTime);
+        const reaction = getActorDerivedStat(actor, 'reaction');
+        return `${index + 1}. ${formatActorDebugLabel(actor, state)} | Zeit ${nextActionTime} | Reaktion ${reaction} | Tempo ${speedState.category} (${speedState.displayPercentLabel})`;
+      }),
+    ];
+  }
+
   function buildDebugInfoText() {
     const state = getState();
     const floorState = getCurrentFloorState?.() ?? null;
     const topologyNode = state.runStudioTopology?.nodes?.[state.floor] ?? null;
     const generationSeed = floorState?.generationSeed ?? deriveStudioGenerationSeed(state.runSeed, state.floor);
+    const nextActor = getDebugTimelineActors(state)
+      .sort((left, right) => compareActorsForDebugOrder(left, right, state))[0] ?? null;
 
     return [
       `Studio: ${state.floor}`,
@@ -95,6 +214,10 @@ export function createModalController(context) {
       `Topologie Eingangshinweis: ${formatPosition(topologyNode?.entryTransitionHint)}`,
       `Topologie Ausgangshinweis: ${formatPosition(topologyNode?.exitTransitionHint)}`,
       `Züge: ${state.turn ?? 0}`,
+      `Weltzeit: ${normalizeTimelineValue(state.timelineTime, 0)}`,
+      `Spieler-Zeitpunkt: ${normalizeTimelineValue(state.player?.nextActionTime, state.timelineTime)}`,
+      `Nächster Akteur: ${nextActor ? formatActorDebugLabel(nextActor, state) : "-"}`,
+      ...buildTimelinePreviewLines(state),
     ].join("\n");
   }
 
@@ -113,6 +236,8 @@ export function createModalController(context) {
   }
 
   function closeTransientModals() {
+    getState().pendingContainerLoot = null;
+    setContainerLootModalVisibility(false);
     toggleInventory(false);
     toggleStudioTopology(false);
     toggleRunStats(false);
@@ -158,6 +283,8 @@ export function createModalController(context) {
     }
     state.modals.inventoryOpen = forceOpen ?? !state.modals.inventoryOpen;
     if (state.modals.inventoryOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.studioTopologyOpen = false;
       state.modals.debugInfoOpen = false;
     }
@@ -168,6 +295,8 @@ export function createModalController(context) {
     const state = getState();
     state.modals.studioTopologyOpen = forceOpen ?? !state.modals.studioTopologyOpen;
     if (state.modals.studioTopologyOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.inventoryOpen = false;
       state.modals.runStatsOpen = false;
       state.modals.optionsOpen = false;
@@ -183,6 +312,8 @@ export function createModalController(context) {
     const state = getState();
     state.modals.runStatsOpen = forceOpen ?? !state.modals.runStatsOpen;
     if (state.modals.runStatsOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
       state.modals.debugInfoOpen = false;
@@ -197,6 +328,8 @@ export function createModalController(context) {
     const state = getState();
     state.modals.optionsOpen = forceOpen ?? !state.modals.optionsOpen;
     if (state.modals.optionsOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
       state.modals.debugInfoOpen = false;
@@ -208,6 +341,8 @@ export function createModalController(context) {
     const state = getState();
     state.modals.savegamesOpen = forceOpen ?? !state.modals.savegamesOpen;
     if (state.modals.savegamesOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.inventoryOpen = false;
       state.modals.runStatsOpen = false;
       state.modals.optionsOpen = false;
@@ -223,6 +358,8 @@ export function createModalController(context) {
     const state = getState();
     state.modals.helpOpen = forceOpen ?? !state.modals.helpOpen;
     if (state.modals.helpOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
       state.modals.debugInfoOpen = false;
@@ -234,6 +371,8 @@ export function createModalController(context) {
     const state = getState();
     state.modals.highscoresOpen = forceOpen ?? !state.modals.highscoresOpen;
     if (state.modals.highscoresOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.savegamesOpen = false;
       state.modals.studioTopologyOpen = false;
       state.modals.debugInfoOpen = false;
@@ -252,6 +391,8 @@ export function createModalController(context) {
 
     state.modals.debugInfoOpen = shouldOpen;
     if (state.modals.debugInfoOpen) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
       state.modals.inventoryOpen = false;
       state.modals.studioTopologyOpen = false;
       state.modals.runStatsOpen = false;
@@ -335,6 +476,158 @@ export function createModalController(context) {
     state.pendingChoice = null;
     choiceModalElement.classList.add("hidden");
     choiceModalElement.setAttribute("aria-hidden", "true");
+  }
+
+  function getChestContents(chest) {
+    if (!chest) {
+      return [];
+    }
+
+    if (Array.isArray(chest.contents)) {
+      return chest.contents.filter(Boolean);
+    }
+
+    return chest.content ? [chest.content] : [];
+  }
+
+  function getContainerImageUrl(chest) {
+    return chest?.containerAssetId
+      ? `./assets/containers/${chest.containerAssetId}.svg`
+      : "./assets/fallbacks/chest.svg";
+  }
+
+  function getContainerEntryTitle(entry) {
+    if (!entry?.item) {
+      return "Unbekannter Gegenstand";
+    }
+
+    return entry.type === "weapon"
+      ? formatWeaponDisplayName(entry.item)
+      : entry.item.name ?? "Unbekannter Gegenstand";
+  }
+
+  function getContainerEntryTypeLabel(entry) {
+    if (entry?.type === "weapon") {
+      return "Waffe";
+    }
+    if (entry?.type === "offhand") {
+      return "Schild";
+    }
+    if (entry?.type === "food") {
+      return "Essen";
+    }
+    if (entry?.type === "consumable") {
+      return entry.item?.effectFamily ? "Verbrauchbar" : "Heilung";
+    }
+    return "Beute";
+  }
+
+  function getContainerEntryDetail(entry) {
+    if (!entry?.item) {
+      return "";
+    }
+
+    if (entry.type === "weapon") {
+      return [formatWeaponStats(entry.item), entry.item.description].filter(Boolean).join(" | ");
+    }
+
+    if (entry.type === "offhand") {
+      return [formatOffHandStats(entry.item), entry.item.description].filter(Boolean).join(" | ");
+    }
+
+    if (entry.type === "food") {
+      return [getFoodSatietyEstimate(entry.item.nutritionRestore), entry.item.description].filter(Boolean).join(" | ");
+    }
+
+    return entry.item.effectDescriptionDe ?? entry.item.description ?? "";
+  }
+
+  function setContainerLootModalVisibility(visible) {
+    if (!containerLootModalElement) {
+      return;
+    }
+
+    containerLootModalElement.classList.toggle("hidden", !visible);
+    containerLootModalElement.setAttribute("aria-hidden", String(!visible));
+  }
+
+  function refreshContainerLootModal() {
+    const state = getState();
+    const pending = state.pendingContainerLoot;
+    if (!pending || !containerLootListElement) {
+      setContainerLootModalVisibility(false);
+      return;
+    }
+
+    const chest = getCurrentFloorState()?.chests?.[pending.chestIndex] ?? null;
+    if (!chest) {
+      state.pendingContainerLoot = null;
+      setContainerLootModalVisibility(false);
+      return;
+    }
+
+    const contents = getChestContents(chest);
+    const selectedIndices = new Set(pending.selectedItemIndices ?? []);
+
+    if (containerLootImageElement) {
+      containerLootImageElement.src = getContainerImageUrl(chest);
+      containerLootImageElement.alt = chest.containerName ?? "Container";
+    }
+    if (containerLootTitleElement) {
+      containerLootTitleElement.textContent = chest.containerName ?? "Requisitenkiste";
+    }
+    if (containerLootSummaryElement) {
+      containerLootSummaryElement.textContent = contents.length > 0
+        ? `${contents.length} Gegenstand${contents.length === 1 ? "" : "e"} verfügbar. Wähle aus, was du mitnehmen willst.`
+        : "Diese Kiste ist leer.";
+    }
+
+    containerLootListElement.innerHTML = "";
+
+    if (!contents.length) {
+      containerLootListElement.innerHTML = '<div class="inventory-empty">Diese Kiste ist leer.</div>';
+    } else {
+      contents.forEach((entry, index) => {
+        const rowElement = document.createElement("article");
+        rowElement.className = "inventory-item container-loot-item";
+        if (selectedIndices.has(index)) {
+          rowElement.classList.add("is-selected");
+        }
+        rowElement.innerHTML = `
+          <div class="inventory-meta">
+            <strong>${getContainerEntryTitle(entry)}</strong>
+            <span>${getContainerEntryTypeLabel(entry)}</span>
+            <span>${getContainerEntryDetail(entry)}</span>
+          </div>
+        `;
+
+        const toggleButton = document.createElement("button");
+        toggleButton.className = "item-btn";
+        toggleButton.type = "button";
+        toggleButton.textContent = selectedIndices.has(index) ? "Abwählen" : "Wählen";
+        toggleButton.addEventListener("click", () => {
+          state.pendingContainerLoot = {
+            ...pending,
+            selectedItemIndices: selectedIndices.has(index)
+              ? [...selectedIndices].filter((value) => value !== index)
+              : [...selectedIndices, index].sort((left, right) => left - right),
+          };
+          renderSelf();
+        });
+
+        rowElement.appendChild(toggleButton);
+        containerLootListElement.appendChild(rowElement);
+      });
+    }
+
+    if (containerLootTakeSelectedButton) {
+      containerLootTakeSelectedButton.disabled = selectedIndices.size === 0;
+    }
+    if (containerLootTakeAllButton) {
+      containerLootTakeAllButton.disabled = contents.length === 0;
+    }
+
+    setContainerLootModalVisibility(true);
   }
 
   function showStairChoice(config) {
@@ -426,7 +719,7 @@ export function createModalController(context) {
     if (action === "change-floor") {
       const changedFloor = moveToFloor(pending.direction);
       if (changedFloor) {
-        endTurn({ skipEnemyMove: true });
+        endTurn({ actionType: "move", actionCost: 150 });
         return;
       }
 
@@ -477,6 +770,7 @@ export function createModalController(context) {
     openRunStatsFromDeath,
     showChoiceModal,
     hideChoiceModal,
+    refreshContainerLootModal,
     showStairChoice,
     hideStairChoice,
     updatePotionChoiceSelection,

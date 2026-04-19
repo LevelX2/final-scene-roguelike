@@ -76,6 +76,9 @@ async function walkTo(page, target) {
     if (await page.locator("#choiceModal").isVisible()) {
       await page.getByRole("button", { name: "Liegen lassen" }).click();
     }
+    if (await page.locator("#containerLootModal").isVisible()) {
+      await page.getByRole("button", { name: "Schließen" }).first().click();
+    }
   }
 }
 

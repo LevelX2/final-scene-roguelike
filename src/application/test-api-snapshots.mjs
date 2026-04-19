@@ -1,4 +1,5 @@
 import { getActorDerivedMaxHp, getActorDerivedStats } from './derived-actor-stats.mjs';
+import { getActorSpeedState } from './actor-speed.mjs';
 
 export function createTestApiSnapshots(context) {
   const {
@@ -50,6 +51,11 @@ export function createTestApiSnapshots(context) {
       roleProfileId: enemy.roleProfileId ?? null,
       preferredWeaponRoles: [...(enemy.preferredWeaponRoles ?? [])],
       balanceGroups: [...(enemy.balanceGroups ?? [])],
+      baseSpeed: enemy.baseSpeed ?? null,
+      nextActionTime: enemy.nextActionTime ?? null,
+      speedIntervalModifier: enemy.speedIntervalModifier ?? 0,
+      speedIntervalModifiers: (enemy.speedIntervalModifiers ?? []).map((entry) => ({ ...entry })),
+      speedState: getActorSpeedState(enemy),
       derivedStats: getActorDerivedStats(enemy),
       temperament: enemy.temperament ?? "stoic",
       temperamentHint: enemy.temperamentHint ?? "",
@@ -66,6 +72,7 @@ export function createTestApiSnapshots(context) {
     }));
     return {
       floor: state.floor,
+      timelineTime: state.timelineTime ?? 0,
       player: {
         name: state.player.name,
         classId: state.player.classId,
@@ -78,6 +85,11 @@ export function createTestApiSnapshots(context) {
         nutrition: state.player.nutrition,
         nutritionMax: state.player.nutritionMax,
         hungerState: state.player.hungerState,
+        baseSpeed: state.player.baseSpeed ?? null,
+        nextActionTime: state.player.nextActionTime ?? null,
+        speedIntervalModifier: state.player.speedIntervalModifier ?? 0,
+        speedIntervalModifiers: (state.player.speedIntervalModifiers ?? []).map((entry) => ({ ...entry })),
+        speedState: getActorSpeedState(state.player),
         progressionBonuses: { ...(state.player.progressionBonuses ?? {}) },
         derivedStats: getActorDerivedStats(state.player),
         statusEffects: (state.player.statusEffects ?? []).map((effect) => ({ ...effect })),
@@ -87,6 +99,12 @@ export function createTestApiSnapshots(context) {
         cursorX: state.targeting?.cursorX ?? null,
         cursorY: state.targeting?.cursorY ?? null,
       },
+      pendingContainerLoot: state.pendingContainerLoot
+        ? {
+            chestIndex: state.pendingContainerLoot.chestIndex ?? null,
+            selectedItemIndices: [...(state.pendingContainerLoot.selectedItemIndices ?? [])],
+          }
+        : null,
       stairsDown: floorState.stairsDown ? { ...floorState.stairsDown } : null,
       stairsUp: floorState.stairsUp ? { ...floorState.stairsUp } : null,
       entryAnchor: floorState.entryAnchor ? {
@@ -134,6 +152,20 @@ export function createTestApiSnapshots(context) {
         id: entry.item.id,
         effectFamily: entry.item.effectFamily ?? null,
         tier: entry.item.tier ?? null,
+      })),
+      chests: (floorState.chests ?? []).map((entry) => ({
+        x: entry.x,
+        y: entry.y,
+        opened: Boolean(entry.opened),
+        containerName: entry.containerName ?? null,
+        containerAssetId: entry.containerAssetId ?? null,
+        contents: Array.isArray(entry.contents)
+          ? entry.contents.map((content) => ({
+              type: content.type,
+              id: content.item?.id ?? null,
+              name: content.item?.name ?? null,
+            }))
+          : [],
       })),
       doors: (floorState.doors ?? []).map((door) => ({
         x: door.x,

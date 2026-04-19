@@ -5,8 +5,9 @@ import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { createKeyItem } from '../item-defs.mjs';
 import { normalizeKillStats } from '../kill-stats.mjs';
 import { createTimestampedId } from '../utils/id-tools.mjs';
-import { normalizeSeed } from '../utils/seeded-random.mjs';
+import { deriveStudioGenerationSeed, normalizeSeed } from '../utils/seeded-random.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
+import { NORMAL_SPEED_INTERVAL } from './actor-speed.mjs';
 import { createEmptyProgressionBonuses, getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 import { areVoiceAnnouncementsForcedOff } from './test-mode.mjs';
 
@@ -364,6 +365,7 @@ export function createStatePersistenceApi(context) {
       view: "game",
       floatingTexts: [],
       boardEffects: [],
+      pendingContainerLoot: null,
       targeting: {
         active: false,
         cursorX: Number(state.targeting?.cursorX) || 0,
@@ -502,6 +504,89 @@ export function createStatePersistenceApi(context) {
     };
   }
 
+  function normalizeChestEntry(entry) {
+    if (!entry || typeof entry !== 'object') {
+      return null;
+    }
+
+    const normalizedItem = normalizeInventoryItem(entry.item);
+    if (!normalizedItem) {
+      return null;
+    }
+
+    return {
+      ...entry,
+      item: normalizedItem,
+    };
+  }
+
+  function normalizeChestPickup(entry) {
+    if (!entry || typeof entry !== 'object') {
+      return entry;
+    }
+
+    const contents = Array.isArray(entry.contents)
+      ? entry.contents.map(normalizeChestEntry).filter(Boolean)
+      : entry.content
+        ? [normalizeChestEntry(entry.content)].filter(Boolean)
+        : [];
+
+    return {
+      ...entry,
+      contents,
+      content: contents[0] ?? null,
+      opened: Boolean(entry.opened),
+      containerName: entry.containerName ?? 'Requisitenkiste',
+      containerAssetId: entry.containerAssetId ?? 'requisite-crate',
+    };
+  }
+
+  function normalizeSpeedModifierEntries(entries) {
+    if (!Array.isArray(entries)) {
+      return [];
+    }
+
+    return entries
+      .map((entry) => {
+        const value = Number(entry?.value);
+        if (!Number.isFinite(value) || Math.round(value) === 0) {
+          return null;
+        }
+
+        return {
+          label: String(entry?.label ?? '').trim() || 'Temporärer Effekt',
+          value: Math.round(value),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function normalizeActorSpeedFields(
+    actor,
+    fallbackBaseSpeed = NORMAL_SPEED_INTERVAL,
+    fallbackNextActionTime = 0,
+  ) {
+    if (!actor || typeof actor !== 'object') {
+      return actor ?? null;
+    }
+
+    const baseSpeed = Number(actor.baseSpeed);
+    const speedIntervalModifier = Number(actor.speedIntervalModifier);
+
+    return {
+      ...actor,
+      baseSpeed: Number.isFinite(baseSpeed) ? Math.max(1, Math.round(baseSpeed)) : fallbackBaseSpeed,
+      nextActionTime: Math.max(
+        0,
+        Number.isFinite(Number(actor.nextActionTime))
+          ? Math.round(Number(actor.nextActionTime))
+          : Math.round(Number(fallbackNextActionTime) || 0),
+      ),
+      speedIntervalModifier: Number.isFinite(speedIntervalModifier) ? Math.round(speedIntervalModifier) : 0,
+      speedIntervalModifiers: normalizeSpeedModifierEntries(actor.speedIntervalModifiers),
+    };
+  }
+
   function normalizeInventoryItem(item) {
     if (!item || typeof item !== "object") {
       return item;
@@ -558,7 +643,7 @@ export function createStatePersistenceApi(context) {
     };
   }
 
-  function normalizeFloorStateWeapons(floorState) {
+  function normalizeFloorStateWeapons(floorState, timelineTime = 0) {
     if (!floorState || typeof floorState !== "object") {
       return floorState;
     }
@@ -584,9 +669,12 @@ export function createStatePersistenceApi(context) {
     floorState.keys = Array.isArray(floorState.keys)
       ? floorState.keys.map(normalizeKeyPickup)
       : [];
+    floorState.chests = Array.isArray(floorState.chests)
+      ? floorState.chests.map(normalizeChestPickup)
+      : [];
     floorState.enemies = Array.isArray(floorState.enemies)
       ? floorState.enemies.map((enemy) => ({
-          ...enemy,
+          ...normalizeActorSpeedFields(enemy, NORMAL_SPEED_INTERVAL, timelineTime),
           mainHand: normalizeWeaponItem(enemy.mainHand),
           weapon: normalizeWeaponItem(enemy.weapon),
           lootWeapon: normalizeWeaponItem(enemy.lootWeapon),
@@ -635,6 +723,7 @@ export function createStatePersistenceApi(context) {
     normalizedState.floor = Math.max(1, Number(savedState.floor) || 1);
     normalizedState.deepestFloor = Math.max(normalizedState.floor, Number(savedState.deepestFloor) || normalizedState.floor);
     normalizedState.turn = Math.max(0, Number(savedState.turn) || 0);
+    normalizedState.timelineTime = Math.max(0, Number(savedState.timelineTime) || 0);
     normalizedState.messages = Array.isArray(savedState.messages)
       ? savedState.messages.map(normalizeLogMessageEntry).filter(Boolean)
       : [];
@@ -645,6 +734,7 @@ export function createStatePersistenceApi(context) {
     normalizedState.safeRestTurns = Math.max(0, Number(savedState.safeRestTurns) || 0);
     normalizedState.pendingChoice = null;
     normalizedState.pendingStairChoice = null;
+    normalizedState.pendingContainerLoot = null;
     normalizedState.deathCause = savedState.deathCause ?? null;
     normalizedState.scoreSaved = Boolean(savedState.scoreSaved);
     normalizedState.kills = Math.max(0, Number(savedState.kills) || 0);
@@ -721,7 +811,13 @@ export function createStatePersistenceApi(context) {
       if (floorState && !floorState.studioArchetypeId) {
         floorState.studioArchetypeId = getArchetypeForFloor(normalizedState.runArchetypeSequence, floorState.floorNumber ?? 1);
       }
-      normalizeFloorStateWeapons(floorState);
+      if (floorState && floorState.generationSeed == null) {
+        floorState.generationSeed = deriveStudioGenerationSeed(
+          normalizedState.runSeed,
+          floorState.floorNumber ?? 1,
+        );
+      }
+      normalizeFloorStateWeapons(floorState, normalizedState.timelineTime);
     });
 
     normalizedState.player = {
@@ -742,6 +838,11 @@ export function createStatePersistenceApi(context) {
       trapAvoidBonus: HERO_CLASSES[heroClassId]?.trapAvoidBonus ?? 0,
       shieldBlockBonus: HERO_CLASSES[heroClassId]?.shieldBlockBonus ?? 0,
     };
+    normalizedState.player = normalizeActorSpeedFields(
+      normalizedState.player,
+      NORMAL_SPEED_INTERVAL,
+      normalizedState.timelineTime,
+    );
     normalizedState.player.progressionBonuses = {
       ...createEmptyProgressionBonuses(),
       ...(savedState.player?.progressionBonuses ?? {}),

@@ -30,6 +30,7 @@ test('state-persistence normalizes transient modal state on load', () => {
     safeRestTurns: 0,
     pendingChoice: null,
     pendingStairChoice: null,
+    pendingContainerLoot: null,
     deathCause: null,
     scoreSaved: false,
     kills: 0,
@@ -111,11 +112,20 @@ test('state-persistence normalizes transient modal state on load', () => {
       state: {
         floor: 1,
         deepestFloor: 1,
+        timelineTime: 180,
         modals: { inventoryOpen: true, optionsOpen: true },
         pendingChoice: { type: 'potion' },
         pendingStairChoice: { direction: 1 },
+        pendingContainerLoot: { chestIndex: 0, selectedItemIndices: [0] },
         player: { name: 'Ripley', classId: 'lead', level: 2, hp: 7, maxHp: 12, xpToNext: 25, nutrition: 50 },
-        floors: { 1: { studioArchetypeId: 'slasher', grid: [['.']], visible: [[true]], enemies: [] } },
+        floors: {
+          1: {
+            studioArchetypeId: 'slasher',
+            grid: [['.']],
+            visible: [[true]],
+            enemies: [{ id: 'test-enemy', name: 'Tempotest', x: 0, y: 0, hp: 4, maxHp: 4 }],
+          },
+        },
       },
     }],
   }));
@@ -127,9 +137,16 @@ test('state-persistence normalizes transient modal state on load', () => {
   assert.equal(state.modals.optionsOpen, false);
   assert.equal(state.pendingChoice, null);
   assert.equal(state.pendingStairChoice, null);
+  assert.equal(state.pendingContainerLoot, null);
   assert.equal(state.player.name, 'Ripley');
+  assert.equal(state.player.baseSpeed, 100);
+  assert.equal(state.timelineTime, 180);
+  assert.equal(state.player.nextActionTime, 180);
   assert.equal(state.options.voiceAnnouncements, true);
   assert.equal(state.options.showcaseAnnouncementMode, 'floating-text');
+  assert.equal(state.floors[1].enemies[0].baseSpeed, 100);
+  assert.equal(state.floors[1].enemies[0].nextActionTime, 180);
+  assert.deepEqual(state.floors[1].enemies[0].speedIntervalModifiers, []);
   assert.deepEqual(state.visitedFloors, [1]);
 });
 

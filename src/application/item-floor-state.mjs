@@ -43,6 +43,27 @@ export function createItemFloorStateApi(context) {
     getCurrentFloorState().keys.splice(index, 1);
   }
 
+  function getChestContents(chest) {
+    if (!chest) {
+      return [];
+    }
+
+    if (Array.isArray(chest.contents)) {
+      return chest.contents.filter(Boolean);
+    }
+
+    return chest.content ? [chest.content] : [];
+  }
+
+  function syncChestContents(chest, contents) {
+    if (!chest) {
+      return;
+    }
+
+    chest.contents = contents;
+    chest.content = contents[0] ?? null;
+  }
+
   function storePotion(index) {
     const state = getState();
     const pickup = getCurrentFloorState().consumables[index];
@@ -174,42 +195,64 @@ export function createItemFloorStateApi(context) {
     }
   }
 
-  function spawnChestContentAtPlayer(content, containerName = 'Requisitenkiste') {
+  function storeContainerItems(chestIndex, itemIndices = []) {
     const state = getState();
     const floorState = getCurrentFloorState();
-    if (!content) {
+    const chest = floorState.chests?.[chestIndex];
+    if (!chest) {
+      return [];
+    }
+
+    const contents = getChestContents(chest);
+    const uniqueIndices = [...new Set(itemIndices)]
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value >= 0 && value < contents.length)
+      .sort((left, right) => right - left);
+
+    if (!uniqueIndices.length) {
+      return [];
+    }
+
+    const takenEntries = [];
+    uniqueIndices.forEach((itemIndex) => {
+      const [entry] = contents.splice(itemIndex, 1);
+      if (!entry?.item) {
+        return;
+      }
+
+      if (entry.type === "weapon") {
+        state.inventory.push(cloneWeapon(entry.item));
+      } else if (entry.type === "offhand") {
+        state.inventory.push(cloneOffHandItem(entry.item));
+      } else {
+        state.inventory.push({ ...entry.item });
+      }
+
+      takenEntries.push(entry);
+    });
+
+    syncChestContents(chest, contents);
+
+    return takenEntries.reverse();
+  }
+
+  function removeChestIfEmpty(index) {
+    const chest = getCurrentFloorState().chests?.[index];
+    if (!chest) {
       return false;
     }
 
-    if (content.type === "healingConsumable" || content.type === "consumable" || isHealingConsumable(content.item)) {
-      floorState.consumables.push(createPotionPickup(content.item, state.player.x, state.player.y));
-      addMessage(`In der ${containerName} wartet ${content.item.name}.`, "important");
-      return true;
+    if (getChestContents(chest).length > 0) {
+      return false;
     }
 
-    if (content.type === "weapon") {
-      floorState.weapons.push(createWeaponPickup(content.item, state.player.x, state.player.y));
-      addMessage(`In der ${containerName} lag ${formatWeaponReference(content.item, { article: "definite", grammaticalCase: "nominative" })} verborgen.`, "important");
-      return true;
-    }
-
-    if (content.type === "offhand") {
-      floorState.offHands.push(createOffHandPickup(content.item, state.player.x, state.player.y));
-      addMessage(`${content.item.name} wartet in der ${containerName}.`, "important");
-      return true;
-    }
-
-    if (content.type === "food" || isFoodConsumable(content.item)) {
-      floorState.foods.push(createFoodPickup(content.item, state.player.x, state.player.y));
-      addMessage(`${content.item.name} steckt in der ${containerName} zwischen altem Schrott.`, "important");
-      return true;
-    }
-
-    return false;
+    removeChestAt(index);
+    return true;
   }
 
   return {
     removeChestAt,
+    removeChestIfEmpty,
     storePotion,
     storeWeapon,
     storeOffHand,
@@ -220,6 +263,6 @@ export function createItemFloorStateApi(context) {
     drinkPotionFromGround,
     useConsumableFromGround,
     eatFoodFromGround,
-    spawnChestContentAtPlayer,
+    storeContainerItems,
   };
 }

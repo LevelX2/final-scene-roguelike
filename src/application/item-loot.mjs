@@ -60,9 +60,11 @@ export function createItemLootApi(context) {
   const chestService = createItemChestService({
     getState,
     getCurrentFloorState,
-    removeChestAt: floorStateApi.removeChestAt,
-    spawnChestContentAtPlayer: floorStateApi.spawnChestContentAtPlayer,
+    storeContainerItems: floorStateApi.storeContainerItems,
+    removeChestIfEmpty: floorStateApi.removeChestIfEmpty,
     addMessage,
+    endTurn,
+    renderSelf,
   });
 
   function equipWeaponFromGround(index) {
@@ -92,9 +94,23 @@ export function createItemLootApi(context) {
     const floorState = getCurrentFloorState();
     const chestIndex = floorState.chests?.findIndex((chest) => chest.x === state.player.x && chest.y === state.player.y) ?? -1;
     if (chestIndex !== -1) {
-      chestService.openChest(chestIndex);
-      renderSelf();
-      return tryPickupLoot();
+      const playerX = state.player.x;
+      const playerY = state.player.y;
+      window.setTimeout(() => {
+        const nextState = getState();
+        const nextFloorState = getCurrentFloorState();
+        const nextChest = nextFloorState.chests?.[chestIndex];
+        if (!nextChest) {
+          return;
+        }
+        if (nextState.player.x !== playerX || nextState.player.y !== playerY) {
+          return;
+        }
+
+        chestService.openChest(chestIndex);
+        renderSelf();
+      }, 0);
+      return true;
     }
 
     const consumableIndex = floorState.consumables?.findIndex((entry) => entry.x === state.player.x && entry.y === state.player.y) ?? -1;
@@ -243,8 +259,8 @@ export function createItemLootApi(context) {
         : pending.kind === 'food'
           ? 'Du lässt das Essen vorerst liegen.'
           : pending.kind === 'consumable'
-            ? 'Du lässt das Consumable vorerst liegen.'
-            : 'Du lässt das Heil-Consumable vorerst liegen.';
+            ? 'Du lässt den Verbrauchsgegenstand vorerst liegen.'
+            : 'Du lässt den Heilgegenstand vorerst liegen.';
     addMessage(leaveMessage);
     renderSelf();
   }
@@ -252,6 +268,10 @@ export function createItemLootApi(context) {
   return {
     tryPickupLoot,
     openChest: chestService.openChest,
+    closeContainerLoot: chestService.closeContainerLoot,
+    toggleContainerLootSelection: chestService.toggleContainerLootSelection,
+    takeSelectedContainerLoot: chestService.takeSelectedContainerLoot,
+    takeAllContainerLoot: chestService.takeAllContainerLoot,
     resolvePotionChoice,
   };
 }

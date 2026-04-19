@@ -249,9 +249,9 @@ export function createTooltipView(context) {
       return;
     }
 
-    const offsetX = 16;
-    const offsetY = 16;
-    const viewportPadding = 12;
+    const offsetX = 30;
+    const offsetY = 28;
+    const viewportPadding = 16;
     let left = event.clientX + offsetX;
     let top = event.clientY + offsetY;
 

@@ -17,6 +17,7 @@ import { createShowcaseAmbienceApi } from './ambience/narration/showcase-ambienc
 import { createStartFlowApi } from './app/start-flow.mjs';
 import { createRuntimeSupportApi } from './app/runtime-support.mjs';
 import { createUiPreferencesApi } from './app/ui-preferences.mjs';
+import { getLoreTooltip } from './content/lore-tooltips.mjs';
 import {
   createBareHandsWeapon,
   cloneOffHandItem,
@@ -25,6 +26,7 @@ import {
   getCombatWeapon,
   createEquipmentPresentationHelpers,
 } from './equipment-helpers.mjs';
+import { createInlineLoreTooltipBinder } from './ui/inline-lore-tooltips.mjs';
 import { createTimestampedId } from './utils/id-tools.mjs';
 import { clamp, createGrid, carveRoom, carveTunnel, roomsOverlap } from './utils.mjs';
 
@@ -221,6 +223,8 @@ const {
   getActorStatusDisplay,
   getTopbarTooltipContent,
   bindTooltip,
+  showTooltip,
+  hideTooltip,
   hideDeathModal,
   restartRun,
   leaveToStartScreen,
@@ -240,6 +244,13 @@ const {
   toggleHighscores,
   bindKeyboardInput,
 } = interfaceApi;
+
+const { bindInlineLoreTooltips } = createInlineLoreTooltipBinder({
+  bindTooltip,
+  showTooltip,
+  hideTooltip,
+  getLoreTooltip,
+});
 
 Object.assign(runtimeContext.gameplay, assembleGameplayModules(runtimeContext));
 
@@ -479,6 +490,7 @@ const { bindAppControls } = createUiBindingsApi({
   viewDeathStudioButton: appUi.viewDeathStudioButton,
   startFormElement: appUi.startFormElement,
   bindTooltip,
+  bindInlineLoreTooltips,
   topbarHpCardElement: appUi.topbarHpCardElement,
   topbarLevelCardElement: appUi.topbarLevelCardElement,
   topbarDamageCardElement: appUi.topbarDamageCardElement,

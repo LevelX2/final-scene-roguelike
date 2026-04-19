@@ -14,12 +14,15 @@
       </div>
       <div class="start-screen-content">
         <div class="start-screen-copy">
-          <p class="eyebrow">K&auml;mpfe dich durch ein sterbendes Filmarchiv</p>
           <h1 class="sr-only">The Final Scene</h1>
+          <h2 class="start-screen-title">DRINGE TIEFER IN DEN STUDIOKOMPLEX VOR</h2>
           <p class="start-screen-lede">
-            Durchquere verfluchte Studiokomplexe, w&auml;hle deinen Platz im Filmbusiness und entscheide selbst,
-            ob du einen neuen Dreh beginnst, einen Spielstand wieder aufnimmst oder erst im Final-Scenes-Archiv
-            nachsiehst, wer es am tiefsten geschafft hat.
+            Erkunde verfluchte <button type="button" class="lore-term" data-lore-term="studio">Studios</button>,
+            finde Ausrüstung und sichere dir jeden Vorteil für den nächsten Vorstoß.
+            Mit jedem erreichten Abschnitt rückst du näher an die
+            <button type="button" class="lore-term" data-lore-term="final-scene">Final Scene</button> heran.
+            Öffne neue Wege, überlebe jeden Take und halte deinen Lauf am Leben, solange dich der Komplex weiter hineinlässt.
+            Wer tief genug kommt, sieht, was im Zentrum noch auf die letzte Einstellung wartet.
           </p>
         </div>
         <div class="start-screen-menu">
@@ -101,6 +104,9 @@
           <div class="board-toolbar" aria-label="Studioansicht">
             <div class="board-toolbar-group">
               <span class="board-toolbar-label">Studiozoom</span>
+            </div>
+            <div class="board-toolbar-group">
+              <button id="openDebugInfo" class="mini-btn ui-hidden" type="button">Debugdaten</button>
             </div>
             <div class="board-toolbar-group board-zoom-controls">
               <button id="zoomOutBoard" class="mini-btn" type="button" aria-label="Studio verkleinern">-</button>
@@ -461,6 +467,20 @@
     </div>
   </div>
 
+  <div id="debugInfoModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card panel debug-info-modal-card">
+      <p class="modal-eyebrow">Debugdaten</p>
+      <h2 id="debugInfoTitle">Reproduktionsdaten</h2>
+      <p class="modal-copy">Hier findest du die wichtigsten Angaben zur aktuell sichtbaren Studio-Konstellation.</p>
+      <textarea id="debugInfoText" class="debug-info-text" readonly spellcheck="false"></textarea>
+      <p id="debugInfoStatus" class="debug-info-status" aria-live="polite"></p>
+      <div class="modal-actions">
+        <button id="copyDebugInfo" class="choice-btn" type="button">Kopieren</button>
+        <button id="closeDebugInfo" class="choice-btn" type="button">Schließen</button>
+      </div>
+    </div>
+  </div>
+
   <div id="deathModal" class="modal hidden" aria-hidden="true">
     <div class="modal-card panel">
       <p class="modal-eyebrow">Abspann</p>
@@ -479,19 +499,25 @@
 
   <div id="startModal" class="modal hidden" aria-hidden="true">
     <div class="modal-card panel start-modal-card">
-      <p class="modal-eyebrow">Casting</p>
-      <h2>Beruf w&auml;hlen</h2>
-      <p class="modal-copy">W&auml;hle Namen und Beruf f&uuml;r deinen Helden.</p>
+      <p class="modal-eyebrow">BESETZUNG</p>
+      <h2>Beruf wählen</h2>
+      <p class="modal-copy">
+        Wähle einen <button type="button" class="lore-term" data-lore-term="beruf">Beruf</button> aus dem
+        <button type="button" class="lore-term" data-lore-term="business">Business</button>, erhalte Zutritt zum
+        <button type="button" class="lore-term" data-lore-term="studiokomplex">Studiokomplex</button> und dringe bis zur
+        <button type="button" class="lore-term" data-lore-term="final-scene">Final Scene</button> vor.
+        Jedes neue <button type="button" class="lore-term" data-lore-term="studio">Studio</button> bringt dich tiefer in den Run.
+      </p>
       <form id="startForm" class="start-form">
         <label class="hero-identity-label" for="heroNameInput">Heldenname</label>
         <input id="heroNameInput" class="hero-name-input" type="text" maxlength="24" placeholder="Final Girl">
         <div>
           <p class="hero-identity-label">Beruf</p>
-          <div id="classOptions" class="class-options" role="radiogroup" aria-label="Heldenberuf"></div>
+          <div id="classOptions" class="class-options" role="radiogroup" aria-label="Beruf wählen"></div>
         </div>
         <div class="modal-actions">
-          <button id="cancelStartModal" class="choice-btn ghost" type="button">Zur&uuml;ck</button>
-          <button id="saveHeroName" class="choice-btn accent" type="submit">Betrete den Studiokomplex</button>
+          <button id="cancelStartModal" class="choice-btn ghost" type="button">Zurück</button>
+          <button id="saveHeroName" class="choice-btn accent" type="submit">Ins erste Studio</button>
         </div>
         <p id="startSavegameStatus" class="hero-identity-note">Kein Spielstand gefunden.</p>
       </form>

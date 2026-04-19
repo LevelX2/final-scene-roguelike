@@ -22,10 +22,29 @@ test("start screen renders the new title", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("The Final Scene");
-  await expect(page.locator("#startScreen").getByText("Kämpfe dich durch ein sterbendes Filmarchiv")).toBeVisible();
+  await expect(page.locator("#startScreen").getByText("DRINGE TIEFER IN DEN STUDIOKOMPLEX VOR")).toBeVisible();
+  await expect(page.locator("#startScreen")).toContainText("Erkunde verfluchte Studios, finde Ausrüstung und sichere dir jeden Vorteil für den nächsten Vorstoß.");
+  await expect(page.locator("#startScreen")).toContainText("Mit jedem erreichten Abschnitt rückst du näher an die Final Scene heran.");
+  await expect(page.locator("#startScreen")).toContainText("Öffne neue Wege, überlebe jeden Take und halte deinen Lauf am Leben, solange dich der Komplex weiter hineinlässt.");
+  await expect(page.locator("#startScreen")).toContainText("Wer tief genug kommt, sieht, was im Zentrum noch auf die letzte Einstellung wartet.");
   await expect(page.locator("#startScreen")).toBeVisible();
   await expect(page.getByRole("button", { name: "Neues Spiel beginnen" })).toBeVisible();
   await expect(page.locator("#gameShell")).toHaveClass(/prestart-hidden/);
+});
+
+test("landing and start modal lore terms show compact tooltips", async ({ page }) => {
+  await page.goto("/");
+
+  await page.locator('#startScreen .lore-term', { hasText: 'Studios' }).hover();
+  await expect(page.locator("#hoverTooltip")).toContainText("Studio");
+  await expect(page.locator("#hoverTooltip")).toContainText("Eine einzelne Ebene innerhalb des Studiokomplexes.");
+
+  await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
+  await expect(page.locator("#startModal")).toBeVisible();
+  await expect(page.locator("#startModal .lore-term")).toHaveCount(5);
+  await page.locator('#startModal .lore-term', { hasText: 'Final Scene' }).last().hover();
+  await expect(page.locator("#hoverTooltip")).toContainText("Final Scene");
+  await expect(page.locator("#hoverTooltip")).toContainText("Das ferne Endziel im innersten Bereich des Komplexes.");
 });
 
 test("start screen menu supports visible arrow-key selection", async ({ page }) => {

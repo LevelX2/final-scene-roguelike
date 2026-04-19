@@ -58,6 +58,7 @@ export function createUiBindingsApi(context) {
     viewDeathStudioButton,
     startFormElement,
     bindTooltip,
+    bindInlineLoreTooltips,
     topbarHpCardElement,
     topbarLevelCardElement,
     topbarDamageCardElement,
@@ -363,6 +364,7 @@ export function createUiBindingsApi(context) {
     bindTopbarTooltips();
     bindOptionControls();
     bindStartControls();
+    bindInlineLoreTooltips?.();
     bindKeyboardInput(documentTarget);
   }
 

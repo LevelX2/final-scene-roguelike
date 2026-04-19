@@ -16,7 +16,7 @@ export function createStartFlowApi(context) {
   } = context;
 
   function resetStartIdentityFeedback() {
-    saveHeroNameButtonElement.textContent = "Betrete den Studiokomplex";
+    saveHeroNameButtonElement.textContent = "Ins erste Studio";
   }
 
   function renderClassOptions(selectedClassId) {

@@ -128,12 +128,54 @@ select {
   box-shadow: 0 18px 30px rgba(0, 0, 0, 0.2);
 }
 
+.start-screen-title {
+  margin: 0 0 12px;
+  max-width: 18ch;
+  color: #d8c38a;
+  font-size: clamp(1.35rem, 1.95vw, 1.82rem);
+  line-height: 1.06;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.26);
+}
+
 .start-screen-lede {
   margin: 0;
-  max-width: 52ch;
+  max-width: 56ch;
   color: rgba(236, 243, 238, 0.82);
-  font-size: 1.04rem;
-  line-height: 1.65;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.lore-term {
+  display: inline;
+  padding: 0;
+  border: none;
+  border-bottom: 1px dashed rgba(125, 220, 138, 0.72);
+  background: none;
+  color: #d8f4dd;
+  font: inherit;
+  font-weight: 700;
+  line-height: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.lore-term:hover,
+.lore-term:focus-visible {
+  color: #f4f8d6;
+  border-bottom-color: rgba(245, 232, 171, 0.92);
+}
+
+.lore-term:focus-visible {
+  outline: 2px solid rgba(245, 232, 171, 0.78);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .start-screen-menu {
@@ -3020,8 +3062,8 @@ kbd {
 .hover-tooltip {
   position: fixed;
   z-index: 50;
-  max-width: 260px;
-  padding: 10px 12px;
+  max-width: 240px;
+  padding: 9px 11px;
   border: 1px solid rgba(125, 220, 138, 0.28);
   border-radius: 12px;
   background: rgba(12, 18, 15, 0.96);
@@ -3324,13 +3366,14 @@ kbd {
 .tooltip-title {
   margin: 0 0 6px;
   font-weight: 700;
+  font-size: 0.92rem;
 }
 
 .tooltip-copy {
   margin: 0;
   color: var(--muted);
   line-height: 1.35;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 .modal-card {

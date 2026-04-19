@@ -1231,61 +1231,250 @@ export function createEnemyTurnApi(context) {
     return moveTowardTarget(enemy, target, floorState, 'aggro');
   }
 
-  function fleeFromTarget(enemy, target, floorState) {
+  function hasPlayerLineOfSightToPosition(position, floorState) {
+    const state = getState();
+    return hasLineOfSight
+      ? hasLineOfSight(floorState, state.player.x, state.player.y, position.x, position.y)
+      : true;
+  }
+
+  function canPlayerAttackEnemyPosition(position, floorState) {
+    const state = getState();
+    const player = state.player;
+    const distance = chebyshevDistance(player, position);
+    if (distance === 1) {
+      return true;
+    }
+
+    const weapon = player?.mainHand;
+    return Boolean(
+      weapon?.attackMode === 'ranged' &&
+      distance > 1 &&
+      distance <= Math.max(1, weapon?.range ?? 1) &&
+      hasPlayerLineOfSightToPosition(position, floorState)
+    );
+  }
+
+  function getPlayerAttackPressureAgainstPosition(position, floorState) {
+    const state = getState();
+    const distance = chebyshevDistance(state.player, position);
+    let pressure = 0;
+
+    if (distance === 1) {
+      pressure += 4;
+    }
+
+    if (canPlayerAttackEnemyPosition(position, floorState)) {
+      pressure += distance > 1 ? 4 : 0;
+    }
+
+    if (hasPlayerLineOfSightToPosition(position, floorState)) {
+      pressure += 1;
+    }
+
+    return pressure;
+  }
+
+  function getRetreatAllyPressure(enemy, position, floorState) {
+    let pressure = 0;
+
+    for (const other of floorState.enemies ?? []) {
+      if (other === enemy || other.hp <= 0) {
+        continue;
+      }
+
+      const distance = chebyshevDistance(other, position);
+      if (distance <= 2) {
+        pressure += 1;
+      }
+
+      if (canEnemyDetectPlayer(other, position, floorState, distance, getEnemyAggroPursuitDetectionBonus(other))) {
+        pressure += other.aggro ? 4 : 2;
+      }
+
+      const otherWeapon = other.mainHand;
+      const canSupportRanged = Boolean(
+        otherWeapon?.attackMode === 'ranged' &&
+        distance > 1 &&
+        distance <= Math.max(1, otherWeapon?.range ?? 1) &&
+        (hasLineOfSight
+          ? hasLineOfSight(floorState, other.x, other.y, position.x, position.y)
+          : true)
+      );
+
+      if (canSupportRanged) {
+        pressure += other.aggro ? 3 : 1;
+      }
+    }
+
+    return pressure;
+  }
+
+  function summarizeRetreatFollowUp(enemy, position, floorState) {
+    const simulatedEnemy = {
+      ...enemy,
+      x: position.x,
+      y: position.y,
+    };
+    const candidatePressure = getPlayerAttackPressureAgainstPosition(position, floorState);
+    const candidateDistance = chebyshevDistance(position, getState().player);
+    const candidateSight = hasPlayerLineOfSightToPosition(position, floorState);
+    const followUps = EIGHT_WAY_STEPS
+      .filter((step) =>
+        isEnemyPathTileOpen(
+          simulatedEnemy,
+          simulatedEnemy.x + step.x,
+          simulatedEnemy.y + step.y,
+          floorState,
+        )
+      )
+      .map((step) => {
+        const nextPosition = {
+          x: simulatedEnemy.x + step.x,
+          y: simulatedEnemy.y + step.y,
+        };
+        const nextPressure = getPlayerAttackPressureAgainstPosition(nextPosition, floorState);
+        const nextDistance = chebyshevDistance(nextPosition, getState().player);
+        const nextSight = hasPlayerLineOfSightToPosition(nextPosition, floorState);
+        const improvesSeparation = nextDistance > candidateDistance || (candidateSight && !nextSight);
+        const lowersThreat = nextPressure < candidatePressure;
+
+        return {
+          nextPosition,
+          nextPressure,
+          nextDistance,
+          nextSight,
+          validEscape: candidatePressure > 0 && improvesSeparation && lowersThreat,
+        };
+      });
+
+    return {
+      openCount: followUps.length,
+      safeCount: followUps.filter((entry) => entry.nextPressure === 0).length,
+      escapeCount: followUps.filter((entry) => entry.validEscape).length,
+    };
+  }
+
+  function buildRetreatActionCandidates(enemy, floorState, options = {}) {
     const recentMovePositions = enemy.recentMovePositions ?? [];
     const immediateBacktrack = recentMovePositions[recentMovePositions.length - 2] ?? null;
-    const currentDistance = chebyshevDistance(enemy, target);
-
-    const candidates = [...EIGHT_WAY_STEPS, { x: 0, y: 0 }]
-      .filter((step) =>
+    const baselinePressure = getPlayerAttackPressureAgainstPosition(enemy, floorState);
+    const baselineAllyPressure = getRetreatAllyPressure(enemy, enemy, floorState);
+    const movementSteps = options.allowMovement === false
+      ? [{ x: 0, y: 0 }]
+      : [...EIGHT_WAY_STEPS, { x: 0, y: 0 }];
+    const movementCandidates = movementSteps
+      .filter((step) => (
         step.x === 0 && step.y === 0
           ? true
           : isEnemyPathTileOpen(enemy, enemy.x + step.x, enemy.y + step.y, floorState)
-      )
+      ))
       .map((step) => {
         const nextPosition = { x: enemy.x + step.x, y: enemy.y + step.y };
-        const nextDistance = chebyshevDistance(nextPosition, target);
+        const nextDistance = chebyshevDistance(nextPosition, getState().player);
         const nextRoom = getRoomAtPosition(floorState, nextPosition);
-        let score = nextDistance * 5;
-
-        if (nextDistance > currentDistance) {
-          score += 3;
-        } else if (nextDistance < currentDistance) {
-          score -= 8;
-        }
-
-        if (step.x === 0 && step.y === 0) {
-          score -= 6;
-        }
-
-        if (recentMovePositions.some((position) => isSamePosition(position, nextPosition))) {
-          score -= 2;
-        }
-
-        if (immediateBacktrack && isSamePosition(immediateBacktrack, nextPosition)) {
-          score -= 5;
-        }
-
-        score += nextRoom ? 1 : 0;
+        const pressure = getPlayerAttackPressureAgainstPosition(nextPosition, floorState);
+        const allyPressure = getRetreatAllyPressure(enemy, nextPosition, floorState);
+        const followUp = summarizeRetreatFollowUp(enemy, nextPosition, floorState);
+        let antiTrap = Math.min(3, followUp.openCount);
+        antiTrap += nextRoom ? 1 : 0;
+        antiTrap -= step.x === 0 && step.y === 0 ? 2 : 0;
+        antiTrap -= recentMovePositions.some((position) => isSamePosition(position, nextPosition)) ? 2 : 0;
+        antiTrap -= immediateBacktrack && isSamePosition(immediateBacktrack, nextPosition) ? 4 : 0;
+        antiTrap -= followUp.openCount === 0 ? 3 : followUp.openCount === 1 ? 1 : 0;
 
         return {
+          type: step.x === 0 && step.y === 0 ? 'wait' : 'move',
           step,
           nextPosition,
-          score,
           distance: nextDistance,
+          escapeWindow: followUp.escapeCount + (baselinePressure > 0 && pressure === 0 ? 1 : 0),
+          threatReduction: Math.max(0, baselinePressure - pressure)
+            + (pressure === 0 ? 8 : 0)
+            + (step.x === 0 && step.y === 0 ? 0 : nextDistance)
+            + (hasPlayerLineOfSightToPosition(nextPosition, floorState) ? 0 : 2),
+          allyPressure,
+          allyPressureGain: allyPressure - baselineAllyPressure,
+          antiTrap,
+          pressure,
         };
-      })
-      .sort((left, right) => {
-        if (right.score !== left.score) {
-          return right.score - left.score;
-        }
-
-        return right.distance - left.distance;
       });
+    const attackCandidates = [];
 
-    const selected = candidates[0];
+    if (options.allowAttack) {
+      const attackPosition = { x: enemy.x, y: enemy.y };
+      const allyPressure = baselineAllyPressure;
+      const followUp = summarizeRetreatFollowUp(enemy, attackPosition, floorState);
+      if (followUp.escapeCount > 0 || allyPressure > 0) {
+        attackCandidates.push({
+          type: 'attack',
+          step: { x: 0, y: 0 },
+          nextPosition: attackPosition,
+          distance: chebyshevDistance(enemy, getState().player),
+          escapeWindow: followUp.escapeCount,
+          threatReduction: 0,
+          allyPressure,
+          allyPressureGain: 0,
+          antiTrap: Math.min(2, followUp.openCount) - 1,
+          pressure: baselinePressure,
+          attackDistance: options.attackDistance ?? chebyshevDistance(enemy, getState().player),
+        });
+      }
+    }
+
+    return [...movementCandidates, ...attackCandidates];
+  }
+
+  function compareRetreatCandidates(left, right) {
+    if (right.escapeWindow !== left.escapeWindow) {
+      return right.escapeWindow - left.escapeWindow;
+    }
+
+    if (right.threatReduction !== left.threatReduction) {
+      return right.threatReduction - left.threatReduction;
+    }
+
+    if (right.allyPressure !== left.allyPressure) {
+      return right.allyPressure - left.allyPressure;
+    }
+
+    if (right.antiTrap !== left.antiTrap) {
+      return right.antiTrap - left.antiTrap;
+    }
+
+    if (right.distance !== left.distance) {
+      return right.distance - left.distance;
+    }
+
+    const actionPriority = {
+      move: 3,
+      attack: 2,
+      wait: 1,
+    };
+
+    return (actionPriority[right.type] ?? 0) - (actionPriority[left.type] ?? 0);
+  }
+
+  function chooseRetreatAction(enemy, floorState, options = {}) {
+    const candidates = buildRetreatActionCandidates(enemy, floorState, options)
+      .sort(compareRetreatCandidates);
+
+    return candidates[0] ?? null;
+  }
+
+  function executeRetreatAction(enemy, floorState, enemyReference, weapon, options = {}) {
+    const selected = chooseRetreatAction(enemy, floorState, options);
     if (!selected) {
       return false;
+    }
+
+    if (selected.type === 'attack') {
+      return performEnemyAttack(enemy, floorState, enemyReference, selected.attackDistance, weapon);
+    }
+
+    if (selected.type === 'wait') {
+      rememberAggroPosition(enemy);
+      return true;
     }
 
     const previousPosition = { x: enemy.x, y: enemy.y };
@@ -1293,7 +1482,7 @@ export function createEnemyTurnApi(context) {
       return false;
     }
 
-    return !isSamePosition(previousPosition, enemy) || (selected.step.x === 0 && selected.step.y === 0);
+    return !isSamePosition(previousPosition, enemy);
   }
 
   function performIdleMovement(enemy, floorState) {
@@ -1369,202 +1558,76 @@ export function createEnemyTurnApi(context) {
     return false;
   }
 
-  function moveEnemies() {
+  function performEnemyAttack(enemy, floorState, enemyReference, distance, weapon) {
     const state = getState();
-    const floorState = getCurrentFloorState();
-
-    for (const enemy of floorState.enemies) {
-      ensureEnemyRuntimeState(enemy);
-      enemy.turnsSinceHit += 1;
-
-      const playerPosition = { x: state.player.x, y: state.player.y };
-      const distance = chebyshevDistance(enemy, playerPosition);
-      const detectsPlayer = (rangeBonus = 0) =>
-        canEnemyDetectPlayer(enemy, playerPosition, floorState, distance, rangeBonus);
-      const weapon = enemy.mainHand;
-      const weaponRange = Math.max(1, weapon?.range ?? 1);
-      const canShootPlayer = Boolean(
-        weapon &&
-        weapon.attackMode === 'ranged' &&
-        distance > 1 &&
-        distance <= weaponRange &&
-        hasLineOfSight?.(floorState, enemy.x, enemy.y, state.player.x, state.player.y) &&
-        detectsPlayer(getEnemyRangedDetectionBonus(enemy, weapon)),
-      );
-      tryEnemyRegeneration(enemy, distance, floorState);
-      const adjacent = distance === 1;
-      const retreating = shouldEnemyRetreat(enemy, state.player, distance);
-
-      const enemyReference = buildCombatEnemyReference(enemy);
-
-      if (retreating && !enemy.isRetreating) {
-        addMessage(`${enemyReference.subjectCapitalized} sucht ploetzlich Abstand.`, 'important');
-      }
-      enemy.isRetreating = retreating;
-
-      if (adjacent) {
-        clearIdleTarget(enemy);
-        if (retreating && fleeFromTarget(enemy, playerPosition, floorState)) {
-          continue;
-        }
-
-        state.safeRestTurns = 0;
-        noteMonsterEncounter(enemy);
-        const result = resolveCombatAttack(enemy, state.player, { distance: 1, weapon });
-
-        if (!result.hit) {
-          showFloatingText(state.player.x, state.player.y, 'Dodge', 'dodge');
-          playDodgeSound();
-          addMessage(`Du weichst dem Angriff von ${enemyReference.dative} aus.`, 'important');
-          continue;
-        }
-
-        const blockResult = resolveBlock(state.player, result.damage);
-        const weaponLabel = formatWeaponReference(weapon, {
-          article: 'definite',
-          grammaticalCase: 'dative',
-        });
-        state.player.hp -= blockResult.damage;
-        state.damageTaken = (state.damageTaken ?? 0) + Math.max(0, blockResult.damage);
-        tryApplyWeaponEffects?.(enemy, state.player, weapon, {
-          ...result,
-          damage: blockResult.damage,
-        });
-        if (blockResult.damage > 0) {
-          showFloatingText(state.player.x, state.player.y, `-${blockResult.damage}`, result.critical ? 'crit' : 'taken');
-          playPlayerHitSound(result.critical);
-        } else {
-          showFloatingText(state.player.x, state.player.y, 'Block', 'heal');
-        }
-        if (blockResult.blocked) {
-          addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden fuer dich ab.`, 'important');
-          if (applyReflectiveCounterToEnemy(enemy, blockResult, floorState, enemyReference)) {
-            if (state.player.hp <= 0) {
-              state.player.hp = 0;
-              state.gameOver = true;
-              state.deathCause = createDeathCause(enemy, {
-                critical: result.critical,
-                ranged: false,
-                victimName: state.player.name,
-                weapon,
-              });
-              playDeathSound();
-              const rank = saveHighscoreIfNeeded();
-              addMessage('Du bist gefallen. Druecke R fuer einen neuen Versuch.', 'danger');
-              showDeathModal(rank);
-              return;
-            }
-            continue;
-          }
-        }
-        addMessage(formatEnemyAttackLog({
-          enemyReference,
-          weaponLabel,
-          damage: blockResult.damage,
-          critical: result.critical,
-        }), 'danger');
-        if (state.player.hp <= 0) {
-          state.player.hp = 0;
-          state.gameOver = true;
-          state.deathCause = createDeathCause(enemy, {
-            critical: result.critical,
-            ranged: false,
-            victimName: state.player.name,
-            weapon,
-          });
-          playDeathSound();
-          const rank = saveHighscoreIfNeeded();
-          addMessage('Du bist gefallen. Druecke R fuer einen neuen Versuch.', 'danger');
-          showDeathModal(rank);
-          return;
-        }
-        continue;
-      }
-
-      if (canShootPlayer) {
-        clearIdleTarget(enemy);
-        state.safeRestTurns = 0;
-        noteMonsterEncounter(enemy);
-        const result = resolveCombatAttack(enemy, state.player, { distance, weapon });
-        const rangedBoardEffect = {
+    state.safeRestTurns = 0;
+    noteMonsterEncounter(enemy);
+    const result = resolveCombatAttack(enemy, state.player, { distance, weapon });
+    const isRangedAttack = weapon?.attackMode === 'ranged' && distance > 1;
+    const boardEffect = isRangedAttack
+      ? {
           boardEffect: {
             fromX: enemy.x,
             fromY: enemy.y,
             kind: result.critical ? 'hostile-shot-crit' : 'hostile-shot',
             flash: true,
           },
-        };
+        }
+      : null;
 
-        if (!result.hit) {
-          showFloatingText(state.player.x, state.player.y, 'Dodge', 'dodge', {
+    if (!result.hit) {
+      showFloatingText(state.player.x, state.player.y, 'Dodge', 'dodge', isRangedAttack
+        ? {
             title: 'Schuss vorbei',
             duration: 900,
-            ...rangedBoardEffect,
-          });
-          playDodgeSound();
-          addMessage(`Du weichst dem Schuss von ${enemyReference.dative} aus.`, 'important');
-          continue;
-        }
+            ...boardEffect,
+          }
+        : {});
+      playDodgeSound();
+      addMessage(isRangedAttack
+        ? `Du weichst dem Schuss von ${enemyReference.dative} aus.`
+        : `Du weichst dem Angriff von ${enemyReference.dative} aus.`, 'important');
+      return true;
+    }
 
-        const blockResult = resolveBlock(state.player, result.damage);
-        const weaponLabel = formatWeaponReference(weapon, {
-          article: 'definite',
-          grammaticalCase: 'dative',
-        });
-        state.player.hp -= blockResult.damage;
-        state.damageTaken = (state.damageTaken ?? 0) + Math.max(0, blockResult.damage);
-        tryApplyWeaponEffects?.(enemy, state.player, weapon, {
-          ...result,
-          damage: blockResult.damage,
-        });
-        if (blockResult.damage > 0) {
-          showFloatingText(state.player.x, state.player.y, `-${blockResult.damage}`, result.critical ? 'crit' : 'taken', {
+    const blockResult = resolveBlock(state.player, result.damage);
+    const weaponLabel = formatWeaponReference(weapon, {
+      article: 'definite',
+      grammaticalCase: 'dative',
+    });
+    state.player.hp -= blockResult.damage;
+    state.damageTaken = (state.damageTaken ?? 0) + Math.max(0, blockResult.damage);
+    tryApplyWeaponEffects?.(enemy, state.player, weapon, {
+      ...result,
+      damage: blockResult.damage,
+    });
+    if (blockResult.damage > 0) {
+      showFloatingText(state.player.x, state.player.y, `-${blockResult.damage}`, result.critical ? 'crit' : 'taken', isRangedAttack
+        ? {
             title: result.critical ? 'Krit-Schuss' : 'Schuss',
             duration: 950,
-            ...rangedBoardEffect,
-          });
-          playPlayerHitSound(result.critical, 'ranged');
-        } else {
-          showFloatingText(state.player.x, state.player.y, 'Block', 'heal', {
+            ...boardEffect,
+          }
+        : {});
+      playPlayerHitSound(result.critical, isRangedAttack ? 'ranged' : undefined);
+    } else {
+      showFloatingText(state.player.x, state.player.y, 'Block', 'heal', isRangedAttack
+        ? {
             title: 'Schuss geblockt',
             duration: 900,
-            ...rangedBoardEffect,
-          });
-        }
-        if (blockResult.blocked) {
-          addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden fuer dich ab.`, 'important');
-          if (applyReflectiveCounterToEnemy(enemy, blockResult, floorState, enemyReference)) {
-            if (state.player.hp <= 0) {
-              state.player.hp = 0;
-              state.gameOver = true;
-              state.deathCause = createDeathCause(enemy, {
-                critical: result.critical,
-                ranged: true,
-                victimName: state.player.name,
-                weapon,
-              });
-              playDeathSound();
-              const rank = saveHighscoreIfNeeded();
-              addMessage('Du bist gefallen. Druecke R fuer einen neuen Versuch.', 'danger');
-              showDeathModal(rank);
-              return;
-            }
-            continue;
+            ...boardEffect,
           }
-        }
-        addMessage(formatEnemyAttackLog({
-          enemyReference,
-          weaponLabel,
-          damage: blockResult.damage,
-          critical: result.critical,
-          ranged: true,
-        }), 'danger');
+        : {});
+    }
+    if (blockResult.blocked) {
+      addMessage(`${getOffHand(state.player).name} faengt ${blockResult.prevented} Schaden fuer dich ab.`, 'important');
+      if (applyReflectiveCounterToEnemy(enemy, blockResult, floorState, enemyReference)) {
         if (state.player.hp <= 0) {
           state.player.hp = 0;
           state.gameOver = true;
           state.deathCause = createDeathCause(enemy, {
             critical: result.critical,
-            ranged: true,
+            ranged: isRangedAttack,
             victimName: state.player.name,
             weapon,
           });
@@ -1572,97 +1635,194 @@ export function createEnemyTurnApi(context) {
           const rank = saveHighscoreIfNeeded();
           addMessage('Du bist gefallen. Druecke R fuer einen neuen Versuch.', 'danger');
           showDeathModal(rank);
-          return;
+          return true;
         }
-        continue;
+        return true;
+      }
+    }
+    addMessage(formatEnemyAttackLog({
+      enemyReference,
+      weaponLabel,
+      damage: blockResult.damage,
+      critical: result.critical,
+      ranged: isRangedAttack,
+    }), 'danger');
+    if (state.player.hp <= 0) {
+      state.player.hp = 0;
+      state.gameOver = true;
+      state.deathCause = createDeathCause(enemy, {
+        critical: result.critical,
+        ranged: isRangedAttack,
+        victimName: state.player.name,
+        weapon,
+      });
+      playDeathSound();
+      const rank = saveHighscoreIfNeeded();
+      addMessage('Du bist gefallen. Druecke R fuer einen neuen Versuch.', 'danger');
+      showDeathModal(rank);
+    }
+    return true;
+  }
+
+  function takeEnemyTurn(enemy) {
+    const state = getState();
+    const floorState = getCurrentFloorState();
+    if (!enemy || state.gameOver || enemy.hp <= 0 || !floorState.enemies.includes(enemy)) {
+      return false;
+    }
+
+    ensureEnemyRuntimeState(enemy);
+    enemy.turnsSinceHit += 1;
+
+    const playerPosition = { x: state.player.x, y: state.player.y };
+    const distance = chebyshevDistance(enemy, playerPosition);
+    const detectsPlayer = (rangeBonus = 0) =>
+      canEnemyDetectPlayer(enemy, playerPosition, floorState, distance, rangeBonus);
+    const weapon = enemy.mainHand;
+    const weaponRange = Math.max(1, weapon?.range ?? 1);
+    const canShootPlayer = Boolean(
+      weapon &&
+      weapon.attackMode === 'ranged' &&
+      distance > 1 &&
+      distance <= weaponRange &&
+      hasLineOfSight?.(floorState, enemy.x, enemy.y, state.player.x, state.player.y) &&
+      detectsPlayer(getEnemyRangedDetectionBonus(enemy, weapon)),
+    );
+    tryEnemyRegeneration(enemy, distance, floorState);
+    const adjacent = distance === 1;
+    const retreating = shouldEnemyRetreat(enemy, state.player, distance);
+    const fallbackRetreat = shouldEnemyFallbackFromCloseRange(enemy, weapon, distance);
+    const retreatMode = retreating || fallbackRetreat;
+    const canMove = canActorMove?.(enemy) ?? true;
+
+    const enemyReference = buildCombatEnemyReference(enemy);
+
+    if (retreating && !enemy.isRetreating) {
+      addMessage(`${enemyReference.subjectCapitalized} sucht ploetzlich Abstand.`, 'important');
+    }
+    enemy.isRetreating = retreatMode;
+
+    if (adjacent) {
+      clearIdleTarget(enemy);
+      if (retreatMode) {
+        executeRetreatAction(enemy, floorState, enemyReference, weapon, {
+          allowMovement: canMove,
+          allowAttack: true,
+          attackDistance: 1,
+        });
+        return true;
       }
 
-      if (!canActorMove?.(enemy)) {
-        continue;
-      }
+      return performEnemyAttack(enemy, floorState, enemyReference, 1, weapon);
+    }
 
-      const mobility = getEnemyMobility(enemy);
-      const aggroState = updateEnemyAggroState(enemy, mobility, distance, detectsPlayer, randomChance);
+    if (canShootPlayer && !retreatMode) {
+      clearIdleTarget(enemy);
+      return performEnemyAttack(enemy, floorState, enemyReference, distance, weapon);
+    }
 
-      if (retreating || shouldEnemyFallbackFromCloseRange(enemy, weapon, distance)) {
-        clearIdleTarget(enemy);
-        fleeFromTarget(enemy, playerPosition, floorState);
-        continue;
-      }
+    const mobility = getEnemyMobility(enemy);
+    const aggroState = updateEnemyAggroState(enemy, mobility, distance, detectsPlayer, randomChance);
 
-      if (enemy.behavior === 'dormant') {
-        if (enemy.aggro) {
-          clearIdleTarget(enemy);
-          chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < getEnemyIdleChance(enemy)) {
-          performIdleMovement(enemy, floorState);
-        }
-        continue;
-      }
+    if (retreatMode) {
+      clearIdleTarget(enemy);
+      executeRetreatAction(enemy, floorState, enemyReference, weapon, {
+        allowMovement: canMove,
+        allowAttack: canShootPlayer,
+        attackDistance: distance,
+      });
+      return true;
+    }
 
-      if (enemy.behavior === 'wanderer') {
-        if (aggroState.aggroTriggered) {
-          clearIdleTarget(enemy);
-          chaseTarget(enemy, playerPosition, floorState);
-        } else if (enemy.aggro && randomChance() < getEnemyAggroChaseChance(enemy)) {
-          clearIdleTarget(enemy);
-          chaseTarget(enemy, playerPosition, floorState);
-        } else {
-          performIdleMovement(enemy, floorState);
-        }
-        continue;
-      }
+    if (!canMove) {
+      return true;
+    }
 
-      if (enemy.behavior === 'trickster') {
-        if (enemy.aggro && randomChance() < getEnemyAggroChaseChance(enemy)) {
-          clearIdleTarget(enemy);
-          chaseTarget(enemy, playerPosition, floorState);
-        } else {
-          performIdleMovement(enemy, floorState);
-        }
-        continue;
-      }
-
-      if (enemy.behavior === 'stalker') {
-        if (enemy.aggro) {
-          clearIdleTarget(enemy);
-          chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < getEnemyIdleChance(enemy)) {
-          performIdleMovement(enemy, floorState);
-        }
-        continue;
-      }
-
-      if (enemy.behavior === 'hunter') {
-        if (enemy.aggro || detectsPlayer()) {
-          clearIdleTarget(enemy);
-          chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < getEnemyIdleChance(enemy)) {
-          performIdleMovement(enemy, floorState);
-        }
-        continue;
-      }
-
-      if (enemy.behavior === 'juggernaut') {
-        if (enemy.aggro) {
-          clearIdleTarget(enemy);
-          chaseTarget(enemy, playerPosition, floorState);
-        } else if (randomChance() < getEnemyIdleChance(enemy)) {
-          performIdleMovement(enemy, floorState);
-        }
-        continue;
-      }
-
-      if (detectsPlayer()) {
+    if (enemy.behavior === 'dormant') {
+      if (enemy.aggro) {
         clearIdleTarget(enemy);
         chaseTarget(enemy, playerPosition, floorState);
       } else if (randomChance() < getEnemyIdleChance(enemy)) {
         performIdleMovement(enemy, floorState);
       }
+      return true;
+    }
+
+    if (enemy.behavior === 'wanderer') {
+      if (aggroState.aggroTriggered) {
+        clearIdleTarget(enemy);
+        chaseTarget(enemy, playerPosition, floorState);
+      } else if (enemy.aggro && randomChance() < getEnemyAggroChaseChance(enemy)) {
+        clearIdleTarget(enemy);
+        chaseTarget(enemy, playerPosition, floorState);
+      } else {
+        performIdleMovement(enemy, floorState);
+      }
+      return true;
+    }
+
+    if (enemy.behavior === 'trickster') {
+      if (enemy.aggro && randomChance() < getEnemyAggroChaseChance(enemy)) {
+        clearIdleTarget(enemy);
+        chaseTarget(enemy, playerPosition, floorState);
+      } else {
+        performIdleMovement(enemy, floorState);
+      }
+      return true;
+    }
+
+    if (enemy.behavior === 'stalker') {
+      if (enemy.aggro) {
+        clearIdleTarget(enemy);
+        chaseTarget(enemy, playerPosition, floorState);
+      } else if (randomChance() < getEnemyIdleChance(enemy)) {
+        performIdleMovement(enemy, floorState);
+      }
+      return true;
+    }
+
+    if (enemy.behavior === 'hunter') {
+      if (enemy.aggro || detectsPlayer()) {
+        clearIdleTarget(enemy);
+        chaseTarget(enemy, playerPosition, floorState);
+      } else if (randomChance() < getEnemyIdleChance(enemy)) {
+        performIdleMovement(enemy, floorState);
+      }
+      return true;
+    }
+
+    if (enemy.behavior === 'juggernaut') {
+      if (enemy.aggro) {
+        clearIdleTarget(enemy);
+        chaseTarget(enemy, playerPosition, floorState);
+      } else if (randomChance() < getEnemyIdleChance(enemy)) {
+        performIdleMovement(enemy, floorState);
+      }
+      return true;
+    }
+
+    if (detectsPlayer()) {
+      clearIdleTarget(enemy);
+      chaseTarget(enemy, playerPosition, floorState);
+    } else if (randomChance() < getEnemyIdleChance(enemy)) {
+      performIdleMovement(enemy, floorState);
+    }
+
+    return true;
+  }
+
+  function moveEnemies() {
+    const floorState = getCurrentFloorState();
+    for (const enemy of [...(floorState.enemies ?? [])]) {
+      if (getState().gameOver) {
+        return;
+      }
+      takeEnemyTurn(enemy);
     }
   }
 
   return {
+    takeEnemyTurn,
     moveEnemies,
   };
 }

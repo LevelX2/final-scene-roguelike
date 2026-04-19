@@ -10,11 +10,30 @@ function createMask(width, height, fill = false) {
   return Array.from({ length: height }, () => Array(width).fill(fill));
 }
 
-function createEnemyTurnHarness({ enemy, floorState, player, randomChance = () => 0.99 }) {
+function createEnemyTurnHarness({
+  enemy,
+  floorState,
+  player,
+  randomChance = () => 0.99,
+  resolveCombatAttack = () => ({ hit: false, dodged: false, blocked: false, damage: 0, defeated: false }),
+  resolveBlock = (_actor, damage) => ({
+    damage,
+    blocked: false,
+    prevented: 0,
+    reflectiveDamage: 0,
+    item: { name: 'Testschild' },
+  }),
+  hasLineOfSight = () => false,
+  canActorMove = () => true,
+  noteMonsterEncounter = () => {},
+} = {}) {
   const state = {
     player,
     gameOver: false,
     safeRestTurns: 0,
+    damageTaken: 0,
+    damageDealt: 0,
+    kills: 0,
   };
   const messages = [];
   const floatingTexts = [];
@@ -29,12 +48,12 @@ function createEnemyTurnHarness({ enemy, floorState, player, randomChance = () =
     getCurrentFloorState: () => floorState,
     getDoorAt: (x, y, nextFloorState = floorState) =>
       nextFloorState?.doors?.find((door) => door.x === x && door.y === y) ?? null,
-    getOffHand: () => null,
-    resolveCombatAttack: () => ({ hit: false, dodged: false, blocked: false, damage: 0, defeated: false }),
-    resolveBlock: () => false,
-    hasLineOfSight: () => false,
+    getOffHand: () => ({ name: 'Testschild' }),
+    resolveCombatAttack,
+    resolveBlock,
+    hasLineOfSight,
     isStraightShot: () => false,
-    canActorMove: () => true,
+    canActorMove,
     tryApplyWeaponEffects: () => null,
     addMessage: (text, tone) => messages.push({ text, tone }),
     showFloatingText: (x, y, text, kind, options = {}) => {
@@ -47,7 +66,7 @@ function createEnemyTurnHarness({ enemy, floorState, player, randomChance = () =
     playDoorOpenSound: () => { doorOpenSoundCount += 1; },
     saveHighscoreIfNeeded: () => {},
     showDeathModal: () => {},
-    noteMonsterEncounter: () => {},
+    noteMonsterEncounter,
     handleActorEnterTile: () => {},
     manhattanDistance: (left, right) => Math.abs(left.x - right.x) + Math.abs(left.y - right.y),
     randomChance,
@@ -59,6 +78,40 @@ function createEnemyTurnHarness({ enemy, floorState, player, randomChance = () =
     messages,
     floatingTexts,
     getDoorOpenSoundCount: () => doorOpenSoundCount,
+  };
+}
+
+function createLineOfSightChecker() {
+  return (floorState, startX, startY, endX, endY) => {
+    let x = startX;
+    let y = startY;
+    const deltaX = Math.abs(endX - startX);
+    const deltaY = Math.abs(endY - startY);
+    const stepX = startX < endX ? 1 : -1;
+    const stepY = startY < endY ? 1 : -1;
+    let error = deltaX - deltaY;
+
+    while (!(x === endX && y === endY)) {
+      const doubledError = error * 2;
+      if (doubledError > -deltaY) {
+        error -= deltaY;
+        x += stepX;
+      }
+      if (doubledError < deltaX) {
+        error += deltaX;
+        y += stepY;
+      }
+
+      if (x === endX && y === endY) {
+        return true;
+      }
+
+      if (floorState.grid[y]?.[x] === '#') {
+        return false;
+      }
+    }
+
+    return true;
   };
 }
 
@@ -306,7 +359,7 @@ test('enemy idle movement avoids immediate two-tile ping-pong when target path i
     player: { x: 0, y: 0, hp: 20, maxHp: 20 },
   });
 
-  api.moveEnemies();
+  api.takeEnemyTurn(enemy);
 
   assert.equal(enemy.x, 2);
   assert.equal(enemy.y, 3);
@@ -324,7 +377,7 @@ test('cowardly enemies can retreat even with minimal intelligence', () => {
 
   const { api } = createEnemyTurnHarness(scenario);
 
-  api.moveEnemies();
+  api.takeEnemyTurn(scenario.enemy);
 
   assert.equal(scenario.enemy.isRetreating, true);
   assert.equal(scenario.enemy.x, 5);
@@ -346,7 +399,7 @@ test('cowardly enemies can keep retreating from a slightly longer distance once 
 
   const { api } = createEnemyTurnHarness(scenario);
 
-  api.moveEnemies();
+  api.takeEnemyTurn(scenario.enemy);
 
   assert.equal(scenario.enemy.isRetreating, true);
   assert.equal(scenario.enemy.x, 6);
@@ -396,7 +449,7 @@ test('cowardly kultist profile does not retreat above six of eleven hp', () => {
     player: { x: 2, y: 2, hp: 20, maxHp: 20 },
   });
 
-  api.moveEnemies();
+  api.takeEnemyTurn(enemy);
 
   assert.equal(enemy.isRetreating, false);
   assert.equal(enemy.x, 3);
@@ -446,11 +499,11 @@ test('roaming lurking enemies can drop aggro at long range and resume healing', 
     randomChance: () => 0.99,
   });
 
-  api.moveEnemies();
+  api.takeEnemyTurn(enemy);
   assert.equal(enemy.aggro, false);
   assert.equal(enemy.hp, 3);
 
-  api.moveEnemies();
+  api.takeEnemyTurn(enemy);
   assert.equal(enemy.hp, 4);
 });
 
@@ -466,7 +519,7 @@ test('cautious enemies begin retreating before dropping to critical slivers', ()
 
   const { api } = createEnemyTurnHarness(scenario);
 
-  api.moveEnemies();
+  api.takeEnemyTurn(scenario.enemy);
 
   assert.equal(scenario.enemy.isRetreating, true);
   assert.equal(scenario.enemy.x, 5);
@@ -487,7 +540,7 @@ test('enemies keep pressing when they can plausibly finish the player in two hit
 
   const { api } = createEnemyTurnHarness(scenario);
 
-  api.moveEnemies();
+  api.takeEnemyTurn(scenario.enemy);
 
   assert.equal(scenario.enemy.isRetreating, false);
   assert.equal(scenario.enemy.x, 3);
@@ -536,6 +589,236 @@ test('retreat movement avoids immediate left-right ping-pong when two escape ste
   api.moveEnemies();
 
   assert.notDeepEqual({ x: enemy.x, y: enemy.y }, { x: 2, y: 3 });
+});
+
+test('cornered retreating enemies stay in retreat mode and do not auto-attack when no tactical out exists', () => {
+  const enemy = createBaseEnemy({
+    id: 'cornered-cautious',
+    x: 4,
+    y: 2,
+    originX: 4,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'cautious',
+    aggro: true,
+    hp: 2,
+    maxHp: 10,
+    intelligence: 6,
+  });
+
+  const grid = createGrid(7, 5, '#');
+  grid[2][3] = '.';
+  grid[2][4] = '.';
+
+  const floorState = {
+    grid,
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(7, 5, false),
+  };
+
+  let attackCalls = 0;
+  const { api, state } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: { x: 3, y: 2, hp: 24, maxHp: 24 },
+    resolveCombatAttack: () => {
+      attackCalls += 1;
+      return { hit: true, critical: false, damage: 3 };
+    },
+  });
+
+  api.takeEnemyTurn(enemy);
+
+  assert.equal(enemy.isRetreating, true);
+  assert.equal(enemy.x, 4);
+  assert.equal(enemy.y, 2);
+  assert.equal(state.player.hp, 24);
+  assert.equal(attackCalls, 0);
+});
+
+test('ranged fallback uses retreat evaluation to take an available sidestep that breaks the players safe shot', () => {
+  const enemy = createBaseEnemy({
+    id: 'fallback-sidestep',
+    x: 4,
+    y: 2,
+    originX: 4,
+    originY: 2,
+    behavior: 'trickster',
+    mobility: 'roaming',
+    retreatProfile: 'none',
+    aggro: true,
+    hp: 9,
+    maxHp: 10,
+    intelligence: 5,
+    mainHand: { damage: 1, attackMode: 'ranged', range: 6 },
+  });
+
+  const grid = createGrid(8, 5, '#');
+  grid[2][2] = '.';
+  grid[2][3] = '.';
+  grid[2][4] = '.';
+  grid[1][4] = '.';
+  grid[1][3] = '#';
+
+  const floorState = {
+    grid,
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, false),
+  };
+
+  const { api } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: {
+      x: 2,
+      y: 2,
+      hp: 20,
+      maxHp: 20,
+      mainHand: { damage: 3, attackMode: 'ranged', range: 7 },
+    },
+    hasLineOfSight: createLineOfSightChecker(),
+  });
+
+  api.takeEnemyTurn(enemy);
+
+  assert.equal(enemy.x, 4);
+  assert.equal(enemy.y, 1);
+});
+
+test('retreating enemies may use a tactical attack when allies already cover the chokepoint', () => {
+  const enemy = createBaseEnemy({
+    id: 'supported-retreat',
+    x: 4,
+    y: 2,
+    originX: 4,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'cautious',
+    aggro: true,
+    hp: 2,
+    maxHp: 10,
+    intelligence: 6,
+    mainHand: { damage: 2, attackMode: 'melee' },
+  });
+  const ally = createBaseEnemy({
+    id: 'support-hunter',
+    x: 5,
+    y: 2,
+    originX: 5,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'none',
+    aggro: true,
+    aggroRadius: 6,
+    hp: 12,
+    maxHp: 12,
+  });
+
+  const grid = createGrid(7, 5, '#');
+  grid[2][3] = '.';
+  grid[2][4] = '.';
+  grid[2][5] = '.';
+
+  const floorState = {
+    grid,
+    enemies: [enemy, ally],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(7, 5, false),
+  };
+
+  let attackCalls = 0;
+  const { api, state } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: { x: 3, y: 2, hp: 18, maxHp: 24 },
+    hasLineOfSight: () => true,
+    resolveCombatAttack: () => {
+      attackCalls += 1;
+      return { hit: true, critical: false, damage: 2 };
+    },
+  });
+
+  api.takeEnemyTurn(enemy);
+
+  assert.equal(enemy.isRetreating, true);
+  assert.equal(enemy.x, 4);
+  assert.equal(enemy.y, 2);
+  assert.equal(state.player.hp, 16);
+  assert.equal(attackCalls, 1);
+});
+
+test('retreat movement prefers the route that drags pursuit toward allied aggro coverage', () => {
+  const enemy = createBaseEnemy({
+    id: 'ally-pressure-retreat',
+    x: 4,
+    y: 2,
+    originX: 4,
+    originY: 2,
+    behavior: 'trickster',
+    mobility: 'roaming',
+    retreatProfile: 'cautious',
+    aggro: true,
+    hp: 2,
+    maxHp: 10,
+    intelligence: 6,
+    mainHand: { damage: 1, attackMode: 'ranged', range: 6 },
+  });
+  const ally = createBaseEnemy({
+    id: 'ally-pressure-support',
+    x: 7,
+    y: 2,
+    originX: 7,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'none',
+    aggro: true,
+    aggroRadius: 6,
+    hp: 12,
+    maxHp: 12,
+  });
+
+  const grid = createGrid(9, 5, '#');
+  grid[2][2] = '.';
+  grid[2][3] = '.';
+  grid[2][4] = '.';
+  grid[2][5] = '.';
+  grid[2][6] = '.';
+  grid[2][7] = '.';
+  grid[1][5] = '.';
+  grid[1][6] = '.';
+
+  const floorState = {
+    grid,
+    enemies: [enemy, ally],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(9, 5, false),
+  };
+
+  const { api } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: { x: 2, y: 2, hp: 20, maxHp: 20 },
+    hasLineOfSight: () => true,
+  });
+
+  api.takeEnemyTurn(enemy);
+
+  assert.equal(enemy.x, 5);
+  assert.equal(enemy.y, 2);
 });
 
 test('roaming idle movement picks a real reachable waypoint in open space', () => {
@@ -1037,7 +1320,7 @@ test('enemy door opening logs when the doorway is visible or close enough to hea
   });
   const hiddenHarness = createEnemyTurnHarness(hiddenScenario);
 
-  hiddenHarness.api.moveEnemies();
+  hiddenHarness.api.takeEnemyTurn(hiddenScenario.enemy);
 
   assert.equal(hiddenScenario.enemy.x, 14);
   assert.equal(hiddenScenario.floorState.doors[0].isOpen, true);
@@ -1051,7 +1334,7 @@ test('enemy door opening logs when the doorway is visible or close enough to hea
   });
   const nearbyHarness = createEnemyTurnHarness(nearbyScenario);
 
-  nearbyHarness.api.moveEnemies();
+  nearbyHarness.api.takeEnemyTurn(nearbyScenario.enemy);
 
   assert.equal(nearbyScenario.enemy.x, 14);
   assert.equal(nearbyScenario.floorState.doors[0].isOpen, true);
@@ -1074,7 +1357,7 @@ test('enemy door opening logs when the doorway is visible or close enough to hea
   const visibleScenario = createDoorOpeningScenario({ doorVisible: true });
   const visibleHarness = createEnemyTurnHarness(visibleScenario);
 
-  visibleHarness.api.moveEnemies();
+  visibleHarness.api.takeEnemyTurn(visibleScenario.enemy);
 
   assert.equal(visibleScenario.enemy.x, 14);
   assert.equal(visibleScenario.floorState.doors[0].isOpen, true);

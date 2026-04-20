@@ -16,7 +16,13 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
         keys: 1,
         lockedDoors: 1,
         foods: 3,
-        consumables: { total: 4, healing: 2, utility: 2 },
+        foodNutrition: { totalNutrition: 120, averageNutrition: 40 },
+        consumables: {
+          total: 4,
+          healing: 2,
+          utility: 2,
+          healingValue: { totalHeal: 20, averageHeal: 10 },
+        },
         floorWeapons: 1,
         floorOffHands: 0,
         chests: 2,
@@ -34,7 +40,13 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           keys: 0,
           lockedDoors: 0,
           foods: 1,
-          consumables: { total: 1, healing: 1, utility: 0 },
+          foodNutrition: { totalNutrition: 20, averageNutrition: 20 },
+          consumables: {
+            total: 1,
+            healing: 1,
+            utility: 0,
+            healingValue: { totalHeal: 8, averageHeal: 8 },
+          },
           floorWeapons: 0,
           floorOffHands: 0,
           chests: 1,
@@ -51,7 +63,13 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           keys: 1,
           lockedDoors: 1,
           foods: 2,
-          consumables: { total: 3, healing: 1, utility: 2 },
+          foodNutrition: { totalNutrition: 100, averageNutrition: 50 },
+          consumables: {
+            total: 3,
+            healing: 1,
+            utility: 2,
+            healingValue: { totalHeal: 12, averageHeal: 12 },
+          },
           floorWeapons: 1,
           floorOffHands: 0,
           chests: 1,
@@ -70,7 +88,13 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
         keys: 2,
         lockedDoors: 2,
         foods: 5,
-        consumables: { total: 6, healing: 3, utility: 3 },
+        foodNutrition: { totalNutrition: 260, averageNutrition: 52 },
+        consumables: {
+          total: 6,
+          healing: 3,
+          utility: 3,
+          healingValue: { totalHeal: 34, averageHeal: 11.33 },
+        },
         floorWeapons: 2,
         floorOffHands: 1,
         chests: 3,
@@ -88,7 +112,13 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           keys: 0,
           lockedDoors: 0,
           foods: 2,
-          consumables: { total: 2, healing: 1, utility: 1 },
+          foodNutrition: { totalNutrition: 70, averageNutrition: 35 },
+          consumables: {
+            total: 2,
+            healing: 1,
+            utility: 1,
+            healingValue: { totalHeal: 6, averageHeal: 6 },
+          },
           floorWeapons: 0,
           floorOffHands: 0,
           chests: 1,
@@ -105,7 +135,13 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           keys: 2,
           lockedDoors: 2,
           foods: 3,
-          consumables: { total: 4, healing: 2, utility: 2 },
+          foodNutrition: { totalNutrition: 190, averageNutrition: 63.33 },
+          consumables: {
+            total: 4,
+            healing: 2,
+            utility: 2,
+            healingValue: { totalHeal: 28, averageHeal: 14 },
+          },
           floorWeapons: 2,
           floorOffHands: 1,
           chests: 2,
@@ -124,9 +160,15 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
   assert.equal(batchReport.studioCount, 2);
   assert.equal(batchReport.totals.rooms.mean, 12);
   assert.equal(batchReport.totals.keys.max, 2);
+  assert.equal(batchReport.totals['foodNutrition.totalNutrition'].mean, 190);
+  assert.equal(batchReport.totals['foodNutrition.averageNutrition'].mean, 46);
+  assert.equal(batchReport.totals['consumables.healingValue.totalHeal'].mean, 27);
+  assert.equal(batchReport.totals['consumables.healingValue.averageHeal'].mean, 10.67);
   assert.equal(batchReport.totals['loot.total'].mean, 17.5);
   assert.equal(batchReport.totals['chestContents.offHands'].mean, 1.5);
   assert.equal(batchReport.perStudio[0].metrics.rooms.mean, 4.5);
+  assert.equal(batchReport.perStudio[1].metrics['foodNutrition.totalNutrition'].mean, 145);
+  assert.equal(batchReport.perStudio[1].metrics['consumables.healingValue.totalHeal'].mean, 20);
   assert.equal(batchReport.perStudio[1].metrics['chestContents.offHands'].mean, 1.5);
   assert.equal(batchReport.perStudio[1].metrics.lockedDoors.mean, 1.5);
   assert.deepEqual(batchReport.perStudio[0].archetypeIds, ['action', 'romcom']);
@@ -147,8 +189,12 @@ test('studio-generation-batch-report formats a readable summary', () => {
       keys: { mean: 1.5, min: 1, max: 2 },
       lockedDoors: { mean: 1.5, min: 1, max: 2 },
       foods: { mean: 4, min: 3, max: 5 },
+      'foodNutrition.totalNutrition': { mean: 180, min: 160, max: 200 },
+      'foodNutrition.averageNutrition': { mean: 45, min: 40, max: 50 },
       'consumables.total': { mean: 5, min: 4, max: 6 },
       'consumables.healing': { mean: 2, min: 1, max: 3 },
+      'consumables.healingValue.totalHeal': { mean: 21, min: 16, max: 26 },
+      'consumables.healingValue.averageHeal': { mean: 10.5, min: 8, max: 13 },
       'consumables.utility': { mean: 3, min: 3, max: 3 },
       floorWeapons: { mean: 1, min: 1, max: 1 },
       floorOffHands: { mean: 0.5, min: 0, max: 1 },
@@ -170,7 +216,11 @@ test('studio-generation-batch-report formats a readable summary', () => {
           keys: { mean: 0.5, min: 0, max: 1 },
           lockedDoors: { mean: 0.5, min: 0, max: 1 },
           foods: { mean: 2, min: 1, max: 3 },
+          'foodNutrition.totalNutrition': { mean: 80, min: 60, max: 100 },
+          'foodNutrition.averageNutrition': { mean: 40, min: 30, max: 50 },
           'consumables.total': { mean: 2, min: 1, max: 3 },
+          'consumables.healingValue.totalHeal': { mean: 9, min: 8, max: 10 },
+          'consumables.healingValue.averageHeal': { mean: 9, min: 8, max: 10 },
           chests: { mean: 1, min: 1, max: 1 },
           'chestContents.total': { mean: 3, min: 2, max: 4 },
           'chestContents.offHands': { mean: 1, min: 1, max: 1 },
@@ -185,6 +235,10 @@ test('studio-generation-batch-report formats a readable summary', () => {
   assert.match(text, /Laeufe 2 \| Studios pro Lauf 1/);
   assert.match(text, /Keys 1.5 \(min 1, max 2\)/);
   assert.match(text, /Studio 1 \| Archetyp action/);
+  assert.match(text, /Nahrung Nährwert 80 \(min 60, max 100\)/);
+  assert.match(text, /Nahrung Schnitt 40 \(min 30, max 50\)/);
+  assert.match(text, /Verbrauchbar Heilwert 9 \(min 8, max 10\)/);
+  assert.match(text, /Verbrauchbar Heilschnitt 9 \(min 8, max 10\)/);
   assert.match(text, /Truhenschilde 1 \(min 1, max 1\)/);
   assert.match(text, /Loot gesamt 7 \(min 6, max 8\)/);
 });

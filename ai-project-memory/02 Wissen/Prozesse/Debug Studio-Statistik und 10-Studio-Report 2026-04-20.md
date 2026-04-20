@@ -53,13 +53,27 @@ Der aktive Runtime-Pfad besitzt jetzt eine wiederverwendbare Studio-Generierungs
 - Elite- und Dire-Varianten
 - Boss-Gegner ab Rangband `boss`
 - Schlüssel und verschlossene Türen
-- Nahrung
+- Nahrung als Anzahl plus Nährwertsumme und durchschnittlicher Nährwert pro Nahrungspickup
 - Verbrauchbares gesamt sowie Heilung gegen Utility
 - Bodenwaffen und Bodenschilde
 - Truhen und Truheninhalte nach Typ
 - Fallen
 - Vitrinen
 - Räume gesamt sowie Raumrollen pro Studio im strukturierten Report
+
+## Nachtrag Nahrungsauswertung vom 2026-04-20
+- Die Studio-Statistik zeigt Nahrung nicht mehr nur als reine Pickup-Anzahl, sondern zusätzlich als aufsummierten Nährwert und als Durchschnitt pro Nahrungspickup.
+- Der strukturierte Report liefert dafür pro Studio und in der Gesamtsumme das Objekt `foodNutrition` mit `count`, `totalNutrition` und `averageNutrition`.
+- Die Textausgabe in Debug-Dialog und Test-API nutzt jetzt das Format `Nahrung X (Nährwert Y, Schnitt Z)`.
+- Die Batch-CLI aggregiert diese Werte zusätzlich als eigene Metriken `Nahrung Nährwert` und `Nahrung Schnitt`, jeweils mit Mittelwert, Minimum und Maximum über alle Runs.
+- Damit lässt sich nun unterscheiden, ob ein Run wenig Nahrung wegen geringer Pickup-Zahl oder wegen schwacher Einzelwerte erzeugt.
+
+## Nachtrag Heilungsauswertung vom 2026-04-20
+- Die Studio-Statistik wertet Heilverbrauchsgüter jetzt nicht mehr nur als Anzahl aus, sondern zusätzlich als aufsummierten Heilwert und als Durchschnitt pro Heilitem.
+- Der strukturierte Report führt diese Daten unter `consumables.healingValue` mit `count`, `totalHeal` und `averageHeal`.
+- Die Textausgabe in Debug-Dialog und Test-API nutzt dafür jetzt das Format `Verbrauchbar X (Heilung Y, Heilwert Z, Schnitt W)`.
+- Die Batch-CLI aggregiert dazu die Zusatzmetriken `Verbrauchbar Heilwert` und `Verbrauchbar Heilschnitt`, jeweils als Mittelwert, Minimum und Maximum über alle Runs.
+- Dadurch lässt sich unterscheiden, ob Heilung in einem Run knapp ist, weil zu wenige Heilitems spawnen, oder weil die einzelnen Heilitems schwache Werte tragen.
 
 ## Einordnung für Balancing und Prüfung
 - Die Statistik ist absichtlich generatornah und zählt den Zustand direkt auf dem erzeugten Studiozustand, nicht erst indirekt über UI-Renderpfade.

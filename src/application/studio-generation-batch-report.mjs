@@ -9,8 +9,12 @@ const METRIC_DEFS = [
   { id: 'keys', label: 'Keys', read: (entry) => entry?.keys ?? 0 },
   { id: 'lockedDoors', label: 'Locked Doors', read: (entry) => entry?.lockedDoors ?? 0 },
   { id: 'foods', label: 'Nahrung', read: (entry) => entry?.foods ?? 0 },
+  { id: 'foodNutrition.totalNutrition', label: 'Nahrung Nährwert', read: (entry) => entry?.foodNutrition?.totalNutrition ?? 0 },
+  { id: 'foodNutrition.averageNutrition', label: 'Nahrung Schnitt', read: (entry) => entry?.foodNutrition?.averageNutrition ?? 0 },
   { id: 'consumables.total', label: 'Verbrauchbar', read: (entry) => entry?.consumables?.total ?? 0 },
   { id: 'consumables.healing', label: 'Verbrauchbar Heilung', read: (entry) => entry?.consumables?.healing ?? 0 },
+  { id: 'consumables.healingValue.totalHeal', label: 'Verbrauchbar Heilwert', read: (entry) => entry?.consumables?.healingValue?.totalHeal ?? 0 },
+  { id: 'consumables.healingValue.averageHeal', label: 'Verbrauchbar Heilschnitt', read: (entry) => entry?.consumables?.healingValue?.averageHeal ?? 0 },
   { id: 'consumables.utility', label: 'Verbrauchbar Utility', read: (entry) => entry?.consumables?.utility ?? 0 },
   { id: 'floorWeapons', label: 'Bodenwaffen', read: (entry) => entry?.floorWeapons ?? 0 },
   { id: 'floorOffHands', label: 'Bodenschilde', read: (entry) => entry?.floorOffHands ?? 0 },
@@ -118,7 +122,11 @@ export function formatStudioGenerationBatchReport(report) {
     lines.push(`  ${formatMetricLine('Keys', studio.metrics.keys)}`);
     lines.push(`  ${formatMetricLine('Locked Doors', studio.metrics.lockedDoors)}`);
     lines.push(`  ${formatMetricLine('Nahrung', studio.metrics.foods)}`);
+    lines.push(`  ${formatMetricLine('Nahrung Nährwert', studio.metrics['foodNutrition.totalNutrition'])}`);
+    lines.push(`  ${formatMetricLine('Nahrung Schnitt', studio.metrics['foodNutrition.averageNutrition'])}`);
     lines.push(`  ${formatMetricLine('Verbrauchbar', studio.metrics['consumables.total'])}`);
+    lines.push(`  ${formatMetricLine('Verbrauchbar Heilwert', studio.metrics['consumables.healingValue.totalHeal'])}`);
+    lines.push(`  ${formatMetricLine('Verbrauchbar Heilschnitt', studio.metrics['consumables.healingValue.averageHeal'])}`);
     lines.push(`  ${formatMetricLine('Truhen', studio.metrics.chests)}`);
     lines.push(`  ${formatMetricLine('Truheninhalte', studio.metrics['chestContents.total'])}`);
     lines.push(`  ${formatMetricLine('Truhenschilde', studio.metrics['chestContents.offHands'])}`);

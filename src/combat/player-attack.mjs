@@ -3,6 +3,7 @@ import { recordEnemyDeathMarker } from '../application/death-marker-service.mjs'
 import { buildCombatEnemyReference, formatPlayerAttackLog } from '../text/combat-log.mjs';
 import { formatWeaponDativePhrase, formatWeaponReference } from '../text/combat-phrasing.mjs';
 import { isBowWeapon } from '../equipment-helpers.mjs';
+import { dropEnemyLoot } from '../application/enemy-loot-drop-service.mjs';
 
 const OPENING_STRIKE_LOGS = {
   filmstar: {
@@ -32,7 +33,6 @@ export function createPlayerAttackApi(context) {
     getCurrentFloorState,
     createWeaponPickup,
     createOffHandPickup,
-    createFoodPickup,
     resolveCombatAttack,
     resolveBlock,
     tryApplyWeaponEffects,
@@ -187,18 +187,16 @@ export function createPlayerAttackApi(context) {
       recordEnemyDeathMarker(floorState, enemy, state.turn);
       state.kills += 1;
       state.killStats = recordKillStat(state.killStats, enemy);
-      if (enemy.lootWeapon && randomChance() < (enemy.weaponDropChance ?? 0.55)) {
-        floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
-        addMessage(`${enemyReference.subjectCapitalized} laesst ${formatWeaponReference(enemy.lootWeapon, { article: 'definite', grammaticalCase: 'accusative' })} fallen.`, 'important');
-      }
-      if (enemy.lootOffHand && randomChance() < (enemy.offHandDropChance ?? 0.45)) {
-        floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));
-        addMessage(`${enemyReference.subjectCapitalized} verliert ${enemy.lootOffHand.name}.`, 'important');
-      }
-      if (enemy.lootDrop?.item?.type === 'food') {
-        floorState.foods.push(createFoodPickup(enemy.lootDrop.item, enemy.x, enemy.y));
-        addMessage(`${enemyReference.subjectCapitalized} laesst ${enemy.lootDrop.item.name} fallen.`, 'important');
-      }
+      dropEnemyLoot({
+        enemy,
+        floorState,
+        enemyReference,
+        randomChance,
+        createWeaponPickup,
+        createOffHandPickup,
+        formatWeaponReference,
+        addMessage,
+      });
       playVictorySound();
       grantExperience(enemy.xpReward, enemyReference.object);
       addMessage(`${enemyReference.subjectCapitalized} ist besiegt.`, 'important');

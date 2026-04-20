@@ -35,9 +35,9 @@ export const MONSTER_VARIANT_TIERS = {
     modCount: 0,
     hpMultiplier: 1,
     xpMultiplier: 1,
-    weaponDropChance: 0.08,
-    offHandDropChance: 0.06,
-    iconicWeaponDropChance: 0.25,
+    weaponDropChance: 0.48,
+    offHandDropChance: 0.18,
+    iconicWeaponDropChance: 0.72,
   },
   elite: {
     id: "elite",
@@ -45,9 +45,9 @@ export const MONSTER_VARIANT_TIERS = {
     modCount: 1,
     hpMultiplier: 1.18,
     xpMultiplier: 1.35,
-    weaponDropChance: 0.16,
-    offHandDropChance: 0.12,
-    iconicWeaponDropChance: 0.34,
+    weaponDropChance: 0.64,
+    offHandDropChance: 0.3,
+    iconicWeaponDropChance: 0.84,
   },
   dire: {
     id: "dire",
@@ -55,9 +55,9 @@ export const MONSTER_VARIANT_TIERS = {
     modCount: 2,
     hpMultiplier: 1.32,
     xpMultiplier: 1.65,
-    weaponDropChance: 0.24,
-    offHandDropChance: 0.18,
-    iconicWeaponDropChance: 0.45,
+    weaponDropChance: 0.8,
+    offHandDropChance: 0.42,
+    iconicWeaponDropChance: 0.94,
   },
 };
 export const MONSTER_VARIANT_MODIFIERS = [

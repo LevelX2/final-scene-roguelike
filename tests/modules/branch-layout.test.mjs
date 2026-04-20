@@ -261,9 +261,9 @@ function createGeneratorHarness(options = {}) {
     rollChestContent: options.rollChestContent ?? (() => null),
     rollChestContents: options.rollChestContents ?? null,
     getFloorWeaponSpawnCount: () => 0,
-    getEnemyCountForFloor: () => 0,
+    getEnemyCountForFloor: options.getEnemyCountForFloor ?? (() => 0),
     getPotionCountForFloor: () => 0,
-    getUnlockedMonsterRank: () => 0,
+    getUnlockedMonsterRank: options.getUnlockedMonsterRank ?? (() => 0),
     shouldSpawnFloorWeapon: options.shouldSpawnFloorWeapon ?? (() => false),
     shouldSpawnFloorShield: options.shouldSpawnFloorShield ?? (() => false),
     shouldSpawnChest: options.shouldSpawnChest ?? (() => false),
@@ -332,9 +332,9 @@ function createStudioGeneratorHarness(options = {}) {
     rollChestContent: options.rollChestContent ?? (() => null),
     rollChestContents: options.rollChestContents ?? null,
     getFloorWeaponSpawnCount: () => 0,
-    getEnemyCountForFloor: () => 0,
+    getEnemyCountForFloor: options.getEnemyCountForFloor ?? (() => 0),
     getPotionCountForFloor: () => 0,
-    getUnlockedMonsterRank: () => 0,
+    getUnlockedMonsterRank: options.getUnlockedMonsterRank ?? (() => 0),
     shouldSpawnFloorWeapon: options.shouldSpawnFloorWeapon ?? (() => false),
     shouldSpawnFloorShield: options.shouldSpawnFloorShield ?? (() => false),
     shouldSpawnChest: options.shouldSpawnChest ?? (() => false),
@@ -601,6 +601,55 @@ test('floor utility consumables stay utility pickups instead of being normalized
   assert.ok(utilityPickups.length >= 2);
   assert.equal(utilityPickups.every((entry) => entry.item?.effectFamily === 'blink_teleport'), true);
   assert.equal(utilityPickups.every((entry) => entry.item?.heal == null), true);
+});
+
+test('studio generator can assign enemy misc drops as healing loot when no food drop is planned', () => {
+  const enemy = {
+    id: 'test-enemy',
+    variantTier: 'normal',
+  };
+
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: (() => {
+      const sequence = [0, 0.2, 0.2];
+      return () => sequence.shift() ?? 0.2;
+    })(),
+    randomInt: (min) => min,
+    MONSTER_CATALOG: [{ id: 'test-enemy', archetypeId: 'slasher', spawnGroup: 'standard', rank: 1 }],
+    getEnemyCountForFloor: () => 1,
+    getUnlockedMonsterRank: () => 1,
+    chooseWeightedMonster: () => ({ id: 'test-enemy', spawnGroup: 'standard', rank: 1 }),
+    createEnemy: () => ({ ...enemy }),
+    getLockedDoorCountForFloor: () => 0,
+    createHealingConsumableDefinition: (familyId) => ({
+      id: `${familyId}-drop`,
+      type: 'consumable',
+      itemType: 'consumable',
+      consumableType: 'healing',
+      familyId,
+      name: 'Monster-Heilung',
+      displayName: 'Monster-Heilung',
+      heal: 8,
+    }),
+    rollConsumableLootDefinition: () => null,
+  });
+
+  const level = generator.createDungeonLevel(2, {
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 2,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher'],
+  });
+
+  assert.equal(level.enemies.length, 1);
+  assert.equal(level.enemies[0].lootDrop?.item?.consumableType, 'healing');
+  assert.equal(level.enemies[0].lootDrop?.item?.displayName, 'Monster-Heilung');
 });
 
 test('branch layout keeps the main corridor bounding box horizontally dominant', () => {

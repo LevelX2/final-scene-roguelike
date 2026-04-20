@@ -19,6 +19,15 @@ const LOCKED_BONUS_ROOM_MIN_REWARD_TILES = 5;
 const LOCKED_BONUS_ROOM_FOOD_COUNT = 2;
 const LOCKED_BONUS_ROOM_HEALING_COUNT = 2;
 const LOCKED_BONUS_ROOM_CHEST_CONTENT_COUNT = 3;
+const MONSTER_MISC_DROP_CHANCE_BY_VARIANT = Object.freeze({
+  normal: 0.34,
+  elite: 0.46,
+  dire: 0.58,
+});
+const MONSTER_MISC_DROP_TYPE_WEIGHTS = Object.freeze({
+  healing: 68,
+  utility: 32,
+});
 
 const ROOM_TYPE_SPECS = {
   entry_room: {
@@ -3471,6 +3480,72 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
   }
 }
 
+function getMonsterMiscDropChance(enemy) {
+  return MONSTER_MISC_DROP_CHANCE_BY_VARIANT[enemy?.variantTier ?? 'normal']
+    ?? MONSTER_MISC_DROP_CHANCE_BY_VARIANT.normal;
+}
+
+function createMonsterHealingDrop(state, floorNumber, studioArchetypeId) {
+  const familyId = chooseHealingFamilyForFloor(floorNumber, (entries) => weightedPick(entries, state.randomChance));
+  const healingItem = state.createHealingConsumableDefinition?.(familyId, {
+    studioArchetypeId,
+  });
+
+  return healingItem
+    ? {
+        itemId: healingItem.id,
+        item: healingItem,
+      }
+    : null;
+}
+
+function createMonsterUtilityDrop(state, floorNumber, studioArchetypeId) {
+  const allowedPhase = floorNumber >= 6 ? 3 : floorNumber >= 3 ? 2 : 1;
+  const consumable = state.rollConsumableLootDefinition?.({
+    floorNumber,
+    sourceType: 'special',
+    archetypeId: studioArchetypeId,
+    allowedPhase,
+  });
+
+  return consumable
+    ? {
+        itemId: consumable.id,
+        item: consumable,
+      }
+    : null;
+}
+
+function rollMonsterMiscDrop(state, enemy, floorNumber, studioArchetypeId) {
+  if (state.randomChance() >= getMonsterMiscDropChance(enemy)) {
+    return null;
+  }
+
+  const weightedTypes = [
+    {
+      type: 'healing',
+      weight: typeof state.createHealingConsumableDefinition === 'function'
+        ? MONSTER_MISC_DROP_TYPE_WEIGHTS.healing
+        : 0,
+    },
+    {
+      type: 'utility',
+      weight: typeof state.rollConsumableLootDefinition === 'function'
+        ? MONSTER_MISC_DROP_TYPE_WEIGHTS.utility
+        : 0,
+    },
+  ].filter((entry) => entry.weight > 0);
+
+  const selectedType = weightedPick(weightedTypes, state.randomChance)?.type ?? null;
+  if (selectedType === 'utility') {
+    return createMonsterUtilityDrop(state, floorNumber, studioArchetypeId)
+      ?? createMonsterHealingDrop(state, floorNumber, studioArchetypeId);
+  }
+
+  return createMonsterHealingDrop(state, floorNumber, studioArchetypeId)
+    ?? createMonsterUtilityDrop(state, floorNumber, studioArchetypeId);
+}
+
 function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
   const foodBudget = state.splitFoodBudget(state.rollFoodBudget(state.randomInt).totalBudget);
   const floorSeenCounts = {};
@@ -3507,6 +3582,11 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
         item: plannedDrop.item,
       };
       foodBudget.monsters = Math.max(0, foodBudget.monsters - plannedDrop.spentBudget);
+    } else {
+      const miscDrop = rollMonsterMiscDrop(state, enemy, floorNumber, studioArchetypeId);
+      if (miscDrop) {
+        enemy.lootDrop = miscDrop;
+      }
     }
     state.enemies.push(enemy);
   }

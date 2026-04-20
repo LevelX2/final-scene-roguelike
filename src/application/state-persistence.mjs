@@ -85,6 +85,7 @@ export function createStatePersistenceApi(context) {
     nextOptions.stepSound = Boolean(nextOptions.stepSound);
     nextOptions.deathSound = Boolean(nextOptions.deathSound);
     nextOptions.voiceAnnouncements = Boolean(nextOptions.voiceAnnouncements);
+    nextOptions.directFireOnSingleTarget = Boolean(nextOptions.directFireOnSingleTarget);
     nextOptions.decorativeOverlaysEnabled = Boolean(nextOptions.decorativeOverlaysEnabled);
     nextOptions.decorativeOverlayDebugLog = Boolean(nextOptions.decorativeOverlayDebugLog);
     nextOptions.decorativeOverlayDebugMask = Boolean(nextOptions.decorativeOverlayDebugMask);

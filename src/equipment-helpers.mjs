@@ -4,6 +4,8 @@ import { getItemBalanceGroups } from './item-balance-groups.mjs';
 import { buildWeaponGrammar, formatWeaponDisplayName as formatWeaponDisplayNameText, formatWeaponReference as formatWeaponReferenceText } from './text/combat-phrasing.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from './weapon-runtime-effects.mjs';
 
+const BOW_WEAPON_KEYWORDS = ['bow', 'bogen'];
+
 export function createBareHandsWeapon() {
   const weapon = {
     type: 'weapon',
@@ -89,6 +91,25 @@ export function getOffHand(entity) {
 
 export function getCombatWeapon(entity) {
   return getMainHand(entity);
+}
+
+export function isBowWeapon(weapon) {
+  if (!weapon || typeof weapon !== 'object') {
+    return false;
+  }
+
+  return [
+    weapon.id,
+    weapon.templateId,
+    weapon.baseItemId,
+    weapon.name,
+    weapon.displayName,
+  ]
+    .filter((value) => typeof value === 'string' && value.length > 0)
+    .some((value) => {
+      const normalizedValue = value.toLowerCase();
+      return BOW_WEAPON_KEYWORDS.some((keyword) => normalizedValue.includes(keyword));
+    });
 }
 
 export function createEquipmentPresentationHelpers({ formatRarityLabel, getItemModifierSummary }) {

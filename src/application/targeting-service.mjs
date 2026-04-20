@@ -21,6 +21,7 @@ export function evaluateTargetSelection(context) {
     y,
     rangeDistance,
     hasLineOfSight,
+    previewCombatAttack,
   } = context;
 
   const enemy = floorState?.enemies?.find((entry) => entry.x === x && entry.y === y) ?? null;
@@ -32,6 +33,9 @@ export function evaluateTargetSelection(context) {
     enemy &&
     hasLineOfSight?.(floorState, state?.player?.x, state?.player?.y, enemy.x, enemy.y),
   );
+  const attackPreview = enemy && hasRange && hasSight
+    ? previewCombatAttack?.(state?.player, enemy, { weapon, distance })
+    : null;
 
   return {
     enemy,
@@ -39,6 +43,12 @@ export function evaluateTargetSelection(context) {
     hasRange,
     hasSight,
     valid: Boolean(enemy && hasRange && hasSight),
+    hitChance: attackPreview?.hitChance ?? null,
+    baseHitChance: attackPreview?.baseHitChance ?? null,
+    critChance: attackPreview?.critChance ?? null,
+    coverPenalty: attackPreview?.coverPenalty ?? 0,
+    coverGrade: attackPreview?.coverGrade ?? 'clear',
+    coverLabel: attackPreview?.coverLabel ?? '',
   };
 }
 
@@ -49,6 +59,7 @@ export function getVisibleTargetSelections(context) {
     weapon,
     rangeDistance,
     hasLineOfSight,
+    previewCombatAttack,
   } = context;
 
   if (!isTargetModeWeapon(weapon)) {
@@ -74,6 +85,7 @@ export function getVisibleTargetSelections(context) {
       y: enemy.y,
       rangeDistance,
       hasLineOfSight,
+      previewCombatAttack,
     }))
     .sort((left, right) => (left.distance ?? Number.MAX_SAFE_INTEGER) - (right.distance ?? Number.MAX_SAFE_INTEGER));
 
@@ -88,5 +100,16 @@ export function getTargetHintLabel(targetSelection) {
     return 'Kein Ziel';
   }
 
-  return targetSelection.valid ? 'Schuss frei' : 'Kein Schuss';
+  if (!targetSelection.valid) {
+    return 'Kein Schuss';
+  }
+
+  const chanceLabel = Number.isFinite(targetSelection.hitChance)
+    ? `${Math.round(targetSelection.hitChance)}% Treffer`
+    : 'Schuss frei';
+  if ((targetSelection.coverPenalty ?? 0) > 0) {
+    return `${targetSelection.coverLabel || 'Teildeckung'} · ${chanceLabel}`;
+  }
+
+  return `Schuss frei · ${chanceLabel}`;
 }

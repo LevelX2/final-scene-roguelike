@@ -7,11 +7,11 @@ export function createRenderAssetHelpers(context) {
   const BOW_KEYWORDS = ['bow'];
   const HEAVY_RANGED_KEYWORDS = ['shotgun', 'launcher', 'lance'];
   const MAIN_HAND_POSES = {
-    'melee-light': { scale: 0.98, offsetX: 6, offsetY: 5, rotation: -48 },
-    'melee-heavy': { scale: 1.08, offsetX: 4, offsetY: 1, rotation: -40 },
-    'ranged-bow': { scale: 1.08, offsetX: 6, offsetY: 0, rotation: -6 },
-    'ranged-heavy': { scale: 1.06, offsetX: 5, offsetY: 1, rotation: -24 },
-    'ranged-gun': { scale: 1, offsetX: 6, offsetY: 2, rotation: -22 },
+    'melee-light': { scale: 0.98, offsetX: 7, offsetY: 0, rotation: 42 },
+    'melee-heavy': { scale: 1.08, offsetX: 6, offsetY: -1, rotation: 36 },
+    'ranged-bow': { scale: 1.08, offsetX: 5, offsetY: -2, rotation: 2 },
+    'ranged-heavy': { scale: 1.06, offsetX: 5, offsetY: -1, rotation: 0 },
+    'ranged-gun': { scale: 1, offsetX: 4, offsetY: -3, rotation: -4 },
   };
   const OFF_HAND_POSES = {
     shield: { poseClass: 'offhand-shield', scale: 0.9, offsetX: -5, offsetY: 2, rotation: 10 },

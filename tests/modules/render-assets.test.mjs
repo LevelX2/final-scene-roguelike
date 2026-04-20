@@ -330,9 +330,9 @@ test('render asset helpers derive player and enemy hand overlays from equipped i
       imageUrl: './assets/weapons/combat-knife.svg',
       poseClass: 'melee-light',
       scale: 0.98,
-      offsetX: 6,
-      offsetY: 5,
-      rotation: -48,
+      offsetX: 7,
+      offsetY: 0,
+      rotation: 42,
     },
   );
 
@@ -349,9 +349,9 @@ test('render asset helpers derive player and enemy hand overlays from equipped i
       imageUrl: './assets/weapons/woodcutter-axe.svg',
       poseClass: 'melee-heavy',
       scale: 1.08,
-      offsetX: 4,
-      offsetY: 1,
-      rotation: -40,
+      offsetX: 6,
+      offsetY: -1,
+      rotation: 36,
     },
   );
 
@@ -368,9 +368,9 @@ test('render asset helpers derive player and enemy hand overlays from equipped i
       imageUrl: './assets/weapons/sport-bow.svg',
       poseClass: 'ranged-bow',
       scale: 1.08,
-      offsetX: 6,
-      offsetY: 0,
-      rotation: -6,
+      offsetX: 5,
+      offsetY: -2,
+      rotation: 2,
     },
   );
 
@@ -387,9 +387,9 @@ test('render asset helpers derive player and enemy hand overlays from equipped i
       imageUrl: './assets/weapons/expedition-revolver.svg',
       poseClass: 'ranged-gun',
       scale: 1,
-      offsetX: 6,
-      offsetY: 2,
-      rotation: -22,
+      offsetX: 4,
+      offsetY: -3,
+      rotation: -4,
     },
   );
 
@@ -405,9 +405,9 @@ test('render asset helpers derive player and enemy hand overlays from equipped i
       imageUrl: './assets/weapons/revolver.svg',
       poseClass: 'ranged-gun',
       scale: 1,
-      offsetX: 6,
-      offsetY: 2,
-      rotation: -22,
+      offsetX: 4,
+      offsetY: -3,
+      rotation: -4,
     },
   );
 

@@ -35,6 +35,7 @@ export function createStateBlueprintApi(context) {
     stepSound: true,
     deathSound: true,
     voiceAnnouncements: true,
+    directFireOnSingleTarget: true,
     showcaseAnnouncementMode: "floating-text",
     decorativeOverlaysEnabled: true,
     decorativeOverlayDebugLog: false,

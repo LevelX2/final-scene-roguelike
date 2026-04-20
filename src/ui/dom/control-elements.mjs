@@ -42,6 +42,7 @@ export const tooltipScaleValueElement = document.getElementById("tooltipScaleVal
 export const toggleStepSoundElement = document.getElementById("toggleStepSound");
 export const toggleDeathSoundElement = document.getElementById("toggleDeathSound");
 export const toggleVoiceAnnouncementsElement = document.getElementById("toggleVoiceAnnouncements");
+export const toggleDirectFireOnSingleTargetElement = document.getElementById("toggleDirectFireOnSingleTarget");
 export const toggleDecorativeOverlaysElement = document.getElementById("toggleDecorativeOverlays");
 export const toggleDecorativeOverlayDebugLogElement = document.getElementById("toggleDecorativeOverlayDebugLog");
 export const toggleDecorativeOverlayDebugMaskElement = document.getElementById("toggleDecorativeOverlayDebugMask");

@@ -2,6 +2,7 @@ import { recordKillStat } from '../kill-stats.mjs';
 import { recordEnemyDeathMarker } from '../application/death-marker-service.mjs';
 import { buildCombatEnemyReference, formatPlayerAttackLog } from '../text/combat-log.mjs';
 import { formatWeaponDativePhrase, formatWeaponReference } from '../text/combat-phrasing.mjs';
+import { isBowWeapon } from '../equipment-helpers.mjs';
 
 const OPENING_STRIKE_LOGS = {
   filmstar: {
@@ -65,13 +66,17 @@ export function createPlayerAttackApi(context) {
     const enemyReference = buildCombatEnemyReference(enemy);
     const isRangedAttack = (options.distance ?? 1) > 1 && weapon?.attackMode === 'ranged';
     const weaponPhrase = formatWeaponDativePhrase(weapon);
+    const usesArrowProjectile = isRangedAttack && isBowWeapon(weapon);
+    const projectileKind = usesArrowProjectile
+      ? (result.critical ? 'hero-arrow-crit' : 'hero-arrow')
+      : (result.critical ? 'hero-shot-crit' : 'hero-shot');
     const rangedBoardEffect = isRangedAttack
       ? {
           boardEffect: {
             fromX: state.player.x,
             fromY: state.player.y,
-            kind: result.critical ? 'hero-shot-crit' : 'hero-shot',
-            flash: true,
+            kind: projectileKind,
+            flash: !usesArrowProjectile,
           },
         }
       : null;

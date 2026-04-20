@@ -359,6 +359,10 @@
           <input id="toggleVoiceAnnouncements" type="checkbox">
         </label>
         <label class="option-row">
+          <span>Direktschuss bei genau einem Ziel</span>
+          <input id="toggleDirectFireOnSingleTarget" type="checkbox">
+        </label>
+        <label class="option-row">
           <span>Vitrinenansagen</span>
           <select id="showcaseAnnouncementMode">
             <option value="off">Aus</option>
@@ -439,8 +443,8 @@
           <div class="help-list">
             <div class="help-row"><span><kbd>QWE</kbd> / <kbd>A D</kbd> / <kbd>YXC</kbd> oder <kbd>Pfeile</kbd></span><strong>Bewegen, auch diagonal</strong></div>
             <div class="help-row"><span><kbd>Leertaste</kbd></span><strong>Warten</strong></div>
-            <div class="help-row"><span><kbd>T</kbd> oder <kbd>Zielen</kbd></span><strong>G&uuml;ltige Fernkampfziele durchschalten</strong></div>
-            <div class="help-row"><span class="help-keys"><kbd>F</kbd><span class="help-key-sep">oder</span><kbd>Schie&szlig;en</kbd></span><strong>Auf das gr&uuml;n markierte Ziel feuern</strong></div>
+            <div class="help-row"><span><kbd>T</kbd> oder <kbd>Zielen</kbd></span><strong>Zielmodus &ouml;ffnen oder bei genau einem Ziel direkt schie&szlig;en</strong></div>
+            <div class="help-row"><span class="help-keys"><kbd>F</kbd><span class="help-key-sep">oder</span><kbd>Schie&szlig;en</kbd></span><strong>Auf das markierte Ziel feuern oder bei genau einem Ziel direkt schie&szlig;en</strong></div>
             <div class="help-row"><span><kbd>H</kbd></span><strong>Schnell Heiltrank trinken</strong></div>
             <div class="help-row"><span><kbd>V</kbd></span><strong>Benachbarte offene T&uuml;r schlie&szlig;en</strong></div>
             <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>
@@ -491,16 +495,21 @@
     </div>
   </div>
 
-  <div id="debugInfoModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-card panel debug-info-modal-card">
-      <p class="modal-eyebrow">Debugdaten</p>
-      <h2 id="debugInfoTitle">Reproduktionsdaten</h2>
-      <p class="modal-copy">Hier findest du die wichtigsten Angaben zur aktuell sichtbaren Studio-Konstellation.</p>
-      <textarea id="debugInfoText" class="debug-info-text" readonly spellcheck="false"></textarea>
-      <p id="debugInfoStatus" class="debug-info-status" aria-live="polite"></p>
-      <div class="modal-actions">
-        <button id="copyDebugInfo" class="choice-btn" type="button">Kopieren</button>
-        <button id="closeDebugInfo" class="choice-btn" type="button">Schließen</button>
+    <div id="debugInfoModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card panel debug-info-modal-card">
+        <p class="modal-eyebrow">Debugdaten</p>
+        <h2 id="debugInfoTitle">Reproduktionsdaten</h2>
+        <p class="modal-copy">Hier findest du die wichtigsten Angaben zur aktuell sichtbaren Studio-Konstellation.</p>
+        <div class="debug-info-advance-row">
+          <label class="debug-info-advance-label" for="debugAdvanceInput">Zeitvorschub</label>
+          <input id="debugAdvanceInput" class="debug-info-advance-input" type="number" min="1" step="1" value="100" inputmode="numeric">
+          <button id="debugAdvanceButton" class="choice-btn accent" type="button">Vorspulen</button>
+        </div>
+        <textarea id="debugInfoText" class="debug-info-text" readonly spellcheck="false"></textarea>
+        <p id="debugInfoStatus" class="debug-info-status" aria-live="polite"></p>
+        <div class="modal-actions">
+          <button id="copyDebugInfo" class="choice-btn" type="button">Kopieren</button>
+          <button id="closeDebugInfo" class="choice-btn" type="button">Schließen</button>
       </div>
     </div>
   </div>

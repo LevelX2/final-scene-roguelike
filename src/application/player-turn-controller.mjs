@@ -30,9 +30,11 @@ export function createPlayerTurnController(context) {
     hasLineOfSight,
     chebyshevDistance,
     getCombatWeapon,
+    previewCombatAttack,
     ensureSchedulerState,
     beginActorTurn,
     scheduleActorNextTurn,
+    setTimelineTime,
     getNextScheduledActor,
     getActorFloorContext,
     isPlayerTurn,
@@ -69,25 +71,25 @@ export function createPlayerTurnController(context) {
     return dx !== 0 && dy !== 0;
   }
 
-  function processActorAfterAction(actor, floorState, { actionType = "other" } = {}) {
+  function processActorAfterAction(actor, floorState, { actionType = "other", ignoreGameOver = false } = {}) {
     const state = getState();
-    if (!actor || actor.hp <= 0 || state.gameOver) {
+    if (!actor || actor.hp <= 0 || (state.gameOver && !ignoreGameOver)) {
       return;
     }
 
     processActorStatusEffects(actor, floorState);
-    if (state.gameOver || actor.hp <= 0) {
+    if ((state.gameOver && !ignoreGameOver) || actor.hp <= 0) {
       return;
     }
 
     processActorContinuousTraps(actor, floorState);
-    if (state.gameOver || actor.hp <= 0) {
+    if ((state.gameOver && !ignoreGameOver) || actor.hp <= 0) {
       return;
     }
 
     if (actor === state.player) {
       processActorSafeRegeneration(actor, actionType);
-      if (state.gameOver || actor.hp <= 0) {
+      if ((state.gameOver && !ignoreGameOver) || actor.hp <= 0) {
         return;
       }
 
@@ -167,6 +169,130 @@ export function createPlayerTurnController(context) {
       flushScheduledActorsUntilPlayerTurn();
     }
     renderSelf();
+  }
+
+  function pruneDeathMarkersForTurn() {
+    const state = getState();
+    const floorStates = Object.values(state.floors ?? {});
+    if (floorStates.length > 0) {
+      floorStates.forEach((floorState) => pruneExpiredDeathMarkers(floorState, state.turn));
+      return;
+    }
+
+    pruneExpiredDeathMarkers(getCurrentFloorState(), state.turn);
+  }
+
+  function runDebugActorStep(nextActor, {
+    playerActionType = "wait",
+    playerActionCost = 100,
+    ignoreGameOver = true,
+  } = {}) {
+    const state = getState();
+    if (!nextActor || nextActor.hp <= 0) {
+      return null;
+    }
+
+    const actorFloorContext = getActorFloorContext(nextActor);
+    beginActorTurn(nextActor);
+
+    if (nextActor === state.player) {
+      state.turn += 1;
+      pruneDeathMarkersForTurn();
+      if (!state.gameOver) {
+        applyPlayerNutritionTurnCost();
+      }
+      processActorAfterAction(state.player, actorFloorContext.floorState, {
+        actionType: playerActionType,
+        ignoreGameOver,
+      });
+      if (state.player.hp > 0) {
+        scheduleActorNextTurn(state.player, playerActionCost);
+      }
+      return {
+        actor: state.player,
+        floorNumber: actorFloorContext.floorNumber,
+        wasPlayer: true,
+      };
+    }
+
+    takeEnemyTurn(nextActor, {
+      floorState: actorFloorContext.floorState,
+      canTargetPlayer: actorFloorContext.floorNumber === state.floor,
+    });
+    processActorAfterAction(nextActor, actorFloorContext.floorState, {
+      actionType: "other",
+      ignoreGameOver,
+    });
+
+    if (nextActor.hp > 0 && (actorFloorContext.floorState?.enemies ?? []).includes(nextActor)) {
+      scheduleActorNextTurn(nextActor);
+    }
+
+    return {
+      actor: nextActor,
+      floorNumber: actorFloorContext.floorNumber,
+      wasPlayer: false,
+    };
+  }
+
+  function debugAdvanceTimeline(timeBudget = 100) {
+    const state = getState();
+    const floorState = getCurrentFloorState();
+    const normalizedBudget = Math.max(1, Math.round(Number(timeBudget) || 0));
+    if (!floorState?.debugReveal) {
+      return {
+        ok: false,
+        reason: "debug-reveal-required",
+      };
+    }
+
+    ensureSchedulerState();
+    const startTime = Math.max(0, Math.round(Number(state.timelineTime) || 0));
+    const targetTime = startTime + normalizedBudget;
+    let simulatedTurns = 0;
+    let guard = 0;
+    let lastStep = null;
+
+    while (guard < 2000) {
+      const nextActor = getNextScheduledActor();
+      if (!nextActor) {
+        break;
+      }
+
+      const nextActorTime = Math.max(0, Math.round(Number(nextActor.nextActionTime) || 0));
+      if (nextActorTime >= targetTime) {
+        break;
+      }
+
+      lastStep = runDebugActorStep(nextActor, {
+        playerActionType: "wait",
+        playerActionCost: 100,
+        ignoreGameOver: true,
+      });
+      if (!lastStep) {
+        break;
+      }
+
+      simulatedTurns += 1;
+      guard += 1;
+    }
+
+    if ((Number(state.timelineTime) || 0) < targetTime) {
+      setTimelineTime(targetTime);
+    }
+
+    renderSelf();
+    return {
+      ok: true,
+      startTime,
+      targetTime,
+      simulatedTurns,
+      actualTime: Math.max(0, Math.round(Number(state.timelineTime) || 0)),
+      exhaustedGuard: guard >= 2000,
+      lastActorLabel: lastStep
+        ? `${lastStep.actor === state.player ? "Spieler" : (lastStep.actor.name ?? lastStep.actor.baseName ?? lastStep.actor.id ?? "Unbekannt")} | Floor ${lastStep.floorNumber}`
+        : null,
+    };
   }
 
   function tryCloseAdjacentDoor() {
@@ -363,8 +489,35 @@ export function createPlayerTurnController(context) {
         weapon,
         rangeDistance: chebyshevDistance,
         hasLineOfSight,
+        previewCombatAttack,
       }),
     };
+  }
+
+  function isDirectFireOnSingleTargetEnabled(state = getState()) {
+    return state.options?.directFireOnSingleTarget ?? true;
+  }
+
+  function tryDirectFireSingleTarget(state = getState()) {
+    if (state.targeting?.active || !isDirectFireOnSingleTargetEnabled(state)) {
+      return false;
+    }
+
+    const { validTargets } = getVisibleTargetData(state);
+    if (validTargets.length !== 1) {
+      return false;
+    }
+
+    if (!ensurePlayerTurnReady()) {
+      renderSelf();
+      return true;
+    }
+
+    const [directTarget] = validTargets;
+    state.targeting.active = false;
+    attackEnemy(directTarget.enemy, { distance: directTarget.distance });
+    endTurn({ actionType: 'other' });
+    return true;
   }
 
   function enterTargetMode() {
@@ -395,6 +548,10 @@ export function createPlayerTurnController(context) {
     if (!canEnterTargetMode()) {
       addMessage('Mit dieser Waffe kannst du gerade keinen Zielmodus öffnen.', 'danger');
       renderSelf();
+      return;
+    }
+
+    if (tryDirectFireSingleTarget(state)) {
       return;
     }
 
@@ -493,6 +650,7 @@ export function createPlayerTurnController(context) {
       y: state.targeting.cursorY,
       rangeDistance: chebyshevDistance,
       hasLineOfSight,
+      previewCombatAttack,
     });
 
     if (!targetSelection.enemy) {
@@ -514,6 +672,7 @@ export function createPlayerTurnController(context) {
 
   return {
     endTurn,
+    debugAdvanceTimeline,
     tryCloseAdjacentDoor,
     movePlayer,
     handleWait,

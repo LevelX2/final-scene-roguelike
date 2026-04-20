@@ -19,6 +19,7 @@ export function createBoardView(context) {
     getMainHand,
     getCombatWeapon,
     getOffHand,
+    previewCombatAttack,
     formatWeaponDisplayName,
     formatWeaponReference,
     hasLineOfSight,
@@ -589,7 +590,7 @@ export function createBoardView(context) {
       const stateLabel = door.isOpen ? "Offen" : locked ? "Verschlossen" : "Geschlossen";
       const doorPresentation = getDoorPresentation(door, floorState);
       return appendDeathMarkerUnderlay({
-        type: `floor studio-${studioArchetypeId} ${door.isOpen ? "door-open" : "door-closed"} ${doorPresentation.classes.join(" ")}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`,
+        type: `${isVisible ? `floor studio-${studioArchetypeId}` : `floor memory studio-${studioArchetypeId}`} ${door.isOpen ? "door-open" : "door-closed"} ${doorPresentation.classes.join(" ")}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`.trim(),
         glyph: door.isOpen ? TILE.DOOR_OPEN : TILE.DOOR_CLOSED,
         overlayImageUrl: doorPresentation.iconAssetUrl,
         tooltip: isVisible ? {
@@ -741,12 +742,12 @@ export function createBoardView(context) {
     }, deathMarker, state.turn);
   }
 
-  function getTargetCursorState(x, y, state, floorState) {
+  function getTargetCursorSelection(x, y, state, floorState) {
     if (!state.targeting?.active) {
       return null;
     }
 
-    const targetSelection = evaluateTargetSelection({
+    return evaluateTargetSelection({
       state,
       floorState,
       weapon: getCombatWeapon?.(state.player) ?? getMainHand(state.player),
@@ -757,9 +758,12 @@ export function createBoardView(context) {
         Math.abs(enemy.y - player.y),
       ),
       hasLineOfSight,
+      previewCombatAttack,
     });
+  }
 
-    if (!targetSelection.enemy) {
+  function getTargetCursorState(targetSelection) {
+    if (!targetSelection?.enemy) {
       return "invalid";
     }
 
@@ -813,13 +817,23 @@ export function createBoardView(context) {
           cell.appendChild(underlay);
         }
         if (state.targeting?.active && state.targeting.cursorX === x && state.targeting.cursorY === y) {
+          const targetSelection = getTargetCursorSelection(x, y, state, floorState);
           cell.classList.add('target-cursor');
-          cell.classList.add(`target-cursor-${getTargetCursorState(x, y, state, floorState) ?? "invalid"}`);
+          cell.classList.add(`target-cursor-${getTargetCursorState(targetSelection) ?? "invalid"}`);
+          if (targetSelection?.valid && Number.isFinite(targetSelection.hitChance)) {
+            const chanceBadge = document.createElement('div');
+            chanceBadge.className = 'target-hit-chance';
+            if ((targetSelection.coverPenalty ?? 0) > 0) {
+              chanceBadge.classList.add('covered');
+            }
+            chanceBadge.textContent = `${Math.round(targetSelection.hitChance)}%`;
+            cell.appendChild(chanceBadge);
+          }
         }
         if (state.targeting?.active) {
           cell.classList.add("targeting-clickable");
           cell.addEventListener("click", () => {
-            const cursorState = getTargetCursorState(x, y, state, floorState);
+            const cursorState = getTargetCursorState(getTargetCursorSelection(x, y, state, floorState));
             const alreadySelected = state.targeting?.cursorX === x && state.targeting?.cursorY === y;
             if (alreadySelected && cursorState === "valid") {
               confirmTargetAttack?.();

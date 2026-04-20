@@ -15,6 +15,7 @@ export function createInputController(context) {
     toggleHelp,
     toggleHighscores,
     toggleDebugInfo,
+    triggerDebugAdvance,
     closeStartModal,
     movePlayer,
     handleWait,
@@ -65,6 +66,7 @@ export function createInputController(context) {
     const key = typeof event.key === "string" ? event.key.toLowerCase() : "";
     const code = typeof event.code === "string" ? event.code : "";
     const matchesShortcut = (keys = [], codes = []) => keys.includes(key) || codes.includes(code);
+    const debugRevealActive = Boolean(state.floors?.[state.floor]?.debugReveal);
 
     if (matchesShortcut(["r"], ["KeyR"]) && state.view === "game" && state.gameOver) {
       confirmRestartRun();
@@ -269,6 +271,12 @@ export function createInputController(context) {
       return;
     }
 
+    if (debugRevealActive && !(event.ctrlKey || event.altKey || event.metaKey) && matchesShortcut(["n"], ["KeyN"])) {
+      event.preventDefault();
+      triggerDebugAdvance?.();
+      return;
+    }
+
     if (matchesShortcut(["k"], ["KeyK"])) {
       event.preventDefault();
       toggleSavegames();
@@ -316,6 +324,12 @@ export function createInputController(context) {
     }
 
     if (matchesShortcut(["t"], ["KeyT"])) {
+      event.preventDefault();
+      cycleTargetMode();
+      return;
+    }
+
+    if (matchesShortcut(["f"], ["KeyF"])) {
       event.preventDefault();
       cycleTargetMode();
       return;

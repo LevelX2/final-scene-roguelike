@@ -1,8 +1,9 @@
 import { formatStudioLabel, getStudioArchetypeLabel } from '../studio-theme.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 import { deriveStudioGenerationSeed } from '../utils/seeded-random.mjs';
-import { getActorSpeedState } from './actor-speed.mjs';
+import { formatSignedPercent, getActorSpeedState } from './actor-speed.mjs';
 import { getActorDerivedStat } from './derived-actor-stats.mjs';
+import { buildStudioGenerationReport, formatStudioGenerationReportText } from './studio-generation-report.mjs';
 
 export function createModalController(context) {
   const {
@@ -12,6 +13,7 @@ export function createModalController(context) {
     createSheetRow,
     updateSavegameControls,
     getCurrentFloorState,
+    ensureFloorExists,
     returnToStartScreen,
     renderSelf,
     addMessage,
@@ -40,12 +42,16 @@ export function createModalController(context) {
     deathModalElement,
     deathSummaryElement,
     debugInfoModalElement,
+    debugAdvanceInputElement,
     debugInfoTextElement,
     debugInfoStatusElement,
+    debugAdvanceTimeline,
     formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
   } = context;
+
+  let debugAdvanceBudget = 100;
 
   function formatPosition(position) {
     if (!position || typeof position.x !== "number" || typeof position.y !== "number") {
@@ -183,9 +189,53 @@ export function createModalController(context) {
         const speedState = getActorSpeedState(actor);
         const nextActionTime = normalizeTimelineValue(actor?.nextActionTime, state.timelineTime);
         const reaction = getActorDerivedStat(actor, 'reaction');
-        return `${index + 1}. ${formatActorDebugLabel(actor, state)} | Zeit ${nextActionTime} | Reaktion ${reaction} | Tempo ${speedState.category} (${speedState.displayPercentLabel})`;
+        return `${index + 1}. ${formatActorDebugLabel(actor, state)} | Zeit ${nextActionTime} | Reaktion ${reaction} | Tempo ${speedState.category} (${formatSignedPercent(speedState.displayPercent)})`;
       }),
     ];
+  }
+
+  function normalizeDebugAdvanceBudget(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return 100;
+    }
+
+    return Math.max(1, Math.round(numeric));
+  }
+
+  function syncDebugAdvanceInput() {
+    if (debugAdvanceInputElement) {
+      debugAdvanceInputElement.value = String(debugAdvanceBudget);
+    }
+  }
+
+  function setDebugAdvanceBudget(value = 100) {
+    debugAdvanceBudget = normalizeDebugAdvanceBudget(value);
+    syncDebugAdvanceInput();
+    return debugAdvanceBudget;
+  }
+
+  function readDebugAdvanceBudget() {
+    if (!debugAdvanceInputElement) {
+      return debugAdvanceBudget;
+    }
+
+    return setDebugAdvanceBudget(debugAdvanceInputElement.value);
+  }
+
+  function formatDebugAdvanceStatus(result, budget) {
+    if (!result?.ok) {
+      return 'Debug-Vorschub nicht verfügbar.';
+    }
+
+    const summary = `Debug-Vorschub: Weltzeit +${budget}, ${result.simulatedTurns} Akteurzüge simuliert.`;
+    if (result.exhaustedGuard) {
+      return `${summary} Guard-Limit erreicht.`;
+    }
+
+    return result.lastActorLabel
+      ? `${summary} Letzter Akteur: ${result.lastActorLabel}.`
+      : summary;
   }
 
   function buildDebugInfoText() {
@@ -193,6 +243,10 @@ export function createModalController(context) {
     const floorState = getCurrentFloorState?.() ?? null;
     const topologyNode = state.runStudioTopology?.nodes?.[state.floor] ?? null;
     const generationSeed = floorState?.generationSeed ?? deriveStudioGenerationSeed(state.runSeed, state.floor);
+    const studioReport = buildStudioGenerationReport(state, {
+      studioCount: 10,
+      ensureFloorExists,
+    });
     const nextActor = getDebugTimelineActors(state)
       .sort((left, right) => compareActorsForDebugOrder(left, right, state))[0] ?? null;
 
@@ -218,10 +272,15 @@ export function createModalController(context) {
       `Spieler-Zeitpunkt: ${normalizeTimelineValue(state.player?.nextActionTime, state.timelineTime)}`,
       `Nächster Akteur: ${nextActor ? formatActorDebugLabel(nextActor, state) : "-"}`,
       ...buildTimelinePreviewLines(state),
+      '',
+      formatStudioGenerationReportText(studioReport, {
+        formatArchetypeLabel: getStudioArchetypeLabel,
+      }),
     ].join("\n");
   }
 
   function syncDebugInfoContent(statusText = "Bereit zum Kopieren.") {
+    syncDebugAdvanceInput();
     if (debugInfoTextElement) {
       debugInfoTextElement.value = buildDebugInfoText();
     }
@@ -400,9 +459,41 @@ export function createModalController(context) {
       state.modals.savegamesOpen = false;
       state.modals.helpOpen = false;
       state.modals.highscoresOpen = false;
+      syncDebugAdvanceInput();
       syncDebugInfoContent();
     }
     renderSelf();
+  }
+
+  function triggerDebugAdvance(overrideBudget = null) {
+    const floorState = getCurrentFloorState?.() ?? null;
+    if (!floorState?.debugReveal) {
+      return {
+        ok: false,
+        reason: 'debug-reveal-required',
+      };
+    }
+
+    const budget = overrideBudget == null
+      ? readDebugAdvanceBudget()
+      : setDebugAdvanceBudget(overrideBudget);
+    const result = debugAdvanceTimeline?.(budget) ?? { ok: false };
+    const statusText = result.ok
+      ? formatDebugAdvanceStatus(result, budget)
+      : 'Debug-Vorschub konnte nicht ausgeführt werden.';
+
+    if (getState().modals.debugInfoOpen) {
+      syncDebugInfoContent(statusText);
+    } else if (result.ok) {
+      addMessage(statusText, 'important');
+    } else {
+      addMessage(statusText, 'danger');
+    }
+
+    return {
+      ...result,
+      budget,
+    };
   }
 
   async function copyDebugInfo() {
@@ -778,6 +869,8 @@ export function createModalController(context) {
     cycleStairChoice,
     resolveChoiceBySlot,
     resolveStairChoice,
+    setDebugAdvanceBudget,
+    triggerDebugAdvance,
     toggleInventory,
     toggleRunStats,
     toggleOptions,

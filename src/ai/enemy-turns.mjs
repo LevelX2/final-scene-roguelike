@@ -27,6 +27,7 @@ import {
 import { getActorDerivedMaxHp, getActorDerivedStat } from '../application/derived-actor-stats.mjs';
 import { buildCombatEnemyReference, formatEnemyAttackLog } from '../text/combat-log.mjs';
 import { formatWeaponReference } from '../text/combat-phrasing.mjs';
+import { isBowWeapon } from '../equipment-helpers.mjs';
 
 const EIGHT_WAY_STEPS = Object.freeze([
   { x: 1, y: 0 },
@@ -1562,13 +1563,17 @@ export function createEnemyTurnApi(context) {
     noteMonsterEncounter(enemy);
     const result = resolveCombatAttack(enemy, state.player, { distance, weapon });
     const isRangedAttack = weapon?.attackMode === 'ranged' && distance > 1;
+    const usesArrowProjectile = isRangedAttack && isBowWeapon(weapon);
+    const projectileKind = usesArrowProjectile
+      ? (result.critical ? 'hostile-arrow-crit' : 'hostile-arrow')
+      : (result.critical ? 'hostile-shot-crit' : 'hostile-shot');
     const boardEffect = isRangedAttack
       ? {
           boardEffect: {
             fromX: enemy.x,
             fromY: enemy.y,
-            kind: result.critical ? 'hostile-shot-crit' : 'hostile-shot',
-            flash: true,
+            kind: projectileKind,
+            flash: !usesArrowProjectile,
           },
         }
       : null;

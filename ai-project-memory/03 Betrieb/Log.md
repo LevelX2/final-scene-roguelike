@@ -1,5 +1,36 @@
 # Log
 
+## [2026-04-20] feature | Debug Studio-Statistik und 10-Studio-Report
+- Anlass oder Quelle: Nutzerwunsch nach einer schnellen numerischen Prüfung über 10 generierte Studios mit Gegner-, Schlüssel-, Nahrung- und Loot-Zahlen
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Dokumentiert, dass der Debug-Dialog jetzt eine kopierbare 10-Studio-Statistik aus dem aktiven Generator anzeigen kann.
+  - Dokumentiert, dass `window.__TEST_API__.getStudioGenerationReport()` und `getStudioGenerationReportText()` denselben Zahlenblock strukturiert bzw. als Text liefern.
+  - Eine lokal verifizierte Beispielauswertung mit Run-Seed und Gesamtsummen für 10 Studios wurde als Referenz festgehalten.
+
+## [2026-04-20] feature | Direktschuss fuer Einzelziel und Bogen-Projektiloptik ergaenzt
+- Anlass oder Quelle: Nutzerwunsch fuer schnelleren Fernkampf mit `T`/`F` bei genau einem gueltigen Ziel sowie eine weniger laserartige Bogen-Animation
+- Neu angelegte Seiten:
+  - keine
+- GeÃ¤nderte Seiten:
+  - `index.html`
+  - `styles.css`
+  - `src/application/input-controller.mjs`
+  - `src/application/player-turn-controller.mjs`
+  - `src/application/state-blueprint.mjs`
+  - `src/application/state-persistence.mjs`
+  - `src/application/ui-bindings.mjs`
+  - `src/app/render-cycle.mjs`
+  - `src/combat/player-attack.mjs`
+  - `src/equipment-helpers.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Fernkampf kann nun optional bei genau einem gueltigen Ziel sofort ausloesen, statt erst den Zielmodus zu oeffnen.
+  - Die Option ist in den Spieleinstellungen schaltbar und bleibt ueber die gespeicherten Optionen erhalten.
+  - Bogenwaffen verwenden fuer Spieler- und Gegner-Fernkampfangriffe nun eine eigene Pfeil-Animation statt des generischen Schussstrahls.
+
 ## Format
 - Datum
 - Anlass oder Quelle
@@ -8,6 +39,38 @@
 - Kern der inhaltlichen Anpassung
 
 ## Einträge
+
+## [2026-04-20] update | Gemeinsamen Verify-Lauf fuer lokale Qualitaetspruefung ergaenzt
+- Anlass oder Quelle: Wunsch nach einem Skript, das den gesamten lokalen Qualitätslauf zusammen ausführt
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+- Kern der inhaltlichen Anpassung:
+  - Dokumentiert, dass `npm run verify:quick` aus `lint:strict`, `check:js` und Modultests besteht.
+  - Dokumentiert, dass `npm run verify` darauf aufsetzt und zusätzlich `test:e2e` ausführt.
+  - Festgehalten, dass der Syntax-Check über ein eigenes Skript mit kompakterer Ausgabe läuft.
+
+## [2026-04-20] update | ESLint als statische JavaScript-Pruefung eingefuehrt
+- Anlass oder Quelle: gewünschte Einführung von `ESLint` für das Repository
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+- Kern der inhaltlichen Anpassung:
+  - Dokumentiert, dass `npm run lint` jetzt als statische JavaScript-Prüfung zum Projektablauf gehört.
+  - Sichtbar gemacht, dass `lint` den bestehenden Ablauf aus `check:js`, Modultests und Playwright sinnvoll ergänzt.
+
+## [2026-04-20] analyse | Einordnung von PHP CodeSniffer fuer Projekt-Tests
+- Anlass oder Quelle: Projektfrage zu `Codesnif` als moeglichem Testwerkzeug
+- Neu angelegte Seiten:
+  - [[../01 Rohquellen/web/PHP_CodeSniffer Referenz 2026-04-20]]
+  - [[../02 Wissen/Prozesse/Einordnung PHP CodeSniffer fuer dieses Projekt 2026-04-20]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass `Codesnif` sehr wahrscheinlich `PHP_CodeSniffer` meint und dieses Tool fuer PHP-Coding-Standards statt fuer fachliche JavaScript-Tests gedacht ist.
+  - Sichtbar gemacht, dass dieses Repository bereits auf `check:js`, modulnahe Node-Tests und Playwright-E2E ausgerichtet ist.
 
 ## [2026-04-20] analyse | Bewertung der Tests 11 bis 20 aus `tests/app.spec.js`
 - Anlass oder Quelle: Review des nächsten Blocks konkreter Playwright-Tests in `tests/app.spec.js`
@@ -39,7 +102,7 @@
   - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
 - Kern der inhaltlichen Anpassung:
   - Festgehalten, dass ein alter Listener auf Port `4173` Playwright gegen einen veralteten Testserver laufen lassen kann.
-  - Festgehalten, dass lange E2E-Floorlaeufe fuer reine Generierungspruefungen vor dem Ebenenwechsel gegebenenfalls von Floor-Entitaeten bereinigt werden sollten, damit keine kampfbedingten Nebenzustände die Aussage des Tests verfaelschen.
+  - Festgehalten, dass lange E2E-Floorlaeufe fuer reine Generierungspruefungen vor dem Ebenenwechsel gegebenenfalls von Floor-Entitäten bereinigt werden sollten, damit keine kampfbedingten Nebenzustände die Aussage des Tests verfälschen.
 
 ## [2026-04-17] create | Initiale Projekt-Wissensbasis
 - Anlass oder Quelle: Initiale projektbezogene Wissensbasis für `Projekt Rogue`
@@ -109,7 +172,7 @@
   - Menschlicher Lesepfad für den Einstieg in die Wissensbasis verbessert.
 
 ## [2026-04-17] update | Sprachregel fuer Umlaute und ß
-- Anlass oder Quelle: neu Vorgabe für sichtbare deutsche Texte in UI und Wissensbasis
+- Anlass oder Quelle: neue Vorgabe für sichtbare deutsche Texte in UI und Wissensbasis
 - Neu angelegte Seiten:
   - keine
 - Geänderte Seiten:
@@ -132,7 +195,7 @@
   - Fließtexte in der Wissensbasis sprachlich normalisiert und auf echte Umlaute bzw. `ß` ausgerichtet.
   - Technische Dateinamen, Pfade und bestehende Links bewusst unverändert gelassen.
 
-## [2026-04-17] analyse | Baseline-Anwendung als primäre aktuelle Referenz
+## [2026-04-17] analyse | Baseline-Anwendung als primaere aktuelle Referenz
 - Anlass oder Quelle: Bedarf nach einer frischen Komplettanalyse statt alleiniger Nutzung älterer `docs/`
 - Neu angelegte Seiten:
   - [[../02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-17]]
@@ -145,3 +208,44 @@
   - Frische Baseline aus aktuellem Workspace, Build, Syntax-Check und Modultest-Stand als neue Hauptreferenz aufgenommen.
   - Ältere `docs/` nicht verworfen, sondern gegenüber der Baseline als Kontext-, Snapshot- oder Rationale-Quellen eingeordnet.
   - Aktuelle rote Modultest-Bereiche und laufende Umbauzonen explizit sichtbar gemacht.
+
+## [2026-04-20] fix | Studiokarte dunkelt erkundete Tueren korrekt ab
+- Anlass oder Quelle: Nutzerhinweis zur abgedunkelten Studiokarte, in der offene und geschlossene Türen trotz Memory-State zu hell blieben
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `styles.css`
+- Kern der inhaltlichen Anpassung:
+  - Türzellen der Studiokarte erhalten im erkundeten, aber aktuell nicht sichtbaren Zustand nun gedämpfte Farben statt dauerhaft heller Akzentfarben.
+  - Die hellen Farben für `door-open` und `door-closed` greifen jetzt nur noch bei `is-visible`, damit die Kartendarstellung konsistent mit dem Fog-of-War bleibt.
+
+## [2026-04-20] fix | Absperrband-Kreuz clippt Streifen sauber im 2x2-Overlay
+- Anlass oder Quelle: Nutzerhinweis zum unsauberen Absperrband-Kreuz auf der Kachelansicht
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `assets/overlays/tape-cross-128.svg`
+- Kern der inhaltlichen Anpassung:
+  - Das Motiv `tape-cross-2x2` bleibt ein einzelnes dekoratives Overlay über einem 2x2-Maskenbereich und ist kein Doppel-Overlay.
+  - Die schwarzen Warnstreifen werden in der SVG nun an die horizontale und vertikale Bandform geclippt, damit sie optisch nicht mehr aus dem Absperrband herauslaufen.
+
+## [2026-04-20] fix | Absperrband-Kreuz wieder stärker als gelbes Warnband gezeichnet
+- Anlass oder Quelle: Folgefeedback, dass das erste Rework den Charakter des klassischen Absperrbandes zu stark verloren hatte
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `assets/overlays/tape-cross-128.svg`
+- Kern der inhaltlichen Anpassung:
+  - Das Kreuz nutzt weiterhin ein einzelnes 2x2-Overlay, zeichnet die Bänder aber wieder mit klar gelber Grundfläche statt optisch zu dunklem Gesamteindruck.
+  - Die diagonalen dunklen Streifen sind nun schmaler und in gleichmäßigem Abstand gesetzt, damit das Motiv wieder näher an klassischem Warnband liegt.
+
+## [2026-04-20] update | Fernkampf bekommt Eck-Deckung und Trefferchance im Zielmodus
+- Anlass oder Quelle: Nutzerwunsch nach Schutzwirkung für Ziele, die nur knapp um Ecken sichtbar sind
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Begriffe und Konzepte/Spielsysteme im Ueberblick]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass Fernkampfschüsse auf knapp sichtbare Eckziele nun einen Deckungsmalus erhalten, wenn die Schusslinie eine spätere Ecke nur streift.
+  - Dokumentiert, dass direkter Eckkontakt am Schützen bewusst ohne Malus bleibt, damit Nah-Eckspiel nicht unnötig entwertet wird.
+  - Sichtbar gemacht, dass der Zielmodus die aktuelle Trefferchance jetzt direkt in Prozent anzeigt und Eck-Deckung als `Teildeckung` oder `Starke Deckung` markiert.

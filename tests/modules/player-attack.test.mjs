@@ -75,3 +75,72 @@ test('player-attack records a death marker when the player kills an enemy', () =
   }]);
   assert.deepEqual(grantedXp, [[4, 'den Test Enemy']]);
 });
+
+test('player-attack uses an arrow-style projectile effect for bows', () => {
+  const enemy = {
+    type: 'monster',
+    id: 'test-enemy',
+    name: 'Test Enemy',
+    x: 4,
+    y: 5,
+    hp: 12,
+    maxHp: 12,
+    aggro: false,
+    turnsSinceHit: 0,
+    xpReward: 4,
+  };
+  const floatingTexts = [];
+  const state = {
+    player: {
+      x: 2,
+      y: 5,
+      name: 'Ripley',
+      classId: 'filmstar',
+    },
+    turn: 0,
+    safeRestTurns: 2,
+    damageDealt: 0,
+    damageTaken: 0,
+    kills: 0,
+    killStats: {},
+  };
+
+  const api = createPlayerAttackApi({
+    getState: () => state,
+    getCombatWeapon: () => ({
+      id: 'hunting-bow',
+      name: 'Jagdbogen',
+      attackMode: 'ranged',
+    }),
+    getCurrentFloorState: () => ({
+      enemies: [enemy],
+      weapons: [],
+      offHands: [],
+      foods: [],
+      recentDeaths: [],
+    }),
+    createWeaponPickup: () => null,
+    createOffHandPickup: () => null,
+    createFoodPickup: () => null,
+    resolveCombatAttack: () => ({ hit: true, damage: 3, critical: false, usedOpeningStrike: false }),
+    resolveBlock: (_actor, damage) => ({ damage, blocked: false, prevented: 0, reflectiveDamage: 0, item: { name: 'Blocker' } }),
+    tryApplyWeaponEffects: () => {},
+    grantExperience: () => {},
+    showFloatingText: (x, y, text, kind, options = {}) => floatingTexts.push({ x, y, text, kind, options }),
+    playEnemyHitSound: () => {},
+    playDodgeSound: () => {},
+    playVictorySound: () => {},
+    getWeaponConditionalDamageBonus: () => 0,
+    itemHasModifier: () => false,
+    noteMonsterEncounter: () => {},
+    addMessage: () => {},
+    renderSelf: () => {},
+    randomChance: () => 1,
+  });
+
+  api.attackEnemy(enemy, { distance: 3 });
+
+  assert.equal(floatingTexts.length, 1);
+  assert.equal(floatingTexts[0].options.boardEffect.kind, 'hero-arrow');
+  assert.equal(floatingTexts[0].options.boardEffect.flash, false);
+});

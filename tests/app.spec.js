@@ -1699,6 +1699,8 @@ test("target mode shows reduced hit chance for enemies peeking from remote corne
       player: {
         precision: 6,
         strength: 4,
+        openingStrikeHitBonus: 0,
+        openingStrikeCritBonus: 0,
         mainHand: {
           type: "weapon",
           id: "test-pistol",
@@ -2502,6 +2504,52 @@ test("enemy ranged hits show explicit shot feedback", async ({ page }) => {
   await expect(page.locator(".projectile-effect-flash.hostile-shot, .projectile-effect-flash.hostile-shot-crit")).toHaveCount(1);
   await expect(page.locator("#messageLog")).toContainText("aus der Distanz");
   await expect(page.locator("#messageLog")).toContainText("Testgewehr");
+});
+
+test("enemy bow shots use the arrow projectile effect", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        hp: 20,
+        maxHp: 20,
+      },
+      playerPosition: { x: 2, y: 2 },
+      enemyPosition: { x: 5, y: 2 },
+      enemy: {
+        name: "Bogenschuetze",
+        aggro: true,
+        aggroRadius: 10,
+        precision: 5,
+        mainHand: {
+          type: "weapon",
+          id: "hunting-bow",
+          name: "Jagdbogen",
+          source: "Tests",
+          handedness: "two-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+    });
+    window.__TEST_API__.setRandomSequence([0, 0]);
+  });
+
+  await page.keyboard.press(" ");
+
+  await expect(page.locator(".projectile-effect-line.hostile-arrow, .projectile-effect-line.hostile-arrow-crit")).toHaveCount(1);
+  await expect(page.locator(".projectile-effect-impact.hostile-arrow, .projectile-effect-impact.hostile-arrow-crit")).toHaveCount(1);
+  await expect(page.locator(".projectile-effect-flash.hostile-arrow, .projectile-effect-flash.hostile-arrow-crit")).toHaveCount(0);
+  await expect(page.locator("#messageLog")).toContainText("Jagdbogen");
 });
 
 test("enemies can fire ranged attacks diagonally with clear sight", async ({ page }) => {

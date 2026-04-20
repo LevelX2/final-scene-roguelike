@@ -1137,6 +1137,45 @@ kbd {
     0 0 8px rgba(255, 248, 202, 0.55);
 }
 
+.projectile-effect-line.hero-arrow,
+.projectile-effect-line.hero-arrow-crit {
+  height: 3px;
+  border-radius: 2px;
+  overflow: visible;
+  background: linear-gradient(90deg, rgba(95, 67, 35, 0.1), rgba(148, 102, 46, 0.94) 38%, rgba(214, 181, 108, 0.96) 82%);
+  box-shadow:
+    0 0 8px rgba(214, 181, 108, 0.22),
+    0 0 2px rgba(66, 42, 18, 0.46);
+}
+
+.projectile-effect-line.hero-arrow::after,
+.projectile-effect-line.hero-arrow-crit::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  transform: translateY(-50%);
+}
+
+.projectile-effect-line.hero-arrow::after {
+  border-color: transparent transparent transparent #d9b470;
+}
+
+.projectile-effect-line.hero-arrow-crit {
+  background: linear-gradient(90deg, rgba(133, 93, 43, 0.12), rgba(214, 171, 82, 0.96) 38%, rgba(255, 231, 162, 0.98) 82%);
+  box-shadow:
+    0 0 12px rgba(255, 229, 149, 0.32),
+    0 0 3px rgba(94, 59, 24, 0.54);
+}
+
+.projectile-effect-line.hero-arrow-crit::after {
+  border-color: transparent transparent transparent #ffe39a;
+}
+
 .projectile-effect-line.hostile-shot {
   background: linear-gradient(90deg, rgba(255, 161, 133, 0), rgba(255, 129, 101, 0.94) 45%, rgba(255, 226, 168, 0.84));
 }
@@ -1146,6 +1185,45 @@ kbd {
   box-shadow:
     0 0 18px rgba(255, 110, 88, 0.72),
     0 0 8px rgba(255, 226, 176, 0.5);
+}
+
+.projectile-effect-line.hostile-arrow,
+.projectile-effect-line.hostile-arrow-crit {
+  height: 3px;
+  border-radius: 2px;
+  overflow: visible;
+  background: linear-gradient(90deg, rgba(99, 69, 39, 0.1), rgba(152, 103, 54, 0.94) 38%, rgba(232, 143, 93, 0.96) 82%);
+  box-shadow:
+    0 0 8px rgba(232, 143, 93, 0.24),
+    0 0 2px rgba(86, 50, 24, 0.48);
+}
+
+.projectile-effect-line.hostile-arrow::after,
+.projectile-effect-line.hostile-arrow-crit::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  transform: translateY(-50%);
+}
+
+.projectile-effect-line.hostile-arrow::after {
+  border-color: transparent transparent transparent #f09b75;
+}
+
+.projectile-effect-line.hostile-arrow-crit {
+  background: linear-gradient(90deg, rgba(133, 78, 44, 0.12), rgba(255, 137, 96, 0.98) 38%, rgba(255, 220, 176, 0.98) 82%);
+  box-shadow:
+    0 0 12px rgba(255, 164, 126, 0.34),
+    0 0 3px rgba(112, 56, 32, 0.56);
+}
+
+.projectile-effect-line.hostile-arrow-crit::after {
+  border-color: transparent transparent transparent #ffd6b3;
 }
 
 .projectile-effect-impact {
@@ -1188,12 +1266,28 @@ kbd {
   color: #ffe66d;
 }
 
+.projectile-effect-impact.hero-arrow {
+  color: #d4ae68;
+}
+
+.projectile-effect-impact.hero-arrow-crit {
+  color: #ffe39a;
+}
+
 .projectile-effect-impact.hostile-shot {
   color: #ff9f82;
 }
 
 .projectile-effect-impact.hostile-shot-crit {
   color: #ff705f;
+}
+
+.projectile-effect-impact.hostile-arrow {
+  color: #f09b75;
+}
+
+.projectile-effect-impact.hostile-arrow-crit {
+  color: #ffd6b3;
 }
 
 .projectile-effect-flash {
@@ -3219,6 +3313,32 @@ kbd {
     0 0 14px rgba(255, 125, 102, 0.34);
 }
 
+.target-hit-chance {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  z-index: 6;
+  min-width: 28px;
+  padding: 2px 5px;
+  border: 1px solid rgba(125, 220, 138, 0.55);
+  border-radius: 999px;
+  background: rgba(7, 18, 9, 0.92);
+  color: #dff7d9;
+  font-size: 0.56rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.34);
+  pointer-events: none;
+}
+
+.target-hit-chance.covered {
+  border-color: rgba(255, 198, 110, 0.6);
+  background: rgba(30, 20, 7, 0.94);
+  color: #ffe0a4;
+}
+
 .hover-tooltip.hidden {
   display: none;
 }
@@ -3485,6 +3605,35 @@ body.tooltip-open [data-tooltip-bound="true"] {
 
 .debug-info-modal-card {
   width: min(640px, 100%);
+}
+
+.debug-info-advance-row {
+  display: grid;
+  grid-template-columns: auto minmax(110px, 140px) auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.debug-info-advance-label {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.debug-info-advance-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(125, 220, 138, 0.22);
+  border-radius: 12px;
+  background: rgba(7, 11, 10, 0.86);
+  color: var(--text);
+  font: inherit;
+}
+
+.debug-info-advance-input:focus {
+  outline: none;
+  border-color: rgba(125, 220, 138, 0.6);
+  box-shadow: 0 0 0 3px rgba(125, 220, 138, 0.14);
 }
 
 .debug-info-text {

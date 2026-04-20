@@ -11,6 +11,7 @@ export function createRenderCycleApi(context) {
     getCurrentStudioArchetypeId,
     getCurrentFloorState,
     getCombatWeapon,
+    previewCombatAttack,
     updateVisibility,
     hideTooltip,
     renderBoard,
@@ -73,6 +74,7 @@ export function createRenderCycleApi(context) {
     toggleStepSoundElement,
     toggleDeathSoundElement,
     toggleVoiceAnnouncementsElement,
+    toggleDirectFireOnSingleTargetElement,
     toggleDecorativeOverlaysElement,
     toggleDecorativeOverlayDebugLogElement,
     toggleDecorativeOverlayDebugMaskElement,
@@ -344,6 +346,7 @@ export function createRenderCycleApi(context) {
           y: state.targeting.cursorY,
           rangeDistance: chebyshevDistance,
           hasLineOfSight,
+          previewCombatAttack,
         })
       : null;
     const targetIsValid = Boolean(targetSelection?.valid);
@@ -480,6 +483,9 @@ export function createRenderCycleApi(context) {
       const voiceAnnouncementsForcedOff = areVoiceAnnouncementsForcedOff();
       toggleVoiceAnnouncementsElement.checked = !voiceAnnouncementsForcedOff && state.options.voiceAnnouncements;
       toggleVoiceAnnouncementsElement.disabled = voiceAnnouncementsForcedOff;
+    }
+    if (toggleDirectFireOnSingleTargetElement) {
+      toggleDirectFireOnSingleTargetElement.checked = state.options.directFireOnSingleTarget ?? true;
     }
     if (toggleDecorativeOverlaysElement) {
       toggleDecorativeOverlaysElement.checked = state.options.decorativeOverlaysEnabled ?? true;

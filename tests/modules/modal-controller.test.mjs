@@ -215,6 +215,116 @@ test('modal-controller debug info shows timeline and upcoming actor order when o
   assert.match(debugInfoTextElement.value, /Spieler-Zeitpunkt: 300/);
   assert.match(debugInfoTextElement.value, /Nächster Akteur: Raider \| Floor 1/);
   assert.match(debugInfoTextElement.value, /Nächste Akteure:/);
-  assert.match(debugInfoTextElement.value, /1\. Raider \| Floor 1 \| Zeit 260 \| Reaktion 2 \| Tempo Sehr schnell/);
-  assert.match(debugInfoTextElement.value, /2\. Spieler \| Floor 2 \| Zeit 300 \| Reaktion 4 \| Tempo Normal/);
+  assert.match(debugInfoTextElement.value, /1\. Raider \| Floor 1 \| Zeit 260 \| Reaktion 2 \| Tempo Sehr schnell \(\+20 %\)/);
+  assert.match(debugInfoTextElement.value, /2\. Spieler \| Floor 2 \| Zeit 300 \| Reaktion 4 \| Tempo Normal \(0 %\)/);
+});
+
+test('modal-controller forwards the configured debug advance budget and updates the status text', () => {
+  const state = {
+    floor: 1,
+    runSeed: 777,
+    timelineTime: 0,
+    turn: 0,
+    player: {
+      x: 1,
+      y: 1,
+      hp: 10,
+      nextActionTime: 0,
+      baseSpeed: 100,
+      reaction: 4,
+    },
+    floors: {
+      1: {
+        generationSeed: 999,
+        studioArchetypeId: 'action',
+        layoutId: 'debug-layout',
+        layoutVariant: 'test',
+        layoutFailureReason: null,
+        corridorWidth: 2,
+        entryAnchor: null,
+        exitAnchor: null,
+        enemies: [],
+        debugReveal: true,
+      },
+    },
+    pendingStairChoice: null,
+    pendingChoice: null,
+    modals: {
+      inventoryOpen: false,
+      studioTopologyOpen: false,
+      runStatsOpen: false,
+      debugInfoOpen: false,
+      optionsOpen: false,
+      savegamesOpen: false,
+      helpOpen: false,
+      highscoresOpen: false,
+    },
+  };
+  const debugInfoTextElement = createElement();
+  const debugInfoStatusElement = createElement();
+  const debugAdvanceInputElement = createElement();
+  let receivedBudget = null;
+
+  const controller = createModalController({
+    CHOICE_ACTIONS: {},
+    STAIR_ACTIONS: ['change-floor', 'stay'],
+    getState: () => state,
+    createSheetRow: () => '',
+    updateSavegameControls: () => {},
+    getCurrentFloorState: () => state.floors[state.floor],
+    returnToStartScreen: () => {},
+    renderSelf: () => {},
+    addMessage: () => {},
+    moveToFloor: () => false,
+    endTurn: () => {},
+    resolvePotionChoice: () => {},
+    renderEquipmentCompareHtml: () => '',
+    choiceModalElement: createElement(),
+    choiceTitleElement: createElement(),
+    choiceTextElement: createElement(),
+    choiceDrinkButton: createElement(),
+    choiceStoreButton: createElement(),
+    choiceLeaveButton: createElement(),
+    containerLootModalElement: createElement(),
+    containerLootImageElement: createElement(),
+    containerLootTitleElement: createElement(),
+    containerLootSummaryElement: createElement(),
+    containerLootListElement: createElement(),
+    containerLootTakeSelectedButton: createElement(),
+    containerLootTakeAllButton: createElement(),
+    stairsModalElement: createElement(),
+    stairsTitleElement: createElement(),
+    stairsTextElement: createElement(),
+    stairsConfirmButton: createElement(),
+    stairsStayButton: createElement(),
+    deathModalElement: createElement(),
+    deathSummaryElement: createElement(),
+    debugInfoModalElement: createElement(),
+    debugAdvanceInputElement,
+    debugAdvanceButtonElement: createElement(),
+    debugInfoTextElement,
+    debugInfoStatusElement,
+    debugAdvanceTimeline: (budget) => {
+      receivedBudget = budget;
+      state.timelineTime = budget;
+      state.player.nextActionTime = budget;
+      return {
+        ok: true,
+        simulatedTurns: 5,
+        lastActorLabel: 'Spieler | Floor 1',
+      };
+    },
+    formatWeaponDisplayName: () => '',
+    formatWeaponStats: () => '',
+    formatOffHandStats: () => '',
+  });
+
+  controller.toggleDebugInfo(true);
+  controller.setDebugAdvanceBudget(500);
+  controller.triggerDebugAdvance();
+
+  assert.equal(receivedBudget, 500);
+  assert.equal(debugAdvanceInputElement.value, '500');
+  assert.match(debugInfoTextElement.value, /Weltzeit: 500/);
+  assert.match(debugInfoStatusElement.textContent, /Debug-Vorschub: Weltzeit \+500, 5 Akteurzüge simuliert\./);
 });

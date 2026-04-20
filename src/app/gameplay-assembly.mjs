@@ -63,6 +63,7 @@ export function assembleGameplayModules(context) {
     setMovePlayer,
     setHandleWait,
     setDebugRevealOrAdvanceStudio,
+    setDebugAdvanceTimeline,
     setCycleTargetMode,
     setEnterTargetMode,
     setCancelTargetMode,
@@ -86,6 +87,7 @@ export function assembleGameplayModules(context) {
     createDungeonLevel,
     detectNearbyTraps,
     getDoorAt,
+    isDoorClosed,
     openDoor,
     closeDoor,
     canPlayerOpenDoor,
@@ -147,6 +149,7 @@ export function assembleGameplayModules(context) {
   });
 
   combatApi = createCombatApi({
+    TILE,
     BASE_HIT_CHANCE,
     MIN_HIT_CHANCE,
     MAX_HIT_CHANCE,
@@ -159,6 +162,8 @@ export function assembleGameplayModules(context) {
     getCombatWeapon,
     getOffHand,
     getCurrentFloorState,
+    getDoorAt,
+    isDoorClosed,
     createWeaponPickup,
     createOffHandPickup,
     createFoodPickup,
@@ -321,6 +326,7 @@ export function assembleGameplayModules(context) {
     hasLineOfSight: core.hasLineOfSight,
     isStraightShot: core.isStraightShot,
     getCombatWeapon,
+    previewCombatAttack: combatApi.previewCombatAttack,
     canActorMove: statusEffectService.canActorMove,
     ...actionScheduler,
     processActorStatusEffects: statusEffectService.processActorStatusEffects,
@@ -351,6 +357,7 @@ export function assembleGameplayModules(context) {
     createDoor,
     createKeyPickup,
     generateEquipmentItem,
+    ensureFloorExists: floorTransitionService.ensureFloorExists,
     enterTargetMode: playerTurnController.enterTargetMode,
     cancelTargetMode: playerTurnController.cancelTargetMode,
     moveTargetCursor: playerTurnController.moveTargetCursor,
@@ -372,6 +379,7 @@ export function assembleGameplayModules(context) {
   setMovePlayer(playerTurnController.movePlayer);
   setHandleWait(playerTurnController.handleWait);
   setDebugRevealOrAdvanceStudio(floorTransitionService.debugRevealOrAdvanceStudio);
+  setDebugAdvanceTimeline(playerTurnController.debugAdvanceTimeline);
   setCycleTargetMode(playerTurnController.cycleTargetMode);
   setEnterTargetMode(playerTurnController.enterTargetMode);
   setCancelTargetMode(playerTurnController.cancelTargetMode);

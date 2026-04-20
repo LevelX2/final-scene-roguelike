@@ -40,6 +40,8 @@ export function createUiBindingsApi(context) {
     showOverviewHelpButtonElement,
     openDeathKillsButton,
     closeDeathButton,
+    debugAdvanceInputElement,
+    debugAdvanceButtonElement,
     copyDebugInfoButtonElement,
     closeDebugInfoButtonElement,
     startNewGameButton,
@@ -56,6 +58,7 @@ export function createUiBindingsApi(context) {
     toggleStepSoundElement,
     toggleDeathSoundElement,
     toggleVoiceAnnouncementsElement,
+    toggleDirectFireOnSingleTargetElement,
     toggleDecorativeOverlaysElement,
     toggleDecorativeOverlayDebugLogElement,
     toggleDecorativeOverlayDebugMaskElement,
@@ -86,6 +89,8 @@ export function createUiBindingsApi(context) {
     toggleHelp,
     toggleHighscores,
     toggleDebugInfo,
+    setDebugAdvanceBudget,
+    triggerDebugAdvance,
     copyDebugInfo,
     restartRun,
     leaveToStartScreen,
@@ -185,6 +190,12 @@ export function createUiBindingsApi(context) {
       saveOptions();
     });
     openDebugInfoButtonElement?.addEventListener("click", () => toggleDebugInfo?.(true));
+    debugAdvanceInputElement?.addEventListener("change", () => {
+      setDebugAdvanceBudget?.(debugAdvanceInputElement.value);
+    });
+    debugAdvanceButtonElement?.addEventListener("click", () => {
+      triggerDebugAdvance?.();
+    });
     copyDebugInfoButtonElement?.addEventListener("click", () => {
       copyDebugInfo?.();
     });
@@ -252,6 +263,10 @@ export function createUiBindingsApi(context) {
       }
 
       getState().options.voiceAnnouncements = toggleVoiceAnnouncementsElement.checked;
+      saveOptions();
+    });
+    toggleDirectFireOnSingleTargetElement.addEventListener("change", () => {
+      getState().options.directFireOnSingleTarget = toggleDirectFireOnSingleTargetElement.checked;
       saveOptions();
     });
     toggleDecorativeOverlaysElement.addEventListener("change", () => {

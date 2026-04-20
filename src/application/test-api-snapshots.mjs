@@ -1,5 +1,6 @@
 import { getActorDerivedMaxHp, getActorDerivedStats } from './derived-actor-stats.mjs';
 import { getActorSpeedState } from './actor-speed.mjs';
+import { buildStudioGenerationReport, formatStudioGenerationReportText } from './studio-generation-report.mjs';
 
 export function createTestApiSnapshots(context) {
   const {
@@ -11,6 +12,7 @@ export function createTestApiSnapshots(context) {
     countFoodInInventory,
     loadHighscores,
     generateEquipmentItem,
+    ensureFloorExists,
   } = context;
 
   function collectUniqueGroups(entries) {
@@ -246,6 +248,17 @@ export function createTestApiSnapshots(context) {
     return generateEquipmentItem(baseItem, dropContext);
   }
 
+  function getStudioGenerationReport(options = {}) {
+    return buildStudioGenerationReport(getState(), {
+      ...options,
+      ensureFloorExists,
+    });
+  }
+
+  function getStudioGenerationReportText(options = {}) {
+    return formatStudioGenerationReportText(getStudioGenerationReport(options));
+  }
+
   return {
     getSnapshot,
     getMessages,
@@ -253,5 +266,7 @@ export function createTestApiSnapshots(context) {
     getOptionsSnapshot,
     getHighscores,
     previewGeneratedEquipment,
+    getStudioGenerationReport,
+    getStudioGenerationReportText,
   };
 }

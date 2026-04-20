@@ -9,6 +9,8 @@ function createHarness({
   doors = [],
   showcases = [],
   enemies = [],
+  weapon = null,
+  options = {},
   openDoor = () => {},
   takeEnemyTurn = () => {},
   hasNearbyEnemy = () => false,
@@ -49,9 +51,19 @@ function createHarness({
     floor: 1,
     turn: 0,
     timelineTime: 0,
+    options: {
+      directFireOnSingleTarget: true,
+      ...options,
+    },
+    targeting: {
+      active: false,
+      cursorX: 0,
+      cursorY: 0,
+    },
   };
   const floorState = {
     grid,
+    visible: Array.from({ length: grid.length }, () => Array(grid[0].length).fill(true)),
     doors,
     showcases,
     enemies: normalizedEnemies,
@@ -59,6 +71,7 @@ function createHarness({
   };
   const messages = [];
   const attacks = [];
+  const attackCalls = [];
   const playerActionCosts = [];
   const scheduler = createActionScheduler({
     getState: () => state,
@@ -82,7 +95,10 @@ function createHarness({
     getDoorColorLabels: () => ({ adjective: 'gruene' }),
     manhattanDistance: (left, right) => Math.abs(left.x - right.x) + Math.abs(left.y - right.y),
     addMessage: (text) => messages.push(text),
-    attackEnemy: (enemy) => attacks.push(enemy),
+    attackEnemy: (enemy, attackOptions) => {
+      attacks.push(enemy);
+      attackCalls.push({ enemy, options: attackOptions });
+    },
     tryPickupLoot: () => false,
     tryUseStairs: () => false,
     detectNearbyTraps: () => {},
@@ -95,7 +111,7 @@ function createHarness({
     canActorMove,
     hasLineOfSight: () => true,
     chebyshevDistance: (left, right) => Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y)),
-    getCombatWeapon: () => null,
+    getCombatWeapon: () => weapon,
     ...scheduler,
     scheduleActorNextTurn: (actor, actionCost) => {
       if (actor === state.player) {
@@ -116,6 +132,7 @@ function createHarness({
     state,
     messages,
     attacks,
+    attackCalls,
     floorState,
     playerActionCosts,
   };
@@ -164,6 +181,52 @@ test('player-turn-controller does not open closed doors diagonally', () => {
     harness.messages.some((entry) => entry.includes('nicht diagonal aufdrücken')),
     true,
   );
+  assert.equal(harness.state.turn, 0);
+});
+
+test('player-turn-controller fires immediately when only one ranged target is valid and the option is enabled', () => {
+  const enemy = { id: 'single-target', x: 5, y: 2 };
+  const harness = createHarness({
+    enemies: [enemy],
+    weapon: {
+      id: 'test-pistol',
+      attackMode: 'ranged',
+      range: 6,
+    },
+    options: {
+      directFireOnSingleTarget: true,
+    },
+  });
+
+  harness.api.cycleTargetMode();
+
+  assert.equal(harness.attacks.length, 1);
+  assert.equal(harness.attacks[0].id, 'single-target');
+  assert.equal(harness.attackCalls[0].options.distance, 3);
+  assert.equal(harness.state.targeting.active, false);
+  assert.equal(harness.state.turn, 1);
+});
+
+test('player-turn-controller keeps the target mode when direct fire on a single target is disabled', () => {
+  const enemy = { id: 'single-target', x: 5, y: 2 };
+  const harness = createHarness({
+    enemies: [enemy],
+    weapon: {
+      id: 'test-pistol',
+      attackMode: 'ranged',
+      range: 6,
+    },
+    options: {
+      directFireOnSingleTarget: false,
+    },
+  });
+
+  harness.api.cycleTargetMode();
+
+  assert.equal(harness.attacks.length, 0);
+  assert.equal(harness.state.targeting.active, true);
+  assert.equal(harness.state.targeting.cursorX, 5);
+  assert.equal(harness.state.targeting.cursorY, 2);
   assert.equal(harness.state.turn, 0);
 });
 

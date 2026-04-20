@@ -1463,6 +1463,62 @@ test('takeEnemyTurn does not let off-floor enemies target the player', () => {
   assert.equal(state.player.hp, 20);
 });
 
+test('enemy-turns use an arrow-style projectile effect for bows', () => {
+  const enemy = {
+    id: 'bow-hunter',
+    name: 'Bogenjaeger',
+    x: 5,
+    y: 2,
+    originX: 5,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'none',
+    healingProfile: 'none',
+    temperament: 'stoic',
+    aggro: true,
+    aggroRadius: 8,
+    canOpenDoors: false,
+    canChangeFloors: false,
+    hp: 10,
+    maxHp: 10,
+    strength: 2,
+    precision: 4,
+    reaction: 2,
+    nerves: 2,
+    intelligence: 2,
+    mainHand: {
+      id: 'hunting-bow',
+      name: 'Jagdbogen',
+      attackMode: 'ranged',
+      range: 6,
+      damage: 3,
+      hitBonus: 2,
+      critBonus: 0,
+    },
+  };
+  const floorState = {
+    grid: createGrid(8, 5, '.'),
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, true),
+  };
+  const harness = createEnemyTurnHarness({
+    floorState,
+    player: { x: 2, y: 2, hp: 20, maxHp: 20 },
+    hasLineOfSight: () => true,
+    resolveCombatAttack: () => ({ hit: true, damage: 3, critical: false }),
+  });
+
+  harness.api.takeEnemyTurn(enemy);
+
+  assert.equal(harness.floatingTexts.length, 1);
+  assert.equal(harness.floatingTexts[0].options.boardEffect.kind, 'hostile-arrow');
+  assert.equal(harness.floatingTexts[0].options.boardEffect.flash, false);
+});
+
 test('enemy-turns records a death marker when reflective damage kills an attacker', () => {
   const enemy = createBaseEnemy({
     x: 3,

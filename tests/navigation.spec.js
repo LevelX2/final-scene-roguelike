@@ -211,8 +211,33 @@ test("debug info modal shows timeline and upcoming actor order when revealed", a
   await expect(page.locator("#debugInfoText")).toHaveValue(/Spieler-Zeitpunkt: 300/);
   await expect(page.locator("#debugInfoText")).toHaveValue(/Nächster Akteur: Debug-Raider \| Floor 1/);
   await expect(page.locator("#debugInfoText")).toHaveValue(/Nächste Akteure:/);
-  await expect(page.locator("#debugInfoText")).toHaveValue(/1\. Debug-Raider \| Floor 1 \| Zeit 260 \| Reaktion 2/);
-  await expect(page.locator("#debugInfoText")).toHaveValue(/2\. Spieler \| Floor 1 \| Zeit 300 \| Reaktion 4/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/1\. Debug-Raider \| Floor 1 \| Zeit 260 \| Reaktion 2 \| Tempo Sehr schnell \(\+20 %\)/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/2\. Spieler \| Floor 1 \| Zeit 300 \| Reaktion 4 \| Tempo Normal \(0 %\)/);
+});
+
+test("debug modal advances the timeline with the configured budget via button and N", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setDebugReveal(true);
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.setTimelineTime(0);
+    window.__TEST_API__.setPlayerSpeed({ nextActionTime: 0, baseSpeed: 100 });
+  });
+
+  await page.locator("#openDebugInfo").click();
+  await page.locator("#debugAdvanceInput").fill("500");
+  await page.locator("#debugAdvanceButton").click();
+
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Weltzeit: 500/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Spieler-Zeitpunkt: 500/);
+  await expect(page.locator("#debugInfoStatus")).toContainText("Debug-Vorschub: Weltzeit +500");
+
+  await page.keyboard.press("N");
+
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Weltzeit: 1000/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Spieler-Zeitpunkt: 1000/);
 });
 
 test("actors standing on studio transitions keep the transition marker visible", async ({ page }) => {

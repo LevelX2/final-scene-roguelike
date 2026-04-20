@@ -165,3 +165,46 @@ test('previewCombatAttack keeps a point-blank corner shot without extra cover pe
   assert.equal(preview.hitChance, 76);
   assert.equal(preview.coverLabel, '');
 });
+
+test('previewCombatAttack now catches near-corner shots that miss the old exact-graze check', () => {
+  const floorState = {
+    grid: createGrid(8, 8, '.'),
+    showcases: [],
+    doors: [],
+  };
+  floorState.grid[2][2] = '#';
+
+  const attacker = {
+    type: 'player',
+    x: 1,
+    y: 1,
+    strength: 2,
+    precision: 6,
+    openingStrikeHitBonus: 0,
+    openingStrikeCritBonus: 0,
+  };
+  const defender = {
+    type: 'monster',
+    x: 5,
+    y: 2,
+    reaction: 1,
+    nerves: 1,
+    openingStrikeSpent: true,
+  };
+  const weapon = {
+    attackMode: 'ranged',
+    range: 6,
+    damage: 3,
+    hitBonus: 2,
+    critBonus: 0,
+    meleePenaltyHit: -2,
+  };
+
+  const api = createResolutionHarness(5, { floorState });
+  const preview = api.previewCombatAttack(attacker, defender, { distance: 4, weapon });
+
+  assert.equal(preview.baseHitChance, 76);
+  assert.equal(preview.coverPenalty, 15);
+  assert.equal(preview.hitChance, 61);
+  assert.equal(preview.coverLabel, 'Teildeckung');
+});

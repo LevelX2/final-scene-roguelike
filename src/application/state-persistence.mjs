@@ -8,6 +8,11 @@ import { createTimestampedId } from '../utils/id-tools.mjs';
 import { deriveStudioGenerationSeed, normalizeSeed } from '../utils/seeded-random.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 import { NORMAL_SPEED_INTERVAL } from './actor-speed.mjs';
+import {
+  normalizeDebugEnemyTrailTiles,
+  normalizeDebugEnemyTrailVisits,
+} from './debug-enemy-trails.mjs';
+import { DEFAULT_DEBUG_ADVANCE_SPEED, normalizeDebugAdvanceSpeed } from './debug-advance.mjs';
 import { normalizeDeathMarkers, pruneExpiredDeathMarkers } from './death-marker-service.mjs';
 import { createEmptyProgressionBonuses, getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 import { areVoiceAnnouncementsForcedOff } from './test-mode.mjs';
@@ -675,6 +680,8 @@ export function createStatePersistenceApi(context) {
       ? floorState.chests.map(normalizeChestPickup)
       : [];
     floorState.recentDeaths = normalizeDeathMarkers(floorState.recentDeaths);
+    floorState.debugEnemyTrailTiles = normalizeDebugEnemyTrailTiles(floorState.debugEnemyTrailTiles);
+    floorState.debugEnemyTrailVisits = normalizeDebugEnemyTrailVisits(floorState.debugEnemyTrailVisits);
     floorState.enemies = Array.isArray(floorState.enemies)
       ? floorState.enemies.map((enemy) => ({
           ...normalizeActorSpeedFields(enemy, NORMAL_SPEED_INTERVAL, timelineTime),
@@ -794,6 +801,11 @@ export function createStatePersistenceApi(context) {
     normalizedState.preferences = {
       ...createDefaultPreferences(),
       ...(savedState.preferences ?? {}),
+    };
+    normalizedState.debug = {
+      enemyTrailEnabled: Boolean(savedState.debug?.enemyTrailEnabled),
+      advancePlaybackSpeed: normalizeDebugAdvanceSpeed(savedState.debug?.advancePlaybackSpeed ?? DEFAULT_DEBUG_ADVANCE_SPEED),
+      advanceInProgress: false,
     };
     normalizedState.healOverlay = {
       open: false,

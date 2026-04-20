@@ -289,11 +289,31 @@ export function createFloorTransitionService(context) {
     return true;
   }
 
+  function debugReturnToPreviousStudio() {
+    const state = getState();
+    if (state.floor <= 1) {
+      return false;
+    }
+
+    const moved = moveToFloor(-1);
+    if (!moved) {
+      return false;
+    }
+
+    const floorState = getCurrentFloorState();
+    if (floorState) {
+      floorState.debugReveal = true;
+    }
+    renderSelf();
+    return true;
+  }
+
   return {
     ensureFloorExists,
     transferFloorFollower,
     moveToFloor,
     tryUseStairs,
     debugRevealOrAdvanceStudio,
+    debugReturnToPreviousStudio,
   };
 }

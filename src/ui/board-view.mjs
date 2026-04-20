@@ -1,5 +1,6 @@
 import { evaluateTargetSelection, getTargetChanceTooltip } from '../application/targeting-service.mjs';
 import { getActorDerivedMaxHp, getActorDerivedStats } from '../application/derived-actor-stats.mjs';
+import { getDebugEnemyTrailTile, isDebugEnemyTrailEnabled } from '../application/debug-enemy-trails.mjs';
 import { getDeathMarkerAt, getDeathMarkerVisualStage, pruneExpiredDeathMarkers } from '../application/death-marker-service.mjs';
 import { getDecorativeOverlayPreset } from '../ambience/visual/decorative-overlay-presets.mjs';
 import { isHealingConsumable } from '../content/catalogs/consumables.mjs';
@@ -368,6 +369,9 @@ export function createBoardView(context) {
     const studioArchetypeId = floorState?.studioArchetypeId ?? "slasher";
     const isVisible = Boolean(floorState.visible?.[y]?.[x]);
     const isExplored = Boolean(floorState.explored?.[y]?.[x]);
+    const debugTrail = floorState?.debugReveal && isDebugEnemyTrailEnabled(state)
+      ? getDebugEnemyTrailTile(floorState, x, y)
+      : null;
     const transitionTile = getTransitionTilePresentation({
       x,
       y,
@@ -401,6 +405,7 @@ export function createBoardView(context) {
           ? `floor studio-${studioArchetypeId} player dead`
           : `floor studio-${studioArchetypeId} player`,
         glyph: TILE.PLAYER,
+        debugTrail,
         overlayImageUrl: getPlayerIconAssetUrl(state.player, state.gameOver),
         underlayType: transitionTile?.type ?? chestTile?.type ?? "",
         underlayGlyph: transitionTile?.glyph ?? chestTile?.glyph ?? "",
@@ -477,6 +482,7 @@ export function createBoardView(context) {
       return {
         type: `floor studio-${studioArchetypeId} enemy monster-${enemy.id}`,
         glyph: TILE.ENEMY,
+        debugTrail,
         overlayImageUrl: getMonsterIconAssetUrl(enemy),
         underlayType: transitionTile?.type ?? "",
         underlayGlyph: transitionTile?.glyph ?? "",
@@ -529,6 +535,7 @@ export function createBoardView(context) {
       return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} ${isHealingItem ? 'potion' : 'consumable'}`,
         glyph: TILE.POTION,
+        debugTrail,
         overlayImageUrl: imageUrl,
         tooltip: {
           title: potionPickup.item.name,
@@ -551,6 +558,7 @@ export function createBoardView(context) {
       return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} key key-${keyPickup.item.keyColor}`,
         glyph: TILE.KEY,
+        debugTrail,
         overlayImageUrl: getKeyIconAssetUrl(keyPickup.item),
         tooltip: {
           title: keyPickup.item.name,
@@ -571,6 +579,7 @@ export function createBoardView(context) {
       return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} food`,
         glyph: "",
+        debugTrail,
         overlayImageUrl: getFoodIconAssetUrl(foodPickup.item),
         tooltip: {
           title: foodPickup.item.name,
@@ -592,6 +601,7 @@ export function createBoardView(context) {
       return appendDeathMarkerUnderlay({
         type: `${isVisible ? `floor studio-${studioArchetypeId}` : `floor memory studio-${studioArchetypeId}`} ${door.isOpen ? "door-open" : "door-closed"} ${doorPresentation.classes.join(" ")}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`.trim(),
         glyph: door.isOpen ? TILE.DOOR_OPEN : TILE.DOOR_CLOSED,
+        debugTrail,
         overlayImageUrl: doorPresentation.iconAssetUrl,
         tooltip: isVisible ? {
           title: locked ? `${getDoorColorLabel(door.lockColor)} Tür` : "Tür",
@@ -617,6 +627,7 @@ export function createBoardView(context) {
       return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} weapon-drop ${getItemRarityClass(weaponPickup.item)}`,
         glyph: "",
+        debugTrail,
         overlayImageUrl: getWeaponIconAssetUrl(weaponPickup.item),
         tooltip: {
           title: formatWeaponDisplayName(weaponPickup.item),
@@ -644,6 +655,7 @@ export function createBoardView(context) {
       return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} weapon-drop offhand-drop ${getItemRarityClass(offHandPickup.item)}`,
         glyph: "",
+        debugTrail,
         overlayImageUrl: getOffHandIconAssetUrl(offHandPickup.item),
         tooltip: {
           title: offHandPickup.item.name,
@@ -655,7 +667,10 @@ export function createBoardView(context) {
     }
 
     if (chestTile) {
-      return appendDeathMarkerUnderlay(chestTile, deathMarker, state.turn);
+      return appendDeathMarkerUnderlay({
+        ...chestTile,
+        debugTrail,
+      }, deathMarker, state.turn);
     }
 
     const trap = floorState.traps?.find((entry) => entry.x === x && entry.y === y) ?? null;
@@ -691,6 +706,7 @@ export function createBoardView(context) {
       return appendDeathMarkerUnderlay({
         type: `${isVisible ? `floor studio-${studioArchetypeId}` : `floor memory studio-${studioArchetypeId}`} trap trap-${trap.type} ${trapStateClass}${isVisible ? "" : " memory"}`.trim(),
         glyph: trapGlyph,
+        debugTrail,
         overlayImageUrl: getTrapIconAssetUrl(trap),
         tooltip: {
           title: trap.name,
@@ -712,6 +728,7 @@ export function createBoardView(context) {
           ? `floor studio-${studioArchetypeId} showcase`
           : `floor memory studio-${studioArchetypeId} showcase memory`,
         glyph: TILE.SHOWCASE,
+        debugTrail,
         overlayImageUrl: getShowcaseIconAssetUrl(showcase.item),
         tooltip: isVisible ? {
           title: showcase.item.name,
@@ -727,7 +744,10 @@ export function createBoardView(context) {
     }
 
     if (transitionTile) {
-      return appendDeathMarkerUnderlay(transitionTile, deathMarker, state.turn);
+      return appendDeathMarkerUnderlay({
+        ...transitionTile,
+        debugTrail,
+      }, deathMarker, state.turn);
     }
 
     if (floorState.grid[y][x] === TILE.WALL) {
@@ -738,6 +758,7 @@ export function createBoardView(context) {
       type: isVisible
         ? `floor studio-${studioArchetypeId}`
         : `floor memory studio-${studioArchetypeId}`,
+      debugTrail,
       glyph: "",
     }, deathMarker, state.turn);
   }
@@ -792,6 +813,16 @@ export function createBoardView(context) {
         const base = document.createElement("div");
         base.className = `tile tile-base ${baseType}`;
         cell.appendChild(base);
+        if (tile.debugTrail) {
+          const trailLayer = document.createElement('div');
+          const visitStrength = Math.min(1, 0.22 + ((Math.max(1, tile.debugTrail.visitCount) - 1) * 0.11));
+          const totalStrength = Math.min(1, 0.18 + ((Math.max(1, tile.debugTrail.totalVisits) - 1) * 0.07));
+          trailLayer.className = 'tile tile-debug-trail';
+          trailLayer.style.setProperty('--debug-trail-hue', String(tile.debugTrail.hue ?? 210));
+          trailLayer.style.setProperty('--debug-trail-visit-alpha', visitStrength.toFixed(3));
+          trailLayer.style.setProperty('--debug-trail-total-alpha', totalStrength.toFixed(3));
+          cell.appendChild(trailLayer);
+        }
         const shouldRenderDeathUnderlay = Boolean(tile.deathUnderlayType || tile.deathUnderlayOverlayImageUrl);
         if (shouldRenderDeathUnderlay) {
           const deathUnderlay = document.createElement('div');

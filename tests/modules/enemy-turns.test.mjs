@@ -26,6 +26,7 @@ function createEnemyTurnHarness({
   hasLineOfSight = () => false,
   canActorMove = () => true,
   noteMonsterEncounter = () => {},
+  recordDebugEnemyTrailStep = () => {},
 } = {}) {
   const state = {
     player,
@@ -66,6 +67,7 @@ function createEnemyTurnHarness({
     playDoorOpenSound: () => { doorOpenSoundCount += 1; },
     saveHighscoreIfNeeded: () => {},
     showDeathModal: () => {},
+    recordDebugEnemyTrailStep,
     noteMonsterEncounter,
     handleActorEnterTile: () => {},
     manhattanDistance: (left, right) => Math.abs(left.x - right.x) + Math.abs(left.y - right.y),
@@ -1511,6 +1513,56 @@ test('takeEnemyTurn does not let off-floor enemies target the player', () => {
 
   assert.equal(attackCalls, 0);
   assert.equal(state.player.hp, 20);
+});
+
+test('enemy movement records debug trail steps when reveal heatmap mode is active', () => {
+  const enemy = createBaseEnemy({
+    id: 'trail-hunter',
+    x: 3,
+    y: 2,
+    originX: 3,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    aggro: true,
+    aggroRadius: 6,
+  });
+  const floorState = {
+    grid: createGrid(8, 5, '#'),
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, true),
+    debugReveal: true,
+  };
+  for (let x = 2; x <= 5; x += 1) {
+    floorState.grid[2][x] = '.';
+  }
+  const trailCalls = [];
+  const harness = createEnemyTurnHarness({
+    floorState,
+    player: { x: 5, y: 2, hp: 20, maxHp: 20 },
+    hasLineOfSight: () => true,
+    recordDebugEnemyTrailStep: (nextFloorState, movedEnemy, position) => {
+      trailCalls.push({
+        floorState: nextFloorState,
+        enemyId: movedEnemy.id,
+        position,
+      });
+    },
+  });
+  harness.state.debug = { enemyTrailEnabled: true };
+
+  harness.api.takeEnemyTurn(enemy);
+
+  assert.equal(enemy.x, 4);
+  assert.equal(enemy.y, 2);
+  assert.deepEqual(trailCalls, [{
+    floorState,
+    enemyId: 'trail-hunter',
+    position: { x: 4, y: 2 },
+  }]);
 });
 
 test('enemy-turns use an arrow-style projectile effect for bows', () => {

@@ -166,3 +166,35 @@ test('floor-transition-service places the player on the destination threshold wh
   assert.equal(state.floor, 1);
   assert.deepEqual(state.player, { x: 4, y: 4 });
 });
+
+test('floor-transition-service can return to the previous revealed debug studio', () => {
+  const { state, service } = createHarness({
+    existingFloors: {
+      1: {
+        exitAnchor: {
+          position: { x: 4, y: 3 },
+          transitionPosition: { x: 4, y: 4 },
+        },
+        stairsDown: { x: 4, y: 4 },
+        debugReveal: true,
+      },
+      2: {
+        entryAnchor: {
+          position: { x: 1, y: 2 },
+          transitionPosition: { x: 1, y: 1 },
+        },
+        stairsUp: { x: 1, y: 1 },
+        debugReveal: true,
+      },
+    },
+  });
+  state.floor = 2;
+  state.player = { x: 1, y: 1 };
+
+  const moved = service.debugReturnToPreviousStudio();
+
+  assert.equal(moved, true);
+  assert.equal(state.floor, 1);
+  assert.deepEqual(state.player, { x: 4, y: 4 });
+  assert.equal(state.floors[1].debugReveal, true);
+});

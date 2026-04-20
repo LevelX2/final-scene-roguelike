@@ -215,7 +215,7 @@ test("debug info modal shows timeline and upcoming actor order when revealed", a
   await expect(page.locator("#debugInfoText")).toHaveValue(/2\. Spieler \| Floor 1 \| Zeit 300 \| Reaktion 4 \| Tempo Normal \(0 %\)/);
 });
 
-test("debug modal advances the timeline with the configured budget via button and N", async ({ page }) => {
+test("debug toolbar advances the timeline with the configured budget via button and N", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -226,18 +226,84 @@ test("debug modal advances the timeline with the configured budget via button an
     window.__TEST_API__.setPlayerSpeed({ nextActionTime: 0, baseSpeed: 100 });
   });
 
-  await page.locator("#openDebugInfo").click();
+  await expect(page.locator("#debugToolbarControls")).toBeVisible();
   await page.locator("#debugAdvanceInput").fill("500");
+  await page.locator("#debugAdvanceSpeedRange").evaluate((node) => {
+    node.value = "4";
+    node.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await expect(page.locator("#debugAdvanceSpeedValue")).toHaveText("Langsam");
   await page.locator("#debugAdvanceButton").click();
+  await expect(page.locator("#debugAdvanceButton")).toHaveText("Läuft...");
 
-  await expect(page.locator("#debugInfoText")).toHaveValue(/Weltzeit: 500/);
-  await expect(page.locator("#debugInfoText")).toHaveValue(/Spieler-Zeitpunkt: 500/);
-  await expect(page.locator("#debugInfoStatus")).toContainText("Debug-Vorschub: Weltzeit +500");
+  await expect.poll(async () => {
+    const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+    return `${snapshot.timelineTime}:${snapshot.player.nextActionTime}`;
+  }).toBe("500:500");
+  await expect(page.locator("#debugAdvanceButton")).toHaveText("Vorspulen");
 
   await page.keyboard.press("N");
 
-  await expect(page.locator("#debugInfoText")).toHaveValue(/Weltzeit: 1000/);
-  await expect(page.locator("#debugInfoText")).toHaveValue(/Spieler-Zeitpunkt: 1000/);
+  await expect.poll(async () => {
+    const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+    return `${snapshot.timelineTime}:${snapshot.player.nextActionTime}`;
+  }).toBe("1000:1000");
+});
+
+test("F7 returns to the previous revealed debug studio", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.keyboard.press("F8");
+  await expect(page.locator("#debugToolbarControls")).toBeVisible();
+
+  await page.keyboard.press("F8");
+  await expect(page.locator("#depthTitle")).toContainText("Studio 2");
+
+  await page.keyboard.press("F7");
+  await expect(page.locator("#depthTitle")).toContainText("Studio 1");
+});
+
+test("debug enemy trails render as a heatmap when the toolbar toggle is enabled", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const trailIndex = await page.evaluate(() => {
+    window.__TEST_API__.setDebugReveal(true);
+    window.__TEST_API__.clearFloorEntities();
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const enemyStart = { x: snapshot.player.x + 3, y: snapshot.player.y };
+    const trailTile = { x: snapshot.player.x + 2, y: snapshot.player.y };
+    window.__TEST_API__.placeEnemy(enemyStart, {
+      id: "trail-raider",
+      name: "Trail-Raider",
+      hp: 10,
+      aggro: true,
+      behavior: "hunter",
+      behaviorLabel: "Jäger",
+      aggroRadius: 8,
+      baseSpeed: 100,
+      nextActionTime: 0,
+    });
+    window.__TEST_API__.setTimelineTime(0);
+    window.__TEST_API__.setPlayerSpeed({ nextActionTime: 400, baseSpeed: 100 });
+    window.__TEST_API__.setEnemySpeed({ nextActionTime: 0, baseSpeed: 100 }, 0);
+    return trailTile.y * snapshot.grid[0].length + trailTile.x;
+  });
+
+  await page.locator("#toggleDebugEnemyTrail").check();
+  await page.locator("#debugAdvanceInput").fill("100");
+  await page.locator("#debugAdvanceButton").click();
+
+  const trailInfo = await page.locator(".tile-cell").nth(trailIndex).locator(".tile-debug-trail").evaluate((node) => ({
+    hue: node.style.getPropertyValue("--debug-trail-hue"),
+    visitAlpha: node.style.getPropertyValue("--debug-trail-visit-alpha"),
+    totalAlpha: node.style.getPropertyValue("--debug-trail-total-alpha"),
+  }));
+
+  expect(Number(trailInfo.hue)).toBeGreaterThan(0);
+  expect(Number(trailInfo.visitAlpha)).toBeGreaterThan(0);
+  expect(Number(trailInfo.totalAlpha)).toBeGreaterThan(0);
 });
 
 test("actors standing on studio transitions keep the transition marker visible", async ({ page }) => {

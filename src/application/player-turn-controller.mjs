@@ -1,5 +1,12 @@
-import { evaluateTargetSelection, getTargetHintLabel, getVisibleTargetSelections, isTargetModeWeapon } from './targeting-service.mjs';
+import {
+  evaluateTargetSelection,
+  getSingleDirectFireTargetSelection,
+  getTargetHintLabel,
+  getVisibleTargetSelections,
+  isTargetModeWeapon,
+} from './targeting-service.mjs';
 import { pruneExpiredDeathMarkers } from './death-marker-service.mjs';
+import { getDebugAdvanceDelayMs } from './debug-advance.mjs';
 
 export function createPlayerTurnController(context) {
   const {
@@ -44,6 +51,16 @@ export function createPlayerTurnController(context) {
     processConsumableBuffs,
     applyPlayerNutritionTurnCost,
     renderSelf,
+    waitForDebugAdvanceFrame = () => (
+      typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+        ? new Promise((resolve) => window.requestAnimationFrame(() => resolve()))
+        : Promise.resolve()
+    ),
+    waitForDebugAdvanceDelay = (delayMs) => (
+      delayMs > 0
+        ? new Promise((resolve) => setTimeout(resolve, delayMs))
+        : Promise.resolve()
+    ),
   } = context;
 
   function isMovementBlockingTile(x, y, floorState) {
@@ -235,7 +252,7 @@ export function createPlayerTurnController(context) {
     };
   }
 
-  function debugAdvanceTimeline(timeBudget = 100) {
+  async function debugAdvanceTimeline(timeBudget = 100) {
     const state = getState();
     const floorState = getCurrentFloorState();
     const normalizedBudget = Math.max(1, Math.round(Number(timeBudget) || 0));
@@ -246,53 +263,75 @@ export function createPlayerTurnController(context) {
       };
     }
 
+    state.debug ??= {};
+    if (state.debug.advanceInProgress) {
+      return {
+        ok: false,
+        reason: "debug-advance-busy",
+      };
+    }
+
+    state.debug.advanceInProgress = true;
     ensureSchedulerState();
-    const startTime = Math.max(0, Math.round(Number(state.timelineTime) || 0));
-    const targetTime = startTime + normalizedBudget;
-    let simulatedTurns = 0;
-    let guard = 0;
-    let lastStep = null;
-
-    while (guard < 2000) {
-      const nextActor = getNextScheduledActor();
-      if (!nextActor) {
-        break;
-      }
-
-      const nextActorTime = Math.max(0, Math.round(Number(nextActor.nextActionTime) || 0));
-      if (nextActorTime >= targetTime) {
-        break;
-      }
-
-      lastStep = runDebugActorStep(nextActor, {
-        playerActionType: "wait",
-        playerActionCost: 100,
-        ignoreGameOver: true,
-      });
-      if (!lastStep) {
-        break;
-      }
-
-      simulatedTurns += 1;
-      guard += 1;
-    }
-
-    if ((Number(state.timelineTime) || 0) < targetTime) {
-      setTimelineTime(targetTime);
-    }
-
     renderSelf();
-    return {
-      ok: true,
-      startTime,
-      targetTime,
-      simulatedTurns,
-      actualTime: Math.max(0, Math.round(Number(state.timelineTime) || 0)),
-      exhaustedGuard: guard >= 2000,
-      lastActorLabel: lastStep
-        ? `${lastStep.actor === state.player ? "Spieler" : (lastStep.actor.name ?? lastStep.actor.baseName ?? lastStep.actor.id ?? "Unbekannt")} | Floor ${lastStep.floorNumber}`
-        : null,
-    };
+
+    try {
+      const startTime = Math.max(0, Math.round(Number(state.timelineTime) || 0));
+      const targetTime = startTime + normalizedBudget;
+      const delayMs = getDebugAdvanceDelayMs(state.debug?.advancePlaybackSpeed);
+      let simulatedTurns = 0;
+      let guard = 0;
+      let lastStep = null;
+
+      while (guard < 2000) {
+        const nextActor = getNextScheduledActor();
+        if (!nextActor) {
+          break;
+        }
+
+        const nextActorTime = Math.max(0, Math.round(Number(nextActor.nextActionTime) || 0));
+        if (nextActorTime >= targetTime) {
+          break;
+        }
+
+        lastStep = runDebugActorStep(nextActor, {
+          playerActionType: "wait",
+          playerActionCost: 100,
+          ignoreGameOver: true,
+        });
+        if (!lastStep) {
+          break;
+        }
+
+        simulatedTurns += 1;
+        guard += 1;
+
+        if (delayMs > 0) {
+          renderSelf();
+          await waitForDebugAdvanceFrame();
+          await waitForDebugAdvanceDelay(delayMs);
+        }
+      }
+
+      if ((Number(state.timelineTime) || 0) < targetTime) {
+        setTimelineTime(targetTime);
+      }
+
+      return {
+        ok: true,
+        startTime,
+        targetTime,
+        simulatedTurns,
+        actualTime: Math.max(0, Math.round(Number(state.timelineTime) || 0)),
+        exhaustedGuard: guard >= 2000,
+        lastActorLabel: lastStep
+          ? `${lastStep.actor === state.player ? "Spieler" : (lastStep.actor.name ?? lastStep.actor.baseName ?? lastStep.actor.id ?? "Unbekannt")} | Floor ${lastStep.floorNumber}`
+          : null,
+      };
+    } finally {
+      state.debug.advanceInProgress = false;
+      renderSelf();
+    }
   }
 
   function tryCloseAdjacentDoor() {
@@ -498,25 +537,14 @@ export function createPlayerTurnController(context) {
     return state.options?.directFireOnSingleTarget ?? true;
   }
 
-  function canDirectFireTarget(targetSelection) {
-    return Boolean(
-      targetSelection?.valid &&
-      (targetSelection.coverPenalty ?? 0) <= 0
-    );
-  }
-
   function tryDirectFireSingleTarget(state = getState()) {
     if (state.targeting?.active || !isDirectFireOnSingleTargetEnabled(state)) {
       return false;
     }
 
     const { validTargets } = getVisibleTargetData(state);
-    if (validTargets.length !== 1) {
-      return false;
-    }
-
-    const [directTarget] = validTargets;
-    if (!canDirectFireTarget(directTarget)) {
+    const directTarget = getSingleDirectFireTargetSelection(validTargets, true);
+    if (!directTarget) {
       return false;
     }
 

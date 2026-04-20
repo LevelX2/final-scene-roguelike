@@ -1,6 +1,7 @@
 import { createStatusEffectService } from '../application/status-effect-service.mjs';
 import { createConsumableService } from '../application/consumable-service.mjs';
 import { createActionScheduler } from '../application/action-scheduler.mjs';
+import { recordDebugEnemyTrailStep } from '../application/debug-enemy-trails.mjs';
 import { getEffectStateLabel } from '../content/catalogs/weapon-effects.mjs';
 
 export function assembleGameplayModules(context) {
@@ -63,6 +64,7 @@ export function assembleGameplayModules(context) {
     setMovePlayer,
     setHandleWait,
     setDebugRevealOrAdvanceStudio,
+    setDebugReturnToPreviousStudio,
     setDebugAdvanceTimeline,
     setCycleTargetMode,
     setEnterTargetMode,
@@ -212,6 +214,7 @@ export function assembleGameplayModules(context) {
     showDeathModal,
     grantExperience: (...args) => combatApi?.grantExperience?.(...args),
     noteMonsterEncounter,
+    recordDebugEnemyTrailStep,
     handleActorEnterTile,
     randomChance,
     hasLineOfSight: core.hasLineOfSight,
@@ -379,6 +382,7 @@ export function assembleGameplayModules(context) {
   setMovePlayer(playerTurnController.movePlayer);
   setHandleWait(playerTurnController.handleWait);
   setDebugRevealOrAdvanceStudio(floorTransitionService.debugRevealOrAdvanceStudio);
+  setDebugReturnToPreviousStudio(floorTransitionService.debugReturnToPreviousStudio);
   setDebugAdvanceTimeline(playerTurnController.debugAdvanceTimeline);
   setCycleTargetMode(playerTurnController.cycleTargetMode);
   setEnterTargetMode(playerTurnController.enterTargetMode);

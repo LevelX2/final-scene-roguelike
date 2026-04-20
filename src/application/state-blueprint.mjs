@@ -8,6 +8,7 @@ import { cloneOffHandItem } from '../equipment-helpers.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 import { createSeededRandomApi, normalizeSeed } from '../utils/seeded-random.mjs';
 import { NORMAL_SPEED_INTERVAL } from './actor-speed.mjs';
+import { DEFAULT_DEBUG_ADVANCE_SPEED } from './debug-advance.mjs';
 import { createEmptyProgressionBonuses } from './derived-actor-stats.mjs';
 
 export function createStateBlueprintApi(context) {
@@ -430,6 +431,11 @@ export function createStateBlueprintApi(context) {
       modals: createDefaultModals(openStartModal),
       collapsedCards: createDefaultCollapsedCards(),
       options: { ...initialOptions },
+      debug: {
+        enemyTrailEnabled: false,
+        advancePlaybackSpeed: DEFAULT_DEBUG_ADVANCE_SPEED,
+        advanceInProgress: false,
+      },
       floors: {},
       preferences: createDefaultPreferences(),
       healOverlay: {

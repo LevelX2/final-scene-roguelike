@@ -1,5 +1,12 @@
-import { evaluateTargetSelection, getTargetChanceTooltip, getTargetHintLabel } from '../application/targeting-service.mjs';
+import {
+  evaluateTargetSelection,
+  getSingleDirectFireTargetSelection,
+  getTargetChanceTooltip,
+  getTargetHintLabel,
+  getVisibleTargetSelections,
+} from '../application/targeting-service.mjs';
 import { areVoiceAnnouncementsForcedOff } from '../application/test-mode.mjs';
+import { getDebugAdvanceSpeedLabel, normalizeDebugAdvanceSpeed } from '../application/debug-advance.mjs';
 import { getHealingFamily, getHealingOverlayLabel, getHealingTypeLabel } from '../content/catalogs/consumables.mjs';
 
 export function createRenderCycleApi(context) {
@@ -91,7 +98,14 @@ export function createRenderCycleApi(context) {
     toggleEnemyPanelModeButtonElement,
     inventoryItemsTabButtonElement,
     inventoryHeroTabButtonElement,
+    debugToolbarControlsElement,
     openDebugInfoButtonElement,
+    debugPrevStudioButtonElement,
+    debugAdvanceInputElement,
+    debugAdvanceButtonElement,
+    debugAdvanceSpeedRangeElement,
+    debugAdvanceSpeedValueElement,
+    toggleDebugEnemyTrailElement,
     updateSavegameControls,
     collapsibleCards,
     updatePotionChoiceSelection,
@@ -341,8 +355,23 @@ export function createRenderCycleApi(context) {
     topbarStatusSummaryElement.classList.toggle("ui-hidden", !statusSummary);
 
     const floorState = getCurrentFloorState();
+    const combatWeapon = getCombatWeapon?.(state.player) ?? null;
+    const visibleTargetData = getVisibleTargetSelections({
+      state,
+      floorState,
+      weapon: combatWeapon,
+      rangeDistance: chebyshevDistance,
+      hasLineOfSight,
+      previewCombatAttack,
+    });
     const targetingActive = Boolean(state.targeting?.active);
-    const targetingWeapon = targetingActive ? getCombatWeapon?.(state.player) : null;
+    const directFireTarget = !targetingActive
+      ? getSingleDirectFireTargetSelection(
+          visibleTargetData.validTargets,
+          state.options?.directFireOnSingleTarget ?? true,
+        )
+      : null;
+    const targetingWeapon = targetingActive ? combatWeapon : null;
     const targetSelection = targetingActive
       ? evaluateTargetSelection({
           state,
@@ -358,7 +387,8 @@ export function createRenderCycleApi(context) {
     const targetIsValid = Boolean(targetSelection?.valid);
     const targetHint = targetingActive ? getTargetHintLabel(targetSelection) : "";
     currentTargetModeTooltip = targetingActive ? getTargetChanceTooltip(targetSelection) : null;
-    openTargetModeButton.textContent = "Zielen";
+    openTargetModeButton.dataset.action = directFireTarget ? "direct-fire" : "target-mode";
+    openTargetModeButton.textContent = directFireTarget ? "Schießen" : "Zielen";
     openTargetModeButton.setAttribute("aria-pressed", String(targetingActive));
     openTargetModeButton.classList.toggle("targeting-active", targetingActive);
     confirmTargetModeButton.classList.toggle("ui-hidden", !targetingActive);
@@ -436,6 +466,8 @@ export function createRenderCycleApi(context) {
     const inventoryView = state.preferences?.inventoryView === "hero" ? "hero" : "items";
     const showInventoryItems = inventoryView === "items";
     const debugRevealActive = Boolean(floorState?.debugReveal);
+    const debugAdvanceInProgress = Boolean(state.debug?.advanceInProgress);
+    const debugAdvanceSpeed = normalizeDebugAdvanceSpeed(state.debug?.advancePlaybackSpeed);
     if (!debugRevealActive && state.modals.debugInfoOpen) {
       state.modals.debugInfoOpen = false;
     }
@@ -456,7 +488,29 @@ export function createRenderCycleApi(context) {
     studioTopologyModalElement?.setAttribute("aria-hidden", String(!state.modals.studioTopologyOpen));
     runStatsModalElement?.classList.toggle("hidden", !state.modals.runStatsOpen);
     runStatsModalElement?.setAttribute("aria-hidden", String(!state.modals.runStatsOpen));
+    debugToolbarControlsElement?.classList.toggle("ui-hidden", !(inGameView && debugRevealActive));
     openDebugInfoButtonElement?.classList.toggle("ui-hidden", !(inGameView && debugRevealActive));
+    if (debugPrevStudioButtonElement) {
+      debugPrevStudioButtonElement.disabled = !debugRevealActive || state.floor <= 1 || debugAdvanceInProgress;
+    }
+    if (debugAdvanceInputElement) {
+      debugAdvanceInputElement.disabled = !debugRevealActive || debugAdvanceInProgress;
+    }
+    if (debugAdvanceButtonElement) {
+      debugAdvanceButtonElement.disabled = !debugRevealActive || debugAdvanceInProgress;
+      debugAdvanceButtonElement.textContent = debugAdvanceInProgress ? "Läuft..." : "Vorspulen";
+    }
+    if (debugAdvanceSpeedRangeElement) {
+      debugAdvanceSpeedRangeElement.value = String(debugAdvanceSpeed);
+      debugAdvanceSpeedRangeElement.disabled = !debugRevealActive || debugAdvanceInProgress;
+    }
+    if (debugAdvanceSpeedValueElement) {
+      debugAdvanceSpeedValueElement.textContent = getDebugAdvanceSpeedLabel(debugAdvanceSpeed);
+    }
+    if (toggleDebugEnemyTrailElement) {
+      toggleDebugEnemyTrailElement.checked = Boolean(state.debug?.enemyTrailEnabled);
+      toggleDebugEnemyTrailElement.disabled = !debugRevealActive || debugAdvanceInProgress;
+    }
     debugInfoModalElement?.classList.toggle("hidden", !state.modals.debugInfoOpen);
     debugInfoModalElement?.setAttribute("aria-hidden", String(!state.modals.debugInfoOpen));
     if (state.modals.debugInfoOpen) {

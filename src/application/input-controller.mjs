@@ -20,6 +20,7 @@ export function createInputController(context) {
     movePlayer,
     handleWait,
     debugRevealOrAdvanceStudio,
+    debugReturnToPreviousStudio,
     tryCloseAdjacentDoor,
     quickUsePotion,
     closeContainerLoot,
@@ -256,6 +257,12 @@ export function createInputController(context) {
     if (matchesShortcut([], ["F8"])) {
       event.preventDefault();
       debugRevealOrAdvanceStudio?.();
+      return;
+    }
+
+    if (debugRevealActive && matchesShortcut([], ["F7"])) {
+      event.preventDefault();
+      debugReturnToPreviousStudio?.();
       return;
     }
 

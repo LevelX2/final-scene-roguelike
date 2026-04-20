@@ -39,6 +39,11 @@ export function createCombatResolutionApi(context) {
     return showcaseBlocksTile || isDoorClosed?.(getDoorAt?.(x, y, floorState));
   }
 
+  function isNearCornerGraze(decision, distanceX, distanceY) {
+    const threshold = Math.max(1, Math.floor((Math.min(distanceX, distanceY) + 1) / 2));
+    return Math.abs(decision) <= threshold;
+  }
+
   function getRangedCornerCover(attacker, defender, options = {}) {
     const floorState = options.floorState ?? getCurrentFloorState?.();
     const weapon = options.weapon ?? getCombatWeapon(attacker);
@@ -77,36 +82,42 @@ export function createCombatResolutionApi(context) {
     let traversedX = 0;
     let traversedY = 0;
     const grazingCorners = [];
+    const grazingCornerKeys = new Set();
 
     while (traversedX < distanceX || traversedY < distanceY) {
       const decision = (1 + 2 * traversedX) * distanceY - (1 + 2 * traversedY) * distanceX;
-      if (decision !== 0) {
-        if (decision < 0) {
-          currentX += stepX;
-          traversedX += 1;
-        } else {
-          currentY += stepY;
-          traversedY += 1;
+      if (isNearCornerGraze(decision, distanceX, distanceY)) {
+        const horizontalTile = { x: currentX + stepX, y: currentY };
+        const verticalTile = { x: currentX, y: currentY + stepY };
+        const horizontalOpaque = isOpaqueTile(floorState, horizontalTile.x, horizontalTile.y);
+        const verticalOpaque = isOpaqueTile(floorState, verticalTile.x, verticalTile.y);
+
+        if (horizontalOpaque !== verticalOpaque) {
+          const blockerTile = horizontalOpaque ? horizontalTile : verticalTile;
+          const grazeStepIndex = Math.max(traversedX, traversedY) + 1;
+          const grazeKey = `${blockerTile.x},${blockerTile.y}:${grazeStepIndex}`;
+          if (!grazingCornerKeys.has(grazeKey)) {
+            grazingCorners.push({
+              stepIndex: grazeStepIndex,
+              blockerTile,
+            });
+            grazingCornerKeys.add(grazeKey);
+          }
         }
-        continue;
       }
 
-      const horizontalTile = { x: currentX + stepX, y: currentY };
-      const verticalTile = { x: currentX, y: currentY + stepY };
-      const horizontalOpaque = isOpaqueTile(floorState, horizontalTile.x, horizontalTile.y);
-      const verticalOpaque = isOpaqueTile(floorState, verticalTile.x, verticalTile.y);
-
-      if (horizontalOpaque !== verticalOpaque) {
-        grazingCorners.push({
-          stepIndex: Math.max(traversedX, traversedY) + 1,
-          blockerTile: horizontalOpaque ? horizontalTile : verticalTile,
-        });
+      if (decision === 0) {
+        currentX += stepX;
+        currentY += stepY;
+        traversedX += 1;
+        traversedY += 1;
+      } else if (decision < 0) {
+        currentX += stepX;
+        traversedX += 1;
+      } else {
+        currentY += stepY;
+        traversedY += 1;
       }
-
-      currentX += stepX;
-      currentY += stepY;
-      traversedX += 1;
-      traversedY += 1;
     }
 
     const remoteCorners = grazingCorners.filter((corner) => corner.stepIndex > 1);

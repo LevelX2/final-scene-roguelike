@@ -337,7 +337,7 @@ test("highscores render class icons for stored runs", async ({ page }) => {
   });
 
   await startRun(page);
-  await page.getByRole("button", { name: "Final Scenes" }).click();
+  await page.getByRole("button", { name: "Bestenliste" }).click();
   await expect(page.locator("#highscoresModal")).toBeVisible();
   await expect(page.locator(".score-class-badge")).toHaveCount(1);
   await expect(page.locator(".score-item")).toContainText("Sidney");
@@ -1024,7 +1024,7 @@ test("highscores open from a button instead of the sidebar", async ({ page }) =>
   await page.goto("/");
   await startRun(page);
 
-  await page.getByRole("button", { name: "Final Scenes" }).click();
+  await page.getByRole("button", { name: "Bestenliste" }).click();
   await expect(page.locator("#highscoresModal")).toBeVisible();
 
   await page.keyboard.press("Escape");
@@ -1792,7 +1792,7 @@ test("pressing T with a ranged weapon selects the first valid target", async ({ 
   await expect(page.locator("#messageLog")).not.toContainText("Zielmodus aktiv: T waehlt Ziele, F feuert.");
 });
 
-test("target mode can also be opened from the header button", async ({ page }) => {
+test("the primary attack button follows the direct-fire single-target rule", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -1820,12 +1820,58 @@ test("target mode can also be opened from the header button", async ({ page }) =
     });
   });
 
+  await expect(page.getByRole("button", { name: "Schießen" })).toBeVisible();
+  await page.getByRole("button", { name: "Schießen" }).click();
+
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+  await expect(page.locator("#messageLog")).toContainText("Testpistole");
+});
+
+test("target mode can still be opened from the header button when direct fire is disabled", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+  });
+
+  await page.keyboard.press("o");
+  await page.locator("#toggleDirectFireOnSingleTarget").uncheck();
+  await page.keyboard.press("Escape");
+
   await page.getByRole("button", { name: "Zielen" }).click();
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
   await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
   await expect(page.getByRole("button", { name: "Zielen" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Schießen" })).toBeVisible();
+  await expect(page.locator(".board-primary-controls button:visible")).toHaveText([
+    "Schießen",
+    "Zielen",
+    "Inventar",
+    "Spielverlauf",
+    "Karte",
+  ]);
 });
 
 test("target mode shows a clear hint even without a valid straight shot target", async ({ page }) => {
@@ -1890,6 +1936,10 @@ test("the header target button closes target mode again after the last target", 
       enemyPosition: { x: 5, y: 2 },
     });
   });
+
+  await page.keyboard.press("o");
+  await page.locator("#toggleDirectFireOnSingleTarget").uncheck();
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Zielen" }).click();
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);

@@ -22,6 +22,9 @@ export function createUiBindingsApi(context) {
     zoomResetBoardButtonElement,
     zoomInBoardButtonElement,
     openDebugInfoButtonElement,
+    debugPrevStudioButtonElement,
+    debugAdvanceSpeedRangeElement,
+    toggleDebugEnemyTrailElement,
     closeInventoryButton,
     openRunStatsButton,
     closeRunStatsButton,
@@ -89,7 +92,9 @@ export function createUiBindingsApi(context) {
     toggleHelp,
     toggleHighscores,
     toggleDebugInfo,
+    debugReturnToPreviousStudio,
     setDebugAdvanceBudget,
+    setDebugAdvanceSpeed,
     triggerDebugAdvance,
     copyDebugInfo,
     restartRun,
@@ -111,6 +116,8 @@ export function createUiBindingsApi(context) {
     openStartModal,
     closeStartModal,
     applyStartProfile,
+    enterTargetMode,
+    setDebugEnemyTrailEnabled,
     cycleTargetMode,
     confirmTargetAttack,
     bindKeyboardInput,
@@ -148,10 +155,21 @@ export function createUiBindingsApi(context) {
 
   function bindModalControls() {
     const openSavegames = () => toggleSavegames(true);
+    const openTargetModeFromButton = () => {
+      if (getState()?.targeting?.active) {
+        cycleTargetMode();
+        return;
+      }
+      if (openTargetModeButton?.dataset.action === "direct-fire") {
+        cycleTargetMode();
+        return;
+      }
+      enterTargetMode();
+    };
     openInventoryButton.addEventListener("click", () => toggleInventory(true, "items"));
     openHeroDetailsButton?.addEventListener("click", () => toggleInventory(true, "hero"));
     openStudioTopologyButton.addEventListener("click", () => toggleStudioTopology(true));
-    openTargetModeButton.addEventListener("click", () => cycleTargetMode());
+    openTargetModeButton.addEventListener("click", openTargetModeFromButton);
     confirmTargetModeButton.addEventListener("click", () => confirmTargetAttack());
     closeInventoryButton.addEventListener("click", () => toggleInventory(false));
     openRunStatsButton.addEventListener("click", () => toggleRunStats(true));
@@ -190,11 +208,18 @@ export function createUiBindingsApi(context) {
       saveOptions();
     });
     openDebugInfoButtonElement?.addEventListener("click", () => toggleDebugInfo?.(true));
+    debugPrevStudioButtonElement?.addEventListener("click", () => debugReturnToPreviousStudio?.());
     debugAdvanceInputElement?.addEventListener("change", () => {
       setDebugAdvanceBudget?.(debugAdvanceInputElement.value);
     });
+    debugAdvanceSpeedRangeElement?.addEventListener("input", () => {
+      setDebugAdvanceSpeed?.(debugAdvanceSpeedRangeElement.value);
+    });
     debugAdvanceButtonElement?.addEventListener("click", () => {
       triggerDebugAdvance?.();
+    });
+    toggleDebugEnemyTrailElement?.addEventListener("change", () => {
+      setDebugEnemyTrailEnabled?.(toggleDebugEnemyTrailElement.checked);
     });
     copyDebugInfoButtonElement?.addEventListener("click", () => {
       copyDebugInfo?.();

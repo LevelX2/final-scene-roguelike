@@ -2,6 +2,7 @@ import { formatStudioLabel, getStudioArchetypeLabel } from '../studio-theme.mjs'
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 import { deriveStudioGenerationSeed } from '../utils/seeded-random.mjs';
 import { formatSignedPercent, getActorSpeedState } from './actor-speed.mjs';
+import { getDebugAdvanceSpeedLabel, normalizeDebugAdvanceSpeed } from './debug-advance.mjs';
 import { getActorDerivedStat } from './derived-actor-stats.mjs';
 import { buildStudioGenerationReport, formatStudioGenerationReportText } from './studio-generation-report.mjs';
 
@@ -43,6 +44,8 @@ export function createModalController(context) {
     deathSummaryElement,
     debugInfoModalElement,
     debugAdvanceInputElement,
+    debugAdvanceSpeedRangeElement,
+    debugAdvanceSpeedValueElement,
     debugInfoTextElement,
     debugInfoStatusElement,
     debugAdvanceTimeline,
@@ -209,10 +212,30 @@ export function createModalController(context) {
     }
   }
 
+  function syncDebugAdvanceSpeedInput() {
+    const state = getState();
+    const speedValue = normalizeDebugAdvanceSpeed(state.debug?.advancePlaybackSpeed);
+    if (debugAdvanceSpeedRangeElement) {
+      debugAdvanceSpeedRangeElement.value = String(speedValue);
+    }
+    if (debugAdvanceSpeedValueElement) {
+      debugAdvanceSpeedValueElement.textContent = getDebugAdvanceSpeedLabel(speedValue);
+    }
+  }
+
   function setDebugAdvanceBudget(value = 100) {
     debugAdvanceBudget = normalizeDebugAdvanceBudget(value);
     syncDebugAdvanceInput();
     return debugAdvanceBudget;
+  }
+
+  function setDebugAdvanceSpeed(value = 2) {
+    const state = getState();
+    state.debug ??= {};
+    state.debug.advancePlaybackSpeed = normalizeDebugAdvanceSpeed(value);
+    syncDebugAdvanceSpeedInput();
+    renderSelf();
+    return state.debug.advancePlaybackSpeed;
   }
 
   function readDebugAdvanceBudget() {
@@ -281,6 +304,7 @@ export function createModalController(context) {
 
   function syncDebugInfoContent(statusText = "Bereit zum Kopieren.") {
     syncDebugAdvanceInput();
+    syncDebugAdvanceSpeedInput();
     if (debugInfoTextElement) {
       debugInfoTextElement.value = buildDebugInfoText();
     }
@@ -465,7 +489,7 @@ export function createModalController(context) {
     renderSelf();
   }
 
-  function triggerDebugAdvance(overrideBudget = null) {
+  async function triggerDebugAdvance(overrideBudget = null) {
     const floorState = getCurrentFloorState?.() ?? null;
     if (!floorState?.debugReveal) {
       return {
@@ -477,7 +501,7 @@ export function createModalController(context) {
     const budget = overrideBudget == null
       ? readDebugAdvanceBudget()
       : setDebugAdvanceBudget(overrideBudget);
-    const result = debugAdvanceTimeline?.(budget) ?? { ok: false };
+    const result = await (debugAdvanceTimeline?.(budget) ?? { ok: false });
     const statusText = result.ok
       ? formatDebugAdvanceStatus(result, budget)
       : 'Debug-Vorschub konnte nicht ausgeführt werden.';
@@ -494,6 +518,14 @@ export function createModalController(context) {
       ...result,
       budget,
     };
+  }
+
+  function setDebugEnemyTrailEnabled(value) {
+    const state = getState();
+    state.debug ??= {};
+    state.debug.enemyTrailEnabled = Boolean(value);
+    renderSelf();
+    return state.debug.enemyTrailEnabled;
   }
 
   async function copyDebugInfo() {
@@ -870,6 +902,8 @@ export function createModalController(context) {
     resolveChoiceBySlot,
     resolveStairChoice,
     setDebugAdvanceBudget,
+    setDebugAdvanceSpeed,
+    setDebugEnemyTrailEnabled,
     triggerDebugAdvance,
     toggleInventory,
     toggleRunStats,

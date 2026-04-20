@@ -23,6 +23,9 @@ function createHarness({
   takeEnemyTurn = () => {},
   hasNearbyEnemy = () => false,
   canActorMove = () => true,
+  renderSelf = () => {},
+  waitForDebugAdvanceFrame,
+  waitForDebugAdvanceDelay,
 } = {}) {
   const normalizedEnemies = enemies.map((enemy) => ({
     hp: 10,
@@ -133,7 +136,9 @@ function createHarness({
     processActorSafeRegeneration: () => {},
     processConsumableBuffs: () => {},
     applyPlayerNutritionTurnCost: () => {},
-    renderSelf: () => {},
+    renderSelf,
+    waitForDebugAdvanceFrame,
+    waitForDebugAdvanceDelay,
   });
 
   return {
@@ -506,4 +511,53 @@ test('player-turn-controller processes off-floor actors without letting them tar
   assert.equal(state.player.nextActionTime, 100);
   assert.equal(offFloorEnemy.nextActionTime, 160);
   assert.equal(currentFloorEnemy.nextActionTime, 140);
+});
+
+test('player-turn-controller renders paced debug advance steps even after the player is dead', async () => {
+  const renderFrames = [];
+  const enemy = {
+    id: 'debug-hunter',
+    x: 7,
+    y: 5,
+    hp: 10,
+    baseSpeed: 100,
+    nextActionTime: 0,
+    reaction: 2,
+    statusEffects: [],
+  };
+  const harness = createHarness({
+    player: { x: 5, y: 5, hp: 0, nextActionTime: 200 },
+    enemies: [enemy],
+    renderSelf: () => {
+      renderFrames.push({
+        playerX: harness.state.player.x,
+        playerY: harness.state.player.y,
+        enemyX: harness.floorState.enemies[0].x,
+        enemyY: harness.floorState.enemies[0].y,
+        inProgress: Boolean(harness.state.debug?.advanceInProgress),
+      });
+    },
+    takeEnemyTurn: (activeEnemy) => {
+      activeEnemy.x -= 1;
+    },
+    waitForDebugAdvanceFrame: async () => {},
+    waitForDebugAdvanceDelay: async () => {},
+  });
+
+  harness.state.gameOver = true;
+  harness.state.debug = {
+    enemyTrailEnabled: false,
+    advancePlaybackSpeed: 1,
+    advanceInProgress: false,
+  };
+  harness.floorState.debugReveal = true;
+
+  const result = await harness.api.debugAdvanceTimeline(100);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.simulatedTurns, 1);
+  assert.equal(harness.floorState.enemies[0].x, 6);
+  assert.equal(renderFrames.some((frame) => frame.inProgress), true);
+  assert.equal(renderFrames.some((frame) => frame.enemyX === 6), true);
+  assert.equal(harness.state.debug.advanceInProgress, false);
 });

@@ -28,6 +28,7 @@ import { getActorDerivedMaxHp, getActorDerivedStat } from '../application/derive
 import { buildCombatEnemyReference, formatEnemyAttackLog } from '../text/combat-log.mjs';
 import { formatWeaponReference } from '../text/combat-phrasing.mjs';
 import { isBowWeapon } from '../equipment-helpers.mjs';
+import { dropEnemyLoot } from '../application/enemy-loot-drop-service.mjs';
 
 const ARROW_PROJECTILE_DURATION_MS = 760;
 
@@ -60,7 +61,6 @@ export function createEnemyTurnApi(context) {
     getOffHand,
     createWeaponPickup,
     createOffHandPickup,
-    createFoodPickup,
     resolveCombatAttack,
     resolveBlock,
     hasLineOfSight,
@@ -77,6 +77,7 @@ export function createEnemyTurnApi(context) {
     saveHighscoreIfNeeded,
     showDeathModal,
     grantExperience,
+    recordDebugEnemyTrailStep,
     noteMonsterEncounter,
     handleActorEnterTile,
     manhattanDistance,
@@ -423,18 +424,16 @@ export function createEnemyTurnApi(context) {
     recordEnemyDeathMarker(floorState, enemy, state.turn);
     state.kills += 1;
     state.killStats = recordKillStat(state.killStats, enemy);
-    if (enemy.lootWeapon && randomChance() < (enemy.weaponDropChance ?? 0.55)) {
-      floorState.weapons.push(createWeaponPickup(enemy.lootWeapon, enemy.x, enemy.y));
-      addMessage(`${enemyReference.subjectCapitalized} laesst ${formatWeaponReference(enemy.lootWeapon, { article: 'definite', grammaticalCase: 'accusative' })} fallen.`, 'important');
-    }
-    if (enemy.lootOffHand && randomChance() < (enemy.offHandDropChance ?? 0.45)) {
-      floorState.offHands.push(createOffHandPickup(enemy.lootOffHand, enemy.x, enemy.y));
-      addMessage(`${enemyReference.subjectCapitalized} verliert ${enemy.lootOffHand.name}.`, 'important');
-    }
-    if (enemy.lootDrop?.item?.type === 'food') {
-      floorState.foods.push(createFoodPickup(enemy.lootDrop.item, enemy.x, enemy.y));
-      addMessage(`${enemyReference.subjectCapitalized} laesst ${enemy.lootDrop.item.name} fallen.`, 'important');
-    }
+    dropEnemyLoot({
+      enemy,
+      floorState,
+      enemyReference,
+      randomChance,
+      createWeaponPickup,
+      createOffHandPickup,
+      formatWeaponReference,
+      addMessage,
+    });
     playVictorySound?.();
     grantExperience?.(enemy.xpReward, enemyReference.object);
     addMessage(message ?? `${enemyReference.subjectCapitalized} geht am Gegenschlag zugrunde.`, 'important');
@@ -568,6 +567,9 @@ export function createEnemyTurnApi(context) {
     enemy.x = nextX;
     enemy.y = nextY;
     handleActorEnterTile(enemy, floorState);
+    if (floorState?.debugReveal && getState().debug?.enemyTrailEnabled) {
+      recordDebugEnemyTrailStep?.(floorState, enemy, { x: nextX, y: nextY });
+    }
     rememberEnemyMovement(enemy, floorState, previousPosition);
     if (options.trackAggro) {
       rememberAggroPosition(enemy);

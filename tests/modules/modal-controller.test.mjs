@@ -219,7 +219,7 @@ test('modal-controller debug info shows timeline and upcoming actor order when o
   assert.match(debugInfoTextElement.value, /2\. Spieler \| Floor 2 \| Zeit 300 \| Reaktion 4 \| Tempo Normal \(0 %\)/);
 });
 
-test('modal-controller forwards the configured debug advance budget and updates the status text', () => {
+test('modal-controller forwards the configured debug advance budget and updates the status text', async () => {
   const state = {
     floor: 1,
     runSeed: 777,
@@ -321,7 +321,7 @@ test('modal-controller forwards the configured debug advance budget and updates 
 
   controller.toggleDebugInfo(true);
   controller.setDebugAdvanceBudget(500);
-  controller.triggerDebugAdvance();
+  await controller.triggerDebugAdvance();
 
   assert.equal(receivedBudget, 500);
   assert.equal(debugAdvanceInputElement.value, '500');

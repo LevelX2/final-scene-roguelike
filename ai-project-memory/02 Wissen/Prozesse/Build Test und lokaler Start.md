@@ -39,6 +39,9 @@ Das Projekt nutzt einen einfachen lokalen Ablauf aus Build, App-Server und Playw
 - Nach Runtime-Änderungen mindestens neu baün.
 - Bei Gameplay- oder UI-Änderungen möglichst die Test-Suite oder geeignete Teiltests mitlaufen lassen.
 
+- Wenn `npm run test:e2e` unerwartet alte Laufzeitartefakte oder Smoke-Fehler zeigt, pruefen, ob auf `127.0.0.1:4173` noch ein alter Listener laeuft. Ein bereits belegter Port kann dazu fuehren, dass Playwright gegen einen veralteten Testserver laeuft.
+- Lange E2E-Laeufe ueber viele Ebenen sollten keine unbeabsichtigten Kampf- oder Todeszustaende mitschleppen, wenn eigentlich nur Generierung oder Zustandserhalt geprueft wird. Solche Tests bei Bedarf vor dem Ebenenwechsel gezielt von Floor-Entitaeten bereinigen.
+
 ## Verwandte Seiten
 - [[../00 Uebersichten/Aktueller Projektstatus]]
 - [[../../03 Betrieb/Qualitaetspruefung]]

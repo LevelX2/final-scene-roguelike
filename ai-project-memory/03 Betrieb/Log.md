@@ -9,6 +9,16 @@
 
 ## Einträge
 
+## [2026-04-20] update | E2E-Stabilisierung fuer Testlaeufe und Floor-Wechsel
+- Anlass oder Quelle: Durchlauf und Fehlerbehebung von `npm run test:e2e`
+- Neu angelegte Seiten:
+  - keine
+- GeÃ¤nderte Seiten:
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass ein alter Listener auf Port `4173` Playwright gegen einen veralteten Testserver laufen lassen kann.
+  - Festgehalten, dass lange E2E-Floorlaeufe fuer reine Generierungspruefungen vor dem Ebenenwechsel gegebenenfalls von Floor-Entitaeten bereinigt werden sollten, damit keine kampfbedingten Nebenzustaende die Aussage des Tests verfaelschen.
+
 ## [2026-04-17] create | Initiale Projekt-Wissensbasis
 - Anlass oder Quelle: Initiale projektbezogene Wissensbasis für `Projekt Rogue`
 - Neu angelegte Seiten:

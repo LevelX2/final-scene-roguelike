@@ -4,6 +4,41 @@ Fight Through a Dying Movieverse
 
 Browserbasiertes Rogue-like mit Horrorfilm-Thema, einem prozedural erzeugten Studiokomplex aus einzelnen Studios, zustandsbasiertem Kampf, Loot, Hunger-System, Save/Load und einer recht großen Playwright-E2E-Suite.
 
+![Startbildschirm von The Final Scene](assets/title/start-screen-final-scene.png)
+
+## Auf einen Blick
+
+`The Final Scene` ist ein browserbasiertes Solo-Roguelike, in dem du dich durch einen sterbenden Filmkosmos aus thematischen Studios kämpfst. Jeder Run verbindet Erkundung, rundenbasierten Kampf, Loot, Hunger-Management und filmische Genrewechsel zwischen Slasher, Western, Noir, Fantasy, Sci-Fi und weiteren Sets.
+
+Das Projekt richtet sich gerade vor allem an Leute, die Freude an experimentellen Systemen, taktischem Roguelike-Gameplay und einer starken Genre-Idee haben. Es ist bereits gut spielbar, aber bewusst noch in einem frühen Entwicklungsstadium.
+
+## Was dich erwartet
+
+- prozedural erzeugte Studiokomplexe mit verzweigten Pfaden, Türen, Fallen und Sonderräumen
+- rundenbasierte Kämpfe mit Waffen, Schilden, Heilung, Effekten und situativen Entscheidungen
+- Genre-Sets mit eigener Stimmung, eigenen Gegnern, Props und Item-Identität
+- ein Hunger- und Ressourcenmodell, das Runs unter Druck setzt
+- Save/Load, Highscores und eine umfangreiche lokale Testbasis
+
+## So spielt es sich
+
+Ein typischer Run beginnt mit einer Klasse, ersten Grundwerten und einem Start-Setup. Danach arbeitest du dich Studio für Studio vor, weichst Gegnern aus oder gehst bewusst in Kämpfe, sammelst Nahrung, Heilung, Ausrüstung und Schlüssel und versuchst, deinen Build an die Situation anzupassen.
+
+Der Reiz entsteht aus der Mischung aus Positionierung, Ressourcenknappheit, Genre-Wechseln und improvisierter Taktik. Du sollst nie nur den einen richtigen Build finden, sondern mit dem arbeiten, was der Run dir gibt.
+
+## Entwicklungsstatus
+
+Aktuelle Vorabversion: `0.1.0-alpha.1`
+
+Das Projekt ist spielbar und lokal gut abgesichert, aber noch klar im frühen Produktstadium:
+
+- das Kernspiel funktioniert bereits über viele Systeme hinweg stabil
+- Balancing, Progressionskurve und Item-/Gegner-Gewichtung sind noch nicht ausgereift
+- die langfristige Endstruktur eines Runs ist noch offen
+- Endherausforderungen, Endgegner und ein endgültiger Abschlusszustand werden noch weiterentwickelt
+
+Wer sich das Repository ansieht, sollte es deshalb als aktives Pre-Release verstehen, nicht als inhaltlich abgeschlossene Version.
+
 ## Projektregeln
 
 - Sichtbare deutsche UI-Texte verwenden echte Umlaute und ß.
@@ -39,6 +74,11 @@ Stand jetzt ist das Projekt spielbar und die vorhandene Verifikation läuft loka
 - `npm run test:e2e`
 
 Die Playwright-Suite deckt Startflow, Navigation, Kampf, Loot, Hunger, Persistenz, Türen/Schlüssel, Fallen, Showcase-Objekte und mehrere Smoke-Checks gegen den produktiven Laufzeitpfad ab.
+
+Versionierung aktuell:
+
+- `0.1.0-alpha.1` entspricht dem ersten öffentlichen Pre-Release-Stand
+- größere spielerische und strukturelle Änderungen sind vor `1.0` ausdrücklich zu erwarten
 
 ## Schnellstart
 
@@ -185,3 +225,16 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 
 - Architektur- und Arbeitsüberblick: [docs/project-overview.md](docs/project-overview.md)
 - Qualitätsanalyse: [docs/quality-report.md](docs/quality-report.md)
+
+## Lizenz
+
+Der Quellcode dieses Projekts steht unter der `PolyForm Noncommercial 1.0.0`-Lizenz.
+Eigene nicht-codebezogene Inhalte wie Assets, SVGs und Dokumentation stehen, sofern nicht anders angegeben, unter `CC BY-NC 4.0`.
+
+Kommerzielle Nutzung ist ohne ausdrückliche gesonderte Genehmigung nicht erlaubt.
+
+Siehe dazu:
+
+- [LICENSE](LICENSE)
+- [LICENSE-assets.md](LICENSE-assets.md)
+- [NOTICE.md](NOTICE.md)

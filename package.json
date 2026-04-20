@@ -1,6 +1,6 @@
-﻿{
+{
   "name": "final-scene",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha.1",
   "description": "Fight Through a Dying Movieverse",
   "main": "src/main.mjs",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "commonjs",
   "devDependencies": {
     "esbuild": "^0.28.0",

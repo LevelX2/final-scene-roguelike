@@ -199,10 +199,8 @@ export function createFloorTransitionService(context) {
       state.deepestFloor = Math.max(state.deepestFloor, state.floor);
       const targetInteraction = getAnchorInteractionPosition(state.floors[targetFloor].entryAnchor, state.floors[targetFloor].stairsUp)
         ?? state.floors[targetFloor].startPosition;
-      const targetSpawn = getAnchorSpawnPosition(state.floors[targetFloor].entryAnchor, state.floors[targetFloor].startPosition)
-        ?? targetInteraction;
-      state.player.x = targetSpawn.x;
-      state.player.y = targetSpawn.y;
+      state.player.x = targetInteraction.x;
+      state.player.y = targetInteraction.y;
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
       const follower = transferFloorFollower(targetFloor - 1, targetFloor, sourceStair, targetInteraction);
@@ -222,9 +220,8 @@ export function createFloorTransitionService(context) {
     if (direction < 0 && (currentFloorState.entryAnchor?.position ?? currentFloorState.stairsUp) && state.floor > 1) {
       state.floor = targetFloor;
       const targetInteraction = getAnchorInteractionPosition(state.floors[targetFloor].exitAnchor, state.floors[targetFloor].stairsDown);
-      const targetSpawn = getAnchorSpawnPosition(state.floors[targetFloor].exitAnchor, targetInteraction);
-      state.player.x = targetSpawn.x;
-      state.player.y = targetSpawn.y;
+      state.player.x = targetInteraction.x;
+      state.player.y = targetInteraction.y;
       detectNearbyTraps();
       maybeTriggerShowcaseAmbience();
       const follower = transferFloorFollower(targetFloor + 1, targetFloor, sourceStair, targetInteraction);

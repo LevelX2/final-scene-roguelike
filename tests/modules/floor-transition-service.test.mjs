@@ -30,7 +30,18 @@ function createHarness({
         stairsDown: { x: 4, y: 4 },
         ...existingFloors[1],
       },
-      ...existingFloors,
+      ...Object.fromEntries(
+        Object.entries(existingFloors).map(([floorNumber, floorState]) => [
+          floorNumber,
+          {
+            grid: Array.from({ length: 6 }, () => Array(6).fill('.')),
+            enemies: [],
+            stairsUp: { x: 1, y: 1 },
+            stairsDown: { x: 4, y: 4 },
+            ...floorState,
+          },
+        ]),
+      ),
     },
   };
 
@@ -95,4 +106,63 @@ test('floor-transition-service keeps existing floor timelines untouched on revis
   service.ensureFloorExists(2);
 
   assert.equal(state.floors[2].enemies[0].nextActionTime, 310);
+});
+
+test('floor-transition-service places the player on the destination threshold when descending', () => {
+  const { state, service } = createHarness({
+    existingFloors: {
+      1: {
+        exitAnchor: {
+          position: { x: 4, y: 3 },
+          transitionPosition: { x: 4, y: 4 },
+        },
+        stairsDown: { x: 4, y: 4 },
+      },
+    },
+    createDungeonLevel: () => ({
+      grid: Array.from({ length: 6 }, () => Array(6).fill('.')),
+      enemies: [],
+      stairsUp: { x: 1, y: 1 },
+      stairsDown: { x: 4, y: 4 },
+      entryAnchor: {
+        position: { x: 1, y: 2 },
+        transitionPosition: { x: 1, y: 1 },
+      },
+    }),
+  });
+
+  const moved = service.moveToFloor(1);
+
+  assert.equal(moved, true);
+  assert.equal(state.floor, 2);
+  assert.deepEqual(state.player, { x: 1, y: 1 });
+});
+
+test('floor-transition-service places the player on the destination threshold when ascending', () => {
+  const { state, service } = createHarness({
+    existingFloors: {
+      1: {
+        exitAnchor: {
+          position: { x: 4, y: 3 },
+          transitionPosition: { x: 4, y: 4 },
+        },
+        stairsDown: { x: 4, y: 4 },
+      },
+      2: {
+        entryAnchor: {
+          position: { x: 1, y: 2 },
+          transitionPosition: { x: 1, y: 1 },
+        },
+        stairsUp: { x: 1, y: 1 },
+      },
+    },
+  });
+  state.floor = 2;
+  state.player = { x: 1, y: 1 };
+
+  const moved = service.moveToFloor(-1);
+
+  assert.equal(moved, true);
+  assert.equal(state.floor, 1);
+  assert.deepEqual(state.player, { x: 4, y: 4 });
 });

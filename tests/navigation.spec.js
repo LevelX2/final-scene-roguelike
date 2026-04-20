@@ -110,6 +110,12 @@ test("stairs confirmation can move the player to the next floor", async ({ page 
 
   await expect(page.locator("#stairsModal")).toBeHidden();
   await expect(page.locator("#depthTitle")).toContainText("Studio 2");
+
+  const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
+  const entryTransition = snapshot.entryAnchor?.transitionPosition ?? snapshot.stairsUp;
+
+  expect(snapshot.player.x).toBe(entryTransition.x);
+  expect(snapshot.player.y).toBe(entryTransition.y);
 });
 
 test("adjacent studios preserve the transition line across the floor change", async ({ page }) => {

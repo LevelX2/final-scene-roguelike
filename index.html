@@ -41,16 +41,21 @@
         <h1>The Final Scene</h1>
       </div>
       <div class="hero-actions">
-        <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Neues Spiel beginnen</button>
-        <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Spielverlauf</button>
-        <button id="openStudioTopology" class="mini-btn hero-help-btn" type="button">Karte</button>
-        <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
-        <button id="openTargetMode" class="mini-btn hero-help-btn" type="button">Zielen</button>
-        <button id="confirmTargetMode" class="mini-btn hero-help-btn ui-hidden" type="button">Schie&szlig;en</button>
-        <button id="saveGameQuick" class="mini-btn hero-help-btn" type="button">Speichern</button>
-        <button id="openOptions" class="mini-btn hero-help-btn" type="button">Optionen</button>
-        <button id="openHighscores" class="mini-btn hero-help-btn" type="button">Final Scenes Bestenliste</button>
-        <button id="openHelp" class="mini-btn hero-help-btn" type="button">Hilfe</button>
+        <div class="hero-action-group" role="group" aria-label="Laufverwaltung">
+          <span class="hero-action-label">Lauf</span>
+          <div class="hero-action-buttons">
+            <button id="saveGameQuick" class="mini-btn hero-help-btn" type="button">Speichern</button>
+            <button id="openOptions" class="mini-btn hero-help-btn" type="button">Optionen</button>
+          </div>
+        </div>
+        <div class="hero-action-group" role="group" aria-label="Allgemeine Aktionen">
+          <span class="hero-action-label">Men&uuml;</span>
+          <div class="hero-action-buttons">
+            <button id="startFreshRun" class="mini-btn hero-help-btn ui-hidden" type="button">Neues Spiel beginnen</button>
+            <button id="openHighscores" class="mini-btn hero-help-btn" type="button">Final Scenes Bestenliste</button>
+            <button id="openHelp" class="mini-btn hero-help-btn" type="button">Hilfe</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -102,13 +107,35 @@
         <div id="topbarStatusSummary" class="topbar-status-summary ui-hidden" aria-live="polite"></div>
         <div class="board-shell">
           <div class="board-toolbar" aria-label="Studioansicht">
-            <div class="board-toolbar-group">
-              <span class="board-toolbar-label">Studiozoom</span>
-            </div>
-            <div class="board-toolbar-group">
-              <button id="openDebugInfo" class="mini-btn ui-hidden" type="button">Debugdaten</button>
+            <div class="board-toolbar-main">
+              <div class="board-toolbar-group board-primary-controls" role="group" aria-label="Spielnahe Aktionen">
+                <button id="openTargetMode" class="mini-btn hero-help-btn" type="button">Zielen</button>
+                <button id="confirmTargetMode" class="mini-btn hero-help-btn ui-hidden" type="button">Schie&szlig;en</button>
+                <button id="openInventory" class="mini-btn hero-help-btn" type="button">Inventar</button>
+                <button id="openRunStats" class="mini-btn hero-help-btn" type="button">Spielverlauf</button>
+                <button id="openStudioTopology" class="mini-btn hero-help-btn" type="button">Karte</button>
+              </div>
+              <div id="debugToolbarControls" class="board-toolbar-group board-debug-controls ui-hidden">
+                <button id="openDebugInfo" class="mini-btn" type="button">Debugdaten</button>
+                <button id="debugPrevStudio" class="mini-btn" type="button">Zurück</button>
+                <label class="board-debug-advance" for="debugAdvanceInput">
+                  <span class="board-toolbar-label">Zeit</span>
+                  <input id="debugAdvanceInput" class="debug-toolbar-input" type="number" min="1" step="1" value="100" inputmode="numeric">
+                </label>
+                <label class="board-debug-speed" for="debugAdvanceSpeedRange">
+                  <span class="board-toolbar-label">Tempo</span>
+                  <input id="debugAdvanceSpeedRange" class="debug-toolbar-range" type="range" min="0" max="4" step="1" value="2">
+                  <strong id="debugAdvanceSpeedValue" class="board-debug-speed-value">Schnell</strong>
+                </label>
+                <button id="debugAdvanceButton" class="mini-btn" type="button">Vorspulen</button>
+                <label class="board-debug-toggle" for="toggleDebugEnemyTrail">
+                  <input id="toggleDebugEnemyTrail" type="checkbox">
+                  <span>Gegnerspuren</span>
+                </label>
+              </div>
             </div>
             <div class="board-toolbar-group board-zoom-controls">
+              <span class="board-toolbar-label board-zoom-label">Zoom</span>
               <button id="zoomOutBoard" class="mini-btn" type="button" aria-label="Studio verkleinern">-</button>
               <strong id="studioZoomValue" class="board-zoom-value">100%</strong>
               <button id="zoomInBoard" class="mini-btn" type="button" aria-label="Studio vergr&ouml;&szlig;ern">+</button>
@@ -450,6 +477,8 @@
             <div class="help-row"><span><kbd>I</kbd></span><strong>Inventar anzeigen</strong></div>
             <div class="help-row"><span><kbd>O</kbd></span><strong>Optionen anzeigen</strong></div>
             <div class="help-row"><span><kbd>F8</kbd></span><strong>Aktuelles Studio komplett aufdecken oder ins n&auml;chste Debug-Studio springen</strong></div>
+            <div class="help-row"><span><kbd>F7</kbd></span><strong>Im Debugmodus ins vorherige Studio zur&uuml;ckspringen</strong></div>
+            <div class="help-row"><span><kbd>N</kbd></span><strong>Im Debugmodus den eingestellten Zeitvorschub ausf&uuml;hren</strong></div>
             <div class="help-row"><span><kbd>Shift</kbd> + <kbd>R</kbd></span><strong>Aktiven Run neu starten</strong></div>
             <div class="help-row"><span><kbd>R</kbd></span><strong>Auf dem Todesschirm direkt neu starten</strong></div>
             <div class="help-row"><span><kbd>K</kbd></span><strong>Spielst&auml;nde &ouml;ffnen</strong></div>
@@ -500,11 +529,6 @@
         <p class="modal-eyebrow">Debugdaten</p>
         <h2 id="debugInfoTitle">Reproduktionsdaten</h2>
         <p class="modal-copy">Hier findest du die wichtigsten Angaben zur aktuell sichtbaren Studio-Konstellation.</p>
-        <div class="debug-info-advance-row">
-          <label class="debug-info-advance-label" for="debugAdvanceInput">Zeitvorschub</label>
-          <input id="debugAdvanceInput" class="debug-info-advance-input" type="number" min="1" step="1" value="100" inputmode="numeric">
-          <button id="debugAdvanceButton" class="choice-btn accent" type="button">Vorspulen</button>
-        </div>
         <textarea id="debugInfoText" class="debug-info-text" readonly spellcheck="false"></textarea>
         <p id="debugInfoStatus" class="debug-info-status" aria-live="polite"></p>
         <div class="modal-actions">
@@ -522,7 +546,7 @@
       <p class="modal-copy">Den vollst&auml;ndigen Spielverlauf kannst du dir separat ansehen, damit dieses Ende-Fenster kompakt bleibt.</p>
       <div class="modal-actions death-actions">
         <div class="death-details-action">
-          <button id="viewDeathStudio" class="choice-btn" type="button">Zum Todesstudio</button>
+          <button id="viewDeathStudio" class="choice-btn" type="button">Zum letzten Studio</button>
           <button id="openDeathKills" class="choice-btn" type="button">Spielverlauf</button>
           <button id="closeDeath" class="choice-btn" type="button">Zum Startbildschirm</button>
         </div>
@@ -562,4 +586,3 @@
   <script defer src="./dist/game.bundle.js"></script>
 </body>
 </html>
-

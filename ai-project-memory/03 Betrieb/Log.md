@@ -1,5 +1,60 @@
 # Log
 
+## [2026-04-20] update | Sichtbarer Debug-Vorschub mit Temporegler und stabiler Heatmap
+- Anlass oder Quelle: Nutzerfeedback zu zu schnellem Vorspulen, unsichtbaren Gegnerzügen nach `gameOver` und gewünschter Klärung des Heatmap-Verhaltens bei überlagerten Laufwegen
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Entscheidungen/Debug-Vorschub mit sichtbarer Wiedergabe 2026-04-20]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass der Debug-Vorschub in der Toolbar jetzt einen Temporegler besitzt und bei verlangsamter Wiedergabe einzelne Scheduler-Schritte sichtbar rendert.
+  - Dokumentiert, dass Reveal-Debug die Scheduler-Simulation auch nach `gameOver` weiter sichtbar abspielen darf.
+  - Sichtbar gemacht, dass die Gegnerspur-Heatmap pro Feld immer den zuletzt gelaufenen Gegner zeigt und bei späterer Rückkehr desselben Gegners wieder dessen Farbton übernimmt.
+
+## [2026-04-20] update | Kopfbereich und Studioleiste nach Spielnähe gruppiert
+- Anlass oder Quelle: Nutzerwunsch, spielfeldnahe Aktionen direkt über dem Studio und allgemeinere Punkte getrennt im Kopfbereich zu bündeln
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `index.html`
+  - `styles.css`
+- Kern der inhaltlichen Anpassung:
+  - Zielen, Schießen, Inventar, Spielverlauf und Karte liegen nun gesammelt in der Studioleiste links vom Zoombereich.
+  - Der Kopfbereich trennt jetzt sichtbarer zwischen laufbezogenen Aktionen wie Speichern und Optionen sowie allgemeinen Menüpunkten wie neuem Spiel, Bestenliste und Hilfe.
+  - Die neue Gruppierung bleibt responsiv und nutzt dieselben Button-IDs weiter, damit bestehende UI-Bindings unverändert funktionieren.
+
+## [2026-04-20] update | Debug-Heatmap für Gegnerspuren in der Toolbar ergänzt
+- Anlass oder Quelle: Nutzerwunsch nach sichtbaren Laufwegen beim schnellen Vorspulen im Debugmodus
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Entscheidungen/Debugsteuerung in Toolbar statt Modal 2026-04-20]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass die Debugleiste nun ein Häkchen `Gegnerspuren` enthält.
+  - Dokumentiert, dass die Heatmap echte Gegnerbewegungen pro Feld aufzeichnet, den letzten Gegnerfarbton pro Feld zeigt und wiederholte Begehung dunkler markiert.
+  - Sichtbar gemacht, dass die Heatmap nur in der Reveal-Debugsicht erscheint und beim Vorspulen auf dem Brett direkt beobachtbar bleibt.
+
+## [2026-04-20] update | Death-Screen-Button klarer beschriftet
+- Anlass oder Quelle: Nutzerhinweis, dass `Zum Todesstudio` auf dem Todesschirm sprachlich unklar wirkt
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `index.html`
+- Kern der inhaltlichen Anpassung:
+  - Die Button-Beschriftung im Death-Modal wurde von `Zum Todesstudio` auf `Zum letzten Studio` geändert.
+  - Ziel der Änderung ist eine kürzere und eindeutigere Formulierung bei gleichbleibender Studio-Terminologie des Projekts.
+
+## [2026-04-20] update | Debugsteuerung wandert in die obere Studioleiste
+- Anlass oder Quelle: Nutzerwunsch, den Debug-Zeitvorschub nicht im Modal, sondern direkt über der Studioansicht zu bedienen und einen Rücksprung per `F7` zu erhalten
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Entscheidungen/Debugsteuerung in Toolbar statt Modal 2026-04-20]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Dokumentiert, dass `Debugdaten`, Rücksprung, Zeitfeld und `Vorspulen` nun in der oberen Studioleiste erscheinen, sobald `F8` die Debugsicht aktiviert hat.
+  - Festgehalten, dass `F7` im Debugmodus ein Studio zurückspringt und `N` den eingestellten Zeitvorschub ohne geöffnetes Modal ausführt.
+  - Sichtbar gemacht, dass das Debug-Modal für kopierbare Reproduktionsdaten zuständig bleibt, während die eigentliche Debug-Steuerung die Studioansicht nicht mehr verdeckt.
+
 ## [2026-04-20] feature | Debug Studio-Statistik und 10-Studio-Report
 - Anlass oder Quelle: Nutzerwunsch nach einer schnellen numerischen Prüfung über 10 generierte Studios mit Gegner-, Schlüssel-, Nahrung- und Loot-Zahlen
 - Neu angelegte Seiten:
@@ -292,3 +347,59 @@
   - Dokumentiert, dass die bisherige Bodenschild-Rate ungewöhnlich niedrig war, weil Studios `3` und `4` gar keine Bodenschilde erzeugen konnten und tiefe Studios nur mit `8 %` prüften.
   - Festgehalten, dass die Spawn-Regeln für Bodenschilde moderat angehoben wurden: `25 %` auf Studio `1`, `40 %` auf Studio `2`, `20 %` auf Studio `3` und `4`, `16 %` ab Studio `5`.
   - Verifiziert eingetragen, dass ein `20 x 10`-Batch danach im Mittel `1.5` Bodenschilde pro 10-Studio-Run erzeugte statt zuvor ungefähr `0.65`.
+
+## [2026-04-20] update | Nahrung in der Studio-Statistik mit Nährwertsumme und Durchschnitt
+- Anlass oder Quelle: Nutzerwunsch, Nahrung nicht nur als Anzahl, sondern auch nach enthaltenem Nährwert auswerten zu können
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass der strukturierte Studio-Report jetzt zusätzlich `foodNutrition.count`, `foodNutrition.totalNutrition` und `foodNutrition.averageNutrition` liefert.
+  - Dokumentiert, dass Debug-Text, Test-API-Text und Batch-CLI Nahrung nun als Anzahl plus `Nährwert` und `Schnitt` ausgeben.
+  - Verifiziert eingetragen, dass die Batch-Auswertung dafür eigene Kennzahlen `Nahrung Nährwert` und `Nahrung Schnitt` mit Mittelwert, Minimum und Maximum führt.
+
+## [2026-04-20] update | Heilverbrauchsgüter in der Studio-Statistik mit Heilwertsumme und Durchschnitt
+- Anlass oder Quelle: Folgeidee, Heil-Consumables analog zur Nahrung nicht nur zu zählen, sondern auch nach enthaltenem Heilwert auszuwerten
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass der strukturierte Studio-Report Heilverbrauchsgüter jetzt zusätzlich unter `consumables.healingValue` mit `count`, `totalHeal` und `averageHeal` ausweist.
+  - Dokumentiert, dass Debug-Text, Test-API-Text und Batch-CLI für Heilung nun `Heilwert` und `Heilschnitt` zusätzlich zur reinen Heilitem-Anzahl anzeigen.
+  - Verifiziert eingetragen, dass die Batch-Auswertung dafür eigene Kennzahlen `Verbrauchbar Heilwert` und `Verbrauchbar Heilschnitt` mit Mittelwert, Minimum und Maximum führt.
+## [2026-04-20] update | Zielmodus erklärt Trefferchance jetzt per Tooltip
+- Anlass oder Quelle: Nutzerwunsch nach kompakter Anzeige und klarer Erklärung, wie sich Deckung auf die Endchance auswirkt
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Begriffe und Konzepte/Spielsysteme im Ueberblick]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass der Zielmodus die Prozentanzeige auch ohne Deckung weiter sichtbar lässt und das Hauptlabel kompakt hält.
+  - Dokumentiert, dass Tooltip und Zielmarker jetzt die aktuelle Endchance, den Basiswert ohne Deckung und den konkreten Deckungsmalus erklären.
+
+## [2026-04-20] idea | Verschlossene Container und Schl�sseltruhen als offene Designspur
+- Anlass oder Quelle: Nutzeridee, zus�tzlich zu verschlossenen T�ren auch Container oder Truhen vorzusehen, die nur per Schl�ssel ge�ffnet werden k�nnen
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Risiken und offene Punkte/Verschlossene Container und Schluesseltruhen]]
+- Ge�nderte Seiten:
+  - [[../02 Wissen/Risiken und offene Punkte/Offene Designrichtungen]]
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Als offene Projektidee festgehalten, dass Schl�ssel k�nftig nicht nur Wege, sondern auch gezielte Loot-Container freischalten k�nnten.
+  - Sichtbar gemacht, dass diese Idee aktuell kein dokumentierter Ist-Stand ist, sondern eine m�gliche sp�tere Designrichtung.
+  - Offene Designfragen zu Schl�ssel�konomie, Frustvermeidung, Telegraphie und Balancing-Folgen direkt mit dokumentiert.
+
+
+
+## [2026-04-20] update | Gegnerloot deutlich angehoben und um Misc-Drops ergänzt
+- Anlass oder Quelle: Nutzerwunsch nach spürbar höherer Dropchance für besiegte Gegner, mit Fokus auf getragene Waffen sowie zusätzliche Nahrung, Heilung und Utility-Loot
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Begriffe und Konzepte/Spielsysteme im Ueberblick]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass die Waffendropchance im aktiven Runtime-Pfad stark erhöht wurde: nicht ikonisch `48/64/80 %`, ikonisch `72/84/94 %` für `normal/elite/dire`.
+  - Dokumentiert, dass Offhands nun mit `18/30/42 %` auf `normal/elite/dire` droppen und dass im aktuellen Monsterkatalog bereits drei Gegnertypen Offhands tragen.
+  - Verifiziert eingetragen, dass Gegner ohne geplanten Nahrungsdrop jetzt stattdessen mit `34/46/58 %` je Variantentier einen Misc-Drop erhalten können, bevorzugt Heilverbrauchsgüter und sonstige Utility-Consumables.

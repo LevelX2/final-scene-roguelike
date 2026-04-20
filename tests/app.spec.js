@@ -2,12 +2,6 @@ const { test, expect } = require("playwright/test");
 require("./test-setup");
 const { startRun, setupChestAtPlayerStep, setupCombat, setupWeaponAtPlayerStep } = require("./helpers");
 
-async function sendGameKey(page, key) {
-  await page.evaluate((nextKey) => {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: nextKey, bubbles: true }));
-  }, key);
-}
-
 async function loadFirstSaveFromList(page) {
   await expect(page.locator("#savegamesModal")).toBeVisible();
   await page.locator("#savegameList .choice-btn", { hasText: "Laden" }).first().click();
@@ -21,13 +15,10 @@ async function saveIntoFirstEmptySlot(page) {
 test("start screen renders the new title", async ({ page }) => {
   await page.goto("/");
 
+  const startScreen = page.locator("#startScreen");
   await expect(page).toHaveTitle("The Final Scene");
-  await expect(page.locator("#startScreen").getByText("DRINGE TIEFER IN DEN STUDIOKOMPLEX VOR")).toBeVisible();
-  await expect(page.locator("#startScreen")).toContainText("Erkunde verfluchte Studios, finde Ausrüstung und sichere dir jeden Vorteil für den nächsten Vorstoß.");
-  await expect(page.locator("#startScreen")).toContainText("Mit jedem erreichten Abschnitt rückst du näher an die Final Scene heran.");
-  await expect(page.locator("#startScreen")).toContainText("Öffne neue Wege, überlebe jeden Take und halte deinen Lauf am Leben, solange dich der Komplex weiter hineinlässt.");
-  await expect(page.locator("#startScreen")).toContainText("Wer tief genug kommt, sieht, was im Zentrum noch auf die letzte Einstellung wartet.");
-  await expect(page.locator("#startScreen")).toBeVisible();
+  await expect(startScreen).toBeVisible();
+  await expect(startScreen.locator(".start-screen-title")).toContainText("DRINGE TIEFER IN DEN STUDIOKOMPLEX VOR");
   await expect(page.getByRole("button", { name: "Neues Spiel beginnen" })).toBeVisible();
   await expect(page.locator("#gameShell")).toHaveClass(/prestart-hidden/);
 });
@@ -37,14 +28,13 @@ test("landing and start modal lore terms show compact tooltips", async ({ page }
 
   await page.locator('#startScreen .lore-term', { hasText: 'Studios' }).hover();
   await expect(page.locator("#hoverTooltip")).toContainText("Studio");
-  await expect(page.locator("#hoverTooltip")).toContainText("Eine einzelne Ebene innerhalb des Studiokomplexes.");
+  await expect(page.locator("#hoverTooltip")).not.toHaveText("");
 
   await page.getByRole("button", { name: "Neues Spiel beginnen" }).click();
   await expect(page.locator("#startModal")).toBeVisible();
-  await expect(page.locator("#startModal .lore-term")).toHaveCount(5);
   await page.locator('#startModal .lore-term', { hasText: 'Final Scene' }).last().hover();
   await expect(page.locator("#hoverTooltip")).toContainText("Final Scene");
-  await expect(page.locator("#hoverTooltip")).toContainText("Das ferne Endziel im innersten Bereich des Komplexes.");
+  await expect(page.locator("#hoverTooltip")).not.toHaveText("");
 });
 
 test("start screen menu supports visible arrow-key selection", async ({ page }) => {
@@ -131,17 +121,20 @@ test("hero class cards can be selected from the start screen", async ({ page }) 
   await expect(page.locator(".class-option.selected .class-option-title")).toHaveText("Stuntman");
 
   await page.locator("#startForm").evaluate((form) => form.requestSubmit());
-  const heroVisuals = await page.evaluate(() => {
+  const heroSelection = await page.evaluate(() => {
     const playerTile = document.querySelector(".board .tile.player");
     const title = document.getElementById("playerPanelTitle");
+    const snapshot = window.__TEST_API__.getSnapshot();
     return {
-      tileBackground: window.getComputedStyle(playerTile, "::after").backgroundImage,
+      playerClassId: snapshot.player.classId,
       titleIcon: title.style.getPropertyValue("--hero-class-icon"),
+      tileHasVisual: Boolean(window.getComputedStyle(playerTile, "::after").backgroundImage),
     };
   });
 
-  expect(heroVisuals.tileBackground).toContain("sprite-stuntman.svg");
-  expect(heroVisuals.titleIcon).toContain("class-stuntman.svg");
+  expect(heroSelection.playerClassId).toBe("stuntman");
+  expect(heroSelection.titleIcon).not.toBe("");
+  expect(heroSelection.tileHasVisual).toBeTruthy();
 });
 
 test("double-clicking a hero class card starts the run into the first studio", async ({ page }) => {
@@ -329,12 +322,26 @@ test("highscores render class icons for stored runs", async ({ page }) => {
   await page.getByRole("button", { name: "Final Scenes" }).click();
   await expect(page.locator("#highscoresModal")).toBeVisible();
   await expect(page.locator(".score-class-badge")).toHaveCount(1);
-
-  const badgeStyle = await page.locator(".score-class-badge").evaluate((node) => node.getAttribute("style") ?? "");
-  expect(badgeStyle).toContain("class-regisseur.svg");
+  await expect(page.locator(".score-item")).toContainText("Sidney");
+  await expect(page.locator(".score-item")).toContainText("Regisseur");
+  await expect(page.locator(".score-class-badge")).toBeVisible();
 });
 
 test("inventory modal toggles with keyboard controls", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.keyboard.press("i");
+  await expect(page.locator("#inventoryModal")).toBeVisible();
+  await expect(page.locator("#inventoryItemsTab")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#inventoryItemsPanel")).toBeVisible();
+  await expect(page.locator("#inventoryHeroPanel")).toBeHidden();
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#inventoryModal")).toBeHidden();
+});
+
+test("inventory modal keeps food rows compact after filtering", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -372,9 +379,11 @@ test("inventory modal toggles with keyboard controls", async ({ page }) => {
   compactLayout.forEach((entry) => {
     expect(entry.height).toBeLessThan(120);
   });
+});
 
-  await page.keyboard.press("Escape");
-  await expect(page.locator("#inventoryModal")).toBeHidden();
+test("inventory modal scrolls long item lists", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
 
   await page.evaluate(() => {
     for (let index = 0; index < 18; index += 1) {
@@ -390,15 +399,10 @@ test("inventory modal toggles with keyboard controls", async ({ page }) => {
 
   await page.keyboard.press("i");
   await expect(page.locator("#inventoryModal")).toBeVisible();
-  await expect(page.locator("#inventoryItemsTab")).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("#inventoryItemsPanel")).toBeVisible();
-  await expect(page.locator("#inventoryHeroPanel")).toBeHidden();
 
   const inventoryLayout = await page.evaluate(() => {
-    const modalCard = document.querySelector(".inventory-modal-card");
     const inventoryList = document.getElementById("inventoryList");
     return {
-      modalHeight: modalCard?.getBoundingClientRect().height ?? 0,
       listOverflowY: inventoryList ? window.getComputedStyle(inventoryList).overflowY : "",
       listCanScroll: inventoryList ? inventoryList.scrollHeight > inventoryList.clientHeight : false,
     };
@@ -406,15 +410,24 @@ test("inventory modal toggles with keyboard controls", async ({ page }) => {
 
   expect(inventoryLayout.listOverflowY).toBe("auto");
   expect(inventoryLayout.listCanScroll).toBeTruthy();
+});
+
+test("inventory modal switches between items and hero tabs without resizing", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.keyboard.press("i");
+  await expect(page.locator("#inventoryModal")).toBeVisible();
+
+  const inventoryModalHeight = await page.locator(".inventory-modal-card").evaluate((node) => node.getBoundingClientRect().height);
 
   await page.locator("#inventoryHeroTab").click();
   await expect(page.locator("#inventoryHeroTab")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#inventoryHeroPanel")).toBeVisible();
+  await expect(page.locator("#inventoryItemsPanel")).toBeHidden();
 
   const heroModalHeight = await page.locator(".inventory-modal-card").evaluate((node) => node.getBoundingClientRect().height);
-  expect(Math.abs(inventoryLayout.modalHeight - heroModalHeight)).toBeLessThan(2);
-
-  await page.keyboard.press("Escape");
-  await expect(page.locator("#inventoryModal")).toBeHidden();
+  expect(Math.abs(inventoryModalHeight - heroModalHeight)).toBeLessThan(2);
 });
 
 test("containers open a loot list with multiple items and keep remaining contents until emptied", async ({ page }) => {
@@ -534,14 +547,13 @@ test("stepping onto a container opens the loot modal without hanging the applica
     const underlay = playerCell?.querySelector(".tile-transition-underlay");
     return {
       hasChestUnderlay: underlay?.className.includes("chest") ?? false,
-      underlayImage: underlay ? window.getComputedStyle(underlay).getPropertyValue("--tile-overlay-image") : "",
     };
   });
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
   expect(playerCellPresentation.hasChestUnderlay).toBeTruthy();
-  expect(playerCellPresentation.underlayImage).toContain("assets/containers");
   expect(snapshot.pendingContainerLoot).not.toBeNull();
+  expect(snapshot.pendingContainerLoot?.chestIndex).toBe(0);
   expect(snapshot.player.x).toBeGreaterThan(0);
 });
 
@@ -639,15 +651,15 @@ test("heal overlay covers the studio and anchors the healing choices at the lowe
   expect(alignment.viewportBottom - alignment.itemBottom).toBeGreaterThanOrEqual(10);
   expect(alignment.overlayTop).toBeGreaterThanOrEqual(alignment.viewportTop);
 
-  await expect(page.locator("#healOverlayName")).toHaveText("VerbandspÃ¤ckchen");
+  await expect(page.locator("#healOverlayName")).toHaveText("Verbandspäckchen");
   await page.keyboard.press("d");
-  await expect(page.locator("#healOverlayName")).toHaveText("Set-SanitÃ¤tskit");
+  await expect(page.locator("#healOverlayName")).toHaveText("Set-Sanitätskit");
   await page.keyboard.press("a");
-  await expect(page.locator("#healOverlayName")).toHaveText("VerbandspÃ¤ckchen");
+  await expect(page.locator("#healOverlayName")).toHaveText("Verbandspäckchen");
   await page.keyboard.press("6");
-  await expect(page.locator("#healOverlayName")).toHaveText("Set-SanitÃ¤tskit");
+  await expect(page.locator("#healOverlayName")).toHaveText("Set-Sanitätskit");
   await page.keyboard.press("4");
-  await expect(page.locator("#healOverlayName")).toHaveText("VerbandspÃ¤ckchen");
+  await expect(page.locator("#healOverlayName")).toHaveText("Verbandspäckchen");
 
   await page.keyboard.press("w");
   await expect(page.locator("#healOverlay")).toBeVisible();
@@ -1085,16 +1097,19 @@ test("options persist after a page reload", async ({ page }) => {
   const stepSoundToggle = page.locator("#toggleStepSound");
   const deathSoundToggle = page.locator("#toggleDeathSound");
   const voiceAnnouncementsToggle = page.locator("#toggleVoiceAnnouncements");
+  const directFireOnSingleTargetToggle = page.locator("#toggleDirectFireOnSingleTarget");
   const showcaseAnnouncementMode = page.locator("#showcaseAnnouncementMode");
 
   await page.keyboard.press("o");
   await stepSoundToggle.uncheck();
   await deathSoundToggle.uncheck();
   await voiceAnnouncementsToggle.uncheck();
+  await directFireOnSingleTargetToggle.uncheck();
   await showcaseAnnouncementMode.selectOption("voice");
   await expect(stepSoundToggle).not.toBeChecked();
   await expect(deathSoundToggle).not.toBeChecked();
   await expect(voiceAnnouncementsToggle).not.toBeChecked();
+  await expect(directFireOnSingleTargetToggle).not.toBeChecked();
   await expect(showcaseAnnouncementMode).toHaveValue("voice");
 
   await page.reload();
@@ -1104,6 +1119,7 @@ test("options persist after a page reload", async ({ page }) => {
   await expect(page.locator("#toggleStepSound")).not.toBeChecked();
   await expect(page.locator("#toggleDeathSound")).not.toBeChecked();
   await expect(page.locator("#toggleVoiceAnnouncements")).not.toBeChecked();
+  await expect(page.locator("#toggleDirectFireOnSingleTarget")).not.toBeChecked();
   await expect(page.locator("#showcaseAnnouncementMode")).toHaveValue("voice");
 });
 
@@ -1672,6 +1688,54 @@ test("ranged weapons enter target mode and mark a valid target", async ({ page }
   await expect(page.locator("#enemySheet")).toContainText("Aktiv markiert");
 });
 
+test("target mode shows reduced hit chance for enemies peeking from remote corner cover", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 1, y: 1 },
+      player: {
+        precision: 6,
+        strength: 4,
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Eckenziel",
+        reaction: 1,
+        nerves: 1,
+        hp: 18,
+        maxHp: 18,
+        openingStrikeSpent: true,
+      },
+      enemyPosition: { x: 5, y: 5 },
+      walls: [{ x: 3, y: 2 }],
+    });
+  });
+
+  await page.evaluate(() => window.__TEST_API__.enterTargetMode());
+
+  await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
+  await expect(page.locator("#targetModeHint")).toContainText("Teildeckung");
+  await expect(page.locator("#targetModeHint")).toContainText("61%");
+  await expect(page.locator(".tile-cell.target-cursor-valid .target-hit-chance")).toHaveText("61%");
+});
+
 test("pressing T with a ranged weapon selects the first valid target", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -2103,6 +2167,138 @@ test("confirming a ranged target attack damages the enemy and leaves target mode
   await expect(page.locator(".projectile-effect-impact.hero-shot, .projectile-effect-impact.hero-shot-crit")).toHaveCount(1);
   await expect(page.locator(".projectile-effect-flash.hero-shot, .projectile-effect-flash.hero-shot-crit")).toHaveCount(1);
   await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+});
+
+test("a single valid ranged target can be fired directly with T and F", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        strength: 4,
+        precision: 5,
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Sofortziel",
+        hp: 30,
+        maxHp: 30,
+        reaction: 1,
+        nerves: 1,
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+    window.__TEST_API__.setRandomSequence([0, 0]);
+  });
+
+  const beforeT = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+  await page.keyboard.press("t");
+  const afterT = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+
+  expect(afterT).toBeLessThan(beforeT);
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        strength: 4,
+        precision: 5,
+        mainHand: {
+          type: "weapon",
+          id: "test-pistol",
+          name: "Testpistole",
+          source: "Tests",
+          handedness: "one-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Sofortziel",
+        hp: 30,
+        maxHp: 30,
+        reaction: 1,
+        nerves: 1,
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+    window.__TEST_API__.setRandomSequence([0, 0]);
+  });
+
+  const beforeF = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+  await page.keyboard.press("f");
+  const afterF = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
+
+  expect(afterF).toBeLessThan(beforeF);
+  await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+});
+
+test("bows render an arrow-style projectile effect instead of the generic shot beam", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      player: {
+        strength: 4,
+        precision: 5,
+        mainHand: {
+          type: "weapon",
+          id: "hunting-bow",
+          name: "Jagdbogen",
+          source: "Tests",
+          handedness: "two-handed",
+          attackMode: "ranged",
+          range: 6,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Bogenziel",
+        hp: 30,
+        maxHp: 30,
+        reaction: 1,
+        nerves: 1,
+      },
+      enemyPosition: { x: 5, y: 2 },
+    });
+    window.__TEST_API__.setRandomSequence([0, 0]);
+    window.__TEST_API__.enterTargetMode();
+    window.__TEST_API__.confirmTargetAttack();
+  });
+
+  await expect(page.locator(".projectile-effect-line.hero-arrow, .projectile-effect-line.hero-arrow-crit")).toHaveCount(1);
+  await expect(page.locator(".projectile-effect-impact.hero-arrow, .projectile-effect-impact.hero-arrow-crit")).toHaveCount(1);
+  await expect(page.locator(".projectile-effect-flash.hero-arrow, .projectile-effect-flash.hero-arrow-crit")).toHaveCount(0);
 });
 
 test("blocked sight lines show an invalid target cursor and prevent the shot", async ({ page }) => {

@@ -18,6 +18,8 @@
 - [[../Entscheidungen/Aktiver Runtime-Pfad und Legacy-Abgrenzung]]: aktive Produktivlinie und Abgrenzung zu `src/legacy/`.
 - [[../Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]: alltäglicher Bedien- und Pflegeworkflow für Quellen, Fragen und Rückführung von Erkenntnissen.
 - [[../Prozesse/Build Test und lokaler Start]]: lokaler Start-, Build- und Testablauf.
+- [[../Prozesse/Bewertung erste 10 E2E-Startflow-Tests 2026-04-20]]: Einordnung, welche frühen Startflow-Tests fachlich wertvoll bleiben und wo sie für Weiterentwicklung zu spröde sind.
+- [[../Prozesse/Bewertung Tests 11 bis 20 E2E-App-Spec 2026-04-20]]: Einordnung des nächsten E2E-Blocks mit Fokus auf Startausstattung, Inventar, Containerfluss und UI-Kopplung.
 - [[../Prozesse/Quellenverarbeitung in dieser Wissensbasis]]: wie neue Quellen in Wissen überführt werden.
 - [[../Prozesse/Wiki-first Query und Linting]]: Antwortreihenfolge, Rückführung von Erkenntnissen und regelmäßige Health-Checks.
 
@@ -41,4 +43,3 @@
 ## Betrieb
 - [[../../03 Betrieb/Log]]
 - [[../../03 Betrieb/Qualitaetspruefung]]
-

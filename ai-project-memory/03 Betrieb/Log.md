@@ -9,15 +9,37 @@
 
 ## Einträge
 
+## [2026-04-20] analyse | Bewertung der Tests 11 bis 20 aus `tests/app.spec.js`
+- Anlass oder Quelle: Review des nächsten Blocks konkreter Playwright-Tests in `tests/app.spec.js`
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Prozesse/Bewertung Tests 11 bis 20 E2E-App-Spec 2026-04-20]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass die Tests 11 bis 20 fachlich überwiegend sinnvoll sind und beim Review 10 von 10 grün liefen.
+  - Sichtbar gemacht, dass Highscore-, Inventar- und Container-Tests teils unnötig an Asset-Dateien oder Geometrie-Details gekoppelt sind.
+  - Empfehlung dokumentiert, robuste Fachtests beizubehalten und UI-lastige Integrationsfälle stärker nach Verantwortung zu schneiden.
+
+## [2026-04-20] analyse | Bewertung der ersten 10 E2E-Startflow-Tests
+- Anlass oder Quelle: Review der ersten 10 konkreten Playwright-Tests in `tests/app.spec.js` im Kontext laufender Weiterentwicklung
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Prozesse/Bewertung erste 10 E2E-Startflow-Tests 2026-04-20]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass die ersten 10 Startflow-Tests fachlich überwiegend weiter sinnvoll sind und beim Review 10 von 10 grün liefen.
+  - Sichtbar gemacht, dass drei Tests unnötig eng an Marketing-Copy, Tooltip-Wording bzw. konkrete Asset-Dateinamen gekoppelt sind.
+  - Empfehlung dokumentiert, diese spröden Stellen auf Verhaltensschutz statt Präsentationsdetails umzubauen.
+
 ## [2026-04-20] update | E2E-Stabilisierung fuer Testlaeufe und Floor-Wechsel
 - Anlass oder Quelle: Durchlauf und Fehlerbehebung von `npm run test:e2e`
 - Neu angelegte Seiten:
   - keine
-- GeÃ¤nderte Seiten:
+- Geänderte Seiten:
   - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
 - Kern der inhaltlichen Anpassung:
   - Festgehalten, dass ein alter Listener auf Port `4173` Playwright gegen einen veralteten Testserver laufen lassen kann.
-  - Festgehalten, dass lange E2E-Floorlaeufe fuer reine Generierungspruefungen vor dem Ebenenwechsel gegebenenfalls von Floor-Entitaeten bereinigt werden sollten, damit keine kampfbedingten Nebenzustaende die Aussage des Tests verfaelschen.
+  - Festgehalten, dass lange E2E-Floorlaeufe fuer reine Generierungspruefungen vor dem Ebenenwechsel gegebenenfalls von Floor-Entitaeten bereinigt werden sollten, damit keine kampfbedingten Nebenzustände die Aussage des Tests verfaelschen.
 
 ## [2026-04-17] create | Initiale Projekt-Wissensbasis
 - Anlass oder Quelle: Initiale projektbezogene Wissensbasis für `Projekt Rogue`
@@ -51,7 +73,7 @@
   - Index auf Katalogcharakter mit Kurzbeschreibungen geschärft.
   - Parsebares Log-Format und stärkere Lint-Regeln festgelegt.
 
-## [2026-04-17] create | Workflowbeschreibung für Projektarbeit
+## [2026-04-17] create | Workflowbeschreibung fuer Projektarbeit
 - Anlass oder Quelle: Bedarf nach einer praktischen Anleitung für die Nutzung und Pflege der Projekt-Wissensbasis
 - Neu angelegte Seiten:
   - [[../02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]
@@ -86,7 +108,7 @@
   - `docs/`-Quellen nach operativer Brauchbarkeit, Snapshot-Charakter, historischem Status und Designrichtungscharakter eingeordnet.
   - Menschlicher Lesepfad für den Einstieg in die Wissensbasis verbessert.
 
-## [2026-04-17] update | Sprachregel für Umlaute und ß
+## [2026-04-17] update | Sprachregel fuer Umlaute und ß
 - Anlass oder Quelle: neu Vorgabe für sichtbare deutsche Texte in UI und Wissensbasis
 - Neu angelegte Seiten:
   - keine
@@ -123,4 +145,3 @@
   - Frische Baseline aus aktuellem Workspace, Build, Syntax-Check und Modultest-Stand als neue Hauptreferenz aufgenommen.
   - Ältere `docs/` nicht verworfen, sondern gegenüber der Baseline als Kontext-, Snapshot- oder Rationale-Quellen eingeordnet.
   - Aktuelle rote Modultest-Bereiche und laufende Umbauzonen explizit sichtbar gemacht.
-

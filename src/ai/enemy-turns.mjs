@@ -81,6 +81,25 @@ export function createEnemyTurnApi(context) {
     randomChance = Math.random,
   } = context;
 
+  function getCoveredEnemyShotLog(enemyReference, result, outcome = 'hit') {
+    const coverPenalty = Math.max(0, Math.round(result?.coverPenalty ?? 0));
+    if (coverPenalty <= 0) {
+      return null;
+    }
+
+    const hitChance = Math.max(0, Math.round(result?.hitChance ?? 0));
+    const coverLabel = result?.coverLabel || 'Deckung';
+    if (outcome === 'miss') {
+      return coverPenalty >= 25
+        ? `Deine ${coverLabel} zerlegt dem Schuss ${coverPenalty}% Trefferchance. ${enemyReference.subjectCapitalized} ballert in einen miserablen Winkel und trifft nur Kulisse.`
+        : `Deine ${coverLabel} drueckt die Chance auf ${hitChance}%. ${enemyReference.subjectCapitalized} erwischt nur Staub, Licht und schlechte Timing-Nerven.`;
+    }
+
+    return coverPenalty >= 25
+      ? `Deine ${coverLabel} nimmt dem Schuss ${coverPenalty}% Trefferchance, aber ${enemyReference.subject} findet mit nur ${hitChance}% Restchance trotzdem eine schmale Luecke.`
+      : `Deine ${coverLabel} nimmt dem Schuss ${coverPenalty}% Trefferchance, aber ${enemyReference.subject} trifft dich trotz nur ${hitChance}% Restchance.`;
+  }
+
   function chebyshevDistance(left, right) {
     return Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y));
   }
@@ -1587,6 +1606,10 @@ export function createEnemyTurnApi(context) {
           }
         : {});
       playDodgeSound();
+      const coveredMissLog = isRangedAttack ? getCoveredEnemyShotLog(enemyReference, result, 'miss') : null;
+      if (coveredMissLog) {
+        addMessage(coveredMissLog, 'important');
+      }
       addMessage(isRangedAttack
         ? `Du weichst dem Schuss von ${enemyReference.dative} aus.`
         : `Du weichst dem Angriff von ${enemyReference.dative} aus.`, 'important');
@@ -1642,6 +1665,10 @@ export function createEnemyTurnApi(context) {
         }
         return true;
       }
+    }
+    const coveredHitLog = isRangedAttack ? getCoveredEnemyShotLog(enemyReference, result, 'hit') : null;
+    if (coveredHitLog) {
+      addMessage(coveredHitLog, 'danger');
     }
     addMessage(formatEnemyAttackLog({
       enemyReference,

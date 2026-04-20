@@ -1519,6 +1519,134 @@ test('enemy-turns use an arrow-style projectile effect for bows', () => {
   assert.equal(harness.floatingTexts[0].options.boardEffect.flash, false);
 });
 
+test('enemy-turns log atmospheric cover context when the player cover still gets pierced', () => {
+  const enemy = {
+    id: 'covered-shot',
+    name: 'Deckungsschuetze',
+    x: 5,
+    y: 2,
+    originX: 5,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'none',
+    healingProfile: 'none',
+    temperament: 'stoic',
+    aggro: true,
+    aggroRadius: 8,
+    canOpenDoors: false,
+    canChangeFloors: false,
+    hp: 10,
+    maxHp: 10,
+    strength: 2,
+    precision: 4,
+    reaction: 2,
+    nerves: 2,
+    intelligence: 2,
+    mainHand: {
+      id: 'test-pistol',
+      name: 'Testpistole',
+      attackMode: 'ranged',
+      range: 6,
+      damage: 3,
+      hitBonus: 2,
+      critBonus: 0,
+    },
+  };
+  const floorState = {
+    grid: createGrid(8, 5, '.'),
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, true),
+  };
+  const harness = createEnemyTurnHarness({
+    floorState,
+    player: { x: 2, y: 2, hp: 20, maxHp: 20 },
+    hasLineOfSight: () => true,
+    resolveCombatAttack: () => ({
+      hit: true,
+      damage: 3,
+      critical: false,
+      coverPenalty: 15,
+      coverLabel: 'Teildeckung',
+      hitChance: 50,
+    }),
+  });
+
+  harness.api.takeEnemyTurn(enemy);
+
+  assert.equal(
+    harness.messages.some((entry) => entry.text.includes('Deine Teildeckung nimmt dem Schuss 15% Trefferchance') && entry.text.includes('50% Restchance')),
+    true,
+  );
+});
+
+test('enemy-turns log atmospheric cover context when the player cover forces a miss', () => {
+  const enemy = {
+    id: 'covered-miss',
+    name: 'Deckungsschuetze',
+    x: 5,
+    y: 2,
+    originX: 5,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    retreatProfile: 'none',
+    healingProfile: 'none',
+    temperament: 'stoic',
+    aggro: true,
+    aggroRadius: 8,
+    canOpenDoors: false,
+    canChangeFloors: false,
+    hp: 10,
+    maxHp: 10,
+    strength: 2,
+    precision: 4,
+    reaction: 2,
+    nerves: 2,
+    intelligence: 2,
+    mainHand: {
+      id: 'test-pistol',
+      name: 'Testpistole',
+      attackMode: 'ranged',
+      range: 6,
+      damage: 3,
+      hitBonus: 2,
+      critBonus: 0,
+    },
+  };
+  const floorState = {
+    grid: createGrid(8, 5, '.'),
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, true),
+  };
+  const harness = createEnemyTurnHarness({
+    floorState,
+    player: { x: 2, y: 2, hp: 20, maxHp: 20 },
+    hasLineOfSight: () => true,
+    resolveCombatAttack: () => ({
+      hit: false,
+      damage: 0,
+      critical: false,
+      coverPenalty: 15,
+      coverLabel: 'Teildeckung',
+      hitChance: 50,
+    }),
+  });
+
+  harness.api.takeEnemyTurn(enemy);
+
+  assert.equal(
+    harness.messages.some((entry) => entry.text.includes('Deine Teildeckung drueckt die Chance auf 50%')),
+    true,
+  );
+});
+
 test('enemy-turns records a death marker when reflective damage kills an attacker', () => {
   const enemy = createBaseEnemy({
     x: 3,

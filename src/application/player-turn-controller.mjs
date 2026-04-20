@@ -498,6 +498,13 @@ export function createPlayerTurnController(context) {
     return state.options?.directFireOnSingleTarget ?? true;
   }
 
+  function canDirectFireTarget(targetSelection) {
+    return Boolean(
+      targetSelection?.valid &&
+      (targetSelection.coverPenalty ?? 0) <= 0
+    );
+  }
+
   function tryDirectFireSingleTarget(state = getState()) {
     if (state.targeting?.active || !isDirectFireOnSingleTargetEnabled(state)) {
       return false;
@@ -508,12 +515,16 @@ export function createPlayerTurnController(context) {
       return false;
     }
 
+    const [directTarget] = validTargets;
+    if (!canDirectFireTarget(directTarget)) {
+      return false;
+    }
+
     if (!ensurePlayerTurnReady()) {
       renderSelf();
       return true;
     }
 
-    const [directTarget] = validTargets;
     state.targeting.active = false;
     attackEnemy(directTarget.enemy, { distance: directTarget.distance });
     endTurn({ actionType: 'other' });

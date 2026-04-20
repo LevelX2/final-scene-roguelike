@@ -53,6 +53,25 @@ export function createPlayerAttackApi(context) {
     return messages[outcome]?.(enemy) ?? OPENING_STRIKE_LOGS.default[outcome](enemy);
   }
 
+  function getCoveredShotLog(enemyReference, result, outcome = 'hit') {
+    const coverPenalty = Math.max(0, Math.round(result?.coverPenalty ?? 0));
+    if (coverPenalty <= 0) {
+      return null;
+    }
+
+    const hitChance = Math.max(0, Math.round(result?.hitChance ?? 0));
+    const coverLabel = result?.coverLabel || 'Deckung';
+    if (outcome === 'miss') {
+      return coverPenalty >= 25
+        ? `${coverLabel} frisst deinem Schuss ${coverPenalty}% Trefferchance weg. Bei nur ${hitChance}% Restchance landet der Schuss mehr Kulisse als ${enemyReference.object}.`
+        : `${coverLabel} klaut deinem Schuss ${coverPenalty}% Trefferchance. Bei nur ${hitChance}% Restchance zieht ${enemyReference.subject} den Kopf im richtigen Beat weg.`;
+    }
+
+    return coverPenalty >= 25
+      ? `${coverLabel} drueckt den Winkel brutal zusammen, aber du findest mit nur ${hitChance}% Restchance doch noch die eine offene Luecke.`
+      : `${coverLabel} nimmt deinem Schuss ${coverPenalty}% Trefferchance, doch du erwischst ${enemyReference.object} trotz nur ${hitChance}% Restchance im richtigen Moment.`;
+  }
+
   function attackEnemy(enemy, options = {}) {
     const state = getState();
     state.safeRestTurns = 0;
@@ -92,6 +111,10 @@ export function createPlayerAttackApi(context) {
       playDodgeSound();
       if (result.usedOpeningStrike) {
         addMessage(getOpeningStrikeMessage(state.player, enemyReference, 'miss'), 'important');
+      }
+      const coveredMissLog = getCoveredShotLog(enemyReference, result, 'miss');
+      if (coveredMissLog) {
+        addMessage(coveredMissLog, 'important');
       }
       addMessage(`${enemyReference.subjectCapitalized} weicht deinem Angriff mit ${weaponPhrase} aus.`, 'danger');
       renderSelf();
@@ -141,6 +164,10 @@ export function createPlayerAttackApi(context) {
     }
     if (result.usedOpeningStrike) {
       addMessage(getOpeningStrikeMessage(state.player, enemyReference, 'hit'), 'important');
+    }
+    const coveredHitLog = getCoveredShotLog(enemyReference, result, 'hit');
+    if (coveredHitLog) {
+      addMessage(coveredHitLog, 'important');
     }
 
     const attackMessage = formatPlayerAttackLog({

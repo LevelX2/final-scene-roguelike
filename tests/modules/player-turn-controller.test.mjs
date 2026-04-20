@@ -11,6 +11,14 @@ function createHarness({
   enemies = [],
   weapon = null,
   options = {},
+  previewCombatAttack = () => ({
+    hitChance: 65,
+    baseHitChance: 65,
+    critChance: 0,
+    coverPenalty: 0,
+    coverGrade: 'clear',
+    coverLabel: '',
+  }),
   openDoor = () => {},
   takeEnemyTurn = () => {},
   hasNearbyEnemy = () => false,
@@ -112,6 +120,7 @@ function createHarness({
     hasLineOfSight: () => true,
     chebyshevDistance: (left, right) => Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y)),
     getCombatWeapon: () => weapon,
+    previewCombatAttack,
     ...scheduler,
     scheduleActorNextTurn: (actor, actionCost) => {
       if (actor === state.player) {
@@ -219,6 +228,37 @@ test('player-turn-controller keeps the target mode when direct fire on a single 
     options: {
       directFireOnSingleTarget: false,
     },
+  });
+
+  harness.api.cycleTargetMode();
+
+  assert.equal(harness.attacks.length, 0);
+  assert.equal(harness.state.targeting.active, true);
+  assert.equal(harness.state.targeting.cursorX, 5);
+  assert.equal(harness.state.targeting.cursorY, 2);
+  assert.equal(harness.state.turn, 0);
+});
+
+test('player-turn-controller keeps the target mode when the only target has corner cover despite direct fire being enabled', () => {
+  const enemy = { id: 'covered-target', x: 5, y: 2 };
+  const harness = createHarness({
+    enemies: [enemy],
+    weapon: {
+      id: 'test-pistol',
+      attackMode: 'ranged',
+      range: 6,
+    },
+    options: {
+      directFireOnSingleTarget: true,
+    },
+    previewCombatAttack: () => ({
+      hitChance: 50,
+      baseHitChance: 65,
+      critChance: 0,
+      coverPenalty: 15,
+      coverGrade: 'partial',
+      coverLabel: 'Teildeckung',
+    }),
   });
 
   harness.api.cycleTargetMode();

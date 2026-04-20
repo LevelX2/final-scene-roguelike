@@ -42,6 +42,8 @@ Das Spiel wird aktuell von vier großen Druckachsen bestimmt: Lebenspunkte, Nahr
 - Fernkampf nutzt inzwischen freie Winkel mit Sichtlinie; Ziele, die nur knapp um eine Ecke sichtbar sind, können aber einen Treffer-Malus durch Deckung erhalten.
 - Direkt an der Ecke entfällt dieser Malus bewusst. Erst wenn die Schusslinie eine spätere Eckkante nur streift, greift ein Distanz-abhängiger Deckungsmalus von `15` bis `30` Prozentpunkten auf die Trefferchance.
 - Der Zielmodus zeigt für gültige Fernkampfziele nicht nur `Schuss frei`, sondern die aktuelle Trefferchance in Prozent. Bei Eck-Deckung wird diese Reduktion zusätzlich als `Teildeckung` oder `Starke Deckung` kenntlich gemacht.
+- Die Komfortoption für automatisches Sofortfeuer bei genau einem Ziel greift nur noch ohne Eck-Deckung. Sobald ein sichtbares Einzelziel durch eine Ecke gedeckt ist, bleibt der Zielmodus offen, damit Umpositionierung oder bewusster Schuss möglich bleiben.
+- Auch das Kampflog macht reduzierte Trefferchancen durch Eck-Deckung sichtbar. Bei gedeckten Fernkampfschüssen wird die verminderte Restchance jetzt in atmosphärischen Zusatzzeilen erwähnt, sowohl bei Treffern als auch bei Fehlschüssen.
 
 ## Neure Balancing-Richtung
 Die neuere Balancing-Rationale betont, dass künftige Justierung auf klaren Ableitungsschichten, stabilen Runtime-Gruppen und möglichst kanonischen Wirkungsformen beruhen soll. Das verstärkt den Charakter des Spiels als gruppierbares System statt als Sammlung lose verknüpfter Einzelfälle.
@@ -51,4 +53,3 @@ Die neuere Balancing-Rationale betont, dass künftige Justierung auf klaren Able
 - [[Balancing-Fundament und Vereinheitlichungsprinzipien]]
 - [[../Personen und Rollen/Spielerklassen und Passiven]]
 - [[../Risiken und offene Punkte/Offene Designrichtungen]]
-

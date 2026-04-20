@@ -249,6 +249,8 @@
   - Festgehalten, dass Fernkampfschüsse auf knapp sichtbare Eckziele nun einen Deckungsmalus erhalten, wenn die Schusslinie eine spätere Ecke nur streift.
   - Dokumentiert, dass direkter Eckkontakt am Schützen bewusst ohne Malus bleibt, damit Nah-Eckspiel nicht unnötig entwertet wird.
   - Sichtbar gemacht, dass der Zielmodus die aktuelle Trefferchance jetzt direkt in Prozent anzeigt und Eck-Deckung als `Teildeckung` oder `Starke Deckung` markiert.
+  - Ergänzt, dass die Komfortfunktion für automatisches Sofortfeuer bei genau einem Ziel bei Eck-Deckung bewusst nicht auslöst, damit die reduzierte Trefferchance erst sichtbar bestätigt werden kann.
+  - Ergänzt, dass auch das Kampflog reduzierte Trefferchancen durch Eck-Deckung nun in atmosphärischen Zusatztexten benennt, damit Treffer und Fehlschüsse nicht wie normale Vollchancen-Schüsse wirken.
 
 ## [2026-04-20] update | Batch-CLI und Locked-Room-Fix für Studio-Statistik
 - Anlass oder Quelle: Nutzerwunsch nach `100 x 10`-Statistiklauf, Klärung der niedrigen Schlüsselrate und Aufwertung des Schatzraums

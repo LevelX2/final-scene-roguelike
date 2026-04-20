@@ -2,6 +2,7 @@ node_modules/
 dist/
 .playwright-temp/
 test-results/
+.codex-*.png
 
 # Logs
 *.log

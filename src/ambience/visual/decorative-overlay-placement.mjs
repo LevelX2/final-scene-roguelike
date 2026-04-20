@@ -18,6 +18,14 @@ const ZONE_FAMILY_WEIGHT_MULTIPLIERS = Object.freeze({
     grass: 0.82,
     debris: 1,
     scorch: 0.78,
+    paint: 0.98,
+    paper: 0.9,
+    glass: 0.76,
+    chalk: 0.84,
+    dust: 0.92,
+    footprints: 0.68,
+    stains: 0.94,
+    marks: 0.7,
   },
   [MAIN_CORRIDOR_ZONE_TYPE]: {
     puddle: 0.94,
@@ -28,6 +36,14 @@ const ZONE_FAMILY_WEIGHT_MULTIPLIERS = Object.freeze({
     grass: 0.35,
     debris: 0.88,
     scorch: 0.5,
+    paint: 1.16,
+    paper: 1.02,
+    glass: 0.96,
+    chalk: 1.18,
+    dust: 1.04,
+    footprints: 1.22,
+    stains: 1.1,
+    marks: 1.24,
   },
   [SIDE_CORRIDOR_ZONE_TYPE]: {
     puddle: 0.9,
@@ -38,8 +54,32 @@ const ZONE_FAMILY_WEIGHT_MULTIPLIERS = Object.freeze({
     grass: 0.28,
     debris: 0.82,
     scorch: 0.42,
+    paint: 1.12,
+    paper: 0.96,
+    glass: 0.9,
+    chalk: 1.08,
+    dust: 0.98,
+    footprints: 1.14,
+    stains: 1.04,
+    marks: 1.18,
   },
 });
+
+const CORRIDOR_ALLOWED_FAMILIES = Object.freeze([
+  'cable',
+  'tape',
+  'oil',
+  'puddle',
+  'debris',
+  'paint',
+  'paper',
+  'glass',
+  'chalk',
+  'dust',
+  'footprints',
+  'stains',
+  'marks',
+]);
 
 const ROOM_OVERLAY_TUNING = Object.freeze({
   largeRoomChance: 0.9,
@@ -282,7 +322,7 @@ function analyzeCorridorZone(state, tiles, zoneKind) {
     chance: Math.max(0, Math.min(1, chance)),
     targetCount: calculateCorridorTargetCount(walkableTiles),
     score: walkableTiles * (isMain ? 0.7 : 0.55),
-    allowedFamilies: ['cable', 'tape', 'oil', 'puddle', 'debris'],
+    allowedFamilies: CORRIDOR_ALLOWED_FAMILIES,
   };
 }
 

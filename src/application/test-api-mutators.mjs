@@ -1,6 +1,7 @@
 import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 import { cloneItemDef } from '../item-defs.mjs';
 import { NORMAL_SPEED_INTERVAL } from './actor-speed.mjs';
+import { normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
 
 export function createTestApiMutators(context) {
   const {
@@ -68,7 +69,7 @@ export function createTestApiMutators(context) {
       ? cloneWeapon(item)
       : item.type === "offhand"
         ? cloneOffHandItem(item)
-        : { ...item };
+        : normalizeLegacyConsumableItem({ ...item });
     state.inventory.push(clonedItem);
     renderSelf();
   }
@@ -297,6 +298,12 @@ export function createTestApiMutators(context) {
     state.player.x = playerPosition.x;
     state.player.y = playerPosition.y;
     state.player.hp = config.player?.hp ?? getActorDerivedMaxHp(state.player);
+    state.player.nextActionTime = Number.isFinite(config.player?.nextActionTime)
+      ? Math.round(config.player.nextActionTime)
+      : 1;
+    state.player.baseSpeed = Number.isFinite(config.player?.baseSpeed)
+      ? Math.round(config.player.baseSpeed)
+      : NORMAL_SPEED_INTERVAL;
     if (config.player) {
       Object.assign(state.player, config.player);
       if (Array.isArray(config.player.speedIntervalModifiers)) {
@@ -337,7 +344,12 @@ export function createTestApiMutators(context) {
     state.pendingStairChoice = null;
     state.pendingContainerLoot = null;
 
-    const enemy = createTestEnemy(enemyPosition, config.enemy);
+    const enemy = createTestEnemy(enemyPosition, {
+      ...config.enemy,
+      nextActionTime: Number.isFinite(config.enemy?.nextActionTime)
+        ? config.enemy.nextActionTime
+        : NORMAL_SPEED_INTERVAL,
+    });
     floorState.enemies.push(enemy);
     renderSelf();
     return {

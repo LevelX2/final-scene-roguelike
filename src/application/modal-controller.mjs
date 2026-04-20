@@ -256,7 +256,7 @@ export function createModalController(context) {
     deathSummaryElement.innerHTML = [
       `<div class="death-highlight"><strong>${deathLead}</strong></div>`,
       createSheetRow("Name", state.player.name),
-      createSheetRow("Beruf", state.player.classLabel ?? "Unbekannt"),
+      createSheetRow("Klasse", `Der ${state.player.classLabel ?? "Unbekannt"}`),
       createSheetRow("Level", state.player.level),
       createSheetRow("Gestorben in", formatStudioLabel(state.floor)),
       createSheetRow("Archetyp", getStudioArchetypeLabel(currentFloor?.studioArchetypeId) ?? "Unbekannt"),

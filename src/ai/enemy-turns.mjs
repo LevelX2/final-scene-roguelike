@@ -1704,7 +1704,7 @@ export function createEnemyTurnApi(context) {
     tryEnemyRegeneration(enemy, distance, floorState);
     const adjacent = canTargetPlayer && distance === 1;
     const retreating = canTargetPlayer ? shouldEnemyRetreat(enemy, state.player, distance) : false;
-    const fallbackRetreat = canTargetPlayer ? shouldEnemyFallbackFromCloseRange(enemy, weapon, distance) : false;
+    const fallbackRetreat = canTargetPlayer ? shouldEnemyFallbackFromCloseRange(enemy, weapon, distance, state.player) : false;
     const retreatMode = retreating || fallbackRetreat;
     const canMove = canActorMove?.(enemy) ?? true;
 

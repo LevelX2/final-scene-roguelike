@@ -153,8 +153,20 @@ export function getEnemyRangedDetectionBonus(enemy, weapon) {
   return Math.max(0, weaponRange - (enemy?.aggroRadius ?? 0));
 }
 
-export function shouldEnemyFallbackFromCloseRange(enemy, weapon, distanceToPlayer) {
-  return weapon?.attackMode === 'ranged' && distanceToPlayer <= 2;
+export function shouldEnemyFallbackFromCloseRange(enemy, weapon, distanceToPlayer, player = null) {
+  if (weapon?.attackMode !== 'ranged') {
+    return false;
+  }
+
+  if (distanceToPlayer <= 1) {
+    return true;
+  }
+
+  if (distanceToPlayer > 2 || !player) {
+    return false;
+  }
+
+  return enemy?.x === player.x || enemy?.y === player.y;
 }
 
 export function shouldEnemyReplanIdleErratically(enemy, randomChance = Math.random) {

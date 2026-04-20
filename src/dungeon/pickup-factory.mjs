@@ -72,10 +72,10 @@ export function createDungeonPickupFactory(context) {
     return {
       x,
       y,
-      item: {
+      item: normalizeLegacyConsumableItem({
         ...item,
         type: item.type ?? "food",
-      },
+      }),
     };
   }
 

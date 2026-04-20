@@ -1,5 +1,5 @@
 import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
-import { isFoodConsumable, isHealingConsumable } from '../content/catalogs/consumables.mjs';
+import { isFoodConsumable, isHealingConsumable, normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
 import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
 export function createItemFloorStateApi(context) {
@@ -108,7 +108,7 @@ export function createItemFloorStateApi(context) {
     }
 
     removeFoodAt(index);
-    state.inventory.push({ ...pickup.item });
+    state.inventory.push(normalizeLegacyConsumableItem({ ...pickup.item }));
     addMessage(`${pickup.item.name} wandert in dein Inventar.`, "important");
   }
 
@@ -225,7 +225,7 @@ export function createItemFloorStateApi(context) {
       } else if (entry.type === "offhand") {
         state.inventory.push(cloneOffHandItem(entry.item));
       } else {
-        state.inventory.push({ ...entry.item });
+        state.inventory.push(normalizeLegacyConsumableItem({ ...entry.item }));
       }
 
       takenEntries.push(entry);

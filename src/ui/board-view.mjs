@@ -1,4 +1,4 @@
-import { evaluateTargetSelection } from '../application/targeting-service.mjs';
+import { evaluateTargetSelection, getTargetChanceTooltip } from '../application/targeting-service.mjs';
 import { getActorDerivedMaxHp, getActorDerivedStats } from '../application/derived-actor-stats.mjs';
 import { getDeathMarkerAt, getDeathMarkerVisualStage, pruneExpiredDeathMarkers } from '../application/death-marker-service.mjs';
 import { getDecorativeOverlayPreset } from '../ambience/visual/decorative-overlay-presets.mjs';
@@ -818,6 +818,7 @@ export function createBoardView(context) {
         }
         if (state.targeting?.active && state.targeting.cursorX === x && state.targeting.cursorY === y) {
           const targetSelection = getTargetCursorSelection(x, y, state, floorState);
+          const targetChanceTooltip = getTargetChanceTooltip(targetSelection);
           cell.classList.add('target-cursor');
           cell.classList.add(`target-cursor-${getTargetCursorState(targetSelection) ?? "invalid"}`);
           if (targetSelection?.valid && Number.isFinite(targetSelection.hitChance)) {
@@ -827,6 +828,9 @@ export function createBoardView(context) {
               chanceBadge.classList.add('covered');
             }
             chanceBadge.textContent = `${Math.round(targetSelection.hitChance)}%`;
+            if (targetChanceTooltip) {
+              bindTooltip?.(chanceBadge, () => targetChanceTooltip);
+            }
             cell.appendChild(chanceBadge);
           }
         }

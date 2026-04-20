@@ -239,6 +239,7 @@ const renderCycleApi = createRenderCycleApi({
   previewCombatAttack,
   updateVisibility,
   hideTooltip: interfaceApi.hideTooltip,
+  bindTooltip: interfaceApi.bindTooltip,
   renderBoard: interfaceApi.renderBoard,
   formatStudioWithArchetype: appConfig.formatStudioWithArchetype,
   depthTitleElement: appUi.depthTitleElement,

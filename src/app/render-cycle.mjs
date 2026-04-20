@@ -1,4 +1,4 @@
-import { evaluateTargetSelection, getTargetHintLabel } from '../application/targeting-service.mjs';
+import { evaluateTargetSelection, getTargetChanceTooltip, getTargetHintLabel } from '../application/targeting-service.mjs';
 import { areVoiceAnnouncementsForcedOff } from '../application/test-mode.mjs';
 import { getHealingFamily, getHealingOverlayLabel, getHealingTypeLabel } from '../content/catalogs/consumables.mjs';
 
@@ -14,6 +14,7 @@ export function createRenderCycleApi(context) {
     previewCombatAttack,
     updateVisibility,
     hideTooltip,
+    bindTooltip,
     renderBoard,
     formatStudioWithArchetype,
     depthTitleElement,
@@ -103,6 +104,11 @@ export function createRenderCycleApi(context) {
   let lastBoardViewportSignature = "";
   let lastEffectiveStudioZoom = null;
   let lastViewKey = "";
+  let currentTargetModeTooltip = null;
+
+  if (targetModeHintElement) {
+    bindTooltip?.(targetModeHintElement, () => currentTargetModeTooltip);
+  }
 
   function formatPercent(value) {
     return `${Math.round((value ?? 1) * 100)}%`;
@@ -351,6 +357,7 @@ export function createRenderCycleApi(context) {
       : null;
     const targetIsValid = Boolean(targetSelection?.valid);
     const targetHint = targetingActive ? getTargetHintLabel(targetSelection) : "";
+    currentTargetModeTooltip = targetingActive ? getTargetChanceTooltip(targetSelection) : null;
     openTargetModeButton.textContent = "Zielen";
     openTargetModeButton.setAttribute("aria-pressed", String(targetingActive));
     openTargetModeButton.classList.toggle("targeting-active", targetingActive);

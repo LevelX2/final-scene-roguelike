@@ -5,6 +5,10 @@ export function isTargetModeWeapon(weapon) {
   );
 }
 
+function formatTargetChance(value) {
+  return Number.isFinite(value) ? `${Math.round(value)}%` : null;
+}
+
 function fallbackDistance(enemy, player) {
   return Math.max(
     Math.abs((enemy?.x ?? 0) - (player?.x ?? 0)),
@@ -95,6 +99,20 @@ export function getVisibleTargetSelections(context) {
   };
 }
 
+export function getSingleDirectFireTargetSelection(validTargets, directFireEnabled = true) {
+  if (!directFireEnabled || validTargets.length !== 1) {
+    return null;
+  }
+
+  const [targetSelection] = validTargets;
+  return Boolean(
+    targetSelection?.valid &&
+    (targetSelection.coverPenalty ?? 0) <= 0
+  )
+    ? targetSelection
+    : null;
+}
+
 export function getTargetHintLabel(targetSelection) {
   if (!targetSelection?.enemy) {
     return 'Kein Ziel';
@@ -104,12 +122,35 @@ export function getTargetHintLabel(targetSelection) {
     return 'Kein Schuss';
   }
 
-  const chanceLabel = Number.isFinite(targetSelection.hitChance)
-    ? `${Math.round(targetSelection.hitChance)}% Treffer`
-    : 'Schuss frei';
+  const chanceLabel = formatTargetChance(targetSelection.hitChance) ?? 'Schuss frei';
   if ((targetSelection.coverPenalty ?? 0) > 0) {
-    return `${targetSelection.coverLabel || 'Teildeckung'} · ${chanceLabel}`;
+    return `${targetSelection.coverLabel || 'Teildeckung'} - ${chanceLabel}`;
   }
 
-  return `Schuss frei · ${chanceLabel}`;
+  return `Schuss frei - ${chanceLabel}`;
+}
+
+export function getTargetChanceTooltip(targetSelection) {
+  if (!targetSelection?.valid || !Number.isFinite(targetSelection.hitChance)) {
+    return null;
+  }
+
+  const hitChanceLabel = formatTargetChance(targetSelection.hitChance);
+  const baseHitChanceLabel = formatTargetChance(targetSelection.baseHitChance);
+  const coverPenalty = Math.max(0, Math.round(targetSelection.coverPenalty ?? 0));
+  const lines = [`Dieser Schuss trifft aktuell mit ${hitChanceLabel}.`];
+
+  if (coverPenalty > 0) {
+    if (baseHitChanceLabel) {
+      lines.push(`Ohne Deckung waeren es ${baseHitChanceLabel}.`);
+    }
+    lines.push(`${targetSelection.coverLabel || 'Teildeckung'} kostet ${coverPenalty} Prozentpunkte.`);
+  } else {
+    lines.push('Keine Deckung auf der Schusslinie.');
+  }
+
+  return {
+    title: 'Trefferchance',
+    lines,
+  };
 }

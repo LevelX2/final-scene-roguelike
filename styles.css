@@ -3316,7 +3316,7 @@ kbd {
 .target-hit-chance {
   position: absolute;
   right: 3px;
-  bottom: 3px;
+  top: 2px;
   z-index: 6;
   min-width: 28px;
   padding: 2px 5px;
@@ -3330,7 +3330,7 @@ kbd {
   letter-spacing: 0.02em;
   text-align: center;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.34);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .target-hit-chance.covered {

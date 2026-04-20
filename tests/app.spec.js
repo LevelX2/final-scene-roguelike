@@ -1702,6 +1702,7 @@ test("ranged weapons enter target mode and mark a valid target", async ({ page }
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
   await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
+  await expect(page.locator("#targetModeHint")).toContainText("%");
   await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
   await expect(page.locator("#enemySheet")).toContainText("Aktiv markiert");
 });

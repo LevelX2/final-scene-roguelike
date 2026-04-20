@@ -241,6 +241,7 @@ export function assembleInterfaceModules(context) {
 
   const inputController = createInputController({
     getState,
+    addMessage,
     confirmRestartRun: modalController.confirmRestartRun,
     resolveStairChoice: modalController.resolveStairChoice,
     cycleStairChoice: modalController.cycleStairChoice,

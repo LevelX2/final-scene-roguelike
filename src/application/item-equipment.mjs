@@ -118,7 +118,7 @@ export function createItemEquipmentApi(context) {
     const overlay = getHealingOverlayState();
     const groups = syncHealingOverlaySelection();
     if (groups.length === 0) {
-      addMessage("Du hast keine Heil-Consumables im Inventar.");
+      addMessage("Du hast keine Heilgegenstände im Inventar.");
       renderSelf();
       return false;
     }
@@ -253,6 +253,7 @@ export function createItemEquipmentApi(context) {
 
       state.inventory.splice(index, 1);
       applyHealingConsumableEffect(item);
+      getHealingOverlayState().open = false;
       syncHealingOverlaySelection();
       endTurn();
       return;

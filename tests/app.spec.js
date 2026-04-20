@@ -629,6 +629,11 @@ test("heal overlay covers the studio and anchors the healing choices at the lowe
   expect(alignment.scalerBottom - alignment.overlayBottom).toBeGreaterThanOrEqual(10);
   expect(alignment.scalerBottom - alignment.itemBottom).toBeGreaterThanOrEqual(10);
 
+  await page.keyboard.press("w");
+  await expect(page.locator("#healOverlay")).toBeVisible();
+  const overlayHintMessages = await page.evaluate(() => window.__TEST_API__.getMessages());
+  expect(overlayHintMessages.at(-1)?.text ?? "").toContain("Heilauswahl aktiv");
+
   await page.keyboard.press("Enter");
   await expect(page.locator("#healOverlay")).toBeHidden();
 

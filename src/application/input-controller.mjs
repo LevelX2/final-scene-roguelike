@@ -1,6 +1,7 @@
 export function createInputController(context) {
   const {
     getState,
+    addMessage,
     confirmRestartRun,
     resolveStairChoice,
     cycleStairChoice,
@@ -32,6 +33,8 @@ export function createInputController(context) {
     moveTargetCursor,
     confirmTargetAttack,
   } = context;
+
+  let lastHealingOverlayHintAt = 0;
 
   function getMovementFromShortcut(matchesShortcut) {
     return matchesShortcut(["q"], ["KeyQ", "Numpad7"])
@@ -190,6 +193,26 @@ export function createInputController(context) {
         event.preventDefault();
         cycleHealingOverlay(1);
         return;
+      }
+
+      const ignoredKeys = new Set([
+        "",
+        "shift",
+        "control",
+        "alt",
+        "meta",
+        "capslock",
+        "tab",
+        "dead",
+        "altgraph",
+      ]);
+      if (!(event.ctrlKey || event.altKey || event.metaKey) && !ignoredKeys.has(key)) {
+        event.preventDefault();
+        const now = Date.now();
+        if (now - lastHealingOverlayHintAt >= 700) {
+          lastHealingOverlayHintAt = now;
+          addMessage?.("Heilauswahl aktiv: Wähle zuerst ein Heilmittel mit A/D oder den Pfeiltasten, dann nutze Enter.", "important");
+        }
       }
 
       return;

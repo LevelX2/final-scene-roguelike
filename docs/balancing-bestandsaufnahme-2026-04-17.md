@@ -38,11 +38,11 @@ Weitere Regeln:
 
 Relevante Dateien:
 
-- [combat-resolution.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/combat/combat-resolution.mjs:1)
-- [player-attack.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/combat/player-attack.mjs:1)
-- [targeting-service.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/targeting-service.mjs:1)
-- [player-turn-controller.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/player-turn-controller.mjs:3)
-- [balance.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/balance.mjs:8)
+- [combat-resolution.mjs](../src/combat/combat-resolution.mjs:1)
+- [player-attack.mjs](../src/combat/player-attack.mjs:1)
+- [targeting-service.mjs](../src/application/targeting-service.mjs:1)
+- [player-turn-controller.mjs](../src/application/player-turn-controller.mjs:3)
+- [balance.mjs](../src/balance.mjs:8)
 
 ### 1.2 Block
 
@@ -64,9 +64,9 @@ Weitere Regeln:
 
 Relevante Dateien:
 
-- [combat-resolution.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/combat/combat-resolution.mjs:19)
-- [player-attack.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/combat/player-attack.mjs:96)
-- [enemy-turns.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/ai/enemy-turns.mjs:1359)
+- [combat-resolution.mjs](../src/combat/combat-resolution.mjs:19)
+- [player-attack.mjs](../src/combat/player-attack.mjs:96)
+- [enemy-turns.mjs](../src/ai/enemy-turns.mjs:1359)
 
 ### 1.3 Status-Effekte
 
@@ -93,8 +93,8 @@ Systemische Regeln:
 
 Relevante Dateien:
 
-- [status-effect-service.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/status-effect-service.mjs:4)
-- [weapon-effects.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/weapon-effects.mjs:24)
+- [status-effect-service.mjs](../src/application/status-effect-service.mjs:4)
+- [weapon-effects.mjs](../src/content/catalogs/weapon-effects.mjs:24)
 
 ### 1.4 Spielerattribute, Klassenpassiven und Level-Ups
 
@@ -149,10 +149,10 @@ Wichtig:
 
 Relevante Dateien:
 
-- [balance.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/balance.mjs:125)
-- [combat-progression.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/combat/combat-progression.mjs:1)
-- [state-blueprint.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/state-blueprint.mjs:282)
-- [start-loadouts.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/start-loadouts.mjs:11)
+- [balance.mjs](../src/balance.mjs:125)
+- [combat-progression.mjs](../src/combat/combat-progression.mjs:1)
+- [state-blueprint.mjs](../src/application/state-blueprint.mjs:282)
+- [start-loadouts.mjs](../src/content/start-loadouts.mjs:11)
 
 ### 1.5 Gegnerattribute, Floorskalierung, Variantentiers und Gegner-KI
 
@@ -267,12 +267,12 @@ Aktuelle wichtige KI-Regeln:
 
 Relevante Dateien:
 
-- [monsters.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/monsters.mjs:139)
-- [monsters.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/monsters.mjs:981)
-- [monster-phase-one-config.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/monster-phase-one-config.mjs:26)
-- [monster-phase-one.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/monster-phase-one.mjs:159)
-- [enemy-factory.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/dungeon/enemy-factory.mjs:14)
-- [enemy-turns.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/ai/enemy-turns.mjs:24)
+- [monsters.mjs](../src/content/catalogs/monsters.mjs:139)
+- [monsters.mjs](../src/content/catalogs/monsters.mjs:981)
+- [monster-phase-one-config.mjs](../src/content/catalogs/monster-phase-one-config.mjs:26)
+- [monster-phase-one.mjs](../src/content/catalogs/monster-phase-one.mjs:159)
+- [enemy-factory.mjs](../src/dungeon/enemy-factory.mjs:14)
+- [enemy-turns.mjs](../src/ai/enemy-turns.mjs:24)
 
 ### 1.6 Waffen, Schilde, Raritaeten, Modifikatoren und Ausruestungsprofile
 
@@ -357,11 +357,11 @@ Rarity wirkt aktuell auf:
 
 Relevante Dateien:
 
-- [weapon-templates.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/weapon-templates.mjs:3)
-- [shields.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/shields.mjs:25)
-- [itemization.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/itemization.mjs:51)
-- [item-modifiers.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/item-modifiers.mjs:8)
-- [weapon-effects.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/weapon-effects.mjs:24)
+- [weapon-templates.mjs](../src/content/catalogs/weapon-templates.mjs:3)
+- [shields.mjs](../src/content/catalogs/shields.mjs:25)
+- [itemization.mjs](../src/itemization.mjs:51)
+- [item-modifiers.mjs](../src/content/item-modifiers.mjs:8)
+- [weapon-effects.mjs](../src/content/catalogs/weapon-effects.mjs:24)
 
 ### 1.7 Hunger, Heilung, sichere Regeneration und weitere Ressourcenachsen
 
@@ -407,10 +407,10 @@ Wichtig:
 
 Relevante Dateien:
 
-- [nutrition.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/nutrition.mjs:1)
-- [runtime-support.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/app/runtime-support.mjs:1)
-- [ai/awareness.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/ai/awareness.mjs:1)
-- [item-defs.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/item-defs.mjs:1)
+- [nutrition.mjs](../src/nutrition.mjs:1)
+- [runtime-support.mjs](../src/app/runtime-support.mjs:1)
+- [ai/awareness.mjs](../src/ai/awareness.mjs:1)
+- [item-defs.mjs](../src/item-defs.mjs:1)
 
 ### 1.8 Fallen, Gefahrenfelder, Sicht, Tueren, Schluessel, Raumkontrolle
 
@@ -474,10 +474,10 @@ Tueren sind fuer Raumkontrolle relevant, weil sie:
 
 Relevante Dateien:
 
-- [visibility-service.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/visibility-service.mjs:1)
-- [traps.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/traps.mjs:235)
-- [door-service.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/door-service.mjs:3)
-- [player-turn-controller.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/player-turn-controller.mjs:40)
+- [visibility-service.mjs](../src/application/visibility-service.mjs:1)
+- [traps.mjs](../src/traps.mjs:235)
+- [door-service.mjs](../src/application/door-service.mjs:3)
+- [player-turn-controller.mjs](../src/application/player-turn-controller.mjs:40)
 
 ### 1.9 Loot-Spawns, Chest-Regeln, Locked-Room-Belohnungen und Progressionskurven
 
@@ -555,14 +555,14 @@ Loot-Archetypen werden nicht nur aus dem aktuellen Studio gezogen, sondern auch 
 
 Relevante Dateien:
 
-- [balance.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/balance.mjs:253)
-- [branch-layout.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/dungeon/branch-layout.mjs:2958)
-- [branch-layout.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/dungeon/branch-layout.mjs:3180)
-- [equipment-rolls.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/dungeon/equipment-rolls.mjs:1)
-- [food-balance.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/food-balance.mjs:1)
-- [food-loot-pipeline.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/food-loot-pipeline.mjs:11)
-- [studio-archetypes.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/content/catalogs/studio-archetypes.mjs:1)
-- [archetype-loot-service.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/application/archetype-loot-service.mjs:11)
+- [balance.mjs](../src/balance.mjs:253)
+- [branch-layout.mjs](../src/dungeon/branch-layout.mjs:2958)
+- [branch-layout.mjs](../src/dungeon/branch-layout.mjs:3180)
+- [equipment-rolls.mjs](../src/dungeon/equipment-rolls.mjs:1)
+- [food-balance.mjs](../src/content/food-balance.mjs:1)
+- [food-loot-pipeline.mjs](../src/application/food-loot-pipeline.mjs:11)
+- [studio-archetypes.mjs](../src/content/catalogs/studio-archetypes.mjs:1)
+- [archetype-loot-service.mjs](../src/application/archetype-loot-service.mjs:11)
 
 ## 2. EinschÃ¤tzung: Was ist bereits zentral und gruppierbar, was nicht?
 
@@ -1055,8 +1055,8 @@ Diese Gruppen sind aus dem aktuellen Stand besonders sinnvoll:
 
 Relevante Dateien:
 
-- [enemy-turns.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/ai/enemy-turns.mjs:177)
-- [equipment-helpers.mjs](C:/Users/Lui/OneDrive/Documents/final-scene-main/src/equipment-helpers.mjs:18)
+- [enemy-turns.mjs](../src/ai/enemy-turns.mjs:177)
+- [equipment-helpers.mjs](../src/equipment-helpers.mjs:18)
 
 ### 5.2 Versteckte Abhaengigkeiten
 
@@ -1155,4 +1155,3 @@ Prioritaet fuer Vereinheitlichung:
 Der aktuelle Stand von `The Final Scene` ist bereits deutlich gruppierbarer, als es ein rein individuell gebautes Roguelike waere. Besonders Gegnerprofile, Waffenprofile, Variantentiers, Lootquellen, Raumrollen und Klassen sind schon heute brauchbare Anknuepfungspunkte fuer ein spaeteres zentrales Balancing-System.
 
 Gleichzeitig gibt es mehrere Stellen, an denen verstreute Logik, implizite Defaults, tote Felder und Legacy-Ueberhaenge eine spaetere globale Justierung erschweren wuerden. Fuer einen kuenftigen Justierungsschirm und einen Simulations-/Testscreen ist daher vor allem wichtig, zunaechst die bereits vorhandenen systemischen Gruppen zu nutzen und die heute noch halbverdrahteten oder asymmetrischen Sonderfaelle sichtbar zu isolieren.
-

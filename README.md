@@ -168,6 +168,7 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
 ## Hinweise für neue Threads oder Workspaces
 
 - Lies zuerst diese README und danach [docs/project-overview.md](docs/project-overview.md).
+- Für projektbezogenen KI-Kontext und gepflegtes Projektwissen nutze `ai-project-memory/` als primären Einstieg.
 - Arbeite standardmäßig gegen den aktiven Pfad aus `src/main.mjs`, `src/app/`, `src/application/`, `src/ui/` und den jeweiligen Fachmodulen, nicht gegen `src/legacy/`.
 - Nach Änderungen am Runtime-Code immer mindestens `npm run build` ausführen.
 - Bei Spiellogik oder UI-Verhalten möglichst `npm run test:e2e` mitlaufen lassen.

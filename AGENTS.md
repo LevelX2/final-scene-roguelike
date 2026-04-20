@@ -2,9 +2,9 @@
 
 ## Projektbezogene Wissensbasis
 
-F체r dieses Repository existiert eine projektbezogene Obsidian-Wissensbasis unter:
+F체r dieses Repository existiert eine projektbezogene KI-Wissensbasis im Ordner:
 
-`C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis`
+`ai-project-memory/`
 
 Bei neuen Threads, neuen Aufgaben und Projektfragen ist diese Wissensbasis prim채r zu verwenden.
 
@@ -12,10 +12,10 @@ Bei neuen Threads, neuen Aufgaben und Projektfragen ist diese Wissensbasis prim�
 
 Zu Beginn projektbezogener Arbeit zuerst diese Dateien lesen:
 
-1. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\00 Projektstart.md`
-2. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\00 Uebersichten\Index.md`
-3. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\Prozesse\Arbeitsworkflow Wissenspflege und Projektanfragen.md`
-4. `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\00 Steuerung\Regeldatei KI-Wissenspflege.md`
+1. `ai-project-memory/00 Projektstart.md`
+2. `ai-project-memory/02 Wissen/00 Uebersichten/Index.md`
+3. `ai-project-memory/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
+4. `ai-project-memory/00 Steuerung/Regeldatei KI-Wissenspflege.md`
 
 ## Arbeitsmodus
 
@@ -51,8 +51,8 @@ Wenn neue Projektquellen hinzukommen:
 
 ## Wichtige Wissensbasis-Dateien
 
-- Einstieg: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\00 Uebersichten\Index.md`
-- Workflow: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\02 Wissen\Prozesse\Arbeitsworkflow Wissenspflege und Projektanfragen.md`
-- Log: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\03 Betrieb\Log.md`
-- Qualit채tspr체fung: `C:\Users\Lui\OneDrive\Documents\Obsidian-Wissensbasis\Projekt Rogue Wissensbasis\03 Betrieb\Qualit채tspr체fung.md`
+- Einstieg: `ai-project-memory/02 Wissen/00 Uebersichten/Index.md`
+- Workflow: `ai-project-memory/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
+- Log: `ai-project-memory/03 Betrieb/Log.md`
+- Qualit채tspr체fung: `ai-project-memory/03 Betrieb/Qualitaetspruefung.md`
 

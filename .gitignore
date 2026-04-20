@@ -3,6 +3,9 @@ dist/
 .playwright-temp/
 test-results/
 .codex-*.png
+release/
+tmp_obsidian_project_rogue/
+tmp_obsidian_template/
 
 # Logs
 *.log

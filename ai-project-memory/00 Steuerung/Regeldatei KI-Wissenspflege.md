@@ -13,6 +13,11 @@ Diese Wissensbasis dient der dauerhaften, strukturierten und verlinkten Dokument
 - Schreibweisen wie `ae`, `oe`, `ue` oder `ss` statt Umlaut/Eszett sind nur für technische Bezeichner, Dateinamen, Pfade, Code-Symbole, IDs, bestehende Dateilinks oder originale Quellbezeichnungen zulässig.
 - Technische Dateinamen, Modulnamen und IDs bleiben in ihrer Originalschreibweise.
 
+## Dateikodierung
+- Dateien in `ai-project-memory` werden als UTF-8 gespeichert.
+- Wissenspflege soll keine impliziten ANSI- oder Codepage-Schreibpfade verwenden.
+- Nach größeren Pflegearbeiten oder bei Verdacht auf Zeichensalat `npm run check:memory` ausführen.
+
 ## Primäre Quellen
 - Primär gelten die in `01 Rohquellen` abgelegten Projektquellen aus dem Repository.
 - Für Aussagen über den aktuellen Workspace-Stand sind Repo-Snapshots wie [[../01 Rohquellen/repo-root/workspace-status-2026-04-17]] zulässige Rohquellen.
@@ -56,7 +61,6 @@ Diese Wissensbasis dient der dauerhaften, strukturierten und verlinkten Dokument
 - Für externe Webquellen soll nach Möglichkeit ein lokaler Snapshot in `01 Rohquellen` abgelegt werden. Wenn das nicht möglich ist, wird mindestens eine Rohquellen-Referenz mit URL und Abrufdatum angelegt.
 
 ## Lint-Regeln
-- regelmäßig auf Widersprüche, veraltete Aussagen, Orphan-Seiten, fehlende Querverweise, fehlende Pflichtabschnitte und defekte Links prüfen
+- regelmäßig auf Widersprüche, veraltete Aussagen, Orphan-Seiten, fehlende Querverweise, fehlende Pflichtabschnitte, defekte Links und Kodierungsfehler prüfen
 - wichtige Konzepte ohne eigene Seite als Erweiterungskandidaten markieren
 - aus Lint-Ergebnissen konkrete Korrekturhinweise ableiten, nicht nur allgemeine Warnungen
-

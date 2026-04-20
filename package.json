@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node ./node_modules/esbuild/bin/esbuild src/main.mjs --bundle --format=iife --platform=browser --outfile=dist/game.bundle.js",
     "check:js": "node ./scripts/check-js.mjs",
+    "check:memory": "node ./scripts/check-ai-project-memory.mjs",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",

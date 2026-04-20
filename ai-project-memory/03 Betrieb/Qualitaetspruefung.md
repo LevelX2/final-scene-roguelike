@@ -1,10 +1,15 @@
 # Qualitätsprüfung
 
 ## Letzte Prüfung
-- Datum: 2026-04-17
-- Umfang: initiale Wissensbasis auf Struktur, Quellenbezug, erkennbare Lücken sowie Index/Log/Lint-Betrieb geprüft
+- Datum: 2026-04-21
+- Umfang: Wissensbasis zusätzlich auf Dateikodierung, Mischencoding und technische Lint-Absicherung geprüft
 
 ## Befunde
+- Befund: Die Wissensbasis war fast vollständig sauber, aber `Log.md` enthielt einen gemischt kodierten Block aus UTF-8 und Windows-1252.
+  Betroffene Seiten: [[Log]], [[../02 Wissen/Prozesse/Wiki-first Query und Linting]], [[../02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]
+  Empfohlene Korrektur: `Log.md` auf reines UTF-8 normalisieren und künftige Wissenspflege mit `npm run check:memory` absichern.
+  Priorität: hoch
+
 - Befund: Die Wissensbasis hat für die wichtigsten Projektquellen bereits eigene Wissensseiten und Quellenbewertungen.
   Betroffene Seiten: [[../02 Wissen/00 Uebersichten/Index]]
   Empfohlene Korrektur: Bei neuen Repo-Dokumenten oder frischen Testläufen weitere Quellenbewertungen anlegen.
@@ -29,4 +34,3 @@
   Betroffene Seiten: [[../02 Wissen/Prozesse/Wiki-first Query und Linting]], [[../02 Wissen/Prozesse/Wiki-first Query und Linting]]
   Empfohlene Korrektur: Künftige Health-Checks explizit um diese mechanischen Strukturprüfungen ergänzen.
   Priorität: mittel
-

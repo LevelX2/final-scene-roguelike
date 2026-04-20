@@ -1,5 +1,23 @@
 # Log
 
+## [2026-04-21] fix | Wissensbasis auf UTF-8-Check abgesichert und Log-Kodierung repariert
+- Anlass oder Quelle: Analyse wiederkehrender Kodierungsprobleme in der Projekt-Wissensbasis
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../00 Steuerung/Regeldatei KI-Wissenspflege]]
+  - [[../02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+  - [[../02 Wissen/Prozesse/Wiki-first Query und Linting]]
+  - [[../03 Betrieb/Qualitaetspruefung]]
+  - `package.json`
+  - `README.md`
+  - `scripts/check-ai-project-memory.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Gemischt kodierte Stellen in `[[../03 Betrieb/Log]]` auf konsistentes UTF-8 normalisiert.
+  - Ein Repo-Skript `npm run check:memory` ergänzt, das `ai-project-memory/` auf ungültiges UTF-8 und typische Mojibake-Muster prüft.
+  - Die Wissenspflege-Prozesse so nachgeschärft, dass Kodierungschecks bei künftigen Health-Checks und größeren Pflegearbeiten explizit dazugehören.
+
 ## [2026-04-20] update | Sichtbarer Debug-Vorschub mit Temporegler und stabiler Heatmap
 - Anlass oder Quelle: Nutzerfeedback zu zu schnellem Vorspulen, unsichtbaren Gegnerzügen nach `gameOver` und gewünschter Klärung des Heatmap-Verhaltens bei überlagerten Laufwegen
 - Neu angelegte Seiten:
@@ -70,7 +88,7 @@
 - Anlass oder Quelle: Nutzerwunsch fuer schnelleren Fernkampf mit `T`/`F` bei genau einem gueltigen Ziel sowie eine weniger laserartige Bogen-Animation
 - Neu angelegte Seiten:
   - keine
-- GeÃ¤nderte Seiten:
+- Geänderte Seiten:
   - `index.html`
   - `styles.css`
   - `src/application/input-controller.mjs`
@@ -379,17 +397,17 @@
   - Festgehalten, dass der Zielmodus die Prozentanzeige auch ohne Deckung weiter sichtbar lässt und das Hauptlabel kompakt hält.
   - Dokumentiert, dass Tooltip und Zielmarker jetzt die aktuelle Endchance, den Basiswert ohne Deckung und den konkreten Deckungsmalus erklären.
 
-## [2026-04-20] idea | Verschlossene Container und Schl�sseltruhen als offene Designspur
-- Anlass oder Quelle: Nutzeridee, zus�tzlich zu verschlossenen T�ren auch Container oder Truhen vorzusehen, die nur per Schl�ssel ge�ffnet werden k�nnen
+## [2026-04-20] idea | Verschlossene Container und Schlüsseltruhen als offene Designspur
+- Anlass oder Quelle: Nutzeridee, zusätzlich zu verschlossenen Türen auch Container oder Truhen vorzusehen, die nur per Schlüssel geöffnet werden können
 - Neu angelegte Seiten:
   - [[../02 Wissen/Risiken und offene Punkte/Verschlossene Container und Schluesseltruhen]]
-- Ge�nderte Seiten:
+- Geänderte Seiten:
   - [[../02 Wissen/Risiken und offene Punkte/Offene Designrichtungen]]
   - [[../02 Wissen/00 Uebersichten/Index]]
 - Kern der inhaltlichen Anpassung:
-  - Als offene Projektidee festgehalten, dass Schl�ssel k�nftig nicht nur Wege, sondern auch gezielte Loot-Container freischalten k�nnten.
-  - Sichtbar gemacht, dass diese Idee aktuell kein dokumentierter Ist-Stand ist, sondern eine m�gliche sp�tere Designrichtung.
-  - Offene Designfragen zu Schl�ssel�konomie, Frustvermeidung, Telegraphie und Balancing-Folgen direkt mit dokumentiert.
+  - Als offene Projektidee festgehalten, dass Schlüssel künftig nicht nur Wege, sondern auch gezielte Loot-Container freischalten könnten.
+  - Sichtbar gemacht, dass diese Idee aktuell kein dokumentierter Ist-Stand ist, sondern eine mögliche spätere Designrichtung.
+  - Offene Designfragen zu Schlüsselökonomie, Frustvermeidung, Telegraphie und Balancing-Folgen direkt mit dokumentiert.
 
 
 

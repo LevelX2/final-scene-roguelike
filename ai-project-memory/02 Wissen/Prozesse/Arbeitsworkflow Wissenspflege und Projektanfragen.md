@@ -89,9 +89,10 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 
 ### Ablauf
 1. Index, Log und Stichproben aus den Wissensseiten lesen.
-2. Auf Widersprüche, Orphans, defekte Links, fehlende Pflichtabschnitte und veraltete Aussagen prüfen.
-3. Konkrete Korrekturhinweise in [[../../03 Betrieb/Qualitaetspruefung]] dokumentieren.
-4. Wenn sinnvoll, fehlende Verlinkungen oder kleinere Strukturkorrekturen direkt nachziehen.
+2. Auf Widersprüche, Orphans, defekte Links, fehlende Pflichtabschnitte, veraltete Aussagen und Kodierungsprobleme prüfen.
+3. Dafür bei technischen Checks bevorzugt `npm run check:memory` verwenden, damit UTF-8-Fehler und Mojibake nicht still in Log oder Wissensseiten stehen bleiben.
+4. Konkrete Korrekturhinweise in [[../../03 Betrieb/Qualitaetspruefung]] dokumentieren.
+5. Wenn sinnvoll, fehlende Verlinkungen oder kleinere Strukturkorrekturen direkt nachziehen.
 
 ### Wirkung
 - Die Wissensbasis bleibt navigierbar und vertrauenswürdig.
@@ -113,4 +114,3 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 - [[Wiki-first Query und Linting]]
 - [[../../03 Betrieb/Log]]
 - [[../../03 Betrieb/Qualitaetspruefung]]
-

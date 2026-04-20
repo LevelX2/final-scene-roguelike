@@ -1,7 +1,7 @@
 ---
 typ: prozess
 status: aktiv
-letzte_aktualisierung: 2026-04-17
+letzte_aktualisierung: 2026-04-21
 quellen:
   - ../../01 Rohquellen/externe-quellen/2026-04-17-karpathy-llm-wiki-gist.md
   - ../../00 Steuerung/Regeldatei KI-Wissenspflege.md
@@ -35,6 +35,12 @@ Fragen zum Projekt sollen zuerst gegen den bestehenden Wiki-Bestand beantwortet 
 - fehlende Querverweise
 - defekte Links
 - fehlende Pflichtabschnitte wie Kurzfassung, Quellenbasis oder Verwandte Seiten
+- Kodierungsfehler wie ungültiges UTF-8, sichtbare Ersatzzeichen oder falsch decodierte Umlaute und Sonderzeichen
+
+## Technischer Check
+- Für den technischen Health-Check der Wissensbasis `npm run check:memory` nutzen.
+- Der Lauf prüft `ai-project-memory/` auf striktes UTF-8 in `md`, `json` und `txt`.
+- Zusätzlich meldet er typische Fehlmuster aus falsch decodierten Umlauten oder Sonderzeichen, bevor solche Stellen in weiteren Threads weiterkopiert werden.
 
 ## Betriebsnutzen
 - Antworten werden schneller und konsistenter.
@@ -45,4 +51,3 @@ Fragen zum Projekt sollen zuerst gegen den bestehenden Wiki-Bestand beantwortet 
 - [[Quellenverarbeitung in dieser Wissensbasis]]
 - [[../Quellenbewertungen/Karpathy LLM Wiki Bewertung]]
 - [[../../03 Betrieb/Qualitaetspruefung]]
-

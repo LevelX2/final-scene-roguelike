@@ -31,6 +31,7 @@ Das Projekt nutzt einen einfachen lokalen Ablauf aus Build, statischer JavaScrip
 ## Wichtige Skripte
 - `npm run build`: bundle nach `dist/game.bundle.js`
 - `npm run check:js`: Syntaxprüfung auf Kernmodulen
+- `npm run check:memory`: UTF-8- und Mojibake-Check für `ai-project-memory`
 - `npm run lint`: statische JavaScript-Prüfung über den aktiven Projektpfad
 - `npm run lint:strict`: ESLint mit Fehler bei Warnungen
 - `npm run verify:quick`: `lint:strict`, `check:js` und `test:modules`
@@ -44,6 +45,7 @@ Das Projekt nutzt einen einfachen lokalen Ablauf aus Build, statischer JavaScrip
 - Für einen vollständigen lokalen Qualitätslauf bevorzugt `npm run verify` verwenden.
 - Für schnelle Vorprüfung vor größeren Änderungen oder Commits ist `npm run verify:quick` der passende Einstieg.
 - `check:js` läuft über ein eigenes Skript und gibt deshalb nur noch eine kurze lesbare Statusmeldung statt einer sehr langen Shell-Kette aus.
+- Bei Änderungen an der Wissensbasis `ai-project-memory` zusätzlich `npm run check:memory` verwenden, damit gemischte Kodierungen oder falsch decodierte Umlaute früh auffallen.
 - Bei Gameplay- oder UI-Änderungen möglichst die Test-Suite oder geeignete Teiltests mitlaufen lassen.
 - Wenn `npm run test:e2e` unerwartet alte Laufzeitartefakte oder Smoke-Fehler zeigt, prüfen, ob auf `127.0.0.1:4173` noch ein alter Listener läuft. Ein bereits belegter Port kann dazu führen, dass Playwright gegen einen veralteten Testserver läuft.
 - Lange E2E-Läufe über viele Ebenen sollten keine unbeabsichtigten Kampf- oder Todeszustände mitschleppen, wenn eigentlich nur Generierung oder Zustandserhalt geprüft wird. Solche Tests bei Bedarf vor dem Ebenenwechsel gezielt von Floor-Entitäten bereinigen.

@@ -114,6 +114,8 @@ Für den kompletten lokalen Qualitätslauf:
   Bündelt `src/main.mjs` nach `dist/game.bundle.js`.
 - `npm run check:js`
   Führt Syntax-Prüfungen für den aktuell konfigurierten Satz an Kernmodulen aus.
+- `npm run check:memory`
+  Prüft `ai-project-memory/` auf striktes UTF-8 und typische Mojibake-Muster wie falsch decodierte Umlaute.
 - `npm run lint`
   Führt statische JavaScript-Prüfungen über den aktiven Projektpfad aus und ergänzt `check:js` um Qualitätsregeln jenseits reiner Syntax.
 - `npm run lint:strict`

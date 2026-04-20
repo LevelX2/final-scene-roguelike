@@ -17,7 +17,7 @@ export function createItemChoiceConfigs(context) {
       kind: "healingConsumable",
       potionIndex,
       selectedAction: state.preferences.potionAction,
-      title: `${consumable?.name ?? "Healing-Consumable"} gefunden`,
+      title: `${consumable?.name ?? "Heilgegenstand"} gefunden`,
       text: `${consumable?.description ?? "Schnelle Heilung für einen schlechten Moment."} Möchtest du es sofort benutzen, ins Inventar legen oder es vorerst liegen lassen?`,
       labels: ["Jetzt benutzen", "Ins Inventar", "Liegen lassen"],
     };
@@ -29,7 +29,7 @@ export function createItemChoiceConfigs(context) {
       consumableIndex,
       selectedAction: "store",
       title: `${item.name} gefunden`,
-      text: `${item.description} Möchtest du das Consumable sofort benutzen, ins Inventar legen oder es vorerst liegen lassen?`,
+      text: `${item.description} Möchtest du den Verbrauchsgegenstand sofort benutzen, ins Inventar legen oder ihn vorerst liegen lassen?`,
       labels: ["Jetzt benutzen", "Ins Inventar", "Liegen lassen"],
     };
   }

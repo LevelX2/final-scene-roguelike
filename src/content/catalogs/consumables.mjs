@@ -57,9 +57,9 @@ const EFFECT_FAMILY_SPECS = Object.freeze({
     durationByTier: { 1: 20, 2: 24, 3: 28 },
     magnitudeByTier: { 1: { trapDamageReduction: 1 }, 2: { trapDamageReduction: 2 }, 3: { trapDamageReduction: 3 } },
     summaryByTier: {
-      1: '+1 Fallenschadensreduktion',
-      2: '+2 Fallenschadensreduktion',
-      3: '+3 Fallenschadensreduktion',
+      1: 'Reduziert Fallenschaden um 1',
+      2: 'Reduziert Fallenschaden um 2',
+      3: 'Reduziert Fallenschaden um 3',
     },
     buffCategory: 'trap-resist',
   },
@@ -71,9 +71,9 @@ const EFFECT_FAMILY_SPECS = Object.freeze({
       3: { safeRestProgressBonus: 1 },
     },
     summaryByTier: {
-      1: '+0,5 sichere Regeneration pro passender Aktion',
-      2: '+1,0 sichere Regeneration pro passender Aktion',
-      3: '+1,0 sichere Regeneration pro passender Aktion',
+      1: 'Erhöht die sichere Regeneration bei jeder sicheren Bewegung und beim Warten um +0,5',
+      2: 'Erhöht die sichere Regeneration bei jeder sicheren Bewegung und beim Warten um +1,0',
+      3: 'Erhöht die sichere Regeneration bei jeder sicheren Bewegung und beim Warten um +1,0',
     },
     buffCategory: 'safe-rest',
   },
@@ -81,9 +81,9 @@ const EFFECT_FAMILY_SPECS = Object.freeze({
     durationByTier: { 1: 12, 2: 16, 3: 20 },
     magnitudeByTier: { 1: { enemyAggroRadiusMod: -1 }, 2: { enemyAggroRadiusMod: -2 }, 3: { enemyAggroRadiusMod: -3 } },
     summaryByTier: {
-      1: 'Aggro-Radius gegen dich -1',
-      2: 'Aggro-Radius gegen dich -2',
-      3: 'Aggro-Radius gegen dich -3',
+      1: 'Gegner werden erst aus 1 Feld geringerer Entfernung auf dich aufmerksam',
+      2: 'Gegner werden erst aus 2 Feldern geringerer Entfernung auf dich aufmerksam',
+      3: 'Gegner werden erst aus 3 Feldern geringerer Entfernung auf dich aufmerksam',
     },
     buffCategory: 'stealth',
   },
@@ -109,9 +109,9 @@ const EFFECT_FAMILY_SPECS = Object.freeze({
       3: { floors: -2, quality: 'safe-entry' },
     },
     summaryByTier: {
-      1: 'Bringt dich 1 Ebene zurück',
-      2: 'Bringt dich 1 Ebene zurück und sucht einen ruhigeren Einstieg',
-      3: 'Bringt dich 2 Ebenen zurück',
+      1: 'Bringt dich 1 Studio zurück',
+      2: 'Bringt dich 1 Studio zurück und sucht einen ruhigeren Einstieg',
+      3: 'Bringt dich 2 Studios zurück',
     },
     buffCategory: 'floorwarp-retreat',
   },
@@ -123,9 +123,9 @@ const EFFECT_FAMILY_SPECS = Object.freeze({
       3: { floors: 2, quality: 'safe-entry' },
     },
     summaryByTier: {
-      1: 'Bringt dich 1 Ebene tiefer',
-      2: 'Bringt dich 1 Ebene tiefer und bevorzugt einen ruhigeren Einstieg',
-      3: 'Bringt dich 2 Ebenen tiefer',
+      1: 'Bringt dich 1 Studio tiefer',
+      2: 'Bringt dich 1 Studio tiefer und bevorzugt einen ruhigeren Einstieg',
+      3: 'Bringt dich 2 Studios tiefer',
     },
     buffCategory: 'floorwarp-advance',
   },
@@ -427,8 +427,8 @@ function buildConsumableDescription(effectFamily, tier) {
   const duration = spec?.durationByTier?.[tier] ?? 0;
   const summary = spec?.summaryByTier?.[tier] ?? 'Löst einen Spezialeffekt aus';
   return duration > 0
-    ? `Consumable. Gewährt für ${duration} Züge ${summary}.`
-    : `Consumable. ${summary}.`;
+    ? `Verbrauchsgegenstand. ${summary}. Hält ${duration} Züge an.`
+    : `Verbrauchsgegenstand. ${summary}.`;
 }
 
 function buildConsumableDefinition(variant, tier) {
@@ -675,7 +675,7 @@ export function getHealingTypeLabel(healType) {
 
 export function getHealingOverlayLabel(item) {
   const family = getHealingFamily(item?.familyId);
-  return item?.displayName ?? item?.name ?? family?.baseNameDe ?? 'Heil-Consumable';
+  return item?.displayName ?? item?.name ?? family?.baseNameDe ?? 'Heilgegenstand';
 }
 
 export function buildHealingAssetId(archetypeId, familyId) {

@@ -29,6 +29,8 @@ import { buildCombatEnemyReference, formatEnemyAttackLog } from '../text/combat-
 import { formatWeaponReference } from '../text/combat-phrasing.mjs';
 import { isBowWeapon } from '../equipment-helpers.mjs';
 
+const ARROW_PROJECTILE_DURATION_MS = 760;
+
 const EIGHT_WAY_STEPS = Object.freeze([
   { x: 1, y: 0 },
   { x: -1, y: 0 },
@@ -1593,6 +1595,7 @@ export function createEnemyTurnApi(context) {
             fromY: enemy.y,
             kind: projectileKind,
             flash: !usesArrowProjectile,
+            duration: usesArrowProjectile ? ARROW_PROJECTILE_DURATION_MS : undefined,
           },
         }
       : null;

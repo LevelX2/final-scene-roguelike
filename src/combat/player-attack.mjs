@@ -23,6 +23,8 @@ const OPENING_STRIKE_LOGS = {
   },
 };
 
+const ARROW_PROJECTILE_DURATION_MS = 760;
+
 export function createPlayerAttackApi(context) {
   const {
     getState,
@@ -96,6 +98,7 @@ export function createPlayerAttackApi(context) {
             fromY: state.player.y,
             kind: projectileKind,
             flash: !usesArrowProjectile,
+            duration: usesArrowProjectile ? ARROW_PROJECTILE_DURATION_MS : undefined,
           },
         }
       : null;

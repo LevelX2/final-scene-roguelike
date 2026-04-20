@@ -334,7 +334,11 @@ export function createEnemyTurnApi(context) {
     return playerHealthRatio > 0;
   }
 
-  function tryEnemyRegeneration(enemy, distanceToPlayer, floorState) {
+  function tryEnemyRegeneration(enemy, {
+    distanceToPlayer,
+    floorState,
+    detectsPlayerNow = false,
+  } = {}) {
     if (enemy.hp >= enemy.maxHp) {
       return;
     }
@@ -354,7 +358,8 @@ export function createEnemyTurnApi(context) {
       return;
     }
 
-    if (rules.requireCalm && enemy.aggro) {
+    // "Lurking" should key off current pressure, not only sticky aggro memory.
+    if (rules.requireCalm && enemy.aggro && detectsPlayerNow) {
       return;
     }
 
@@ -1728,7 +1733,12 @@ export function createEnemyTurnApi(context) {
       hasLineOfSight?.(floorState, enemy.x, enemy.y, state.player.x, state.player.y) &&
       detectsPlayer(getEnemyRangedDetectionBonus(enemy, weapon)),
     );
-    tryEnemyRegeneration(enemy, distance, floorState);
+    const currentlyDetectsPlayer = detectsPlayer();
+    tryEnemyRegeneration(enemy, {
+      distanceToPlayer: distance,
+      floorState,
+      detectsPlayerNow: currentlyDetectsPlayer,
+    });
     const adjacent = canTargetPlayer && distance === 1;
     const retreating = canTargetPlayer ? shouldEnemyRetreat(enemy, state.player, distance) : false;
     const fallbackRetreat = canTargetPlayer ? shouldEnemyFallbackFromCloseRange(enemy, weapon, distance, state.player) : false;

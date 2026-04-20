@@ -456,7 +456,7 @@ test('cowardly kultist profile does not retreat above six of eleven hp', () => {
   assert.equal(enemy.y, 2);
 });
 
-test('roaming lurking enemies can drop aggro at long range and resume healing', () => {
+test('roaming lurking enemies can start healing as soon as immediate pressure is gone', () => {
   const enemy = createBaseEnemy({
     id: 'slasher-kultist-test',
     name: 'Kultist',
@@ -501,10 +501,60 @@ test('roaming lurking enemies can drop aggro at long range and resume healing', 
 
   api.takeEnemyTurn(enemy);
   assert.equal(enemy.aggro, false);
-  assert.equal(enemy.hp, 3);
+  assert.equal(enemy.hp, 4);
+});
+
+test('lurking enemies can recover behind broken line of sight before aggro memory fully clears', () => {
+  const enemy = createBaseEnemy({
+    id: 'noir-schieber-pressure-break',
+    name: 'Schieber',
+    x: 2,
+    y: 2,
+    originX: 2,
+    originY: 2,
+    behavior: 'trickster',
+    mobility: 'roaming',
+    retreatProfile: 'cowardly',
+    healingProfile: 'lurking',
+    aggro: true,
+    aggroRadius: 4,
+    hp: 2,
+    maxHp: 10,
+    intelligence: 5,
+    turnsSinceHit: 2,
+  });
+
+  const grid = createGrid(12, 6, '#');
+  for (let y = 1; y <= 4; y += 1) {
+    for (let x = 1; x <= 10; x += 1) {
+      grid[y][x] = '.';
+    }
+  }
+  grid[2][4] = '#';
+  grid[1][4] = '#';
+  grid[3][4] = '#';
+
+  const floorState = {
+    grid,
+    enemies: [enemy],
+    doors: [],
+    rooms: [{ id: 'split-room', x: 1, y: 1, width: 10, height: 4 }],
+    showcases: [],
+    visible: createMask(12, 6, false),
+  };
+
+  const { api } = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player: { x: 7, y: 2, hp: 20, maxHp: 20 },
+    hasLineOfSight: createLineOfSightChecker(),
+    randomChance: () => 0.99,
+  });
 
   api.takeEnemyTurn(enemy);
-  assert.equal(enemy.hp, 4);
+
+  assert.equal(enemy.hp, 3);
+  assert.equal(enemy.aggro, true);
 });
 
 test('cautious enemies begin retreating before dropping to critical slivers', () => {

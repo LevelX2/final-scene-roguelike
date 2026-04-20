@@ -12,6 +12,8 @@ Browserbasiertes Rogue-like mit Horrorfilm-Thema, einem prozedural erzeugten Stu
 
 Das Projekt richtet sich gerade vor allem an Leute, die Freude an experimentellen Systemen, taktischem Roguelike-Gameplay und einer starken Genre-Idee haben. Es ist bereits gut spielbar, aber bewusst noch in einem frühen Entwicklungsstadium.
 
+![Gameplay-Szene aus einem laufenden Run](docs/screenshots/gameplay-scene.png)
+
 ## Was dich erwartet
 
 - prozedural erzeugte Studiokomplexe mit verzweigten Pfaden, Türen, Fallen und Sonderräumen

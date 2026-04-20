@@ -386,7 +386,7 @@ export function createBoardView(context) {
 
     return {
       ...tile,
-      deathUnderlayType: 'floor death-marker',
+      deathUnderlayType: 'death-marker',
       deathUnderlayGlyph: '',
       deathUnderlayOverlayImageUrl: getDeathMarkerAssetUrl(deathMarker.markerAssetId),
     };

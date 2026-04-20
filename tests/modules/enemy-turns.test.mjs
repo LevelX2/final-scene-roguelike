@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createEnemyTurnApi } from '../../src/ai/enemy-turns.mjs';
+import { DEATH_MARKER_DURATION_TURNS } from '../../src/application/death-marker-service.mjs';
 
 function createGrid(width, height, fill = '.') {
   return Array.from({ length: height }, () => Array(width).fill(fill));
@@ -11,7 +12,6 @@ function createMask(width, height, fill = false) {
 }
 
 function createEnemyTurnHarness({
-  enemy,
   floorState,
   player,
   randomChance = () => 0.99,
@@ -1505,7 +1505,7 @@ test('enemy-turns records a death marker when reflective damage kills an attacke
   assert.deepEqual(floorState.recentDeaths, [{
     x: 3,
     y: 2,
-    expiresAfterTurn: 3,
+    expiresAfterTurn: DEATH_MARKER_DURATION_TURNS,
     markerAssetId: 'death-mark',
   }]);
 });

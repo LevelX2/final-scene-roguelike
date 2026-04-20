@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPlayerAttackApi } from '../../src/combat/player-attack.mjs';
+import { DEATH_MARKER_DURATION_TURNS } from '../../src/application/death-marker-service.mjs';
 
 test('player-attack records a death marker when the player kills an enemy', () => {
   const enemy = {
@@ -69,7 +70,7 @@ test('player-attack records a death marker when the player kills an enemy', () =
   assert.deepEqual(floorState.recentDeaths, [{
     x: 4,
     y: 5,
-    expiresAfterTurn: 3,
+    expiresAfterTurn: DEATH_MARKER_DURATION_TURNS,
     markerAssetId: 'death-mark',
   }]);
   assert.deepEqual(grantedXp, [[4, 'den Test Enemy']]);

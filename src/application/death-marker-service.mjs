@@ -1,5 +1,16 @@
-export const DEATH_MARKER_DURATION_TURNS = 3;
+export const DEATH_MARKER_PRIMARY_DURATION_TURNS = 3;
+export const DEATH_MARKER_DECAY_DURATION_TURNS = 2;
+export const DEATH_MARKER_SPOT_DURATION_TURNS = 1;
+export const DEATH_MARKER_DURATION_TURNS =
+  DEATH_MARKER_PRIMARY_DURATION_TURNS +
+  DEATH_MARKER_DECAY_DURATION_TURNS +
+  DEATH_MARKER_SPOT_DURATION_TURNS;
 export const DEFAULT_DEATH_MARKER_ASSET_ID = 'death-mark';
+export const DEATH_MARKER_VISUAL_STAGE = Object.freeze({
+  FRESH: 'fresh',
+  DECAY: 'decay',
+  SPOT: 'spot',
+});
 
 function normalizeTurn(value) {
   const numeric = Number(value);
@@ -93,4 +104,22 @@ export function getDeathMarkerAt(floorState, x, y, currentTurn = 0) {
       entry.y === normalizedY &&
       entry.expiresAfterTurn >= normalizedTurn
     ) ?? null;
+}
+
+export function getDeathMarkerVisualStage(marker, currentTurn = 0) {
+  const normalizedEntry = normalizeMarkerEntry(marker);
+  if (!normalizedEntry) {
+    return DEATH_MARKER_VISUAL_STAGE.FRESH;
+  }
+
+  const turnsRemaining = normalizedEntry.expiresAfterTurn - normalizeTurn(currentTurn);
+  if (turnsRemaining < DEATH_MARKER_SPOT_DURATION_TURNS) {
+    return DEATH_MARKER_VISUAL_STAGE.SPOT;
+  }
+
+  if (turnsRemaining < DEATH_MARKER_SPOT_DURATION_TURNS + DEATH_MARKER_DECAY_DURATION_TURNS) {
+    return DEATH_MARKER_VISUAL_STAGE.DECAY;
+  }
+
+  return DEATH_MARKER_VISUAL_STAGE.FRESH;
 }

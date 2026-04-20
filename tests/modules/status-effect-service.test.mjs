@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createStatusEffectService } from '../../src/application/status-effect-service.mjs';
+import { DEATH_MARKER_DURATION_TURNS } from '../../src/application/death-marker-service.mjs';
 
 test('status-effect-service records a death marker when a monster dies from damage over time', () => {
   const enemy = {
@@ -61,7 +62,7 @@ test('status-effect-service records a death marker when a monster dies from dama
   assert.deepEqual(floorState.recentDeaths, [{
     x: 4,
     y: 5,
-    expiresAfterTurn: 3,
+    expiresAfterTurn: DEATH_MARKER_DURATION_TURNS,
     markerAssetId: 'death-mark',
   }]);
   assert.deepEqual(grantedXp, [[3, 'den Test Enemy']]);

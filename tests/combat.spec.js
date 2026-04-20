@@ -743,7 +743,7 @@ test("player death opens the death modal", async ({ page }) => {
   await expect(page.locator("#deathModal h2")).toContainText("Das war der letzte Take");
 });
 
-test("enemy deaths leave a temporary marker under loot and remove it after three turns", async ({ page }) => {
+test("enemy deaths decay in three visual stages under loot before disappearing", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
@@ -784,23 +784,63 @@ test("enemy deaths leave a temporary marker under loot and remove it after three
     const width = snapshot.grid[0]?.length ?? 0;
     const cells = Array.from(document.querySelectorAll(".board .tile-cell"));
     const cell = cells[death.y * width + death.x] ?? null;
+    const underlay = cell?.querySelector(".tile-death-underlay.death-marker") ?? null;
     return {
       death,
       recentDeaths: refreshedSnapshot.recentDeaths,
-      hasDeathUnderlay: Boolean(cell?.querySelector(".tile-death-underlay.death-marker")),
+      hasDeathUnderlay: Boolean(underlay),
+      deathUnderlayClass: underlay?.className ?? "",
       hasFoodForeground: Boolean(cell?.querySelector(".tile-foreground-layer.food")),
     };
   });
 
   expect(killState).not.toBeNull();
   expect(killState.recentDeaths).toHaveLength(1);
-  expect(killState.death.expiresAfterTurn).toBe(3);
+  expect(killState.death.expiresAfterTurn).toBe(6);
   expect(killState.hasDeathUnderlay).toBeTruthy();
+  expect(killState.deathUnderlayClass).toContain("death-stage-fresh");
   expect(killState.hasFoodForeground).toBeTruthy();
 
   await page.keyboard.press(" ");
   await page.keyboard.press(" ");
   await page.keyboard.press(" ");
+  await page.keyboard.press(" ");
+
+  const decayPhase = await page.evaluate((death) => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const width = snapshot.grid[0]?.length ?? 0;
+    const cell = Array.from(document.querySelectorAll(".board .tile-cell"))[death.y * width + death.x] ?? null;
+    return {
+      turn: snapshot.turn,
+      recentDeaths: snapshot.recentDeaths,
+      hasDeathUnderlay: Boolean(cell?.querySelector(".tile-death-underlay.death-marker")),
+      deathUnderlayClass: cell?.querySelector(".tile-death-underlay.death-marker")?.className ?? "",
+    };
+  }, killState.death);
+
+  expect(decayPhase.turn).toBe(4);
+  expect(decayPhase.recentDeaths).toHaveLength(1);
+  expect(decayPhase.deathUnderlayClass).toContain("death-stage-decay");
+
+  await page.keyboard.press(" ");
+  await page.keyboard.press(" ");
+
+  const spotPhase = await page.evaluate((death) => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const width = snapshot.grid[0]?.length ?? 0;
+    const cell = Array.from(document.querySelectorAll(".board .tile-cell"))[death.y * width + death.x] ?? null;
+    return {
+      turn: snapshot.turn,
+      recentDeaths: snapshot.recentDeaths,
+      hasDeathUnderlay: Boolean(cell?.querySelector(".tile-death-underlay.death-marker")),
+      deathUnderlayClass: cell?.querySelector(".tile-death-underlay.death-marker")?.className ?? "",
+    };
+  }, killState.death);
+
+  expect(spotPhase.turn).toBe(6);
+  expect(spotPhase.recentDeaths).toHaveLength(1);
+  expect(spotPhase.deathUnderlayClass).toContain("death-stage-spot");
+
   await page.keyboard.press(" ");
 
   const afterExpiry = await page.evaluate((death) => {
@@ -814,7 +854,7 @@ test("enemy deaths leave a temporary marker under loot and remove it after three
     };
   }, killState.death);
 
-  expect(afterExpiry.turn).toBe(4);
+  expect(afterExpiry.turn).toBe(7);
   expect(afterExpiry.recentDeaths).toHaveLength(0);
   expect(afterExpiry.hasDeathUnderlay).toBeFalsy();
 });

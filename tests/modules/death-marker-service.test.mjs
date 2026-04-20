@@ -1,9 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  DEATH_MARKER_DECAY_DURATION_TURNS,
   DEATH_MARKER_DURATION_TURNS,
+  DEATH_MARKER_PRIMARY_DURATION_TURNS,
+  DEATH_MARKER_SPOT_DURATION_TURNS,
   DEFAULT_DEATH_MARKER_ASSET_ID,
   getDeathMarkerAt,
+  getDeathMarkerVisualStage,
   pruneExpiredDeathMarkers,
   recordEnemyDeathMarker,
 } from '../../src/application/death-marker-service.mjs';
@@ -44,6 +48,30 @@ test('getDeathMarkerAt only returns markers that have not expired yet', () => {
 
   assert.equal(getDeathMarkerAt(floorState, 2, 3, 6)?.markerAssetId, DEFAULT_DEATH_MARKER_ASSET_ID);
   assert.equal(getDeathMarkerAt(floorState, 2, 3, 7), null);
+});
+
+test('getDeathMarkerVisualStage steps through fresh decay and spot phases', () => {
+  const marker = {
+    x: 2,
+    y: 3,
+    expiresAfterTurn: DEATH_MARKER_DURATION_TURNS,
+    markerAssetId: DEFAULT_DEATH_MARKER_ASSET_ID,
+  };
+
+  assert.equal(getDeathMarkerVisualStage(marker, 0), 'fresh');
+  assert.equal(
+    getDeathMarkerVisualStage(marker, DEATH_MARKER_PRIMARY_DURATION_TURNS + 1),
+    'decay',
+  );
+  assert.equal(
+    getDeathMarkerVisualStage(
+      marker,
+      DEATH_MARKER_DURATION_TURNS - DEATH_MARKER_SPOT_DURATION_TURNS + 1,
+    ),
+    'spot',
+  );
+  assert.equal(DEATH_MARKER_DECAY_DURATION_TURNS, 2);
+  assert.equal(DEATH_MARKER_SPOT_DURATION_TURNS, 1);
 });
 
 test('pruneExpiredDeathMarkers removes only expired markers', () => {

@@ -741,7 +741,15 @@ kbd {
   color: #f4e6a3;
 }
 
-.board-scaler.heal-overlay-active::after {
+.board-stage {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.board-stage.heal-overlay-active::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -854,7 +862,6 @@ kbd {
 }
 
 .board-viewport {
-  position: relative;
   display: block;
   height: 100%;
   min-height: 0;
@@ -876,15 +883,15 @@ kbd {
 
 .heal-overlay {
   position: absolute;
-  left: 50%;
-  bottom: calc(12px * var(--ui-scale));
-  transform: translateX(-50%);
+  inset: 0;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   align-items: center;
   gap: calc(8px * var(--ui-scale));
-  width: min(calc(100% - 20px), calc(580px * var(--ui-scale)));
-  padding: 0;
+  width: 100%;
+  padding: calc(12px * var(--ui-scale)) calc(10px * var(--ui-scale));
+  box-sizing: border-box;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -1738,7 +1745,7 @@ kbd {
   color: transparent;
 }
 
-.tile-death-underlay.has-overlay::after {
+.tile-death-underlay.death-stage-fresh.has-overlay::after {
   inset: -3px;
   background-size: 30px 30px;
   opacity: 0.82;
@@ -1746,6 +1753,26 @@ kbd {
     saturate(0.92)
     brightness(0.84)
     drop-shadow(0 1px 1px rgba(0, 0, 0, 0.28));
+}
+
+.tile-death-underlay.death-stage-decay.has-overlay::after {
+  inset: 1px;
+  background-size: 20px 20px;
+  opacity: 0.58;
+  filter:
+    saturate(0.74)
+    brightness(0.74)
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.22));
+}
+
+.tile-death-underlay.death-stage-spot.has-overlay::after {
+  inset: 8px;
+  background-size: 10px 10px;
+  opacity: 0.42;
+  filter:
+    saturate(0.68)
+    brightness(0.68)
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
 }
 
 .tile.potion {
@@ -1855,7 +1882,16 @@ kbd {
 
 .tile.door-closed.memory,
 .tile.door-open.memory {
-  opacity: 0.72;
+  opacity: 0.54;
+}
+
+.tile.door-closed.memory.has-overlay::after,
+.tile.door-open.memory.has-overlay::after {
+  opacity: 0.7;
+  filter:
+    saturate(0.56)
+    brightness(0.6)
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.32));
 }
 
 .tile.door-closed.has-overlay::after,
@@ -2632,10 +2668,18 @@ kbd {
 }
 
 .studio-topology-map-cell.kind-door-open {
-  background: rgba(140, 209, 255, 0.76);
+  background: rgba(66, 103, 123, 0.48);
 }
 
 .studio-topology-map-cell.kind-door-closed {
+  background: rgba(120, 88, 41, 0.54);
+}
+
+.studio-topology-map-cell.kind-door-open.is-visible {
+  background: rgba(140, 209, 255, 0.76);
+}
+
+.studio-topology-map-cell.kind-door-closed.is-visible {
   background: rgba(232, 178, 91, 0.84);
 }
 

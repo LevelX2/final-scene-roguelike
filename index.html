@@ -115,18 +115,20 @@
               <button id="zoomResetBoard" class="mini-btn board-zoom-reset" type="button">Einpassen</button>
             </div>
           </div>
-          <div id="boardViewport" class="board-viewport">
-            <div id="boardScaler" class="board-scaler">
-              <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
-              <section id="healOverlay" class="heal-overlay ui-hidden" aria-hidden="true" aria-label="Heil-Consumables">
-                <div id="healOverlayItems" class="heal-overlay-items"></div>
-                <div class="heal-overlay-detail">
-                  <strong id="healOverlayName">Heil-Consumable</strong>
-                  <span id="healOverlayType">Sofortheilung</span>
-                  <span id="healOverlayEffect">Stellt 8 HP wieder her.</span>
-                </div>
-              </section>
+          <div class="board-stage">
+            <div id="boardViewport" class="board-viewport">
+              <div id="boardScaler" class="board-scaler">
+                <div id="board" class="board" aria-label="Spielbrett" role="img"></div>
+              </div>
             </div>
+            <section id="healOverlay" class="heal-overlay ui-hidden" aria-hidden="true" aria-label="Heil-Consumables">
+              <div id="healOverlayItems" class="heal-overlay-items"></div>
+              <div class="heal-overlay-detail">
+                <strong id="healOverlayName">Heil-Consumable</strong>
+                <span id="healOverlayType">Sofortheilung</span>
+                <span id="healOverlayEffect">Stellt 8 HP wieder her.</span>
+              </div>
+            </section>
           </div>
         </div>
       </section>

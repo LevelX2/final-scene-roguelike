@@ -182,13 +182,13 @@ export function createInputController(context) {
         return;
       }
 
-      if (matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])) {
+      if (matchesShortcut(["arrowleft", "a", "4"], ["ArrowLeft", "KeyA", "Digit4", "Numpad4"])) {
         event.preventDefault();
         cycleHealingOverlay(-1);
         return;
       }
 
-      if (matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])) {
+      if (matchesShortcut(["arrowright", "d", "6"], ["ArrowRight", "KeyD", "Digit6", "Numpad6"])) {
         event.preventDefault();
         cycleHealingOverlay(1);
         return;
@@ -210,7 +210,7 @@ export function createInputController(context) {
         const now = Date.now();
         if (now - lastHealingOverlayHintAt >= 700) {
           lastHealingOverlayHintAt = now;
-          addMessage?.("Heilauswahl aktiv: Wähle zuerst ein Heilmittel mit A/D oder den Pfeiltasten, dann nutze Enter.", "important");
+          addMessage?.("Heilauswahl aktiv: Wähle zuerst ein Heilmittel mit A/D, 4/6 oder den Pfeiltasten, dann nutze Enter.", "important");
         }
       }
 

@@ -591,7 +591,7 @@ test("heal overlay covers the studio and anchors the healing choices at the lowe
   });
 
   await page.goto("/");
-  await startRun(page);
+  await startRun(page, { classLabel: "Stuntman" });
   await page.evaluate(() => {
     window.__TEST_API__.setupCombatScenario({
       player: {
@@ -599,35 +599,55 @@ test("heal overlay covers the studio and anchors the healing choices at the lowe
         maxHp: 20,
       },
     });
+    window.__TEST_API__.addInventoryItem({
+      type: "potion",
+      familyId: "heal_bandage_small",
+    });
   });
 
   await page.keyboard.press("h");
   await expect(page.locator("#healOverlay")).toBeVisible();
-  await expect(page.locator("#healOverlayItems .heal-overlay-item")).toHaveCount(1);
+  await expect(page.locator("#healOverlayItems .heal-overlay-item")).toHaveCount(2);
 
   const alignment = await page.evaluate(() => {
-    const boardScaler = document.getElementById("boardScaler");
+    const boardViewport = document.getElementById("boardViewport");
     const overlay = document.getElementById("healOverlay");
     const item = document.querySelector("#healOverlayItems .heal-overlay-item");
-    const scalerRect = boardScaler?.getBoundingClientRect();
+    const overlayAnchor = overlay?.parentElement ?? null;
+    if (boardViewport) {
+      boardViewport.scrollLeft = Math.max(0, boardViewport.scrollWidth - boardViewport.clientWidth);
+      boardViewport.scrollTop = Math.max(0, boardViewport.scrollHeight - boardViewport.clientHeight);
+    }
+    const viewportRect = boardViewport?.getBoundingClientRect();
     const overlayRect = overlay?.getBoundingClientRect();
     const itemRect = item?.getBoundingClientRect();
     return {
-      scalerHasOverlayClass: boardScaler?.classList.contains("heal-overlay-active") ?? false,
-      scalerCenterX: scalerRect ? scalerRect.left + (scalerRect.width / 2) : 0,
+      anchorHasOverlayClass: overlayAnchor?.classList.contains("heal-overlay-active") ?? false,
+      viewportCenterX: viewportRect ? viewportRect.left + (viewportRect.width / 2) : 0,
       overlayCenterX: overlayRect ? overlayRect.left + (overlayRect.width / 2) : 0,
-      scalerBottom: scalerRect?.bottom ?? 0,
+      viewportBottom: viewportRect?.bottom ?? 0,
       overlayBottom: overlayRect?.bottom ?? 0,
       itemBottom: itemRect?.bottom ?? 0,
       overlayTop: overlayRect?.top ?? 0,
-      scalerTop: scalerRect?.top ?? 0,
+      viewportTop: viewportRect?.top ?? 0,
     };
   });
 
-  expect(alignment.scalerHasOverlayClass).toBeTruthy();
-  expect(Math.abs(alignment.overlayCenterX - alignment.scalerCenterX)).toBeLessThan(2);
-  expect(alignment.scalerBottom - alignment.overlayBottom).toBeGreaterThanOrEqual(10);
-  expect(alignment.scalerBottom - alignment.itemBottom).toBeGreaterThanOrEqual(10);
+  expect(alignment.anchorHasOverlayClass).toBeTruthy();
+  expect(Math.abs(alignment.overlayCenterX - alignment.viewportCenterX)).toBeLessThan(2);
+  expect(Math.abs(alignment.viewportBottom - alignment.overlayBottom)).toBeLessThanOrEqual(2);
+  expect(alignment.viewportBottom - alignment.itemBottom).toBeGreaterThanOrEqual(10);
+  expect(alignment.overlayTop).toBeGreaterThanOrEqual(alignment.viewportTop);
+
+  await expect(page.locator("#healOverlayName")).toHaveText("VerbandspÃ¤ckchen");
+  await page.keyboard.press("d");
+  await expect(page.locator("#healOverlayName")).toHaveText("Set-SanitÃ¤tskit");
+  await page.keyboard.press("a");
+  await expect(page.locator("#healOverlayName")).toHaveText("VerbandspÃ¤ckchen");
+  await page.keyboard.press("6");
+  await expect(page.locator("#healOverlayName")).toHaveText("Set-SanitÃ¤tskit");
+  await page.keyboard.press("4");
+  await expect(page.locator("#healOverlayName")).toHaveText("VerbandspÃ¤ckchen");
 
   await page.keyboard.press("w");
   await expect(page.locator("#healOverlay")).toBeVisible();

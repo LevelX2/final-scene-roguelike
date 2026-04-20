@@ -17,7 +17,7 @@ test("walking onto a potion opens the loot choice modal", async ({ page }) => {
   await page.keyboard.press("ArrowRight");
 
   await expect(page.locator("#choiceModal")).toBeVisible();
-  await expect(page.locator("#choiceTitle")).toContainText("Heiltrank gefunden");
+  await expect(page.locator("#choiceTitle")).toContainText("Set-Sanitätskit gefunden");
 });
 
 test("potions can be stored in the inventory from the loot modal", async ({ page }) => {
@@ -34,7 +34,7 @@ test("potions can be stored in the inventory from the loot modal", async ({ page
 
   expect(inventory.potionCount).toBe(startingInventory.potionCount + 1);
   expect(inventory.inventoryCount).toBe(startingInventory.inventoryCount + 1);
-  expect(messages.some((entry) => entry.text.includes("verstaust den Heiltrank"))).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("Set-Sanitätskit") && entry.text.includes("Inventar"))).toBeTruthy();
 });
 
 test("potions can be consumed directly from the loot modal", async ({ page }) => {
@@ -65,7 +65,7 @@ test("potions can be consumed directly from the loot modal", async ({ page }) =>
   });
 
   await page.keyboard.press("ArrowRight");
-  await page.getByRole("button", { name: "Direkt trinken" }).click();
+  await page.getByRole("button", { name: "Jetzt benutzen" }).click();
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
   const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
@@ -105,7 +105,7 @@ test("stored potions can be used from the inventory", async ({ page }) => {
   await page.getByRole("button", { name: "Ins Inventar" }).click();
 
   await page.keyboard.press("i");
-  await page.locator(".inventory-item", { hasText: "Heiltrank" }).getByRole("button", { name: "Benutzen" }).click();
+  await page.locator(".inventory-item", { hasText: "Set-Sanitätskit" }).getByRole("button", { name: "Benutzen" }).click();
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
   const inventory = await page.evaluate(() => window.__TEST_API__.getInventorySnapshot());
@@ -141,7 +141,7 @@ test("potions cannot be consumed from the loot modal at full health", async ({ p
   });
 
   await page.keyboard.press("ArrowRight");
-  await page.getByRole("button", { name: "Direkt trinken" }).click();
+  await page.getByRole("button", { name: "Jetzt benutzen" }).click();
 
   const snapshot = await page.evaluate(() => window.__TEST_API__.getSnapshot());
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
@@ -228,17 +228,20 @@ test("inventory sorts items by class and can be filtered", async ({ page }) => {
       description: "Nur für Tests.",
     });
     window.__TEST_API__.addInventoryItem({
-      type: "potion",
-      name: "Heiltrank",
+      type: "consumable",
+      consumableType: "healing",
+      effectFamily: "heal_set_medkit_standard",
+      name: "Set-Sanitätskit",
       description: "Nur für Tests.",
       heal: 8,
+      iconAssetPath: "./assets/consumables/potion.svg",
     });
   });
 
   await page.keyboard.press("i");
 
   const headings = await page.locator("#inventoryList .inventory-section-title").allTextContents();
-  expect(headings.slice(0, 4)).toEqual(["Waffen", "Tränke", "Essen", "Schlüssel"]);
+  expect(headings.slice(0, 4)).toEqual(["Waffen", "Heilung", "Essen", "Schlüssel"]);
 
   await page.getByRole("button", { name: "Essen", exact: true }).click();
   await expect(page.locator("#inventoryList .inventory-section-title")).toHaveText("Essen");
@@ -326,10 +329,13 @@ test("inventory uses svg icons for potions and keys when available", async ({ pa
 
   await page.evaluate(() => {
     window.__TEST_API__.addInventoryItem({
-      type: "potion",
-      name: "Heiltrank",
+      type: "consumable",
+      consumableType: "healing",
+      effectFamily: "heal_set_medkit_standard",
+      name: "Set-Sanitätskit",
       description: "Nur für Tests.",
       heal: 8,
+      iconAssetPath: "./assets/consumables/potion.svg",
     });
     window.__TEST_API__.addInventoryItem({
       type: "key",
@@ -499,29 +505,33 @@ test("loot chests can open into a usable reward", async ({ page }) => {
 
   await page.keyboard.press("ArrowRight");
 
-  await expect(page.locator("#choiceModal")).toBeVisible();
+  await expect(page.locator("#containerLootModal")).toBeVisible();
+  await expect(page.locator("#containerLootList")).toContainText("Kistenschild");
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
   expect(messages.some((entry) => entry.text.includes("Requisitenkiste"))).toBeTruthy();
 });
 
-test("potion chests chain directly into the potion choice modal on the same tile", async ({ page }) => {
+test("healing chests open the container loot modal on the same tile", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
 
   await setupChestAtPlayerStep(page, {
-    type: "potion",
+    type: "consumable",
     item: {
-      type: "potion",
-      name: "Heiltrank",
+      type: "consumable",
+      consumableType: "healing",
+      effectFamily: "heal_set_medkit_standard",
+      name: "Set-Sanitätskit",
       description: "Nur für Tests.",
       heal: 8,
+      iconAssetPath: "./assets/consumables/potion.svg",
     },
   });
 
   await page.keyboard.press("ArrowRight");
 
-  await expect(page.locator("#choiceModal")).toBeVisible();
-  await expect(page.locator("#choiceTitle")).toContainText("Heiltrank gefunden");
+  await expect(page.locator("#containerLootModal")).toBeVisible();
+  await expect(page.locator("#containerLootList")).toContainText("Set-Sanitätskit");
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
   expect(messages.some((entry) => entry.text.includes("Requisitenkiste"))).toBeTruthy();
 });

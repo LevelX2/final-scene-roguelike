@@ -1,6 +1,7 @@
 import { createItemChoiceConfigs } from './item-choice-configs.mjs';
 import { createItemChestService } from './item-chest-service.mjs';
 import { createItemFloorStateApi } from './item-floor-state.mjs';
+import { isHealingConsumable } from '../content/catalogs/consumables.mjs';
 
 export function createItemLootApi(context) {
   const {
@@ -117,9 +118,9 @@ export function createItemLootApi(context) {
     if (consumableIndex !== -1) {
       const item = floorState.consumables[consumableIndex].item;
       showChoiceModal(
-        item?.effectFamily
-          ? choiceConfigs.buildConsumableChoiceConfig(consumableIndex, item)
-          : choiceConfigs.buildPotionChoiceConfig(consumableIndex, item),
+        isHealingConsumable(item)
+          ? choiceConfigs.buildPotionChoiceConfig(consumableIndex, item)
+          : choiceConfigs.buildConsumableChoiceConfig(consumableIndex, item),
       );
       renderSelf();
       return true;

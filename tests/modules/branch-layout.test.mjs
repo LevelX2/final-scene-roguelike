@@ -257,7 +257,7 @@ function createGeneratorHarness(options = {}) {
     createKeyPickup: (color, x, y) => ({ x, y, item: { keyColor: color } }),
     chooseWeightedWeapon: () => null,
     chooseWeightedShield: () => null,
-    rollChestContent: () => null,
+    rollChestContent: options.rollChestContent ?? (() => null),
     rollChestContents: options.rollChestContents ?? null,
     getFloorWeaponSpawnCount: () => 0,
     getEnemyCountForFloor: () => 0,
@@ -277,6 +277,12 @@ function createGeneratorHarness(options = {}) {
     getContainerConfigForArchetype: () => ({ name: 'Kiste', assetId: 'crate' }),
     collectUsedShowcasePropIds: () => new Set(),
     computeReachableTilesWithBlockedPositions,
+    createHealingConsumableDefinition: options.createHealingConsumableDefinition ?? ((familyId) => ({
+      id: familyId,
+      effectFamily: familyId,
+      heal: 8,
+      name: familyId,
+    })),
   });
 
   return { generator };
@@ -320,7 +326,7 @@ function createStudioGeneratorHarness(options = {}) {
     createKeyPickup: (color, x, y) => ({ x, y, item: { keyColor: color } }),
     chooseWeightedWeapon: () => null,
     chooseWeightedShield: () => null,
-    rollChestContent: () => null,
+    rollChestContent: options.rollChestContent ?? (() => null),
     rollChestContents: options.rollChestContents ?? null,
     getFloorWeaponSpawnCount: () => 0,
     getEnemyCountForFloor: () => 0,
@@ -341,6 +347,12 @@ function createStudioGeneratorHarness(options = {}) {
     collectUsedShowcasePropIds: () => new Set(),
     computeReachableTilesWithBlockedPositions,
     cloneItemDef: () => null,
+    createHealingConsumableDefinition: options.createHealingConsumableDefinition ?? ((familyId) => ({
+      id: familyId,
+      effectFamily: familyId,
+      heal: 8,
+      name: familyId,
+    })),
   });
 
   return { generator };
@@ -480,6 +492,65 @@ test('branch layout can bundle multiple items into the same spawned chest', () =
 
   assert.equal(level.chests.length, 1);
   assert.deepEqual(level.chests[0].contents.map((entry) => entry.item?.name), ['Bündelklinge', 'Bündelration']);
+});
+
+test('locked bonus rooms receive a guaranteed treasure package', () => {
+  const random = createSeededRandom(7);
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => random(),
+    randomInt: (min, max) => min + Math.floor(random() * (max - min + 1)),
+    getLockedDoorCountForFloor: () => 1,
+    rollChestContents: () => ([
+      {
+        type: 'weapon',
+        item: {
+          id: 'locked-room-opener',
+          name: 'Locked Room Opener',
+        },
+      },
+    ]),
+    buildFoodItemsForBudget: () => ([
+      {
+        type: 'food',
+        id: 'treasure-ration-a',
+        name: 'Treasure Ration A',
+        nutritionRestore: 20,
+      },
+      {
+        type: 'food',
+        id: 'treasure-ration-b',
+        name: 'Treasure Ration B',
+        nutritionRestore: 20,
+      },
+    ]),
+  });
+
+  const level = generator.createDungeonLevel(5, {
+    studioArchetypeId: 'slasher',
+    studioTopologyNode: {
+      floorNumber: 5,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['slasher', 'slasher', 'slasher', 'slasher', 'slasher'],
+  });
+
+  const lockedRoom = level.rooms.find((room) => room.overlayRole === 'locked_bonus');
+  assert.ok(lockedRoom);
+
+  const isInsideLockedRoom = (entry) => entry.x >= lockedRoom.x &&
+    entry.x < lockedRoom.x + lockedRoom.width &&
+    entry.y >= lockedRoom.y &&
+    entry.y < lockedRoom.y + lockedRoom.height;
+
+  const roomChest = level.chests.find((entry) => isInsideLockedRoom(entry));
+  assert.ok(roomChest);
+  assert.equal(roomChest.contents.length, 3);
+  assert.equal(level.foods.filter((entry) => isInsideLockedRoom(entry)).length, 2);
+  assert.equal(level.consumables.filter((entry) => isInsideLockedRoom(entry)).length, 2);
 });
 
 test('branch layout keeps the main corridor bounding box horizontally dominant', () => {

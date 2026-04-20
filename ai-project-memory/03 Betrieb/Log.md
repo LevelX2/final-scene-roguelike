@@ -249,3 +249,21 @@
   - Festgehalten, dass Fernkampfschüsse auf knapp sichtbare Eckziele nun einen Deckungsmalus erhalten, wenn die Schusslinie eine spätere Ecke nur streift.
   - Dokumentiert, dass direkter Eckkontakt am Schützen bewusst ohne Malus bleibt, damit Nah-Eckspiel nicht unnötig entwertet wird.
   - Sichtbar gemacht, dass der Zielmodus die aktuelle Trefferchance jetzt direkt in Prozent anzeigt und Eck-Deckung als `Teildeckung` oder `Starke Deckung` markiert.
+
+## [2026-04-20] update | Batch-CLI und Locked-Room-Fix für Studio-Statistik
+- Anlass oder Quelle: Nutzerwunsch nach `100 x 10`-Statistiklauf, Klärung der niedrigen Schlüsselrate und Aufwertung des Schatzraums
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]
+  - [[../02 Wissen/00 Uebersichten/Index]]
+- Kern der inhaltlichen Anpassung:
+  - Dokumentiert, dass der Terminal-Befehl `npm run report:studios -- --runs 100 --studios 10` wiederhergestellt ist und Batch-Auswertungen über Mittelwerte, Minima und Maxima liefert.
+  - Festgehalten, dass die frühere niedrige Schlüsselrate vor allem aus der Kandidatenauswahl und fehlendem Nachrücken gültiger Locked Rooms entstand, nicht primär aus den Balancewerten.
+  - Festgehalten, dass Locked Bonus Rooms jetzt garantierte Mindestbeute tragen: zwei Nahrungspickups, zwei Heilverbrauchsgüter und eine Truhe mit mindestens drei Inhalten.
+  - Verifiziert eingetragen, dass der `100 x 10`-Lauf nach dem Fix im Mittel `11.64` Schlüssel und `11.64` verschlossene Türen pro Run erzeugt statt zuvor nur `1.22`.
+## [2026-04-20] analyse | Startscreen-Aktivierung per Tastatur abgesichert
+- Die Startscreen-Analyse ergab eine Lücke zwischen bestehender Testabdeckung und realem UX-Pfad: Das Landing-Menü war für Pfeilnavigation und Fokusübergabe abgesichert, aber nicht ausdrücklich für Aktivierung per `Enter` oder `Leertaste`.
+- `src/application/ui-bindings.mjs` wurde deshalb so gehärtet, dass die Landing-Buttons ihre Tastaturaktivierung zusätzlich direkt am fokussierten Button verarbeiten und dieselben Aktionen zentral verwenden wie Maus-Klicks.
+- `tests/app.spec.js` wurde um Regressionsfälle für `Enter` auf dem ausgewählten Landing-Eintrag und `Leertaste` auf dem fokussierten Startbutton ergänzt.
+- Die Prozessseite `02 Wissen/Prozesse/Bewertung erste 10 E2E-Startflow-Tests 2026-04-20.md` dokumentiert die neu sichtbare Testlücke.

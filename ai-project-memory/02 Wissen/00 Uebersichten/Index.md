@@ -18,7 +18,7 @@
 - [[../Entscheidungen/Aktiver Runtime-Pfad und Legacy-Abgrenzung]]: aktive Produktivlinie und Abgrenzung zu `src/legacy/`.
 - [[../Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]: alltÃ¤glicher Bedien- und Pflegeworkflow fÃ¼r Quellen, Fragen und RÃ¼ckfÃ¼hrung von Erkenntnissen.
 - [[../Prozesse/Build Test und lokaler Start]]: lokaler Start-, Build- und Testablauf.
-- [[../Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]: neuer Debug- und Test-API-Pfad für numerische 10-Studio-Auswertungen des Generators.
+- [[../Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]: Debug-, Test-API- und Batch-CLI-Pfad für numerische Studio-Auswertungen samt Analyse der Schlüsselraum-Frequenz.
 - [[../Prozesse/Einordnung PHP CodeSniffer fuer dieses Projekt 2026-04-20]]: warum `PHP_CodeSniffer` fÃ¼r dieses JavaScript-/Playwright-Projekt kein Testwerkzeug ist.
 - [[../Prozesse/Bewertung erste 10 E2E-Startflow-Tests 2026-04-20]]: Einordnung, welche frÃ¼hen Startflow-Tests fachlich wertvoll bleiben und wo sie fÃ¼r Weiterentwicklung zu sprÃ¶de sind.
 - [[../Prozesse/Bewertung Tests 11 bis 20 E2E-App-Spec 2026-04-20]]: Einordnung des nÃ¤chsten E2E-Blocks mit Fokus auf Startausstattung, Inventar, Containerfluss und UI-Kopplung.

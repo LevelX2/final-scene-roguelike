@@ -15,6 +15,10 @@ const ROOM_TYPE_ORDER = [
 
 const MAIN_CORRIDOR_TRAP_FACTOR = 1.2;
 const SIDE_CORRIDOR_TRAP_FACTOR = 1.6;
+const LOCKED_BONUS_ROOM_MIN_REWARD_TILES = 5;
+const LOCKED_BONUS_ROOM_FOOD_COUNT = 2;
+const LOCKED_BONUS_ROOM_HEALING_COUNT = 2;
+const LOCKED_BONUS_ROOM_CHEST_CONTENT_COUNT = 3;
 
 const ROOM_TYPE_SPECS = {
   entry_room: {
@@ -3234,18 +3238,154 @@ function areCoreAnchorsReachableWithCurrentDoors(state) {
   return reachable.has(keyOf(exitTarget.x, exitTarget.y));
 }
 
+function isLockedBonusCandidateRoom(state, room) {
+  return room?.childrenCount === 0 &&
+    room.doorIds.length === 1 &&
+    room.doorTiles.length === 1 &&
+    room.interiorTiles.length >= LOCKED_BONUS_ROOM_MIN_REWARD_TILES &&
+    !state.anchorProtectedRoomIds.has(room.id) &&
+    room.role !== "showcase_room" &&
+    room.role !== "connector_room" &&
+    room.role !== "entry_room";
+}
+
+function buildLockedBonusChestFallbackEntries(state) {
+  const entries = [];
+  const fallbackFoods = state.buildFoodItemsForBudget(120);
+
+  for (const item of fallbackFoods) {
+    if (!item) {
+      continue;
+    }
+    entries.push({
+      type: 'food',
+      item,
+    });
+    if (entries.length >= LOCKED_BONUS_ROOM_CHEST_CONTENT_COUNT) {
+      break;
+    }
+  }
+
+  return entries;
+}
+
+function buildLockedBonusChestContents(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
+  const chestContents = typeof state.rollChestContents === 'function'
+    ? (state.rollChestContents(floorNumber + 1, playerState, {
+        dropSourceTag: "locked-room-chest",
+        preferredArchetypeId: studioArchetypeId,
+        boostSpecial: true,
+        runArchetypeSequence,
+      }) ?? []).filter((entry) => entry?.item)
+    : [state.rollChestContent?.(floorNumber + 1, playerState, {
+        dropSourceTag: "locked-room-chest",
+        preferredArchetypeId: studioArchetypeId,
+        boostSpecial: true,
+        runArchetypeSequence,
+      })].filter((entry) => entry?.item);
+
+  while (
+    chestContents.length < LOCKED_BONUS_ROOM_CHEST_CONTENT_COUNT &&
+    typeof state.rollChestContent === 'function'
+  ) {
+    const entry = state.rollChestContent(floorNumber + 1, playerState, {
+      dropSourceTag: "locked-room-chest",
+      preferredArchetypeId: studioArchetypeId,
+      boostSpecial: true,
+      runArchetypeSequence,
+    });
+    if (!entry?.item) {
+      break;
+    }
+    chestContents.push(entry);
+  }
+
+  if (chestContents.length >= LOCKED_BONUS_ROOM_CHEST_CONTENT_COUNT) {
+    return chestContents.slice(0, LOCKED_BONUS_ROOM_CHEST_CONTENT_COUNT);
+  }
+
+  const fallbackEntries = buildLockedBonusChestFallbackEntries(state);
+  fallbackEntries.forEach((entry) => {
+    if (chestContents.length < LOCKED_BONUS_ROOM_CHEST_CONTENT_COUNT) {
+      chestContents.push(entry);
+    }
+  });
+
+  return chestContents;
+}
+
+function buildLockedBonusFoodRewards(state) {
+  const rewards = [];
+
+  for (let attempt = 0; attempt < 4 && rewards.length < LOCKED_BONUS_ROOM_FOOD_COUNT; attempt += 1) {
+    const budget = 80 + (attempt * 40);
+    const items = state.buildFoodItemsForBudget(budget);
+    for (const item of items) {
+      if (!item) {
+        continue;
+      }
+      rewards.push(item);
+      if (rewards.length >= LOCKED_BONUS_ROOM_FOOD_COUNT) {
+        break;
+      }
+    }
+  }
+
+  return rewards.slice(0, LOCKED_BONUS_ROOM_FOOD_COUNT);
+}
+
+function placeLockedBonusRoomRewards(state, lockedRoom, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
+  const chestTile = chooseFreeRoomTile(state, lockedRoom, { reserveOnly: true });
+  if (chestTile) {
+    const containerConfig = state.getContainerConfigForArchetype(studioArchetypeId);
+    const chestContents = buildLockedBonusChestContents(
+      state,
+      floorNumber,
+      studioArchetypeId,
+      playerState,
+      runArchetypeSequence,
+    );
+    state.chests.push(state.createChestPickup(
+      chestContents,
+      chestTile.x,
+      chestTile.y,
+      {
+        containerName: containerConfig.name,
+        containerAssetId: containerConfig.assetId,
+      },
+    ));
+  }
+
+  const foodRewards = buildLockedBonusFoodRewards(state);
+  foodRewards.forEach((foodItem) => {
+    const tile = chooseFreeRoomTile(state, lockedRoom, { reserveOnly: true });
+    if (tile && foodItem) {
+      state.foods.push(state.createFoodPickup(foodItem, tile.x, tile.y));
+    }
+  });
+
+  for (let index = 0; index < LOCKED_BONUS_ROOM_HEALING_COUNT; index += 1) {
+    const tile = chooseFreeRoomTile(state, lockedRoom, { reserveOnly: true });
+    if (!tile) {
+      break;
+    }
+
+    const familyId = chooseHealingFamilyForFloor(
+      floorNumber + 1,
+      (entries) => weightedPick(entries, state.randomChance),
+    );
+    const healingItem = state.createHealingConsumableDefinition?.(familyId, {
+      studioArchetypeId,
+    });
+    if (healingItem) {
+      state.consumables.push(state.createPotionPickup(healingItem, tile.x, tile.y));
+    }
+  }
+}
+
 function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
   const candidateLockedRooms = shuffleList(
-    state.rooms.filter((room) =>
-      room.attachmentType === "sidearm_main" &&
-      room.childrenCount === 0 &&
-      room.doorIds.length === 1 &&
-      room.doorTiles.length === 1 &&
-      !state.anchorProtectedRoomIds.has(room.id) &&
-      room.role !== "showcase_room" &&
-      room.role !== "connector_room" &&
-      room.role !== "entry_room"
-    ),
+    state.rooms.filter((room) => isLockedBonusCandidateRoom(state, room)),
     state.randomChance,
   );
   const candidateKeyRooms = shuffleList(
@@ -3261,10 +3401,15 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
     3,
     state.getLockedDoorCountForFloor(floorNumber),
     candidateLockedRooms.length,
+    candidateKeyRooms.length,
   );
 
-  for (let index = 0; index < desiredLockedCount; index += 1) {
-    const lockedRoom = candidateLockedRooms[index];
+  let placedLockedCount = 0;
+  for (const lockedRoom of candidateLockedRooms) {
+    if (placedLockedCount >= desiredLockedCount) {
+      break;
+    }
+
     const matchingKeyRoom = candidateKeyRooms.find((room) =>
       room.id !== lockedRoom.id &&
       room.overlayRole == null
@@ -3278,7 +3423,7 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
       continue;
     }
 
-    const lockColor = state.LOCK_COLORS[index % state.LOCK_COLORS.length];
+    const lockColor = state.LOCK_COLORS[placedLockedCount % state.LOCK_COLORS.length];
     door.doorType = state.DOOR_TYPE.LOCKED;
     door.lockColor = lockColor;
     lockedRoom.overlayRole = "locked_bonus";
@@ -3314,34 +3459,15 @@ function assignLockedOverlays(state, floorNumber, studioArchetypeId, playerState
       continue;
     }
 
-    if (state.shouldPlaceLockedRoomChest()) {
-      const chestTile = chooseFreeRoomTile(state, lockedRoom, { reserveOnly: true });
-      if (chestTile) {
-        const containerConfig = state.getContainerConfigForArchetype(studioArchetypeId);
-        const chestContents = typeof state.rollChestContents === 'function'
-          ? state.rollChestContents(floorNumber + 1, playerState, {
-              dropSourceTag: "locked-room-chest",
-              preferredArchetypeId: studioArchetypeId,
-              boostSpecial: true,
-              runArchetypeSequence,
-            })
-          : [state.rollChestContent(floorNumber + 1, playerState, {
-              dropSourceTag: "locked-room-chest",
-              preferredArchetypeId: studioArchetypeId,
-              boostSpecial: true,
-              runArchetypeSequence,
-            })].filter((entry) => entry?.item);
-        state.chests.push(state.createChestPickup(
-          chestContents,
-          chestTile.x,
-          chestTile.y,
-          {
-            containerName: containerConfig.name,
-            containerAssetId: containerConfig.assetId,
-          },
-        ));
-      }
-    }
+    placedLockedCount += 1;
+    placeLockedBonusRoomRewards(
+      state,
+      lockedRoom,
+      floorNumber,
+      studioArchetypeId,
+      playerState,
+      runArchetypeSequence,
+    );
   }
 }
 

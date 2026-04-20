@@ -20,7 +20,7 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
         floorWeapons: 1,
         floorOffHands: 0,
         chests: 2,
-        chestContents: { total: 5 },
+        chestContents: { total: 5, offHands: 1 },
         traps: 6,
         showcases: 1,
         loot: { world: 8, total: 13 },
@@ -38,7 +38,7 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           floorWeapons: 0,
           floorOffHands: 0,
           chests: 1,
-          chestContents: { total: 2 },
+          chestContents: { total: 2, offHands: 0 },
           traps: 2,
           showcases: 0,
           loot: { world: 2, total: 4 },
@@ -55,7 +55,7 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           floorWeapons: 1,
           floorOffHands: 0,
           chests: 1,
-          chestContents: { total: 3 },
+          chestContents: { total: 3, offHands: 1 },
           traps: 4,
           showcases: 1,
           loot: { world: 6, total: 9 },
@@ -74,7 +74,7 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
         floorWeapons: 2,
         floorOffHands: 1,
         chests: 3,
-        chestContents: { total: 8 },
+        chestContents: { total: 8, offHands: 2 },
         traps: 10,
         showcases: 2,
         loot: { world: 14, total: 22 },
@@ -92,7 +92,7 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           floorWeapons: 0,
           floorOffHands: 0,
           chests: 1,
-          chestContents: { total: 2 },
+          chestContents: { total: 2, offHands: 0 },
           traps: 3,
           showcases: 0,
           loot: { world: 4, total: 6 },
@@ -109,7 +109,7 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
           floorWeapons: 2,
           floorOffHands: 1,
           chests: 2,
-          chestContents: { total: 6 },
+          chestContents: { total: 6, offHands: 2 },
           traps: 7,
           showcases: 2,
           loot: { world: 10, total: 16 },
@@ -125,7 +125,9 @@ test('studio-generation-batch-report aggregates totals and per-studio metrics', 
   assert.equal(batchReport.totals.rooms.mean, 12);
   assert.equal(batchReport.totals.keys.max, 2);
   assert.equal(batchReport.totals['loot.total'].mean, 17.5);
+  assert.equal(batchReport.totals['chestContents.offHands'].mean, 1.5);
   assert.equal(batchReport.perStudio[0].metrics.rooms.mean, 4.5);
+  assert.equal(batchReport.perStudio[1].metrics['chestContents.offHands'].mean, 1.5);
   assert.equal(batchReport.perStudio[1].metrics.lockedDoors.mean, 1.5);
   assert.deepEqual(batchReport.perStudio[0].archetypeIds, ['action', 'romcom']);
 });
@@ -152,6 +154,7 @@ test('studio-generation-batch-report formats a readable summary', () => {
       floorOffHands: { mean: 0.5, min: 0, max: 1 },
       chests: { mean: 2, min: 1, max: 3 },
       'chestContents.total': { mean: 6, min: 5, max: 7 },
+      'chestContents.offHands': { mean: 1.5, min: 1, max: 2 },
       traps: { mean: 7, min: 6, max: 8 },
       showcases: { mean: 1, min: 1, max: 1 },
       'loot.world': { mean: 10, min: 9, max: 11 },
@@ -170,6 +173,7 @@ test('studio-generation-batch-report formats a readable summary', () => {
           'consumables.total': { mean: 2, min: 1, max: 3 },
           chests: { mean: 1, min: 1, max: 1 },
           'chestContents.total': { mean: 3, min: 2, max: 4 },
+          'chestContents.offHands': { mean: 1, min: 1, max: 1 },
           traps: { mean: 2, min: 1, max: 3 },
           'loot.total': { mean: 7, min: 6, max: 8 },
         },
@@ -181,6 +185,6 @@ test('studio-generation-batch-report formats a readable summary', () => {
   assert.match(text, /Laeufe 2 \| Studios pro Lauf 1/);
   assert.match(text, /Keys 1.5 \(min 1, max 2\)/);
   assert.match(text, /Studio 1 \| Archetyp action/);
+  assert.match(text, /Truhenschilde 1 \(min 1, max 1\)/);
   assert.match(text, /Loot gesamt 7 \(min 6, max 8\)/);
 });
-

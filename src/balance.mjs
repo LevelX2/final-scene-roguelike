@@ -12,7 +12,7 @@ export const MIN_CRIT_CHANCE = 0;
 export const MAX_CRIT_CHANCE = 50;
 export const FLOOR_WEAPON_SPAWN_CHANCE = 0.25;
 export const CHEST_WEAPON_CHANCE = 0.3;
-export const CHEST_SHIELD_CHANCE = 0.1;
+export const CHEST_SHIELD_CHANCE = 0.22;
 export const DUNGEON_WEAPON_WEIGHT_BONUS = 1.35;
 export const DUPLICATE_WEAPON_WEIGHT_PENALTY = 0.35;
 export const NON_ICONIC_MONSTER_WEIGHT_BONUS = 1.45;
@@ -293,14 +293,18 @@ export function shouldSpawnFloorWeapon(floorNumber, roll = defaultRandomChance()
 
 export function shouldSpawnFloorShield(floorNumber, roll = defaultRandomChance()) {
   if (floorNumber === 1) {
-    return roll < 0.18;
+    return roll < 0.25;
   }
 
   if (floorNumber === 2) {
-    return roll < 0.35;
+    return roll < 0.4;
   }
 
-  return floorNumber >= 5 && roll < 0.08;
+  if (floorNumber <= 4) {
+    return roll < 0.2;
+  }
+
+  return roll < 0.16;
 }
 
 export function shouldSpawnChest(floorNumber, roll = defaultRandomChance()) {

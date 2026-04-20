@@ -45,6 +45,7 @@ Der aktive Runtime-Pfad besitzt jetzt eine wiederverwendbare Studio-Generierungs
 - Test-API: `window.__TEST_API__.getStudioGenerationReportText({ studioCount: 10 })` liefert denselben Inhalt als kopierbaren Textblock.
 - Terminal: `npm run report:studios -- --runs 100 --studios 10` erzeugt eine Batch-Auswertung über mehrere Runs.
 - Terminal: `npm run report:studios -- --runs 100 --studios 10 --json` liefert dieselbe Auswertung plus Rohreports als JSON.
+- Terminal: Während des Batch-Laufs zeigt die CLI nun einen Fortschrittszähler `Statistiklauf x/y`, damit längere Läufe nicht wie ein Hänger wirken.
 
 ## Inhalt der Statistik
 - Gegner gesamt
@@ -126,6 +127,27 @@ Einordnung:
 - Gegenüber dem früheren Batch-Befund von `1.22` Schlüsseln pro Run ist die Schlüsselrate wieder auf dem erwartbaren Niveau für die dokumentierten Locked-Door-Wahrscheinlichkeiten.
 - Die Beute pro Run steigt deutlich, weil verschlossene Bonusräume jetzt eine garantierte Schatzraum-Mindestbeute tragen.
 - Studio `1` und `2` bleiben bewusst schlüsselfrei; die Locked-Room-Mechanik beginnt faktisch erst ab Studio `3`, was mit den Floor-Regeln in `src/balance.mjs` zusammenpasst.
+
+## Nachtrag Utility-Verbrauchbares vom 2026-04-20
+- Ein zusätzlicher Fehler lag im Spawnpfad für normale Boden-Consumables: Utility-Gegenstände wurden zwar korrekt aus dem Consumable-Katalog gerollt, aber beim Platzieren über `createPotionPickup(...)` normalisiert.
+- Dadurch erhielten Utility-Drops fälschlich ein `heal`-Feld und wurden im Report vollständig als Heilverbrauchsgüter gezählt.
+- Der Fix nutzt für diese Lootquelle jetzt `createConsumablePickup(...)`, sodass Utility im Batch-Report wieder sichtbar wird.
+- Verifiziert ist der Fix über Modultests und einen kurzen CLI-Lauf; dabei tauchte `Verbrauchbar Utility` wieder mit Werten größer `0` auf.
+
+## Nachtrag Bodenschilde vom 2026-04-20
+- Die niedrige Schildzahl im Batch-Report war in diesem Fall vor allem eine direkte Folge der Spawn-Regeln für Bodenschilde.
+- Vor dem Fix galt:
+  - Studio `1`: `18 %`
+  - Studio `2`: `35 %`
+  - Studio `3` und `4`: `0 %`
+  - Studio `5+`: `8 %`
+- Dadurch lag `Bodenschilde` in der Batch-Auswertung deutlich unter der gefühlten Erwartung.
+- Der Fix hebt die Rate moderat an:
+  - Studio `1`: `25 %`
+  - Studio `2`: `40 %`
+  - Studio `3` und `4`: `20 %`
+  - Studio `5+`: `16 %`
+- Ein verifizierter `20 x 10`-Lauf zeigte danach `1.5` Bodenschilde pro 10-Studio-Run statt zuvor ungefähr `0.65`.
 
 ## Offene Punkte
 - Die aktuelle Batch-Auswertung arbeitet pro Studioslot. Wenn später archetypspezifische Mittelwerte wichtiger werden, braucht es zusätzliche Gruppierung nach `studioArchetypeId`.

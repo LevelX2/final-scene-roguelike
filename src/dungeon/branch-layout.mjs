@@ -3542,7 +3542,7 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
       allowedPhase: 3,
     });
     if (consumable) {
-      state.consumables.push(state.createPotionPickup(consumable, tile.x, tile.y));
+      state.consumables.push(state.createConsumablePickup(consumable, tile.x, tile.y));
     }
   }
 

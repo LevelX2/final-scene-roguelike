@@ -16,6 +16,7 @@ const METRIC_DEFS = [
   { id: 'floorOffHands', label: 'Bodenschilde', read: (entry) => entry?.floorOffHands ?? 0 },
   { id: 'chests', label: 'Truhen', read: (entry) => entry?.chests ?? 0 },
   { id: 'chestContents.total', label: 'Truheninhalte', read: (entry) => entry?.chestContents?.total ?? 0 },
+  { id: 'chestContents.offHands', label: 'Truhenschilde', read: (entry) => entry?.chestContents?.offHands ?? 0 },
   { id: 'traps', label: 'Fallen', read: (entry) => entry?.traps ?? 0 },
   { id: 'showcases', label: 'Vitrinen', read: (entry) => entry?.showcases ?? 0 },
   { id: 'loot.world', label: 'Weltloot', read: (entry) => entry?.loot?.world ?? 0 },
@@ -120,10 +121,10 @@ export function formatStudioGenerationBatchReport(report) {
     lines.push(`  ${formatMetricLine('Verbrauchbar', studio.metrics['consumables.total'])}`);
     lines.push(`  ${formatMetricLine('Truhen', studio.metrics.chests)}`);
     lines.push(`  ${formatMetricLine('Truheninhalte', studio.metrics['chestContents.total'])}`);
+    lines.push(`  ${formatMetricLine('Truhenschilde', studio.metrics['chestContents.offHands'])}`);
     lines.push(`  ${formatMetricLine('Fallen', studio.metrics.traps)}`);
     lines.push(`  ${formatMetricLine('Loot gesamt', studio.metrics['loot.total'])}`);
   });
 
   return lines.join('\n');
 }
-

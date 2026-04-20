@@ -255,7 +255,7 @@ function formatStudioLine(studio, formatArchetypeLabel) {
     `Nahrung ${studio.foods}`,
     `Verbrauchbar ${studio.consumables.total} (Heilung ${studio.consumables.healing})`,
     `Bodenloot W${studio.floorWeapons}/S${studio.floorOffHands}`,
-    `Truhen ${studio.chests} (${studio.chestContents.total} Inhalte)`,
+    `Truhen ${studio.chests} (${studio.chestContents.total} Inhalte, Schilde ${studio.chestContents.offHands})`,
     `Fallen ${studio.traps}`,
     `Vitrinen ${studio.showcases}`,
   ].join(' | ');
@@ -275,7 +275,7 @@ export function formatStudioGenerationReportText(report, options = {}) {
       `Nahrung ${totals.foods}`,
       `Verbrauchbar ${totals.consumables.total} (Heilung ${totals.consumables.healing})`,
       `Bodenloot ${totals.loot.world}`,
-      `Truhen ${totals.chests} (${totals.chestContents.total} Inhalte)`,
+      `Truhen ${totals.chests} (${totals.chestContents.total} Inhalte, Schilde ${totals.chestContents.offHands})`,
       `Fallen ${totals.traps}`,
       `Vitrinen ${totals.showcases}`,
     ].join(' | '),

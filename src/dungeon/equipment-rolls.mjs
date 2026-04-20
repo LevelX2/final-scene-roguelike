@@ -1,3 +1,5 @@
+import { CHEST_SHIELD_CHANCE } from '../balance.mjs';
+
 export function createDungeonEquipmentRolls(context) {
   const {
     getState,
@@ -28,6 +30,14 @@ export function createDungeonEquipmentRolls(context) {
     });
   }
 
+  function getChestShieldChance(dropContext = {}) {
+    const baseChance = CHEST_SHIELD_CHANCE;
+    if (dropContext.dropSourceTag === 'locked-room-chest') {
+      return Math.min(0.45, baseChance + 0.08);
+    }
+    return baseChance;
+  }
+
   function rollChestContent(floorNumber, player = null, dropContext = {}) {
     const roll = randomChance();
 
@@ -46,7 +56,7 @@ export function createDungeonEquipmentRolls(context) {
       }
     }
 
-    if (floorNumber >= 2 && roll < 0.38) {
+    if (floorNumber >= 2 && roll < 0.3 + getChestShieldChance(dropContext)) {
       const shield = chooseWeightedShield(player ?? getState()?.player, {
         floorNumber,
         dropSourceTag: dropContext.dropSourceTag ?? 'chest',

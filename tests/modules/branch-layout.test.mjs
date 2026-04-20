@@ -252,6 +252,7 @@ function createGeneratorHarness(options = {}) {
       y,
     }),
     createFoodPickup: (item, x, y) => ({ item, x, y }),
+    createConsumablePickup: options.createConsumablePickup ?? ((item, x, y) => ({ item, x, y })),
     createShowcase: (item, x, y) => ({ item, x, y }),
     createDoor: (x, y, config = {}) => ({ x, y, ...config, doorType: config.doorType ?? 'normal', isOpen: config.isOpen ?? false }),
     createKeyPickup: (color, x, y) => ({ x, y, item: { keyColor: color } }),
@@ -277,6 +278,7 @@ function createGeneratorHarness(options = {}) {
     getContainerConfigForArchetype: () => ({ name: 'Kiste', assetId: 'crate' }),
     collectUsedShowcasePropIds: () => new Set(),
     computeReachableTilesWithBlockedPositions,
+    rollConsumableLootDefinition: options.rollConsumableLootDefinition ?? null,
     createHealingConsumableDefinition: options.createHealingConsumableDefinition ?? ((familyId) => ({
       id: familyId,
       effectFamily: familyId,
@@ -320,7 +322,8 @@ function createStudioGeneratorHarness(options = {}) {
       y,
     }),
     createFoodPickup: (item, x, y) => ({ item, x, y }),
-    createPotionPickup: (item, x, y) => ({ item, x, y }),
+    createPotionPickup: options.createPotionPickup ?? ((item, x, y) => ({ item, x, y })),
+    createConsumablePickup: options.createConsumablePickup ?? ((item, x, y) => ({ item, x, y })),
     createShowcase: (item, x, y) => ({ item, x, y }),
     createDoor: (x, y, config = {}) => ({ x, y, ...config, doorType: config.doorType ?? 'normal', isOpen: config.isOpen ?? false }),
     createKeyPickup: (color, x, y) => ({ x, y, item: { keyColor: color } }),
@@ -347,6 +350,7 @@ function createStudioGeneratorHarness(options = {}) {
     collectUsedShowcasePropIds: () => new Set(),
     computeReachableTilesWithBlockedPositions,
     cloneItemDef: () => null,
+    rollConsumableLootDefinition: options.rollConsumableLootDefinition ?? null,
     createHealingConsumableDefinition: options.createHealingConsumableDefinition ?? ((familyId) => ({
       id: familyId,
       effectFamily: familyId,
@@ -445,8 +449,12 @@ test('branch layout gives slasher floor one at least three standard monster cand
 test('balance allows a small amount of equipment to appear on floor one', () => {
   assert.equal(shouldSpawnFloorWeapon(1, 0.2), true);
   assert.equal(shouldSpawnFloorWeapon(1, 0.8), false);
-  assert.equal(shouldSpawnFloorShield(1, 0.1), true);
+  assert.equal(shouldSpawnFloorShield(1, 0.2), true);
   assert.equal(shouldSpawnFloorShield(1, 0.3), false);
+  assert.equal(shouldSpawnFloorShield(3, 0.15), true);
+  assert.equal(shouldSpawnFloorShield(3, 0.25), false);
+  assert.equal(shouldSpawnFloorShield(5, 0.15), true);
+  assert.equal(shouldSpawnFloorShield(5, 0.2), false);
 });
 
 test('branch layout can bundle multiple items into the same spawned chest', () => {
@@ -551,6 +559,48 @@ test('locked bonus rooms receive a guaranteed treasure package', () => {
   assert.equal(roomChest.contents.length, 3);
   assert.equal(level.foods.filter((entry) => isInsideLockedRoom(entry)).length, 2);
   assert.equal(level.consumables.filter((entry) => isInsideLockedRoom(entry)).length, 2);
+});
+
+test('floor utility consumables stay utility pickups instead of being normalized to healing', () => {
+  const { generator } = createStudioGeneratorHarness({
+    randomChance: () => 0.4,
+    randomInt: (min, max) => Math.floor((min + max) / 2),
+    getLockedDoorCountForFloor: () => 0,
+    rollConsumableLootDefinition: () => ({
+      id: 'cons_teleport_blink_rune',
+      type: 'consumable',
+      itemType: 'consumable',
+      effectFamily: 'blink_teleport',
+      name: 'Blink-Rune',
+      displayName: 'Blink-Rune',
+    }),
+    createConsumablePickup: (item, x, y) => ({
+      x,
+      y,
+      item: {
+        ...item,
+        spawnedAs: 'utility',
+      },
+    }),
+  });
+
+  const level = generator.createDungeonLevel(3, {
+    studioArchetypeId: 'fantasy',
+    studioTopologyNode: {
+      floorNumber: 3,
+      position: { x: 0, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['fantasy', 'fantasy', 'fantasy'],
+  });
+
+  const utilityPickups = level.consumables.filter((entry) => entry.item?.spawnedAs === 'utility');
+  assert.ok(utilityPickups.length >= 2);
+  assert.equal(utilityPickups.every((entry) => entry.item?.effectFamily === 'blink_teleport'), true);
+  assert.equal(utilityPickups.every((entry) => entry.item?.heal == null), true);
 });
 
 test('branch layout keeps the main corridor bounding box horizontally dominant', () => {

@@ -251,6 +251,7 @@
   - Sichtbar gemacht, dass der Zielmodus die aktuelle Trefferchance jetzt direkt in Prozent anzeigt und Eck-Deckung als `Teildeckung` oder `Starke Deckung` markiert.
   - Ergänzt, dass die Komfortfunktion für automatisches Sofortfeuer bei genau einem Ziel bei Eck-Deckung bewusst nicht auslöst, damit die reduzierte Trefferchance erst sichtbar bestätigt werden kann.
   - Ergänzt, dass auch das Kampflog reduzierte Trefferchancen durch Eck-Deckung nun in atmosphärischen Zusatztexten benennt, damit Treffer und Fehlschüsse nicht wie normale Vollchancen-Schüsse wirken.
+  - Nachgeschärft, dass Eck-Deckung nicht mehr nur bei perfekten Raster-Ecktreffern greift, sondern auch bei knappen Vorbeischüssen an einer späteren blockierenden Kante, damit flache Schüsse aus zweiter Reihe hinter Ecken konsistenter erfasst werden.
 
 ## [2026-04-20] update | Batch-CLI und Locked-Room-Fix für Studio-Statistik
 - Anlass oder Quelle: Nutzerwunsch nach `100 x 10`-Statistiklauf, Klärung der niedrigen Schlüsselrate und Aufwertung des Schatzraums
@@ -269,3 +270,25 @@
 - `src/application/ui-bindings.mjs` wurde deshalb so gehärtet, dass die Landing-Buttons ihre Tastaturaktivierung zusätzlich direkt am fokussierten Button verarbeiten und dieselben Aktionen zentral verwenden wie Maus-Klicks.
 - `tests/app.spec.js` wurde um Regressionsfälle für `Enter` auf dem ausgewählten Landing-Eintrag und `Leertaste` auf dem fokussierten Startbutton ergänzt.
 - Die Prozessseite `02 Wissen/Prozesse/Bewertung erste 10 E2E-Startflow-Tests 2026-04-20.md` dokumentiert die neu sichtbare Testlücke.
+
+## [2026-04-20] fix | Utility-Verbrauchbares und Fortschrittszähler in der Studio-Batch-CLI
+- Anlass oder Quelle: Nutzerfrage, warum `Verbrauchbar Utility` im Batch-Report dauerhaft `0` blieb, plus Wunsch nach sichtbarem Zähler während langer Statistikläufe
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass normale Utility-Consumables zwar korrekt gerollt wurden, aber fälschlich über `createPotionPickup(...)` liefen und dadurch im Report als Heilung erschienen.
+  - Dokumentiert, dass der Spawnpfad für allgemeine Consumable-Drops jetzt `createConsumablePickup(...)` nutzt und `Verbrauchbar Utility` im Report wieder größer `0` werden kann.
+  - Ergänzt, dass `scripts/studio-stats.mjs` während längerer Batch-Läufe nun einen Fortschrittszähler `Statistiklauf x/y` ausgibt.
+
+## [2026-04-20] update | Bodenschilde in der Studio-Generierung häufiger
+- Anlass oder Quelle: Nutzerhinweis, dass im Statistiklauf zu wenige Schilde auftauchen
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]
+- Kern der inhaltlichen Anpassung:
+  - Dokumentiert, dass die bisherige Bodenschild-Rate ungewöhnlich niedrig war, weil Studios `3` und `4` gar keine Bodenschilde erzeugen konnten und tiefe Studios nur mit `8 %` prüften.
+  - Festgehalten, dass die Spawn-Regeln für Bodenschilde moderat angehoben wurden: `25 %` auf Studio `1`, `40 %` auf Studio `2`, `20 %` auf Studio `3` und `4`, `16 %` ab Studio `5`.
+  - Verifiziert eingetragen, dass ein `20 x 10`-Batch danach im Mittel `1.5` Bodenschilde pro 10-Studio-Run erzeugte statt zuvor ungefähr `0.65`.

@@ -50,6 +50,23 @@ function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function renderProgress(currentRun, totalRuns, options = {}) {
+  const label = `Statistiklauf ${currentRun}/${totalRuns}`;
+  if (process.stderr.isTTY) {
+    process.stderr.write(`\r${label}`);
+    if (options.done) {
+      process.stderr.write('\n');
+    }
+    return;
+  }
+
+  if (options.done) {
+    return;
+  }
+
+  process.stderr.write(`${label}\n`);
+}
+
 async function waitForServer(port, serverProcess, timeoutMs = 15000) {
   const deadline = Date.now() + timeoutMs;
 
@@ -120,6 +137,9 @@ async function collectReports(options) {
     const reports = [];
 
     for (let runIndex = 0; runIndex < options.runs; runIndex += 1) {
+      renderProgress(runIndex + 1, options.runs, {
+        done: false,
+      });
       await page.goto(`http://127.0.0.1:${options.port}/?reportRun=${runIndex + 1}`, {
         waitUntil: 'domcontentloaded',
       });
@@ -131,6 +151,9 @@ async function collectReports(options) {
         window.__TEST_API__.getStudioGenerationReport({ studioCount }), options.studios);
       reports.push(report);
     }
+    renderProgress(options.runs, options.runs, {
+      done: true,
+    });
 
     return {
       reports,
@@ -169,4 +192,3 @@ main().catch((error) => {
   process.stderr.write(`${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
   process.exitCode = 1;
 });
-

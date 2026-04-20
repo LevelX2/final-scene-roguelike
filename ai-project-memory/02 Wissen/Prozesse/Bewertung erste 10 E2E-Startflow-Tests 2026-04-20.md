@@ -75,6 +75,14 @@ Die ersten 10 konkreten Playwright-Tests in `tests/app.spec.js` sind im aktuelle
 - Sie prüfen einen weiterhin produktrelevanten Teil des Spiels: den Einstieg in den Run.
 - Der Hauptverbesserungsbedarf liegt nicht in fehlender Relevanz, sondern in zu enger Kopplung an Text- und Präsentationsdetails.
 
+## Ergänzung aus der Startscreen-Analyse am 2026-04-20
+- Die vorhandenen frühen Startflow-Tests decken Sichtbarkeit, Pfeilnavigation, Fokusführung und Modalübergabe ab, aber nicht die eigentliche Aktivierung des Landing-Menüs per `Enter` oder `Leertaste`.
+- Für die reale UX ist diese Aktivierung ein eigener Regressionspfad, weil Auswahl-Highlight und Aktion technisch getrennt implementiert sind.
+- Daraus folgt als sinnvolle Ergänzung:
+  - ein Test für `Enter` auf dem aktuell ausgewählten Landing-Eintrag
+  - ein Test für `Leertaste` auf einem fokussierten Landing-Button
+- Diese Ergänzung stärkt die Tastaturbedienung fachlich, ohne die Tests enger an Copy oder Assetnamen zu koppeln.
+
 ## Verwandte Seiten
 - [[Build Test und lokaler Start]]
 - [[../00 Uebersichten/Aktueller Projektstatus]]

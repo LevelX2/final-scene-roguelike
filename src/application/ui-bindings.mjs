@@ -297,6 +297,8 @@ export function createUiBindingsApi(context) {
       openHighscoresLandingButton,
       openHelpLandingButton,
     ].filter(Boolean);
+    const getSelectedStartMenuButton = () =>
+      startMenuButtons.find((button) => button.classList.contains("selected")) ?? startMenuButtons[0] ?? null;
     const isStartMenuActive = () => {
       const state = getState();
       return Boolean(
@@ -329,60 +331,90 @@ export function createUiBindingsApi(context) {
       const nextIndex = (currentIndex + direction + startMenuButtons.length) % startMenuButtons.length;
       selectStartMenuButton(startMenuButtons[nextIndex], { focus: true });
     };
-
-    startMenuButtons.forEach((button) => {
-      button.addEventListener("focus", () => selectStartMenuButton(button));
-      button.addEventListener("mouseenter", () => selectStartMenuButton(button, { focus: true }));
-    });
-    const handleStartMenuKeydown = (event) => {
-      if (!isStartMenuActive()) {
+    const activateStartMenuButton = (button) => {
+      if (!button) {
         return;
       }
 
-      const selectedButton = startMenuButtons.find((button) => button.classList.contains("selected")) ?? startMenuButtons[0];
-      if (!selectedButton) {
+      if (button === startNewGameButton) {
+        openStartModal();
         return;
+      }
+
+      if (button === loadGameFromLandingButtonElement) {
+        toggleSavegames(true);
+        return;
+      }
+
+      if (button === openHighscoresLandingButton) {
+        toggleHighscores(true);
+        return;
+      }
+
+      if (button === openHelpLandingButton) {
+        showHelpSection("overview");
+        toggleHelp(true);
+      }
+    };
+    const handleStartMenuNavigation = (event, currentButton = getSelectedStartMenuButton()) => {
+      if (event.defaultPrevented) {
+        return false;
+      }
+
+      if (!isStartMenuActive() || !currentButton) {
+        return false;
       }
 
       if (event.key === "ArrowDown" || event.key === "ArrowRight") {
         event.preventDefault();
-        moveStartMenuSelection(selectedButton, 1);
-        return;
+        moveStartMenuSelection(currentButton, 1);
+        return true;
       }
 
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         event.preventDefault();
-        moveStartMenuSelection(selectedButton, -1);
-        return;
+        moveStartMenuSelection(currentButton, -1);
+        return true;
       }
 
       if (event.key === "Home") {
         event.preventDefault();
         selectStartMenuButton(startMenuButtons[0], { focus: true });
-        return;
+        return true;
       }
 
       if (event.key === "End") {
         event.preventDefault();
         selectStartMenuButton(startMenuButtons[startMenuButtons.length - 1], { focus: true });
-        return;
+        return true;
       }
 
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        selectedButton.click();
+        activateStartMenuButton(currentButton);
+        return true;
       }
+
+      return false;
+    };
+
+    startMenuButtons.forEach((button) => {
+      button.addEventListener("focus", () => selectStartMenuButton(button));
+      button.addEventListener("mouseenter", () => selectStartMenuButton(button, { focus: true }));
+      button.addEventListener("keydown", (event) => {
+        handleStartMenuNavigation(event, button);
+      });
+    });
+    const handleStartMenuKeydown = (event) => {
+      handleStartMenuNavigation(event);
     };
     window.addEventListener("keydown", handleStartMenuKeydown);
     selectStartMenuButton(startMenuButtons[0]);
 
-    startNewGameButton.addEventListener("click", () => openStartModal());
-    loadGameFromLandingButtonElement.addEventListener("click", () => toggleSavegames(true));
-    openHighscoresLandingButton.addEventListener("click", () => toggleHighscores(true));
-    openHelpLandingButton.addEventListener("click", () => {
-      showHelpSection("overview");
-      toggleHelp(true);
-    });
+    startNewGameButton.addEventListener("click", () => activateStartMenuButton(startNewGameButton));
+    loadGameFromLandingButtonElement.addEventListener("click", () => activateStartMenuButton(loadGameFromLandingButtonElement));
+    openHighscoresLandingButton.addEventListener("click", () => activateStartMenuButton(openHighscoresLandingButton));
+    openHelpLandingButton.addEventListener("click", () => activateStartMenuButton(openHelpLandingButton));
     cancelStartModalButtonElement.addEventListener("click", () => closeStartModal());
     startFormElement.addEventListener("submit", (event) => {
       event.preventDefault();

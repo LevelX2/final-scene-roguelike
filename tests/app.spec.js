@@ -67,6 +67,24 @@ test("start screen menu supports visible arrow-key selection", async ({ page }) 
   expect(activeStartButton.selected).toEqual(["loadGameFromLanding"]);
 });
 
+test("pressing Enter activates the selected landing option", async ({ page }) => {
+  await page.goto("/");
+
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+
+  await expect(page.locator("#savegamesModal")).toBeVisible();
+});
+
+test("pressing Space on a focused landing button opens the start modal", async ({ page }) => {
+  await page.goto("/");
+
+  await page.locator("#startNewGame").focus();
+  await page.keyboard.press(" ");
+
+  await expect(page.locator("#startModal")).toBeVisible();
+});
+
 test("hovering a landing button moves the active start-menu focus instead of leaving two highlighted", async ({ page }) => {
   await page.goto("/");
 
@@ -3124,4 +3142,3 @@ test("standing next to a showcase accelerates safe healing for the hero", async 
   expect(snapshot.player.hp).toBe(11);
   expect(messages.some((entry) => entry.text.includes("Nähe der Vitrine"))).toBeTruthy();
 });
-

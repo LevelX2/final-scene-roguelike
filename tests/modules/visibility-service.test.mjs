@@ -16,8 +16,9 @@ function createFloorState(layout) {
   };
 }
 
-function createVisibilityHarness(layout, player = { x: 2, y: 2 }) {
+function createVisibilityHarness(layout, player = { x: 2, y: 2 }, { doors = [] } = {}) {
   const floorState = createFloorState(layout);
+  floorState.doors = doors.map((door) => ({ ...door }));
   const state = { player };
   return {
     floorState,
@@ -29,8 +30,9 @@ function createVisibilityHarness(layout, player = { x: 2, y: 2 }) {
       TILE: { WALL: '#' },
       getState: () => state,
       getCurrentFloorState: () => floorState,
-      getDoorAt: () => null,
-      isDoorClosed: () => false,
+      getDoorAt: (x, y, nextFloorState = floorState) =>
+        nextFloorState.doors.find((door) => door.x === x && door.y === y) ?? null,
+      isDoorClosed: (door) => Boolean(door) && !door.isOpen,
       createGrid,
       getEquippedLightBonus: () => 0,
     }),
@@ -93,4 +95,29 @@ test('visibility-service updateVisibility keeps mirrored diagonal wall reveals c
   assert.equal(floorState.visible[4][2], true);
   assert.equal(floorState.visible[4][4], true);
   assert.equal(state.player.x, 3);
+});
+
+test('visibility-service reveals doors next to visible floors like structural wall edges', () => {
+  const layout = [
+    '#####',
+    '#...#',
+    '#...#',
+    '#...#',
+    '#####',
+  ];
+  const { api, floorState } = createVisibilityHarness(
+    layout,
+    { x: 2, y: 3 },
+    { doors: [{ x: 3, y: 2, isOpen: false, doorType: 'normal' }] },
+  );
+
+  floorState.grid[2][2] = '#';
+  floorState.grid[3][3] = '#';
+
+  assert.equal(api.hasLineOfSight(floorState, 2, 3, 3, 2), false);
+
+  api.updateVisibility();
+
+  assert.equal(floorState.visible[2][3], true);
+  assert.equal(floorState.explored[2][3], true);
 });

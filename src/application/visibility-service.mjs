@@ -29,6 +29,18 @@ export function createVisibilityService(context) {
     return showcaseBlocksTile || isDoorClosed(getDoorAt(x, y, floorState));
   }
 
+  function isStructuralRevealCandidate(floorState, x, y) {
+    if (!isInsideBoard(x, y)) {
+      return false;
+    }
+
+    if (floorState.grid[y][x] === TILE.WALL) {
+      return true;
+    }
+
+    return Boolean(getDoorAt(x, y, floorState));
+  }
+
   function isStraightShot(fromX, fromY, toX, toY) {
     return fromX === toX || fromY === toY;
   }
@@ -134,7 +146,7 @@ export function createVisibilityService(context) {
               nextY < 0 ||
               nextX >= WIDTH ||
               nextY >= HEIGHT ||
-              floorState.grid[nextY][nextX] !== TILE.WALL
+              !isStructuralRevealCandidate(floorState, nextX, nextY)
             ) {
               continue;
             }

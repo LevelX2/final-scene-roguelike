@@ -8,7 +8,6 @@ export function createShieldGenerationService(context) {
 
   const archetypeLootService = createArchetypeLootService(context);
   const {
-    normalizeSourceType,
     rollLootArchetype,
     pickWeightedEntry,
   } = archetypeLootService;

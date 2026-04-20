@@ -72,7 +72,6 @@ export function describeStudioRelativePosition(position) {
 function buildSegment(sceneFrom, sceneTo, fromFloor, toFloor, visitedFloorSet, currentFloor, fromSize, toSize) {
   const deltaX = sceneTo.x - sceneFrom.x;
   const deltaY = sceneTo.y - sceneFrom.y;
-  const deltaZ = sceneTo.z - sceneFrom.z;
   const axis = deltaX !== 0 ? 'x' : deltaY !== 0 ? 'y' : 'z';
   const axisDistance = Math.max(
     0,

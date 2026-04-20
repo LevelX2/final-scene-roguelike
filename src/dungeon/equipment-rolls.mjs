@@ -7,7 +7,7 @@ export function createDungeonEquipmentRolls(context) {
     rollConsumableLootDefinition,
   } = context;
 
-  function chooseWeightedWeapon(player = null, options = {}) {
+  function chooseWeightedWeapon(_player = null, options = {}) {
     return createLootWeapon({
       floorNumber: options.floorNumber ?? 1,
       dropSourceTag: options.dropSourceTag ?? 'floor-weapon',

@@ -51,10 +51,6 @@ export function createFloorTransitionService(context) {
     return anchor?.transitionPosition ?? anchor?.position ?? fallback ?? null;
   }
 
-  function getAnchorSpawnPosition(anchor, fallback) {
-    return anchor?.position ?? fallback ?? null;
-  }
-
   function createStudioGenerationOptions(runSeed, floorNumber) {
     const generationSeed = deriveStudioGenerationSeed(runSeed, floorNumber);
     const seededRandomApi = createSeededRandomApi(generationSeed);

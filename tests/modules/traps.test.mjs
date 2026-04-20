@@ -4,7 +4,7 @@ import { createTrapsApi } from '../../src/traps.mjs';
 
 function createTrapApiHarness(randomChance = () => 0.5) {
   return createTrapsApi({
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
     randomChance,
     getState: () => ({ player: { x: 0, y: 0 } }),
     getCurrentFloorState: () => ({ traps: [], enemies: [] }),
@@ -105,7 +105,7 @@ function createTrapPerceptionHarness({
   };
 
   const trapsApi = createTrapsApi({
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
     randomChance,
     getState: () => state,
     getCurrentFloorState: () => floorState,

@@ -21,7 +21,6 @@ export function createHudView(context) {
     formatOffHandStats,
     loadHighscores,
     loadLastHighscoreMarker,
-    getHungerStateLabel,
     getHeroClassIconUrl,
     knowsMonster,
   } = context;

@@ -621,7 +621,7 @@ test('studio generator can build an open ring variant with a recorded open side'
 test('studio generator keeps exit reachable when locked rooms are added to a ring layout', () => {
   const { generator } = createStudioGeneratorHarness({
     randomChance: () => 0.1,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
     getLockedDoorCountForFloor: () => 2,
   });
   const level = generator.createDungeonLevel(5, {
@@ -1012,7 +1012,7 @@ test('branch layout can place second-row rooms off an already connected side roo
 test('branch layout places open connector rooms before the themed branches fan out', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.1,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
   });
   const level = generator.createDungeonLevel(4, {
     studioArchetypeId: 'slasher',
@@ -1036,7 +1036,7 @@ test('branch layout places open connector rooms before the themed branches fan o
 test('branch layout can add a dedicated trap room on deeper floors', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.1,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
   });
   const level = generator.createDungeonLevel(5, {
     studioArchetypeId: 'slasher',
@@ -1059,7 +1059,7 @@ test('branch layout can add a dedicated trap room on deeper floors', () => {
 test('branch layout can place traps on corridors, not only inside rooms', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.99,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
     buildTrapsForFloor: () => (
       [
         {
@@ -1103,7 +1103,7 @@ test('branch layout can place traps on corridors, not only inside rooms', () => 
 test('branch layout can top off additional connector rooms after themed placement', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.2,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
   });
   const level = generator.createDungeonLevel(4, {
     studioArchetypeId: 'slasher',
@@ -1126,7 +1126,7 @@ test('branch layout can top off additional connector rooms after themed placemen
 test('branch layout lets connector rooms carry further side branches', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.1,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
   });
   const level = generator.createDungeonLevel(4, {
     studioArchetypeId: 'slasher',
@@ -1153,7 +1153,7 @@ test('branch layout lets connector rooms carry further side branches', () => {
 test('branch layout can add peripheral loop connections between normal side rooms', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.1,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
   });
   const level = generator.createDungeonLevel(5, {
     studioArchetypeId: 'slasher',
@@ -1175,7 +1175,7 @@ test('branch layout can add peripheral loop connections between normal side room
 test('branch layout allows ordinary themed rooms to place their outer wall on the map edge', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.1,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
   });
   const level = generator.createDungeonLevel(5, {
     studioArchetypeId: 'slasher',
@@ -1200,7 +1200,7 @@ test('branch layout allows ordinary themed rooms to place their outer wall on th
 test('branch layout allows a side corridor to run directly along the map edge', () => {
   const { generator } = createGeneratorHarness({
     randomChance: () => 0.1,
-    randomInt: (min, max) => min,
+    randomInt: (min, _max) => min,
   });
   const level = generator.createDungeonLevel(6, {
     studioArchetypeId: 'slasher',

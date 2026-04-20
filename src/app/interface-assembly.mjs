@@ -115,8 +115,6 @@ export function assembleInterfaceModules(context) {
     containerLootListElement,
     containerLootTakeSelectedButton,
     containerLootTakeAllButton,
-    containerLootCloseButton,
-    containerLootCloseHeadButton,
     stairsModalElement,
     stairsTitleElement,
     stairsTextElement,

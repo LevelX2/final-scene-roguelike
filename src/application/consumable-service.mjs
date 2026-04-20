@@ -3,7 +3,6 @@ import {
   CONSUMABLE_DEFINITIONS,
   getConsumableDefinition,
   getConsumableEffectLabel,
-  getConsumableEffectSpec,
   getConsumableThemeForArchetype,
 } from '../content/catalogs/consumables.mjs';
 
@@ -108,7 +107,6 @@ export function createConsumableService(context) {
     handleActorEnterTile,
     moveToFloor,
     addMessage,
-    renderSelf,
     createRuntimeId = (prefix) => `${prefix}-${Date.now()}`,
     randomChance = Math.random,
   } = context;

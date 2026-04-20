@@ -28,13 +28,6 @@ import { getActorDerivedMaxHp, getActorDerivedStat } from '../application/derive
 import { buildCombatEnemyReference, formatEnemyAttackLog } from '../text/combat-log.mjs';
 import { formatWeaponReference } from '../text/combat-phrasing.mjs';
 
-const CARDINAL_STEPS = Object.freeze([
-  { x: 1, y: 0 },
-  { x: -1, y: 0 },
-  { x: 0, y: 1 },
-  { x: 0, y: -1 },
-]);
-
 const EIGHT_WAY_STEPS = Object.freeze([
   { x: 1, y: 0 },
   { x: -1, y: 0 },
@@ -1513,7 +1506,6 @@ export function createEnemyTurnApi(context) {
         return false;
       }
 
-      const temperament = getEnemyTemperament(enemy);
       clearIdleTarget(enemy);
       if (shouldEnemyPauseAtIdleTarget(enemy, randomChance)) {
         return false;

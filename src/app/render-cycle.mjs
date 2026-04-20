@@ -35,10 +35,6 @@ export function createRenderCycleApi(context) {
     healOverlayEffectElement,
     openTargetModeButton,
     confirmTargetModeButton,
-    xpLabelElement,
-    xpFillElement,
-    nutritionStateElement,
-    playerStatusSummaryElement,
     topbarFoodCardElement,
     getActorStatusDisplay,
     getHealingConsumableGroups,
@@ -100,7 +96,6 @@ export function createRenderCycleApi(context) {
     refreshDebugInfoModal,
     chebyshevDistance,
     hasLineOfSight,
-    isStraightShot,
   } = context;
 
   let lastBoardViewportSignature = "";

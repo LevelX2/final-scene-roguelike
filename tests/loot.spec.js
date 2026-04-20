@@ -3,7 +3,6 @@ require("./test-setup");
 const {
   setupChestAtPlayerStep,
   setupOffHandAtPlayerStep,
-  setupCombat,
   setupPotionAtPlayerStep,
   setupWeaponAtPlayerStep,
   startRun,

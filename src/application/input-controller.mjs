@@ -28,7 +28,6 @@ export function createInputController(context) {
     closeHealingOverlay,
     useSelectedHealingConsumable,
     cycleTargetMode,
-    enterTargetMode,
     cancelTargetMode,
     moveTargetCursor,
     confirmTargetAttack,

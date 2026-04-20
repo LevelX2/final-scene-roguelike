@@ -97,7 +97,6 @@ export function assembleGameplayModules(context) {
     createDoor,
     createKeyPickup,
     generateEquipmentItem,
-    processContinuousTraps,
     playVictorySound,
     playLevelUpSound,
     playEnemyHitSound,

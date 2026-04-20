@@ -73,6 +73,7 @@ Stand jetzt ist das Projekt spielbar und die vorhandene Verifikation läuft loka
 
 - `npm run check:js`
 - `npm run build`
+- `npm run lint`
 - `npm run test:e2e`
 
 Die Playwright-Suite deckt Startflow, Navigation, Kampf, Loot, Hunger, Persistenz, Türen/Schlüssel, Fallen, Showcase-Objekte und mehrere Smoke-Checks gegen den produktiven Laufzeitpfad ab.
@@ -108,6 +109,10 @@ Das Test-Setup startet selbst einen lokalen Server auf Port `4173`.
   Bündelt `src/main.mjs` nach `dist/game.bundle.js`.
 - `npm run check:js`
   Führt Syntax-Prüfungen für den aktuell konfigurierten Satz an Kernmodulen aus.
+- `npm run lint`
+  Führt statische JavaScript-Prüfungen über den aktiven Projektpfad aus und ergänzt `check:js` um Qualitätsregeln jenseits reiner Syntax.
+- `npm run lint:fix`
+  Wendet automatisch behebbare ESLint-Korrekturen an.
 - `npm run start:test`
   Startet den lokalen Test-/App-Server auf Port `4173` und deaktiviert im ausgelieferten Browser-Testmodus Studio-Sprachausgaben automatisch vor dem App-Start.
 - `npm run start:app`

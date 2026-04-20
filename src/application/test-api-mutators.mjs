@@ -10,8 +10,6 @@ export function createTestApiMutators(context) {
     TILE,
     getState,
     getCurrentFloorState,
-    getMainHand,
-    getOffHand,
     grantExperience,
     cloneWeapon,
     cloneOffHandItem,

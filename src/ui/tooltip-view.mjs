@@ -10,7 +10,6 @@ export function createTooltipView(context) {
     monsterNames = [],
     itemNames = [],
     getState,
-    getMainHand,
     getOffHand,
     getCombatWeapon,
     getActorStatusDisplay = () => [],

@@ -1,5 +1,5 @@
 import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
-import { isFoodConsumable, isHealingConsumable, normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
+import { normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
 import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
 export function createItemFloorStateApi(context) {
@@ -8,10 +8,6 @@ export function createItemFloorStateApi(context) {
     getCurrentFloorState,
     cloneWeapon,
     cloneOffHandItem,
-    createWeaponPickup,
-    createOffHandPickup,
-    createPotionPickup,
-    createFoodPickup,
     formatWeaponReference,
     addMessage,
     restoreNutrition,

@@ -61,8 +61,6 @@ export function createRenderApi(context) {
     clamp,
     loadHighscores,
     loadLastHighscoreMarker,
-    countPotionsInInventory,
-    countFoodInInventory,
     useInventoryItem,
     renderSelf,
     selectTargetTile,

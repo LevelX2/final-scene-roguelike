@@ -6,7 +6,6 @@ export function createPlayerTurnController(context) {
     WIDTH,
     HEIGHT,
     TILE,
-    DOOR_TYPE,
     getState,
     getCurrentFloorState,
     getDoorAt,

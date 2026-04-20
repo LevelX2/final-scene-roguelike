@@ -743,6 +743,147 @@ test("player death opens the death modal", async ({ page }) => {
   await expect(page.locator("#deathModal h2")).toContainText("Das war der letzte Take");
 });
 
+test("enemy deaths leave a temporary marker under loot and remove it after three turns", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    enemy: {
+      hp: 1,
+      maxHp: 1,
+      xpReward: 1,
+    },
+  });
+
+  await page.evaluate(() => {
+    window.__TEST_API__.applyStatusToEnemy({
+      type: "burn",
+      duration: 1,
+      dotDamage: 99,
+    });
+    window.__TEST_API__.processStatusRound();
+  });
+
+  const killState = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const death = snapshot.recentDeaths?.[0] ?? null;
+    if (!death) {
+      return null;
+    }
+
+    window.__TEST_API__.placeFood(death, {
+      type: "food",
+      id: "test-ration",
+      name: "Testration",
+      nutritionRestore: 8,
+      icon: "chips",
+      description: "Nur für Tests.",
+    });
+
+    const refreshedSnapshot = window.__TEST_API__.getSnapshot();
+    const width = snapshot.grid[0]?.length ?? 0;
+    const cells = Array.from(document.querySelectorAll(".board .tile-cell"));
+    const cell = cells[death.y * width + death.x] ?? null;
+    return {
+      death,
+      recentDeaths: refreshedSnapshot.recentDeaths,
+      hasDeathUnderlay: Boolean(cell?.querySelector(".tile-death-underlay.death-marker")),
+      hasFoodForeground: Boolean(cell?.querySelector(".tile-foreground-layer.food")),
+    };
+  });
+
+  expect(killState).not.toBeNull();
+  expect(killState.recentDeaths).toHaveLength(1);
+  expect(killState.death.expiresAfterTurn).toBe(3);
+  expect(killState.hasDeathUnderlay).toBeTruthy();
+  expect(killState.hasFoodForeground).toBeTruthy();
+
+  await page.keyboard.press(" ");
+  await page.keyboard.press(" ");
+  await page.keyboard.press(" ");
+  await page.keyboard.press(" ");
+
+  const afterExpiry = await page.evaluate((death) => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const width = snapshot.grid[0]?.length ?? 0;
+    const cell = Array.from(document.querySelectorAll(".board .tile-cell"))[death.y * width + death.x] ?? null;
+    return {
+      turn: snapshot.turn,
+      recentDeaths: snapshot.recentDeaths,
+      hasDeathUnderlay: Boolean(cell?.querySelector(".tile-death-underlay.death-marker")),
+    };
+  }, killState.death);
+
+  expect(afterExpiry.turn).toBe(4);
+  expect(afterExpiry.recentDeaths).toHaveLength(0);
+  expect(afterExpiry.hasDeathUnderlay).toBeFalsy();
+});
+
+test("death markers do not stay visible in explored memory tiles", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await setupCombat(page, {
+    enemy: {
+      hp: 1,
+      maxHp: 1,
+    },
+  });
+
+  await page.evaluate(() => {
+    window.__TEST_API__.applyStatusToEnemy({
+      type: "burn",
+      duration: 1,
+      dotDamage: 99,
+    });
+    window.__TEST_API__.processStatusRound();
+  });
+
+  const hiddenMarkerState = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    const death = snapshot.recentDeaths?.[0] ?? null;
+    const width = snapshot.grid[0]?.length ?? 0;
+    if (!death) {
+      return null;
+    }
+
+    const candidateTiles = [];
+    for (let y = 0; y < snapshot.grid.length; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        if (snapshot.grid[y]?.[x] === ".") {
+          candidateTiles.push({ x, y });
+        }
+      }
+    }
+
+    let hidingTile = null;
+    for (const tile of candidateTiles) {
+      window.__TEST_API__.teleportPlayer(tile);
+      const nextSnapshot = window.__TEST_API__.getSnapshot();
+      if (!nextSnapshot.visible?.[death.y]?.[death.x]) {
+        hidingTile = tile;
+        break;
+      }
+    }
+
+    if (!hidingTile) {
+      return null;
+    }
+
+    const cells = Array.from(document.querySelectorAll(".board .tile-cell"));
+    const cell = cells[death.y * width + death.x] ?? null;
+    return {
+      hidingTile,
+      hasDeathUnderlay: Boolean(cell?.querySelector(".tile-death-underlay.death-marker")),
+      baseClass: cell?.querySelector(".tile-base")?.className ?? "",
+    };
+  });
+
+  expect(hiddenMarkerState).not.toBeNull();
+  expect(hiddenMarkerState.baseClass).toContain("memory");
+  expect(hiddenMarkerState.hasDeathUnderlay).toBeFalsy();
+});
+
 test("death modal describes who killed the player and with which weapon", async ({ page }) => {
   await page.goto("/");
   await startRun(page, { name: "Level X2" });

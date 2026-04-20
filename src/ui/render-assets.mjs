@@ -6,6 +6,17 @@ export function createRenderAssetHelpers(context) {
   const { getHeroClassAssets } = context;
   const BOW_KEYWORDS = ['bow'];
   const HEAVY_RANGED_KEYWORDS = ['shotgun', 'launcher', 'lance'];
+  const MAIN_HAND_POSES = {
+    'melee-light': { scale: 0.98, offsetX: 6, offsetY: 5, rotation: -48 },
+    'melee-heavy': { scale: 1.08, offsetX: 4, offsetY: 1, rotation: -40 },
+    'ranged-bow': { scale: 1.08, offsetX: 6, offsetY: 0, rotation: -6 },
+    'ranged-heavy': { scale: 1.06, offsetX: 5, offsetY: 1, rotation: -24 },
+    'ranged-gun': { scale: 1, offsetX: 6, offsetY: 2, rotation: -22 },
+  };
+  const OFF_HAND_POSES = {
+    shield: { poseClass: 'offhand-shield', scale: 0.9, offsetX: -5, offsetY: 2, rotation: 10 },
+    utility: { poseClass: 'offhand-light', scale: 0.84, offsetX: -6, offsetY: 4, rotation: 16 },
+  };
 
   function getHeroClassIconUrl(reference) {
     return getHeroClassAssets(reference).iconUrl;
@@ -57,10 +68,26 @@ export function createRenderAssetHelpers(context) {
     return item.iconAsset ?? `./assets/displays/${item.ambienceId ?? item.id}.svg`;
   }
 
+  function getDeathMarkerAssetUrl(markerAssetId = 'death-mark') {
+    if (markerAssetId === 'death-mark') {
+      return './assets/overlays/death-marker-128.svg';
+    }
+
+    return './assets/overlays/death-marker-128.svg';
+  }
+
   function getPlayerIconAssetUrl(player, isDead = false) {
     return isDead
       ? "./assets/player/player-dead.svg"
       : getHeroClassSpriteUrl(player?.classId);
+  }
+
+  function getActorMainHand(actor) {
+    return actor?.mainHand ?? actor?.weapon ?? null;
+  }
+
+  function isTwoHandedMainHand(weapon) {
+    return Boolean(weapon && weapon.id !== 'bare-hands' && (weapon.handedness ?? 'one-handed') === 'two-handed');
   }
 
   function getActorWeaponOverlay(actor, options = {}) {
@@ -68,7 +95,7 @@ export function createRenderAssetHelpers(context) {
       return null;
     }
 
-    const weapon = actor?.mainHand ?? actor?.weapon ?? null;
+    const weapon = getActorMainHand(actor);
     if (!weapon || weapon.id === 'bare-hands') {
       return null;
     }
@@ -87,10 +114,7 @@ export function createRenderAssetHelpers(context) {
         return {
           imageUrl,
           poseClass: 'ranged-bow',
-          scale: 1.18,
-          offsetX: 10,
-          offsetY: -2,
-          rotation: -18,
+          ...MAIN_HAND_POSES['ranged-bow'],
         };
       }
 
@@ -98,20 +122,14 @@ export function createRenderAssetHelpers(context) {
         return {
           imageUrl,
           poseClass: 'ranged-heavy',
-          scale: 1.12,
-          offsetX: 10,
-          offsetY: 1,
-          rotation: -14,
+          ...MAIN_HAND_POSES['ranged-heavy'],
         };
       }
 
       return {
         imageUrl,
         poseClass: 'ranged-gun',
-        scale: 1.08,
-        offsetX: 10,
-        offsetY: 2,
-        rotation: -10,
+        ...MAIN_HAND_POSES['ranged-gun'],
       };
     }
 
@@ -119,20 +137,42 @@ export function createRenderAssetHelpers(context) {
       return {
         imageUrl,
         poseClass: 'melee-heavy',
-        scale: 1.16,
-        offsetX: 10,
-        offsetY: -3,
-        rotation: -30,
+        ...MAIN_HAND_POSES['melee-heavy'],
       };
     }
 
     return {
       imageUrl,
       poseClass: 'melee-light',
-      scale: 1.02,
-      offsetX: 10,
-      offsetY: 3,
-      rotation: -34,
+      ...MAIN_HAND_POSES['melee-light'],
+    };
+  }
+
+  function getActorOffHandOverlay(actor, options = {}) {
+    if (options.isDead) {
+      return null;
+    }
+
+    const offHand = actor?.offHand ?? null;
+    if (!offHand || isTwoHandedMainHand(getActorMainHand(actor))) {
+      return null;
+    }
+
+    const imageUrl = getOffHandIconAssetUrl(offHand);
+    if (!imageUrl) {
+      return null;
+    }
+
+    if (offHand.subtype === 'shield' || offHand.itemType === 'shield') {
+      return {
+        imageUrl,
+        ...OFF_HAND_POSES.shield,
+      };
+    }
+
+    return {
+      imageUrl,
+      ...OFF_HAND_POSES.utility,
     };
   }
 
@@ -140,8 +180,16 @@ export function createRenderAssetHelpers(context) {
     return getActorWeaponOverlay(player, { isDead });
   }
 
+  function getPlayerOffHandOverlay(player, isDead = false) {
+    return getActorOffHandOverlay(player, { isDead });
+  }
+
   function getEnemyWeaponOverlay(enemy) {
     return getActorWeaponOverlay(enemy);
+  }
+
+  function getEnemyOffHandOverlay(enemy) {
+    return getActorOffHandOverlay(enemy);
   }
 
   function getMonsterIconAssetUrl(enemy) {
@@ -206,9 +254,12 @@ export function createRenderAssetHelpers(context) {
     getConsumableIconAssetUrl,
     getKeyIconAssetUrl,
     getShowcaseIconAssetUrl,
+    getDeathMarkerAssetUrl,
     getPlayerIconAssetUrl,
     getPlayerWeaponOverlay,
+    getPlayerOffHandOverlay,
     getEnemyWeaponOverlay,
+    getEnemyOffHandOverlay,
     getMonsterIconAssetUrl,
     getEnemyTooltipImageClass,
     getDoorIconAssetUrl,

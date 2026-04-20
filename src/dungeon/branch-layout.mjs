@@ -3579,6 +3579,7 @@ function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode
     keys: [],
     traps: [],
     showcases: [],
+    recentDeaths: [],
     decorativeOverlays: [],
     decorativeOverlayOccupiedTiles: [],
     extraLoopConnections: [],

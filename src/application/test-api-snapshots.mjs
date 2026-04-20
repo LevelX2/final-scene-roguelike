@@ -72,6 +72,7 @@ export function createTestApiSnapshots(context) {
     }));
     return {
       floor: state.floor,
+      turn: state.turn ?? 0,
       timelineTime: state.timelineTime ?? 0,
       player: {
         name: state.player.name,
@@ -145,6 +146,12 @@ export function createTestApiSnapshots(context) {
         y: entry.y,
         id: entry.item.id,
         nutritionRestore: entry.item.nutritionRestore,
+      })),
+      recentDeaths: (floorState.recentDeaths ?? []).map((entry) => ({
+        x: entry.x,
+        y: entry.y,
+        expiresAfterTurn: entry.expiresAfterTurn,
+        markerAssetId: entry.markerAssetId,
       })),
       consumables: (floorState.consumables ?? []).map((entry) => ({
         x: entry.x,

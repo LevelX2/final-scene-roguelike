@@ -307,8 +307,13 @@ test('render asset helpers resolve board icons for every healing consumable fami
   }
 });
 
-test('render asset helpers derive player and enemy weapon overlays from equipped weapons', () => {
-  const { getPlayerWeaponOverlay, getEnemyWeaponOverlay } = createRenderAssetHelpers({
+test('render asset helpers derive player and enemy hand overlays from equipped items', () => {
+  const {
+    getPlayerWeaponOverlay,
+    getPlayerOffHandOverlay,
+    getEnemyWeaponOverlay,
+    getEnemyOffHandOverlay,
+  } = createRenderAssetHelpers({
     getHeroClassAssets: () => ({ iconUrl: null, spriteUrl: null }),
   });
 
@@ -324,10 +329,10 @@ test('render asset helpers derive player and enemy weapon overlays from equipped
     {
       imageUrl: './assets/weapons/combat-knife.svg',
       poseClass: 'melee-light',
-      scale: 1.02,
-      offsetX: 10,
-      offsetY: 3,
-      rotation: -34,
+      scale: 0.98,
+      offsetX: 6,
+      offsetY: 5,
+      rotation: -48,
     },
   );
 
@@ -343,10 +348,10 @@ test('render asset helpers derive player and enemy weapon overlays from equipped
     {
       imageUrl: './assets/weapons/woodcutter-axe.svg',
       poseClass: 'melee-heavy',
-      scale: 1.16,
-      offsetX: 10,
-      offsetY: -3,
-      rotation: -30,
+      scale: 1.08,
+      offsetX: 4,
+      offsetY: 1,
+      rotation: -40,
     },
   );
 
@@ -362,10 +367,10 @@ test('render asset helpers derive player and enemy weapon overlays from equipped
     {
       imageUrl: './assets/weapons/sport-bow.svg',
       poseClass: 'ranged-bow',
-      scale: 1.18,
-      offsetX: 10,
-      offsetY: -2,
-      rotation: -18,
+      scale: 1.08,
+      offsetX: 6,
+      offsetY: 0,
+      rotation: -6,
     },
   );
 
@@ -381,10 +386,10 @@ test('render asset helpers derive player and enemy weapon overlays from equipped
     {
       imageUrl: './assets/weapons/expedition-revolver.svg',
       poseClass: 'ranged-gun',
-      scale: 1.08,
-      offsetX: 10,
+      scale: 1,
+      offsetX: 6,
       offsetY: 2,
-      rotation: -10,
+      rotation: -22,
     },
   );
 
@@ -399,10 +404,59 @@ test('render asset helpers derive player and enemy weapon overlays from equipped
     {
       imageUrl: './assets/weapons/revolver.svg',
       poseClass: 'ranged-gun',
-      scale: 1.08,
-      offsetX: 10,
+      scale: 1,
+      offsetX: 6,
       offsetY: 2,
-      rotation: -10,
+      rotation: -22,
+    },
+  );
+
+  assert.deepEqual(
+    getPlayerOffHandOverlay({
+      mainHand: {
+        type: 'weapon',
+        id: 'expedition-revolver',
+        attackMode: 'ranged',
+        handedness: 'one-handed',
+      },
+      offHand: {
+        type: 'offhand',
+        subtype: 'shield',
+        itemType: 'shield',
+        id: 'stuntman-bracer',
+      },
+    }),
+    {
+      imageUrl: './assets/shields/stuntman-bracer.svg',
+      poseClass: 'offhand-shield',
+      scale: 0.9,
+      offsetX: -5,
+      offsetY: 2,
+      rotation: 10,
+    },
+  );
+
+  assert.deepEqual(
+    getEnemyOffHandOverlay({
+      mainHand: {
+        id: 'revolver',
+        attackMode: 'ranged',
+        handedness: 'one-handed',
+      },
+      offHand: {
+        type: 'offhand',
+        subtype: 'shield',
+        itemType: 'shield',
+        id: 'neon-diner-tray',
+      },
+    }),
+    {
+      imageUrl: './assets/shields/neon-diner-tray.svg',
+      poseClass: 'offhand-shield',
+      scale: 0.9,
+      offsetX: -5,
+      offsetY: 2,
+      rotation: 10,
     },
   );
 
@@ -415,4 +469,31 @@ test('render asset helpers derive player and enemy weapon overlays from equipped
     }),
     null,
   );
+
+  assert.equal(
+    getPlayerOffHandOverlay({
+      mainHand: {
+        type: 'weapon',
+        id: 'sport-bow',
+        attackMode: 'ranged',
+        handedness: 'two-handed',
+      },
+      offHand: {
+        type: 'offhand',
+        subtype: 'shield',
+        itemType: 'shield',
+        id: 'stuntman-bracer',
+      },
+    }),
+    null,
+  );
+});
+
+test('render asset helpers expose the death marker overlay asset', () => {
+  const { getDeathMarkerAssetUrl } = createRenderAssetHelpers({
+    getHeroClassAssets: () => ({ iconUrl: null, spriteUrl: null }),
+  });
+
+  assert.equal(getDeathMarkerAssetUrl(), './assets/overlays/death-marker-128.svg');
+  expectLocalAsset('./assets/overlays/death-marker-128.svg');
 });

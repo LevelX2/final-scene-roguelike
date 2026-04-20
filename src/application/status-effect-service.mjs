@@ -1,4 +1,5 @@
 import { recordKillStat } from '../kill-stats.mjs';
+import { recordEnemyDeathMarker } from './death-marker-service.mjs';
 import { formatMonsterReference } from '../text/combat-phrasing.mjs';
 import { getWeaponOnHitEffects } from '../weapon-runtime-effects.mjs';
 import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
@@ -161,13 +162,12 @@ export function createStatusEffectService(context) {
     showDeathModal?.(rank);
   }
 
-  function processActorStatusEffects(actor) {
+  function processActorStatusEffects(actor, floorState = getCurrentFloorState()) {
     if (!actor || actor.hp <= 0) {
       return { dead: actor?.hp <= 0 };
     }
 
     const state = getState();
-    const floorState = getCurrentFloorState();
     const effects = getStatusEffects(actor);
     const nextEffects = [];
     let dead = false;
@@ -202,6 +202,7 @@ export function createStatusEffectService(context) {
           handlePlayerDeathFromStatus(effect.sourceName);
         } else if (actor.type === 'monster') {
           floorState.enemies = floorState.enemies.filter((entry) => entry !== actor);
+          recordEnemyDeathMarker(floorState, actor, state.turn);
           state.kills += 1;
           state.killStats = recordKillStat(state.killStats, actor);
           if (effect.sourceActorType === 'player') {
@@ -234,15 +235,16 @@ export function createStatusEffectService(context) {
       return;
     }
 
-    processActorStatusEffects(state.player);
+    processActorStatusEffects(state.player, state.floors?.[state.floor] ?? getCurrentFloorState());
     if (state.gameOver) {
       return;
     }
 
-    const floorState = getCurrentFloorState();
-    const enemies = [...(floorState.enemies ?? [])];
-    for (const enemy of enemies) {
-      processActorStatusEffects(enemy);
+    for (const floorState of Object.values(state.floors ?? {})) {
+      const enemies = [...(floorState?.enemies ?? [])];
+      for (const enemy of enemies) {
+        processActorStatusEffects(enemy, floorState);
+      }
     }
   }
 
@@ -256,6 +258,7 @@ export function createStatusEffectService(context) {
     isActorRooted,
     isActorStunned,
     tryApplyWeaponEffects,
+    processActorStatusEffects,
     processRoundStatusEffects,
   };
 }

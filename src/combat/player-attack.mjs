@@ -1,4 +1,5 @@
 import { recordKillStat } from '../kill-stats.mjs';
+import { recordEnemyDeathMarker } from '../application/death-marker-service.mjs';
 import { buildCombatEnemyReference, formatPlayerAttackLog } from '../text/combat-log.mjs';
 import { formatWeaponDativePhrase, formatWeaponReference } from '../text/combat-phrasing.mjs';
 
@@ -148,6 +149,7 @@ export function createPlayerAttackApi(context) {
     if (enemy.hp <= 0) {
       const floorState = getCurrentFloorState();
       floorState.enemies = floorState.enemies.filter((entry) => entry !== enemy);
+      recordEnemyDeathMarker(floorState, enemy, state.turn);
       state.kills += 1;
       state.killStats = recordKillStat(state.killStats, enemy);
       if (enemy.lootWeapon && randomChance() < (enemy.weaponDropChance ?? 0.55)) {

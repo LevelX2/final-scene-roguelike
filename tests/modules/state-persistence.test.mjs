@@ -123,6 +123,7 @@ test('state-persistence normalizes transient modal state on load', () => {
             studioArchetypeId: 'slasher',
             grid: [['.']],
             visible: [[true]],
+            recentDeaths: [{ x: 0, y: 0, expiresAfterTurn: 200, markerAssetId: 'death-mark' }],
             enemies: [{ id: 'test-enemy', name: 'Tempotest', x: 0, y: 0, hp: 4, maxHp: 4 }],
           },
         },
@@ -144,10 +145,140 @@ test('state-persistence normalizes transient modal state on load', () => {
   assert.equal(state.player.nextActionTime, 180);
   assert.equal(state.options.voiceAnnouncements, true);
   assert.equal(state.options.showcaseAnnouncementMode, 'floating-text');
+  assert.deepEqual(state.floors[1].recentDeaths, [{ x: 0, y: 0, expiresAfterTurn: 200, markerAssetId: 'death-mark' }]);
   assert.equal(state.floors[1].enemies[0].baseSpeed, 100);
   assert.equal(state.floors[1].enemies[0].nextActionTime, 180);
   assert.deepEqual(state.floors[1].enemies[0].speedIntervalModifiers, []);
   assert.deepEqual(state.visitedFloors, [1]);
+});
+
+test('state-persistence loads missing death marker arrays as empty lists', () => {
+  const storage = new Map();
+  const HERO_CLASSES = {
+    filmstar: { label: 'Filmstar', passiveName: 'Triff deine Marke', passiveSummary: 'Test', passiveDescription: 'Test' },
+  };
+  let state = null;
+
+  const createDefaultModals = (startOpen = false) => ({
+    startOpen,
+    inventoryOpen: false,
+    studioTopologyOpen: false,
+    runStatsOpen: false,
+    optionsOpen: false,
+    helpOpen: false,
+    highscoresOpen: false,
+  });
+  const createDefaultCollapsedCards = () => ({ player: 'summary', log: 'compact' });
+  const createDefaultPreferences = () => ({ inventoryFilter: 'all' });
+  const createFreshState = (heroName, heroClassId) => ({
+    floor: 1,
+    deepestFloor: 1,
+    turn: 0,
+    messages: [],
+    inventory: [],
+    gameOver: false,
+    safeRestTurns: 0,
+    pendingChoice: null,
+    pendingStairChoice: null,
+    pendingContainerLoot: null,
+    deathCause: null,
+    scoreSaved: false,
+    kills: 0,
+    killStats: {},
+    damageDealt: 0,
+    damageTaken: 0,
+    xpGained: 0,
+    openedChests: 0,
+    consumedPotions: 0,
+    consumedFoods: 0,
+    knownMonsterTypes: {},
+    seenMonsterCounts: {},
+    visitedFloors: [],
+    lastScoreRank: null,
+    modals: createDefaultModals(false),
+    collapsedCards: createDefaultCollapsedCards(),
+    options: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
+    preferences: createDefaultPreferences(),
+    floors: { 1: { studioArchetypeId: 'slasher', grid: [['.']], visible: [[true]], enemies: [] } },
+    player: {
+      name: heroName,
+      classId: heroClassId,
+      classLabel: HERO_CLASSES[heroClassId].label,
+      classPassiveName: HERO_CLASSES[heroClassId].passiveName,
+      classPassiveSummary: HERO_CLASSES[heroClassId].passiveSummary,
+      classPassiveDescription: HERO_CLASSES[heroClassId].passiveDescription,
+      level: 1,
+      hp: 10,
+      maxHp: 10,
+      xp: 0,
+      xpToNext: 20,
+      mainHand: null,
+      offHand: null,
+      nutrition: 80,
+      nutritionMax: 100,
+      hungerState: 'NORMAL',
+    },
+  });
+
+  const persistence = createStatePersistenceApi({
+    HIGHSCORE_KEY: 'highscores',
+    HIGHSCORE_STORAGE_VERSION: 1,
+    HIGHSCORE_VERSION_KEY: 'highscores-version',
+    HIGHSCORE_LAST_ENTRY_KEY: 'highscores-last',
+    OPTIONS_KEY: 'options',
+    SAVEGAME_KEY: 'savegame',
+    SAVEGAME_VERSION: 4,
+    DEFAULT_OPTIONS: { stepSound: true, deathSound: true, voiceAnnouncements: true, showcaseAnnouncementMode: 'floating-text' },
+    readStorage: (key) => storage.get(key) ?? null,
+    writeStorage: (key, value) => storage.set(key, value),
+    removeStorage: (key) => storage.delete(key),
+    getState: () => state,
+    setState: (nextState) => { state = nextState; },
+    loadHeroClassId: () => 'filmstar',
+    createFreshState,
+    createDefaultModals,
+    createDefaultCollapsedCards,
+    createDefaultPreferences,
+    normalizeHeroName: (value) => value?.trim() || 'Final Girl',
+    resolveHeroClassId: (value, fallback) => HERO_CLASSES[value] ? value : fallback,
+    HERO_CLASSES,
+    randomInt: () => 0,
+    createRunArchetypeSequence: () => ['slasher'],
+    getArchetypeForFloor: () => 'slasher',
+    xpForNextLevel: () => 20,
+    getNutritionMax: () => 100,
+    getNutritionStart: () => 80,
+    getHungerState: () => 'NORMAL',
+    updateVisibility: () => {},
+    renderSelf: () => {},
+  });
+
+  storage.set('savegame', JSON.stringify({
+    version: 2,
+    slots: [{
+      id: 'save-1',
+      savedAt: 123,
+      snapshotVersion: 4,
+      state: {
+        floor: 1,
+        deepestFloor: 1,
+        player: { name: 'Ripley', classId: 'filmstar', level: 2, hp: 7, maxHp: 12, xpToNext: 25, nutrition: 50 },
+        floors: {
+          1: {
+            studioArchetypeId: 'slasher',
+            grid: [['.']],
+            visible: [[true]],
+            enemies: [],
+          },
+        },
+      },
+    }],
+  }));
+
+  const result = persistence.loadSavedGame();
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(state.floors[1].recentDeaths, []);
 });
 
 test('state-persistence ranks final scenes by studio, level, kills, then turns', () => {

@@ -1,4 +1,5 @@
 import { recordKillStat } from '../kill-stats.mjs';
+import { recordEnemyDeathMarker } from '../application/death-marker-service.mjs';
 import {
   getEnemyAggroBreakDistance,
   getEnemyAggroChaseChance,
@@ -256,6 +257,10 @@ export function createEnemyTurnApi(context) {
   }
 
   function canPlayerPerceiveDoorAction(floorState, player, x, y) {
+    if (floorState !== getCurrentFloorState()) {
+      return null;
+    }
+
     if (floorState.visible?.[y]?.[x]) {
       return 'visible';
     }
@@ -395,6 +400,7 @@ export function createEnemyTurnApi(context) {
   function handleEnemyDefeatByCounter(enemy, floorState, enemyReference, message) {
     const state = getState();
     floorState.enemies = floorState.enemies.filter((entry) => entry !== enemy);
+    recordEnemyDeathMarker(floorState, enemy, state.turn);
     state.kills += 1;
     state.killStats = recordKillStat(state.killStats, enemy);
     if (enemy.lootWeapon && randomChance() < (enemy.weaponDropChance ?? 0.55)) {
@@ -1664,9 +1670,11 @@ export function createEnemyTurnApi(context) {
     return true;
   }
 
-  function takeEnemyTurn(enemy) {
+  function takeEnemyTurn(enemy, options = {}) {
     const state = getState();
-    const floorState = getCurrentFloorState();
+    const currentFloorState = getCurrentFloorState();
+    const floorState = options.floorState ?? currentFloorState;
+    const canTargetPlayer = options.canTargetPlayer ?? (floorState === currentFloorState);
     if (!enemy || state.gameOver || enemy.hp <= 0 || !floorState.enemies.includes(enemy)) {
       return false;
     }
@@ -1674,13 +1682,18 @@ export function createEnemyTurnApi(context) {
     ensureEnemyRuntimeState(enemy);
     enemy.turnsSinceHit += 1;
 
-    const playerPosition = { x: state.player.x, y: state.player.y };
-    const distance = chebyshevDistance(enemy, playerPosition);
+    const playerPosition = canTargetPlayer
+      ? { x: state.player.x, y: state.player.y }
+      : null;
+    const distance = playerPosition ? chebyshevDistance(enemy, playerPosition) : Number.POSITIVE_INFINITY;
     const detectsPlayer = (rangeBonus = 0) =>
-      canEnemyDetectPlayer(enemy, playerPosition, floorState, distance, rangeBonus);
+      canTargetPlayer && playerPosition
+        ? canEnemyDetectPlayer(enemy, playerPosition, floorState, distance, rangeBonus)
+        : false;
     const weapon = enemy.mainHand;
     const weaponRange = Math.max(1, weapon?.range ?? 1);
     const canShootPlayer = Boolean(
+      canTargetPlayer &&
       weapon &&
       weapon.attackMode === 'ranged' &&
       distance > 1 &&
@@ -1689,9 +1702,9 @@ export function createEnemyTurnApi(context) {
       detectsPlayer(getEnemyRangedDetectionBonus(enemy, weapon)),
     );
     tryEnemyRegeneration(enemy, distance, floorState);
-    const adjacent = distance === 1;
-    const retreating = shouldEnemyRetreat(enemy, state.player, distance);
-    const fallbackRetreat = shouldEnemyFallbackFromCloseRange(enemy, weapon, distance);
+    const adjacent = canTargetPlayer && distance === 1;
+    const retreating = canTargetPlayer ? shouldEnemyRetreat(enemy, state.player, distance) : false;
+    const fallbackRetreat = canTargetPlayer ? shouldEnemyFallbackFromCloseRange(enemy, weapon, distance) : false;
     const retreatMode = retreating || fallbackRetreat;
     const canMove = canActorMove?.(enemy) ?? true;
 
@@ -1723,6 +1736,29 @@ export function createEnemyTurnApi(context) {
 
     const mobility = getEnemyMobility(enemy);
     const aggroState = updateEnemyAggroState(enemy, mobility, distance, detectsPlayer, randomChance);
+
+    if (!canTargetPlayer) {
+      enemy.isRetreating = false;
+      if (!canMove) {
+        return true;
+      }
+
+      if (enemy.behavior === 'dormant') {
+        if (!enemy.aggro && randomChance() < getEnemyIdleChance(enemy)) {
+          performIdleMovement(enemy, floorState);
+        }
+        return true;
+      }
+
+      if (enemy.behavior === 'wanderer' || enemy.behavior === 'trickster' || enemy.behavior === 'stalker' || enemy.behavior === 'hunter' || enemy.behavior === 'juggernaut') {
+        if (!enemy.aggro && randomChance() < getEnemyIdleChance(enemy)) {
+          performIdleMovement(enemy, floorState);
+        } else if (!enemy.aggro && enemy.idleTarget) {
+          performIdleMovement(enemy, floorState);
+        }
+        return true;
+      }
+    }
 
     if (retreatMode) {
       clearIdleTarget(enemy);

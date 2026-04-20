@@ -87,6 +87,7 @@ export function createTestApiMutators(context) {
     floorState.doors = [];
     floorState.showcases = [];
     floorState.traps = [];
+    floorState.recentDeaths = [];
     state.messages = [];
     state.pendingChoice = null;
     state.pendingStairChoice = null;
@@ -252,6 +253,16 @@ export function createTestApiMutators(context) {
       sourceArchetypeId: config.sourceArchetypeId ?? null,
       mainHand: config.mainHand || config.weapon ? cloneWeapon(config.mainHand ?? config.weapon) : null,
       offHand: config.offHand ? cloneOffHandItem(config.offHand) : null,
+      lootWeapon: config.lootWeapon ? cloneWeapon(config.lootWeapon) : null,
+      lootOffHand: config.lootOffHand ? cloneOffHandItem(config.lootOffHand) : null,
+      lootDrop: config.lootDrop
+        ? {
+            ...config.lootDrop,
+            item: config.lootDrop.item ? { ...config.lootDrop.item } : null,
+          }
+        : null,
+      weaponDropChance: config.weaponDropChance,
+      offHandDropChance: config.offHandDropChance,
       xpReward: config.xpReward ?? 0,
       maxHp: config.maxHp ?? 12,
       hp: config.hp ?? config.maxHp ?? 12,
@@ -310,6 +321,7 @@ export function createTestApiMutators(context) {
     floorState.doors = [];
     floorState.showcases = [];
     floorState.traps = [];
+    floorState.recentDeaths = [];
     if (Array.isArray(config.walls)) {
       config.walls.forEach((wall) => {
         if (wall.x >= 0 && wall.x < WIDTH && wall.y >= 0 && wall.y < HEIGHT) {

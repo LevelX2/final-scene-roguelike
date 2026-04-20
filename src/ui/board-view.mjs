@@ -1,5 +1,6 @@
 import { evaluateTargetSelection } from '../application/targeting-service.mjs';
 import { getActorDerivedMaxHp, getActorDerivedStats } from '../application/derived-actor-stats.mjs';
+import { getDeathMarkerAt, pruneExpiredDeathMarkers } from '../application/death-marker-service.mjs';
 import { getDecorativeOverlayPreset } from '../ambience/visual/decorative-overlay-presets.mjs';
 import { isHealingConsumable } from '../content/catalogs/consumables.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
@@ -41,6 +42,7 @@ export function createBoardView(context) {
     getConsumableIconAssetUrl,
     getKeyIconAssetUrl,
     getShowcaseIconAssetUrl,
+    getDeathMarkerAssetUrl,
     getPlayerIconAssetUrl,
     getPlayerWeaponOverlay,
     getPlayerOffHandOverlay,
@@ -377,6 +379,19 @@ export function createBoardView(context) {
     };
   }
 
+  function appendDeathMarkerUnderlay(tile, deathMarker) {
+    if (!deathMarker) {
+      return tile;
+    }
+
+    return {
+      ...tile,
+      deathUnderlayType: 'floor death-marker',
+      deathUnderlayGlyph: '',
+      deathUnderlayOverlayImageUrl: getDeathMarkerAssetUrl(deathMarker.markerAssetId),
+    };
+  }
+
   function tileAt(x, y) {
     const state = getState();
     const floorState = getCurrentFloorState();
@@ -398,6 +413,9 @@ export function createBoardView(context) {
       studioArchetypeId,
       isVisible,
     });
+    const deathMarker = isVisible
+      ? getDeathMarkerAt(floorState, x, y, state.turn)
+      : null;
 
     if (!isVisible && !isExplored) {
       return { type: "unknown", glyph: "" };
@@ -408,7 +426,7 @@ export function createBoardView(context) {
       const playerMaxHp = getActorDerivedMaxHp(state.player);
       const playerWeaponOverlay = getPlayerWeaponOverlay(state.player, state.gameOver);
       const playerOffHandOverlay = getPlayerOffHandOverlay(state.player, state.gameOver);
-      return {
+      return appendDeathMarkerUnderlay({
         type: state.gameOver
           ? `floor studio-${studioArchetypeId} player dead`
           : `floor studio-${studioArchetypeId} player`,
@@ -445,7 +463,7 @@ export function createBoardView(context) {
             `XP ${state.player.xp}/${state.player.xpToNext}`,
           ].filter(Boolean),
         },
-      };
+      }, deathMarker);
     }
 
     const enemy = isVisible
@@ -538,7 +556,7 @@ export function createBoardView(context) {
       const imageUrl = isHealingItem
         ? getPotionIconAssetUrl(potionPickup.item)
         : getConsumableIconAssetUrl(potionPickup.item);
-      return {
+      return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} ${isHealingItem ? 'potion' : 'consumable'}`,
         glyph: TILE.POTION,
         overlayImageUrl: imageUrl,
@@ -553,14 +571,14 @@ export function createBoardView(context) {
               : 'Kann direkt benutzt oder ins Inventar gelegt werden.',
           ],
         },
-      };
+      }, deathMarker);
     }
 
     const keyPickup = isVisible
       ? floorState.keys?.find((entry) => entry.x === x && entry.y === y)
       : null;
     if (keyPickup) {
-      return {
+      return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} key key-${keyPickup.item.keyColor}`,
         glyph: TILE.KEY,
         overlayImageUrl: getKeyIconAssetUrl(keyPickup.item),
@@ -573,14 +591,14 @@ export function createBoardView(context) {
             "Wird automatisch aufgehoben und beim passenden Aufsperren verbraucht.",
           ],
         },
-      };
+      }, deathMarker);
     }
 
     const foodPickup = isVisible
       ? floorState.foods?.find((entry) => entry.x === x && entry.y === y)
       : null;
     if (foodPickup) {
-      return {
+      return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} food`,
         glyph: "",
         overlayImageUrl: getFoodIconAssetUrl(foodPickup.item),
@@ -593,7 +611,7 @@ export function createBoardView(context) {
             foodPickup.item.description,
           ],
         },
-      };
+      }, deathMarker);
     }
 
     const door = floorState.doors?.find((entry) => entry.x === x && entry.y === y);
@@ -601,7 +619,7 @@ export function createBoardView(context) {
       const locked = door.doorType === "locked";
       const stateLabel = door.isOpen ? "Offen" : locked ? "Verschlossen" : "Geschlossen";
       const doorPresentation = getDoorPresentation(door, floorState);
-      return {
+      return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} ${door.isOpen ? "door-open" : "door-closed"} ${doorPresentation.classes.join(" ")}${locked ? ` lock-${door.lockColor}` : ""}${isVisible ? "" : " memory"}`,
         glyph: door.isOpen ? TILE.DOOR_OPEN : TILE.DOOR_CLOSED,
         overlayImageUrl: doorPresentation.iconAssetUrl,
@@ -619,14 +637,14 @@ export function createBoardView(context) {
               : "Öffnet sich automatisch beim Betreten.",
           ],
         } : null,
-      };
+      }, deathMarker);
     }
 
     const weaponPickup = isVisible
       ? floorState.weapons?.find((weapon) => weapon.x === x && weapon.y === y)
       : null;
     if (weaponPickup) {
-      return {
+      return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} weapon-drop ${getItemRarityClass(weaponPickup.item)}`,
         glyph: "",
         overlayImageUrl: getWeaponIconAssetUrl(weaponPickup.item),
@@ -646,14 +664,14 @@ export function createBoardView(context) {
             weaponPickup.item.description,
           ].filter(Boolean),
         },
-      };
+      }, deathMarker);
     }
 
     const offHandPickup = isVisible
       ? floorState.offHands?.find((item) => item.x === x && item.y === y)
       : null;
     if (offHandPickup) {
-      return {
+      return appendDeathMarkerUnderlay({
         type: `floor studio-${studioArchetypeId} weapon-drop offhand-drop ${getItemRarityClass(offHandPickup.item)}`,
         glyph: "",
         overlayImageUrl: getOffHandIconAssetUrl(offHandPickup.item),
@@ -663,11 +681,11 @@ export function createBoardView(context) {
           imageClass: `tooltip-art-offhand ${getItemRarityClass(offHandPickup.item)}`,
           lines: getOffHandTooltipLines(offHandPickup.item),
         },
-      };
+      }, deathMarker);
     }
 
     if (chestTile) {
-      return chestTile;
+      return appendDeathMarkerUnderlay(chestTile, deathMarker);
     }
 
     const trap = floorState.traps?.find((entry) => entry.x === x && entry.y === y) ?? null;
@@ -700,7 +718,7 @@ export function createBoardView(context) {
           : trap.effect?.slow
             ? "Bremst Bewegungen und Tritt aus."
             : null;
-      return {
+      return appendDeathMarkerUnderlay({
         type: `${isVisible ? `floor studio-${studioArchetypeId}` : `floor memory studio-${studioArchetypeId}`} trap trap-${trap.type} ${trapStateClass}${isVisible ? "" : " memory"}`.trim(),
         glyph: trapGlyph,
         overlayImageUrl: getTrapIconAssetUrl(trap),
@@ -714,12 +732,12 @@ export function createBoardView(context) {
             trapEffectLine,
           ].filter(Boolean),
         },
-      };
+      }, deathMarker);
     }
 
     const showcase = floorState.showcases?.find((entry) => entry.x === x && entry.y === y) ?? null;
     if (showcase && (isVisible || isExplored)) {
-      return {
+      return appendDeathMarkerUnderlay({
         type: isVisible
           ? `floor studio-${studioArchetypeId} showcase`
           : `floor memory studio-${studioArchetypeId} showcase memory`,
@@ -735,23 +753,23 @@ export function createBoardView(context) {
             "Blockiert Bewegung, Sicht und Schüsse.",
           ],
         } : null,
-      };
+      }, deathMarker);
     }
 
     if (transitionTile) {
-      return transitionTile;
+      return appendDeathMarkerUnderlay(transitionTile, deathMarker);
     }
 
     if (floorState.grid[y][x] === TILE.WALL) {
       return { type: isVisible ? "wall" : "wall memory", glyph: TILE.WALL };
     }
 
-    return {
+    return appendDeathMarkerUnderlay({
       type: isVisible
         ? `floor studio-${studioArchetypeId}`
         : `floor memory studio-${studioArchetypeId}`,
       glyph: "",
-    };
+    }, deathMarker);
   }
 
   function getTargetCursorState(x, y, state, floorState) {
@@ -782,6 +800,7 @@ export function createBoardView(context) {
   function renderBoard() {
     const state = getState();
     const floorState = getCurrentFloorState();
+    pruneExpiredDeathMarkers(floorState, state.turn);
     hideTooltip?.();
     boardElement.style.gridTemplateColumns = `repeat(${WIDTH}, ${TILE_SIZE}px)`;
     boardElement.style.gridTemplateRows = `repeat(${HEIGHT}, ${TILE_SIZE}px)`;
@@ -800,6 +819,18 @@ export function createBoardView(context) {
         const base = document.createElement("div");
         base.className = `tile tile-base ${baseType}`;
         cell.appendChild(base);
+        const shouldRenderDeathUnderlay = Boolean(tile.deathUnderlayType || tile.deathUnderlayOverlayImageUrl);
+        if (shouldRenderDeathUnderlay) {
+          const deathUnderlay = document.createElement('div');
+          deathUnderlay.className = `tile tile-death-underlay${tile.deathUnderlayType ? ` ${tile.deathUnderlayType}` : ''}`;
+          deathUnderlay.textContent = tile.deathUnderlayGlyph ?? "";
+          if (tile.deathUnderlayOverlayImageUrl) {
+            deathUnderlay.classList.add('has-overlay');
+            deathUnderlay.style.setProperty('--tile-overlay-image', `url("${tile.deathUnderlayOverlayImageUrl}")`);
+            deathUnderlay.style.color = 'transparent';
+          }
+          cell.appendChild(deathUnderlay);
+        }
         const shouldRenderUnderlay = Boolean(tile.underlayType || tile.underlayOverlayImageUrl);
         if (shouldRenderUnderlay) {
           const underlay = document.createElement('div');

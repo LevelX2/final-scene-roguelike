@@ -1368,3 +1368,144 @@ test('enemy door opening logs when the doorway is visible or close enough to hea
   assert.equal(visibleHarness.floatingTexts.length, 0);
   assert.equal(visibleHarness.getDoorOpenSoundCount(), 1);
 });
+
+test('takeEnemyTurn does not let off-floor enemies target the player', () => {
+  const enemy = createBaseEnemy({
+    id: 'off-floor-hunter',
+    x: 3,
+    y: 2,
+    originX: 3,
+    originY: 2,
+    behavior: 'hunter',
+    mobility: 'roaming',
+    aggro: true,
+    aggroRadius: 6,
+    mainHand: { damage: 2, attackMode: 'ranged', range: 6 },
+  });
+  const offFloorState = {
+    grid: createGrid(8, 5, '#'),
+    enemies: [enemy],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, true),
+  };
+  for (let x = 1; x <= 6; x += 1) {
+    offFloorState.grid[2][x] = '.';
+  }
+  const currentFloorState = {
+    grid: createGrid(8, 5, '.'),
+    enemies: [],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, true),
+  };
+  const state = {
+    player: { x: 2, y: 2, hp: 20, maxHp: 20 },
+    floor: 2,
+    floors: {
+      1: offFloorState,
+      2: currentFloorState,
+    },
+    gameOver: false,
+    safeRestTurns: 0,
+    damageTaken: 0,
+    damageDealt: 0,
+    kills: 0,
+  };
+  let attackCalls = 0;
+  const api = createEnemyTurnApi({
+    WIDTH: 8,
+    HEIGHT: 5,
+    TILE: { FLOOR: '.' },
+    DOOR_TYPE: { LOCKED: 'locked' },
+    getState: () => state,
+    getCurrentFloorState: () => currentFloorState,
+    getDoorAt: () => null,
+    getOffHand: () => ({ name: 'Testschild' }),
+    resolveCombatAttack: () => {
+      attackCalls += 1;
+      return { hit: true, damage: 2 };
+    },
+    resolveBlock: (_actor, damage) => ({
+      damage,
+      blocked: false,
+      prevented: 0,
+      reflectiveDamage: 0,
+      item: { name: 'Testschild' },
+    }),
+    hasLineOfSight: () => true,
+    isStraightShot: () => true,
+    canActorMove: () => true,
+    tryApplyWeaponEffects: () => null,
+    addMessage: () => {},
+    showFloatingText: () => {},
+    createDeathCause: () => null,
+    playPlayerHitSound: () => {},
+    playDodgeSound: () => {},
+    playDeathSound: () => {},
+    playDoorOpenSound: () => {},
+    saveHighscoreIfNeeded: () => {},
+    showDeathModal: () => {},
+    noteMonsterEncounter: () => {},
+    handleActorEnterTile: () => {},
+    manhattanDistance: (left, right) => Math.abs(left.x - right.x) + Math.abs(left.y - right.y),
+    randomChance: () => 0.1,
+  });
+
+  api.takeEnemyTurn(enemy, {
+    floorState: offFloorState,
+    canTargetPlayer: false,
+  });
+
+  assert.equal(attackCalls, 0);
+  assert.equal(state.player.hp, 20);
+});
+
+test('enemy-turns records a death marker when reflective damage kills an attacker', () => {
+  const enemy = createBaseEnemy({
+    x: 3,
+    y: 2,
+    hp: 3,
+    maxHp: 3,
+    aggro: true,
+  });
+  const floorState = {
+    grid: createGrid(8, 5, '.'),
+    enemies: [enemy],
+    weapons: [],
+    offHands: [],
+    foods: [],
+    doors: [],
+    rooms: [],
+    showcases: [],
+    visible: createMask(8, 5, true),
+  };
+  const player = { x: 2, y: 2, hp: 20, maxHp: 20 };
+  const harness = createEnemyTurnHarness({
+    enemy,
+    floorState,
+    player,
+    resolveCombatAttack: () => ({ hit: true, damage: 2, critical: false }),
+    resolveBlock: () => ({
+      damage: 0,
+      blocked: true,
+      prevented: 2,
+      reflectiveDamage: 5,
+      item: { name: 'Spiegelschild' },
+    }),
+    hasLineOfSight: () => true,
+  });
+
+  harness.api.takeEnemyTurn(enemy);
+
+  assert.equal(harness.state.kills, 1);
+  assert.deepEqual(floorState.enemies, []);
+  assert.deepEqual(floorState.recentDeaths, [{
+    x: 3,
+    y: 2,
+    expiresAfterTurn: 3,
+    markerAssetId: 'death-mark',
+  }]);
+});

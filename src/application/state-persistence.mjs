@@ -8,6 +8,7 @@ import { createTimestampedId } from '../utils/id-tools.mjs';
 import { deriveStudioGenerationSeed, normalizeSeed } from '../utils/seeded-random.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
 import { NORMAL_SPEED_INTERVAL } from './actor-speed.mjs';
+import { normalizeDeathMarkers, pruneExpiredDeathMarkers } from './death-marker-service.mjs';
 import { createEmptyProgressionBonuses, getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 import { areVoiceAnnouncementsForcedOff } from './test-mode.mjs';
 
@@ -672,6 +673,7 @@ export function createStatePersistenceApi(context) {
     floorState.chests = Array.isArray(floorState.chests)
       ? floorState.chests.map(normalizeChestPickup)
       : [];
+    floorState.recentDeaths = normalizeDeathMarkers(floorState.recentDeaths);
     floorState.enemies = Array.isArray(floorState.enemies)
       ? floorState.enemies.map((enemy) => ({
           ...normalizeActorSpeedFields(enemy, NORMAL_SPEED_INTERVAL, timelineTime),
@@ -818,6 +820,7 @@ export function createStatePersistenceApi(context) {
         );
       }
       normalizeFloorStateWeapons(floorState, normalizedState.timelineTime);
+      pruneExpiredDeathMarkers(floorState, normalizedState.turn);
     });
 
     normalizedState.player = {

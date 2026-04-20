@@ -1,4 +1,5 @@
 import { evaluateTargetSelection, getTargetHintLabel, getVisibleTargetSelections, isTargetModeWeapon } from './targeting-service.mjs';
+import { pruneExpiredDeathMarkers } from './death-marker-service.mjs';
 
 export function createPlayerTurnController(context) {
   const {
@@ -25,14 +26,20 @@ export function createPlayerTurnController(context) {
     playStepSound,
     playLockedDoorSound,
     hasNearbyEnemy,
-    moveEnemies,
+    takeEnemyTurn,
     canActorMove,
     hasLineOfSight,
     chebyshevDistance,
     getCombatWeapon,
-    processRoundStatusEffects,
-    processContinuousTraps,
-    processSafeRegeneration,
+    ensureSchedulerState,
+    beginActorTurn,
+    scheduleActorNextTurn,
+    getNextScheduledActor,
+    getActorFloorContext,
+    isPlayerTurn,
+    processActorStatusEffects,
+    processActorContinuousTraps,
+    processActorSafeRegeneration,
     processConsumableBuffs,
     applyPlayerNutritionTurnCost,
     renderSelf,
@@ -63,26 +70,102 @@ export function createPlayerTurnController(context) {
     return dx !== 0 && dy !== 0;
   }
 
-  function endTurn({ skipEnemyMove = false, actionType = "other" } = {}) {
+  function processActorAfterAction(actor, floorState, { actionType = "other" } = {}) {
     const state = getState();
+    if (!actor || actor.hp <= 0 || state.gameOver) {
+      return;
+    }
+
+    processActorStatusEffects(actor, floorState);
+    if (state.gameOver || actor.hp <= 0) {
+      return;
+    }
+
+    processActorContinuousTraps(actor, floorState);
+    if (state.gameOver || actor.hp <= 0) {
+      return;
+    }
+
+    if (actor === state.player) {
+      processActorSafeRegeneration(actor, actionType);
+      if (state.gameOver || actor.hp <= 0) {
+        return;
+      }
+
+      processConsumableBuffs?.();
+    }
+  }
+
+  function flushScheduledActorsUntilPlayerTurn() {
+    const state = getState();
+    ensureSchedulerState();
+    let guard = 0;
+
+    while (!state.gameOver && !isPlayerTurn()) {
+      const nextActor = getNextScheduledActor();
+      if (!nextActor || nextActor === state.player) {
+        break;
+      }
+
+      const actorFloorContext = getActorFloorContext(nextActor);
+      beginActorTurn(nextActor);
+      takeEnemyTurn(nextActor, {
+        floorState: actorFloorContext.floorState,
+        canTargetPlayer: actorFloorContext.floorNumber === state.floor,
+      });
+      if (state.gameOver) {
+        break;
+      }
+
+      processActorAfterAction(nextActor, actorFloorContext.floorState);
+      if (state.gameOver || nextActor.hp <= 0) {
+        guard += 1;
+        if (guard > 500) {
+          break;
+        }
+        continue;
+      }
+
+      if ((actorFloorContext.floorState?.enemies ?? []).includes(nextActor)) {
+        scheduleActorNextTurn(nextActor);
+      }
+
+      guard += 1;
+      if (guard > 500) {
+        addMessage("Die Zeitachse stockt gerade. Bitte pruefe den Debug-Zustand.", "danger");
+        break;
+      }
+    }
+  }
+
+  function ensurePlayerTurnReady() {
+    flushScheduledActorsUntilPlayerTurn();
+    const state = getState();
+    return !state.gameOver && isPlayerTurn();
+  }
+
+  function endTurn({ skipEnemyMove = false, actionType = "other", actionCost = 100 } = {}) {
+    const state = getState();
+    ensureSchedulerState();
+    beginActorTurn(state.player);
     state.turn += 1;
+    const floorStates = Object.values(state.floors ?? {});
+    if (floorStates.length > 0) {
+      floorStates.forEach((floorState) => pruneExpiredDeathMarkers(floorState, state.turn));
+    } else {
+      pruneExpiredDeathMarkers(getCurrentFloorState(), state.turn);
+    }
     if (!state.gameOver) {
       applyPlayerNutritionTurnCost();
     }
+    if (!state.gameOver) {
+      processActorAfterAction(state.player, getCurrentFloorState(), { actionType });
+    }
+    if (!state.gameOver && state.player.hp > 0) {
+      scheduleActorNextTurn(state.player, actionCost);
+    }
     if (!state.gameOver && !skipEnemyMove) {
-      moveEnemies();
-    }
-    if (!state.gameOver) {
-      processRoundStatusEffects?.();
-    }
-    if (!state.gameOver) {
-      processContinuousTraps();
-    }
-    if (!state.gameOver) {
-      processSafeRegeneration(actionType);
-    }
-    if (!state.gameOver) {
-      processConsumableBuffs?.();
+      flushScheduledActorsUntilPlayerTurn();
     }
     renderSelf();
   }
@@ -90,6 +173,10 @@ export function createPlayerTurnController(context) {
   function tryCloseAdjacentDoor() {
     const state = getState();
     if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+      return;
+    }
+    if (!ensurePlayerTurnReady()) {
+      renderSelf();
       return;
     }
 
@@ -127,6 +214,10 @@ export function createPlayerTurnController(context) {
     if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
       return;
     }
+    if (!ensurePlayerTurnReady()) {
+      renderSelf();
+      return;
+    }
 
     const floorState = getCurrentFloorState();
     const targetX = state.player.x + dx;
@@ -154,6 +245,7 @@ export function createPlayerTurnController(context) {
     }
 
     const door = getDoorAt(targetX, targetY, floorState);
+    let openedDoorDuringMove = false;
     if (door && !door.isOpen) {
       if (isDiagonalStep(dx, dy)) {
         addMessage("Eine Tür kannst du nicht diagonal aufdrücken.");
@@ -178,6 +270,7 @@ export function createPlayerTurnController(context) {
       }
 
       openDoor(door, "player");
+      openedDoorDuringMove = true;
     }
 
     if (getShowcaseAt(targetX, targetY, floorState)) {
@@ -214,12 +307,16 @@ export function createPlayerTurnController(context) {
       return;
     }
 
-    endTurn({ actionType: "move" });
+    endTurn({ actionType: "move", actionCost: openedDoorDuringMove ? 150 : 100 });
   }
 
   function handleWait() {
     const state = getState();
     if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+      return;
+    }
+    if (!ensurePlayerTurnReady()) {
+      renderSelf();
       return;
     }
 
@@ -380,6 +477,10 @@ export function createPlayerTurnController(context) {
   function confirmTargetAttack() {
     const state = getState();
     if (!state.targeting?.active) {
+      return;
+    }
+    if (!ensurePlayerTurnReady()) {
+      renderSelf();
       return;
     }
 

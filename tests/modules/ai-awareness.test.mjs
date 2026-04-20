@@ -87,3 +87,29 @@ test('ai-awareness includes consumable rest bonus in safe rest progress', () => 
   assert.equal(state.player.hp, 9);
   assert.equal(state.safeRestTurns, 0);
 });
+
+test('ai-awareness only applies actor-safe-regeneration to the player actor', () => {
+  const state = {
+    player: { x: 5, y: 5, hp: 8, maxHp: 12 },
+    safeRestTurns: 2,
+  };
+  const floorState = {
+    enemies: [],
+    showcases: [],
+  };
+
+  const api = createAiAwarenessApi({
+    getState: () => state,
+    getCurrentFloorState: () => floorState,
+    healPlayer: (amount) => {
+      state.player.hp += amount;
+      return amount;
+    },
+    addMessage: () => {},
+  });
+
+  api.processActorSafeRegeneration({ type: 'monster', x: 1, y: 1, hp: 5, maxHp: 5 }, 'wait');
+
+  assert.equal(state.safeRestTurns, 2);
+  assert.equal(state.player.hp, 8);
+});

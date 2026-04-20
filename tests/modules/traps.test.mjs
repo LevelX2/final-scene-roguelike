@@ -253,3 +253,31 @@ test('player-triggered traps play an audible cue on avoidance', () => {
   assert.equal(harness.trapSounds.length, 1);
   assert.deepEqual(harness.trapSounds[0], { trapType: 'floor', avoided: true });
 });
+
+test('continuous hazards can be processed for a single actor without ticking everyone else', () => {
+  const harness = createTrapPerceptionHarness();
+  const enemy = { id: 'enemy', name: 'Testgegner', x: 3, y: 3, hp: 10, turnsSinceHit: 2 };
+  harness.state.player.x = 1;
+  harness.state.player.y = 1;
+  harness.floorState.enemies.push(enemy);
+  harness.floorState.traps.push({
+    id: 'hazard',
+    name: 'Funkenkabel',
+    type: 'hazard',
+    visibility: 'visible',
+    state: 'active',
+    trigger: 'continuous',
+    resetMode: 'persistent',
+    affectsPlayer: true,
+    affectsEnemies: true,
+    x: 3,
+    y: 3,
+    effect: { damage: 2 },
+  });
+
+  harness.trapsApi.processActorContinuousTraps(enemy, harness.floorState);
+
+  assert.equal(enemy.hp, 8);
+  assert.equal(harness.state.player.hp, 10);
+  assert.equal(enemy.turnsSinceHit, 0);
+});

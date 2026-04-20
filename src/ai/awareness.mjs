@@ -30,8 +30,12 @@ export function createAiAwarenessApi(context) {
     );
   }
 
-  function processSafeRegeneration(actionType = "wait") {
+  function processActorSafeRegeneration(actor, actionType = "wait") {
     const state = getState();
+    if (actor !== state.player) {
+      return;
+    }
+
     if (state.player.hp >= getActorDerivedMaxHp(state.player)) {
       state.safeRestTurns = 0;
       return;
@@ -61,10 +65,15 @@ export function createAiAwarenessApi(context) {
     }
   }
 
+  function processSafeRegeneration(actionType = "wait") {
+    processActorSafeRegeneration(getState().player, actionType);
+  }
+
   return {
     manhattanDistance,
     chebyshevDistance,
     hasNearbyEnemy,
+    processActorSafeRegeneration,
     processSafeRegeneration,
   };
 }

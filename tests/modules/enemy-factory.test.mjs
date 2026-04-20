@@ -214,3 +214,26 @@ test('enemy factory can suppress variants per monster for future bosses or scrip
   assert.equal(enemy.weaponDropChance, 0.08);
   assert.equal(enemy.offHandDropChance, 0.06);
 });
+
+test('monster catalog assigns reviewed base speeds within the supported balance band', () => {
+  const reviewedSpeeds = MONSTER_CATALOG.map((monster) => monster.baseSpeed);
+
+  assert.equal(MONSTER_CATALOG.every((monster) => Number.isFinite(monster.baseSpeed)), true);
+  assert.equal(reviewedSpeeds.every((speed) => speed >= 75 && speed <= 135), true);
+  assert.equal(reviewedSpeeds.includes(100), true);
+});
+
+test('enemy factory keeps curated monster base speeds on runtime enemies', () => {
+  const factory = createFactoryHarness();
+  const sampleIds = new Map([
+    ['space-opera-schrottsammler-raider', 100],
+    ['ghostface', 90],
+    ['fantasy-troll-brute', 125],
+  ]);
+
+  for (const [monsterId, expectedSpeed] of sampleIds) {
+    const monster = MONSTER_CATALOG.find((entry) => entry.id === monsterId);
+    const enemy = factory.createEnemy({ x: 1, y: 1 }, 1, monster);
+    assert.equal(enemy.baseSpeed, expectedSpeed);
+  }
+});

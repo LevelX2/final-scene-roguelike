@@ -3,6 +3,7 @@ import { formatMonsterDisplayName } from '../text/combat-phrasing.mjs';
 import { getItemBalanceGroups } from '../item-balance-groups.mjs';
 import { weightedPick, weightedPickFromMap } from '../utils/random-tools.mjs';
 import { cloneItemModifierRuntime, cloneWeaponRuntimeEffect } from '../weapon-runtime-effects.mjs';
+import { NORMAL_SPEED_INTERVAL } from '../application/actor-speed.mjs';
 import {
   MONSTER_HEALING_LABELS,
   MONSTER_HEALING_PROFILE,
@@ -325,6 +326,7 @@ export function createDungeonEnemyFactory(context) {
       originY: position.y,
       aggro: false,
       turnsSinceHit: 0,
+      nextActionTime: 0,
       statusEffects: [],
       canOpenDoors: Boolean(monster.canOpenDoors),
       canChangeFloors: Boolean(monster.canChangeFloors),
@@ -339,6 +341,11 @@ export function createDungeonEnemyFactory(context) {
       xpReward: Math.round((monster.xpReward + scale * ENEMY_XP_PER_SCALE) * variant.xpMultiplier),
       maxHp,
       hp: maxHp,
+      baseSpeed: Number.isFinite(monster.baseSpeed) ? Math.round(monster.baseSpeed) : NORMAL_SPEED_INTERVAL,
+      speedIntervalModifier: Number.isFinite(monster.speedIntervalModifier) ? Math.round(monster.speedIntervalModifier) : 0,
+      speedIntervalModifiers: Array.isArray(monster.speedIntervalModifiers)
+        ? monster.speedIntervalModifiers.map((entry) => ({ ...entry }))
+        : [],
       strength: baseStrength + (variantBonus.strength ?? 0),
       precision: basePrecision + (variantBonus.precision ?? 0),
       reaction: baseReaction + (variantBonus.reaction ?? 0),

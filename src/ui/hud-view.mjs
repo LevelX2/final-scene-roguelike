@@ -2,6 +2,7 @@ import { formatStudioLabel, formatStudioWithArchetype, getStudioArchetypeLabel }
 import { getWeaponEffectDefinition, getEffectStateLabel } from '../content/catalogs/weapon-effects.mjs';
 import { formatKillStatLabel, getKillStatEntries } from '../kill-stats.mjs';
 import { getWeaponRuntimeEffects } from '../weapon-runtime-effects.mjs';
+import { getActorSpeedState } from '../application/actor-speed.mjs';
 
 export function createHudView(context) {
   const {
@@ -129,6 +130,7 @@ export function createHudView(context) {
     const enemyWeaponLabel = target.enemy.mainHand
       ? `${formatWeaponDisplayName(target.enemy.mainHand)} (${formatWeaponStats(target.enemy.mainHand)})`
       : 'Keine';
+    const speedState = getActorSpeedState(target.enemy);
 
     if (compactMode) {
       enemySheetElement.innerHTML = [
@@ -138,6 +140,7 @@ export function createHudView(context) {
         createSheetRow('Distanz', `${target.distance} Felder`),
         createSheetRow('Bedrohung', target.enemy.variantLabel ?? 'Gewöhnlich'),
         createSheetRow('Waffe', revealed ? enemyWeaponLabel : attackSummary),
+        ...(revealed ? [createSheetRow('Geschwindigkeit', speedState.summaryLabel)] : []),
         createSheetRow('Status', revealed ? formatStatusSummary(target.enemy) : 'Unbekannt'),
       ].join('');
       return;
@@ -156,6 +159,13 @@ export function createHudView(context) {
             createSheetRow('Mobilität', target.enemy.mobilityLabel ?? 'Mobil'),
             createSheetRow('Rückzug', target.enemy.retreatLabel ?? 'Standhaft'),
             createSheetRow('Regeneration', target.enemy.healingLabel ?? 'Langsam'),
+            ...(speedState.isModified
+              ? [
+                  createSheetRow('Grundgeschwindigkeit', speedState.baseLabel),
+                  createSheetRow('Aktuelle Geschwindigkeit', speedState.currentLabel),
+                  ...(speedState.modifierLabel ? [createSheetRow('Modifikatoren', speedState.modifierLabel)] : []),
+                ]
+              : [createSheetRow('Geschwindigkeit', speedState.summaryLabel)]),
             createSheetRow('Entfernung', `${target.distance} Felder`),
             createSheetRow('Waffe', enemyWeaponLabel),
             createSheetRow('Kampfprofil', attackSummary),

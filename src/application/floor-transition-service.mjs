@@ -65,6 +65,15 @@ export function createFloorTransitionService(context) {
     };
   }
 
+  function normalizeActorTimelineForGeneratedFloor(actor, fallbackTime) {
+    if (!actor) {
+      return;
+    }
+
+    const normalizedFallback = Math.max(0, Math.round(Number(fallbackTime) || 0));
+    actor.nextActionTime = normalizedFallback;
+  }
+
   function ensureFloorExists(floorNumber) {
     const state = getState();
     state.runStudioTopology = ensureRunStudioTopology(
@@ -80,6 +89,10 @@ export function createFloorTransitionService(context) {
         studioTopologyNode: getStudioTopologyNode(state.runStudioTopology, floorNumber),
         ...generationOptions,
       });
+      const timelineTime = Math.max(0, Math.round(Number(state.timelineTime) || 0));
+      (state.floors[floorNumber].enemies ?? []).forEach((enemy) =>
+        normalizeActorTimelineForGeneratedFloor(enemy, timelineTime),
+      );
       syncTopologyAnchorHints(state.runStudioTopology, floorNumber, state.floors[floorNumber]);
     } else if (state.floors[floorNumber].generationSeed == null) {
       state.floors[floorNumber].generationSeed = deriveStudioGenerationSeed(state.runSeed, floorNumber);

@@ -1,6 +1,17 @@
 import { formatStudioOrigin } from '../studio-theme.mjs';
-import { getFoodSatietyEstimate } from '../nutrition.mjs';
-import { getActorDerivedMaxHp } from '../application/derived-actor-stats.mjs';
+import {
+  ENDURANCE_NUTRITION_BONUS_PER_POINT,
+  getFoodSatietyEstimate,
+  getNutritionMax,
+  getNutritionStart,
+} from '../nutrition.mjs';
+import {
+  getActorBlockChance,
+  getActorCombatSnapshot,
+  getActorDerivedMaxHp,
+  getActorDerivedStats,
+} from '../application/derived-actor-stats.mjs';
+import { getActorSpeedState } from '../application/actor-speed.mjs';
 import {
   getConsumableEffectLabel,
   getHealingTypeLabel,
@@ -12,12 +23,16 @@ import { getWeaponRuntimeEffects } from '../weapon-runtime-effects.mjs';
 
 export function createInventoryView(context) {
   const {
+    MIN_CRIT_CHANCE,
+    MAX_CRIT_CHANCE,
     inventoryListElement,
     heroSheetElement,
     inventoryFilterButtons = [],
     getState,
     getMainHand,
     getOffHand,
+    bindTooltip,
+    clamp,
     formatWeaponDisplayName,
     formatWeaponStats,
     formatOffHandStats,
@@ -28,6 +43,14 @@ export function createInventoryView(context) {
     getItemRarityClass,
     getInventoryIconAssetUrl,
   } = context;
+  const HERO_ATTRIBUTE_CONFIG = Object.freeze([
+    { key: 'strength', label: 'Stärke' },
+    { key: 'precision', label: 'Präzision' },
+    { key: 'reaction', label: 'Reaktion' },
+    { key: 'nerves', label: 'Nerven' },
+    { key: 'intelligence', label: 'Intelligenz' },
+    { key: 'endurance', label: 'Ausdauer' },
+  ]);
 
   function getInventoryItemKind(item) {
     if (isHealingConsumable(item)) {
@@ -230,6 +253,133 @@ export function createInventoryView(context) {
     `;
   }
 
+  function formatSignedNumber(value) {
+    return `${value >= 0 ? '+' : ''}${value}`;
+  }
+
+  function getAttributeModifierSummary(derived, statKey) {
+    const parts = [
+      (derived.progression?.[statKey] ?? 0) ? `Level ${formatSignedNumber(derived.progression[statKey])}` : null,
+      (derived.equipment?.[statKey] ?? 0) ? `Ausrüstung ${formatSignedNumber(derived.equipment[statKey])}` : null,
+      (derived.consumables?.[statKey] ?? 0) ? `Buff ${formatSignedNumber(derived.consumables[statKey])}` : null,
+      (derived.status?.[statKey] ?? 0) ? `Status ${formatSignedNumber(derived.status[statKey])}` : null,
+    ].filter(Boolean);
+
+    if (!parts.length) {
+      return null;
+    }
+
+    return parts.join(' | ');
+  }
+
+  function createHeroAttributeCard({ key, label, value, detail }) {
+    return `
+      <div class="inventory-hero-stat inventory-hero-attribute" data-hero-attribute="${key}">
+        <span>${label}</span>
+        <strong>${value}</strong>
+        ${detail ? `<small>${detail}</small>` : ''}
+      </div>
+    `;
+  }
+
+  function getHeroAttributeTooltip(actor, statKey) {
+    const mainHand = getMainHand(actor);
+    const offHand = getOffHand(actor);
+    const derived = getActorDerivedStats(actor);
+    const combat = getActorCombatSnapshot(actor, {
+      weapon: mainHand,
+      clamp,
+      minCritChance: MIN_CRIT_CHANCE,
+      maxCritChance: MAX_CRIT_CHANCE,
+      distance: 1,
+      floorNumber: getState().floor ?? 1,
+    });
+    const blockChance = getActorBlockChance(actor, offHand, clamp);
+    const currentValue = derived.final[statKey] ?? 0;
+    const modifierSummary = getAttributeModifierSummary(derived, statKey);
+
+    const sharedLines = modifierSummary
+      ? [`Aktuell ${currentValue} (${modifierSummary}).`]
+      : [`Aktuell ${currentValue}.`];
+
+    switch (statKey) {
+      case 'strength':
+        return {
+          title: 'Stärke',
+          lines: [
+            ...sharedLines,
+            'Erhöht deinen Basisschaden im Angriff.',
+            `Mit ${formatWeaponDisplayName(mainHand)} triffst du derzeit für ${combat.baseDamage} Schaden vor Krits.`,
+          ],
+        };
+      case 'precision':
+        return {
+          title: 'Präzision',
+          lines: [
+            ...sharedLines,
+            'Steigert Trefferwert, Krit-Chance und die Entdeckung versteckter Fallen.',
+            `Der aktuelle Angriffswert liegt bei ${combat.hitValue}, die Krit-Chance bei ${combat.critChance}%.`,
+          ],
+        };
+      case 'reaction':
+        return {
+          title: 'Reaktion',
+          lines: [
+            ...sharedLines,
+            'Fließt stark in deinen Ausweichwert ein und verbessert deine Reaktion auf Fallen.',
+            `Zusammen mit Nerven ergibt das derzeit Ausweichwert ${combat.dodgeValue}.`,
+          ],
+        };
+      case 'nerves':
+        return {
+          title: 'Nerven',
+          lines: [
+            ...sharedLines,
+            'Unterstützt deinen Ausweichwert und stärkt Schildblocks.',
+            offHand?.subtype === 'shield'
+              ? `Mit ${offHand.name} hast du aktuell ${blockChance}% Blockchance.`
+              : 'Ohne Schild bleibt deine Blockchance derzeit bei 0%.',
+          ],
+        };
+      case 'intelligence':
+        return {
+          title: 'Intelligenz',
+          lines: [
+            ...sharedLines,
+            'Dieser Wert ist für den Helden aktuell nur schwach angeschlossen.',
+            'Im jetzigen Stand verändert er keine großen sichtbaren Kampf- oder Fallenwerte direkt.',
+          ],
+        };
+      case 'endurance':
+        return {
+          title: 'Ausdauer',
+          lines: [
+            ...sharedLines,
+            'Reduziert erlittenen Fallenschaden und vergrößert dein Hungerpolster.',
+            `Jeder Punkt bringt aktuell ${ENDURANCE_NUTRITION_BONUS_PER_POINT} mehr Maximal- und Startnahrung.`,
+            `Mit deinem aktuellen Wert startest du bei ${getNutritionStart(actor)} Nahrung und kannst bis ${getNutritionMax(actor)} auffüllen.`,
+          ],
+        };
+      default:
+        return null;
+    }
+  }
+
+  function bindHeroAttributeTooltips(state) {
+    if (!heroSheetElement || typeof bindTooltip !== 'function') {
+      return;
+    }
+
+    HERO_ATTRIBUTE_CONFIG.forEach(({ key }) => {
+      const cardElement = heroSheetElement.querySelector(`[data-hero-attribute="${key}"]`);
+      if (!cardElement) {
+        return;
+      }
+
+      bindTooltip(cardElement, () => getHeroAttributeTooltip(state.player, key));
+    });
+  }
+
   function createHeroSlotCard(label, title, detail, slotState = '') {
     return `
       <article class="inventory-hero-slot ${slotState}">
@@ -248,8 +398,10 @@ export function createInventoryView(context) {
     const mainHand = getMainHand(state.player);
     const offHand = getOffHand(state.player);
     const statusSummary = formatStatusSummary(state.player);
+    const speedState = getActorSpeedState(state.player);
     const hungerLabel = getHungerStateLabel(state.player.hungerState);
     const playerMaxHp = getActorDerivedMaxHp(state.player);
+    const playerDerived = getActorDerivedStats(state.player);
     const xpLabel = state.player.xpToNext > 0
       ? `${state.player.xp} / ${state.player.xpToNext}`
       : `${state.player.xp}`;
@@ -261,9 +413,30 @@ export function createInventoryView(context) {
       createHeroStatCard('Level', state.player.level ?? 1),
       createHeroStatCard('Leben', `${state.player.hp}/${playerMaxHp}`),
       createHeroStatCard('Hunger', hungerLabel),
+      ...(speedState.isModified
+        ? [
+            createHeroStatCard('Grundgeschwindigkeit', speedState.baseLabel),
+            createHeroStatCard('Aktuelle Geschwindigkeit', speedState.currentLabel),
+            ...(speedState.modifierLabel ? [createHeroStatCard('Modifikatoren', speedState.modifierLabel)] : []),
+          ]
+        : [createHeroStatCard('Geschwindigkeit', speedState.summaryLabel)]),
       createHeroStatCard('Status', statusSummary, statusSummary === 'Keine' ? 'is-muted' : ''),
       createHeroStatCard('Erfahrung', xpLabel),
       '</div>',
+      '<section class="inventory-hero-section">',
+      '<div class="inventory-hero-section-head">',
+      '<h4 class="inventory-hero-section-title">Attribute</h4>',
+      '<p>Hover zeigt, welche Auswirkungen der Wert im aktuellen Lauf hat.</p>',
+      '</div>',
+      '<div class="inventory-hero-attributes">',
+      ...HERO_ATTRIBUTE_CONFIG.map(({ key, label }) => createHeroAttributeCard({
+        key,
+        label,
+        value: playerDerived.final[key] ?? 0,
+        detail: getAttributeModifierSummary(playerDerived, key),
+      })),
+      '</div>',
+      '</section>',
       '<div class="inventory-hero-loadout">',
       createHeroSlotCard('Haupthand', formatWeaponDisplayName(mainHand), formatWeaponStats(mainHand)),
       createHeroSlotCard(
@@ -280,6 +453,8 @@ export function createInventoryView(context) {
       ),
       '</div>',
     ].join('');
+
+    bindHeroAttributeTooltips(state);
   }
 
   function getDetailLine(item) {

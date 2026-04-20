@@ -178,6 +178,83 @@ test("studio transitions use dedicated overlays instead of normal door art", asy
   expect(visuals.exitClasses).toContain("studio-transition");
 });
 
+test("debug info modal shows timeline and upcoming actor order when revealed", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setDebugReveal(true);
+    window.__TEST_API__.clearFloorEntities();
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.placeEnemy({ x: snapshot.player.x + 2, y: snapshot.player.y }, {
+      id: "debug-raider",
+      name: "Debug-Raider",
+      hp: 10,
+      reaction: 2,
+      baseSpeed: 80,
+    });
+    window.__TEST_API__.setTimelineTime(240);
+    window.__TEST_API__.setPlayerSpeed({ nextActionTime: 300, baseSpeed: 100 });
+    window.__TEST_API__.setEnemySpeed({ nextActionTime: 260, baseSpeed: 80 }, 0);
+  });
+
+  await page.locator("#openDebugInfo").click();
+
+  await expect(page.locator("#debugInfoModal")).toBeVisible();
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Weltzeit: 240/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Spieler-Zeitpunkt: 300/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Nächster Akteur: Debug-Raider \| Floor 1/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/Nächste Akteure:/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/1\. Debug-Raider \| Floor 1 \| Zeit 260 \| Reaktion 2/);
+  await expect(page.locator("#debugInfoText")).toHaveValue(/2\. Spieler \| Floor 1 \| Zeit 300 \| Reaktion 4/);
+});
+
+test("actors standing on studio transitions keep the transition marker visible", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const visuals = await page.evaluate(() => {
+    const snapshot = window.__TEST_API__.getSnapshot();
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.setDebugReveal(true);
+    window.__TEST_API__.teleportPlayer(snapshot.stairsDown);
+    window.__TEST_API__.placeEnemy(snapshot.stairsUp, {
+      id: "transition-scout",
+      name: "Transitionscout",
+      canChangeFloors: true,
+    });
+
+    const playerCell = document.querySelector(".tile.player")?.parentElement ?? null;
+    const enemyCell = document.querySelector(".tile.enemy")?.parentElement ?? null;
+    const playerTransition = playerCell?.querySelector(".tile.stairs-down, .tile.stairs-up") ?? null;
+    const enemyTransition = enemyCell?.querySelector(".tile.stairs-down, .tile.stairs-up") ?? null;
+
+    return {
+      playerClasses: Array.from(playerCell?.querySelectorAll(".tile") ?? []).map((node) => node.className),
+      enemyClasses: Array.from(enemyCell?.querySelectorAll(".tile") ?? []).map((node) => node.className),
+      playerTransitionOverlay: playerTransition?.style.getPropertyValue("--tile-overlay-image") ?? "",
+      enemyTransitionOverlay: enemyTransition?.style.getPropertyValue("--tile-overlay-image") ?? "",
+    };
+  });
+
+  expect(visuals.playerClasses.some((className) => className.includes("tile-transition-underlay"))).toBeTruthy();
+  expect(visuals.playerClasses.some((className) => className.includes("stairs-down") || className.includes("stairs-up"))).toBeTruthy();
+  expect(visuals.playerClasses.some((className) => className.includes("tile-foreground-layer") && className.includes("player"))).toBeTruthy();
+  expect(visuals.enemyClasses.some((className) => className.includes("tile-transition-underlay"))).toBeTruthy();
+  expect(visuals.enemyClasses.some((className) => className.includes("stairs-down") || className.includes("stairs-up"))).toBeTruthy();
+  expect(visuals.enemyClasses.some((className) => className.includes("tile-foreground-layer") && className.includes("enemy"))).toBeTruthy();
+  expect(
+    visuals.playerTransitionOverlay.includes("studio-exit-") ||
+    visuals.playerTransitionOverlay.includes("lift-") ||
+    visuals.playerTransitionOverlay.includes("stairs-")
+  ).toBeTruthy();
+  expect(
+    visuals.enemyTransitionOverlay.includes("studio-entry-") ||
+    visuals.enemyTransitionOverlay.includes("lift-") ||
+    visuals.enemyTransitionOverlay.includes("stairs-")
+  ).toBeTruthy();
+});
+
 test("floor followers use the full inflected monster name in stair messages", async ({ page }) => {
   await page.goto("/");
   await startRun(page);
@@ -1162,6 +1239,82 @@ test("showcase tiles use a larger visual footprint inside the board", async ({ p
   expect(footprint.overlaySize).toBe("34px 34px");
   expect(footprint.overlayInsetTop).toBe("-4px");
   expect(footprint.frameContent === "none" || footprint.frameContent === "\"\"").toBeTruthy();
+});
+
+test("showcases in explored memory tiles keep the dark floor base", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  const showcaseMemoryTile = await page.evaluate(() => {
+    const initialSnapshot = window.__TEST_API__.getSnapshot();
+    const revealTile = { x: initialSnapshot.player.x, y: initialSnapshot.player.y };
+    const width = initialSnapshot.grid[0]?.length ?? 0;
+    const floorTiles = [];
+    const visibleFloorTiles = [];
+
+    for (let y = 0; y < initialSnapshot.grid.length; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        if (initialSnapshot.grid[y]?.[x] !== ".") {
+          continue;
+        }
+
+        const tile = { x, y };
+        floorTiles.push(tile);
+        if (initialSnapshot.visible?.[y]?.[x] && !(x === revealTile.x && y === revealTile.y)) {
+          visibleFloorTiles.push(tile);
+        }
+      }
+    }
+
+    let scenario = null;
+    for (const showcaseTile of visibleFloorTiles) {
+      for (const hideTile of floorTiles) {
+        window.__TEST_API__.teleportPlayer(hideTile);
+        const hiddenSnapshot = window.__TEST_API__.getSnapshot();
+        if (!hiddenSnapshot.visible?.[showcaseTile.y]?.[showcaseTile.x]) {
+          scenario = { showcaseTile, hideTile, width };
+          break;
+        }
+      }
+      if (scenario) {
+        break;
+      }
+    }
+
+    if (!scenario) {
+      window.__TEST_API__.teleportPlayer(revealTile);
+      return null;
+    }
+
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.teleportPlayer(revealTile);
+    window.__TEST_API__.placeShowcase(scenario.showcaseTile, {
+      id: "test-showcase-memory-floor",
+      name: "Memory-Vitrine",
+      source: "Tests",
+      description: "Nur fuer den Memory-Test.",
+    });
+    window.__TEST_API__.teleportPlayer(scenario.hideTile);
+
+    const cells = Array.from(document.querySelectorAll(".board .tile-cell"));
+    const cell = cells[scenario.showcaseTile.y * scenario.width + scenario.showcaseTile.x] ?? null;
+    const base = cell?.querySelector(".tile-base");
+    const foreground = cell?.querySelector(".tile-foreground-layer");
+
+    return {
+      baseClass: base?.className ?? "",
+      foregroundClass: foreground?.className ?? "",
+      showcaseTile: scenario.showcaseTile,
+      hideTile: scenario.hideTile,
+    };
+  });
+
+  expect(showcaseMemoryTile).not.toBeNull();
+  expect(showcaseMemoryTile.baseClass).toContain("tile-base");
+  expect(showcaseMemoryTile.baseClass).toContain("floor");
+  expect(showcaseMemoryTile.baseClass).toContain("memory");
+  expect(showcaseMemoryTile.foregroundClass).toContain("showcase");
+  expect(showcaseMemoryTile.foregroundClass).toContain("memory");
 });
 
 test("moving orthogonally next to a showcase logs one random ambience line", async ({ page }) => {

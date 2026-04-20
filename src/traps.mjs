@@ -278,6 +278,10 @@ export function createTrapsApi(context) {
       return true;
     }
 
+    if (floorState !== getCurrentFloorState()) {
+      return false;
+    }
+
     return isTileVisibleToPlayer(trap?.x ?? actor?.x, trap?.y ?? actor?.y, floorState);
   }
 
@@ -387,9 +391,8 @@ export function createTrapsApi(context) {
     return detected;
   }
 
-  function handleTrapDeath(actor, trap, { perceived = true } = {}) {
+  function handleTrapDeath(actor, trap, { perceived = true, floorState = getCurrentFloorState() } = {}) {
     const state = getState();
-    const floorState = getCurrentFloorState();
 
     if (actor === state.player) {
       state.player.hp = 0;
@@ -411,9 +414,8 @@ export function createTrapsApi(context) {
     }
   }
 
-  function applyTrapEffect(trap, actor, { reduced = false, isContinuous = false } = {}) {
+  function applyTrapEffect(trap, actor, { reduced = false, isContinuous = false, floorState = getCurrentFloorState() } = {}) {
     const state = getState();
-    const floorState = getCurrentFloorState();
     const isPlayer = actor === state.player;
     const perceived = canPlayerPerceiveTrapEvent(actor, trap, floorState);
 
@@ -450,7 +452,7 @@ export function createTrapsApi(context) {
         addMessage(`${actor.classPassiveName} federt einen Teil der Set-Gefahr ab.`, "important");
       }
       if (actor.hp <= 0) {
-        handleTrapDeath(actor, trap, { perceived });
+        handleTrapDeath(actor, trap, { perceived, floorState });
         return;
       }
     }
@@ -482,7 +484,7 @@ export function createTrapsApi(context) {
     }
   }
 
-  function triggerTrap(trap, actor, { isContinuous = false } = {}) {
+  function triggerTrap(trap, actor, { isContinuous = false, floorState = getCurrentFloorState() } = {}) {
     if (!trap || trap.state !== "active") {
       return false;
     }
@@ -516,7 +518,7 @@ export function createTrapsApi(context) {
           );
         }
       } else {
-        applyTrapEffect(trap, actor, { reduced: false, isContinuous: false });
+        applyTrapEffect(trap, actor, { reduced: false, isContinuous: false, floorState });
       }
 
       if (trap.resetMode === "single_use") {
@@ -526,7 +528,7 @@ export function createTrapsApi(context) {
     }
 
     if (isContinuous && trap.trigger === "continuous") {
-      applyTrapEffect(trap, actor, { reduced: false, isContinuous: true });
+      applyTrapEffect(trap, actor, { reduced: false, isContinuous: true, floorState });
       return true;
     }
 
@@ -543,29 +545,47 @@ export function createTrapsApi(context) {
 
   function processContinuousTraps() {
     const state = getState();
-    const floorState = getCurrentFloorState();
-    const activeHazards = (floorState.traps ?? []).filter((trap) =>
-      trap.state === "active" && trap.trigger === "continuous"
-    );
+    for (const [floorNumber, floorState] of Object.entries(state.floors ?? {})) {
+      const activeHazards = (floorState?.traps ?? []).filter((trap) =>
+        trap.state === "active" && trap.trigger === "continuous"
+      );
 
-    if (!activeHazards.length) {
+      if (!activeHazards.length) {
+        continue;
+      }
+
+      activeHazards.forEach((trap) => {
+        if (Number(floorNumber) === state.floor && state.player.x === trap.x && state.player.y === trap.y && !state.gameOver) {
+          triggerTrap(trap, state.player, { isContinuous: true, floorState });
+        }
+
+        if (state.gameOver) {
+          return;
+        }
+
+        [...(floorState.enemies ?? [])].forEach((enemy) => {
+          if (enemy.x === trap.x && enemy.y === trap.y) {
+            triggerTrap(trap, enemy, { isContinuous: true, floorState });
+          }
+        });
+      });
+    }
+  }
+
+  function processActorContinuousTraps(actor, floorState = getCurrentFloorState()) {
+    if (!actor || actor.hp <= 0) {
       return;
     }
 
+    const activeHazards = (floorState.traps ?? []).filter((trap) =>
+      trap.state === "active" &&
+      trap.trigger === "continuous" &&
+      trap.x === actor.x &&
+      trap.y === actor.y
+    );
+
     activeHazards.forEach((trap) => {
-      if (state.player.x === trap.x && state.player.y === trap.y && !state.gameOver) {
-        triggerTrap(trap, state.player, { isContinuous: true });
-      }
-
-      if (state.gameOver) {
-        return;
-      }
-
-      [...floorState.enemies].forEach((enemy) => {
-        if (enemy.x === trap.x && enemy.y === trap.y) {
-          triggerTrap(trap, enemy, { isContinuous: true });
-        }
-      });
+      triggerTrap(trap, actor, { isContinuous: true, floorState });
     });
   }
 
@@ -576,6 +596,7 @@ export function createTrapsApi(context) {
     isTrapVisible,
     detectNearbyTraps,
     handleActorEnterTile,
+    processActorContinuousTraps,
     processContinuousTraps,
   };
 }

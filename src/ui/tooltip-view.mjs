@@ -227,6 +227,7 @@ export function createTooltipView(context) {
     rememberPointerPosition(event);
     clearPendingTooltip();
     currentTooltipElement = options.anchorElement ?? null;
+    document.body.classList.add("tooltip-open");
     hoverTooltipElement.innerHTML = `
       ${(tooltip.imageUrl || tooltip.secondaryImageUrl) ? `
         <div class="tooltip-art-row">
@@ -275,6 +276,7 @@ export function createTooltipView(context) {
   function hideTooltip() {
     clearPendingTooltip();
     currentTooltipElement = null;
+    document.body.classList.remove("tooltip-open");
     hoverTooltipElement.classList.add("hidden");
     hoverTooltipElement.setAttribute("aria-hidden", "true");
     hoverTooltipElement.innerHTML = "";

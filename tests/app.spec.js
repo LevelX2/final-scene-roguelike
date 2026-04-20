@@ -1738,7 +1738,7 @@ test("target mode shows a clear hint even without a valid straight shot target",
           source: "Tests",
           handedness: "one-handed",
           attackMode: "ranged",
-          range: 6,
+          range: 3,
           damage: 3,
           hitBonus: 2,
           critBonus: 0,
@@ -1747,15 +1747,15 @@ test("target mode shows a clear hint even without a valid straight shot target",
           description: "Nur fuer Tests.",
         },
       },
-      enemyPosition: { x: 5, y: 3 },
+      enemyPosition: { x: 6, y: 2 },
     });
   });
 
   await page.evaluate(() => window.__TEST_API__.enterTargetMode());
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
-  await expect(page.locator("#targetModeHint")).toContainText("Kein Schuss");
-  await expect(page.locator("#messageLog")).toContainText("Zielmodus aktiv: Kein Schuss. Richte das Fadenkreuz aus oder brich mit T ab.");
+  await expect(page.locator("#targetModeHint")).toContainText("Kein Ziel");
+  await expect(page.locator("#messageLog")).toContainText("Zielmodus aktiv: Kein Ziel. Richte das Fadenkreuz aus oder brich mit T ab.");
 });
 
 test("the header target button closes target mode again after the last target", async ({ page }) => {

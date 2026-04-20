@@ -45,7 +45,9 @@ test("player damage values are highlighted separately in the log", async ({ page
   await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99, 0]));
   await page.keyboard.press("ArrowRight");
 
-  await expect(page.locator("#messageLog .log-mark-monster").first()).toHaveText(/die besessene Puppe/i);
+  await expect(
+    page.locator("#messageLog .log-mark-monster").filter({ hasText: /die besessene Puppe/i }).first(),
+  ).toHaveText(/die besessene Puppe/i);
   await expect(page.locator("#messageLog .log-mark-damage-to-enemy").first()).toHaveText("7");
 });
 

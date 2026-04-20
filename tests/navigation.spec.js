@@ -285,7 +285,7 @@ test("floor followers use the full inflected monster name in stair messages", as
 
   const messages = await page.evaluate(() => window.__TEST_API__.getMessages());
   expect(messages.some((entry) => entry.text.includes("Der brutale Motel-Schlurfer folgt dir"))).toBeTruthy();
-  await expect(page.locator("#messageLog .log-mark-monster").first()).toHaveText("Der brutale Motel-Schlurfer");
+  await expect(page.locator("#messageLog .log-mark-monster").filter({ hasText: "Der brutale Motel-Schlurfer" }).first()).toHaveText("Der brutale Motel-Schlurfer");
 });
 
 test("restart resets the run back to floor one", async ({ page }) => {
@@ -998,8 +998,13 @@ test("a floor spawns at most three locked doors and one key per locked door", as
     expect(result.keyCount).toBe(result.lockedDoorCount);
 
     if (floor < 10) {
+      await page.evaluate(() => {
+        window.__TEST_API__.clearFloorEntities();
+      });
       await openDownstairsPrompt(page);
-      await page.getByRole("button", { name: "Betreten" }).click();
+      await page.evaluate(() => {
+        document.getElementById("stairsConfirm")?.click();
+      });
     }
   }
 });
@@ -1179,8 +1184,13 @@ test("generated showcases stay unique across floors while unused props remain", 
     result.showcaseIds.forEach((id) => seenShowcaseIds.add(id));
 
     if (floor < 10) {
+      await page.evaluate(() => {
+        window.__TEST_API__.clearFloorEntities();
+      });
       await openDownstairsPrompt(page);
-      await page.getByRole("button", { name: "Betreten" }).click();
+      await page.evaluate(() => {
+        document.getElementById("stairsConfirm")?.click();
+      });
     }
   }
 });

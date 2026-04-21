@@ -929,11 +929,14 @@ test("death modal describes who killed the player and with which weapon", async 
   await startRun(page, { name: "Level X2" });
 
   await setupCombat(page, {
+    clearGrid: true,
+    enemyPosition: { x: 5, y: 2 },
     player: {
-      hp: 4,
+      hp: 1,
       maxHp: 20,
       reaction: 0,
       nerves: 0,
+      offHand: null,
     },
     enemy: {
       id: "kellerkriecher",
@@ -941,8 +944,8 @@ test("death modal describes who killed the player and with which weapon", async 
       name: "Kellerkriecher",
       hp: 12,
       maxHp: 12,
-      strength: 6,
-      precision: 9,
+      strength: 99,
+      precision: 99,
       reaction: 1,
       nerves: 0,
       weapon: {
@@ -958,9 +961,11 @@ test("death modal describes who killed the player and with which weapon", async 
           decadeSuffix: null,
         },
         source: "Tests",
-        damage: 3,
-        hitBonus: 2,
+        damage: 99,
+        hitBonus: 99,
         critBonus: 0,
+        attackMode: "ranged",
+        range: 6,
         description: "Nur für Tests.",
       },
     },
@@ -969,6 +974,7 @@ test("death modal describes who killed the player and with which weapon", async 
   await page.evaluate(() => window.__TEST_API__.setRandomSequence([0, 0.99]));
   await page.keyboard.press(" ");
 
+  await expect(page.locator("#deathModal")).toBeVisible();
   await expect(page.locator("#deathSummary")).toContainText("ein Kellerkriecher");
   await expect(page.locator("#deathSummary")).toContainText("dem leuchtenden Expeditionsrevolver der Flamme");
 });
@@ -978,11 +984,14 @@ test("enemy attack log uses the inflected weapon phrase", async ({ page }) => {
   await startRun(page);
 
   await setupCombat(page, {
+    clearGrid: true,
+    enemyPosition: { x: 5, y: 2 },
     player: {
       hp: 20,
       maxHp: 20,
       reaction: 0,
       nerves: 0,
+      offHand: null,
     },
     enemy: {
       id: "kellerkriecher",
@@ -1019,6 +1028,8 @@ test("enemy attack log uses the inflected weapon phrase", async ({ page }) => {
         damage: 3,
         hitBonus: 2,
         critBonus: 0,
+        attackMode: "ranged",
+        range: 6,
         description: "Nur für Tests.",
       },
     },

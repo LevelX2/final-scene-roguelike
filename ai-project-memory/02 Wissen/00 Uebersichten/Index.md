@@ -2,7 +2,8 @@
 
 ## Einstieg
 - [[Projektueberblick]]: Produktbild, Kernsysteme und technische Grundform des Spiels.
-- [[Baseline-Analyse Anwendung 2026-04-17]]: primäre aktuelle Referenz für heutigen Workspace-, Build- und Modultest-Stand.
+- [[Baseline-Analyse Anwendung 2026-04-21]]: primäre aktuelle Referenz für den heute verifizierten Workspace-, Build- und Schnellverifikationsstand.
+- [[Baseline-Analyse Anwendung 2026-04-17]]: älterer Snapshot eines damals noch baubaren Zwischenstands.
 - [[Systemlandkarte]]: aktive Architektur, Schichten und zentrale Module.
 - [[Aktueller Projektstatus]]: zusammengeführter Status aus Dokumentation, Baseline und beobachtetem Workspace.
 - [[Quellenlage und Aktualitaet]]: welche Dokumente operativ brauchbar, snapshot-gebunden, historisch oder nur Designrichtung sind.

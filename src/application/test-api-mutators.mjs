@@ -207,6 +207,9 @@ export function createTestApiMutators(context) {
 
   function createTestEnemy(position, config = {}) {
     const enemyName = config.name ?? "Testgegner";
+    const hasExplicitMainHand = Object.prototype.hasOwnProperty.call(config, "mainHand")
+      || Object.prototype.hasOwnProperty.call(config, "weapon");
+    const hasExplicitOffHand = Object.prototype.hasOwnProperty.call(config, "offHand");
 
     return {
       x: position.x,
@@ -250,8 +253,12 @@ export function createTestApiMutators(context) {
       canOpenDoors: config.canOpenDoors ?? false,
       canChangeFloors: config.canChangeFloors ?? false,
       sourceArchetypeId: config.sourceArchetypeId ?? null,
-      mainHand: config.mainHand || config.weapon ? cloneWeapon(config.mainHand ?? config.weapon) : null,
-      offHand: config.offHand ? cloneOffHandItem(config.offHand) : null,
+      mainHand: hasExplicitMainHand
+        ? (config.mainHand ?? config.weapon ? cloneWeapon(config.mainHand ?? config.weapon) : null)
+        : null,
+      offHand: hasExplicitOffHand
+        ? (config.offHand ? cloneOffHandItem(config.offHand) : null)
+        : null,
       lootWeapon: config.lootWeapon ? cloneWeapon(config.lootWeapon) : null,
       lootOffHand: config.lootOffHand ? cloneOffHandItem(config.lootOffHand) : null,
       lootDrop: config.lootDrop
@@ -307,11 +314,18 @@ export function createTestApiMutators(context) {
       if (Array.isArray(config.player.speedIntervalModifiers)) {
         state.player.speedIntervalModifiers = config.player.speedIntervalModifiers.map((entry) => ({ ...entry }));
       }
-      if (config.player.weapon || config.player.mainHand) {
-        state.player.mainHand = cloneWeapon(config.player.mainHand ?? config.player.weapon);
+      if (
+        Object.prototype.hasOwnProperty.call(config.player, "weapon")
+        || Object.prototype.hasOwnProperty.call(config.player, "mainHand")
+      ) {
+        state.player.mainHand = config.player.mainHand ?? config.player.weapon
+          ? cloneWeapon(config.player.mainHand ?? config.player.weapon)
+          : null;
       }
-      if (config.player.offHand) {
-        state.player.offHand = cloneOffHandItem(config.player.offHand);
+      if (Object.prototype.hasOwnProperty.call(config.player, "offHand")) {
+        state.player.offHand = config.player.offHand
+          ? cloneOffHandItem(config.player.offHand)
+          : null;
       }
     }
 

@@ -421,3 +421,45 @@
   - Festgehalten, dass die Waffendropchance im aktiven Runtime-Pfad stark erhöht wurde: nicht ikonisch `48/64/80 %`, ikonisch `72/84/94 %` für `normal/elite/dire`.
   - Dokumentiert, dass Offhands nun mit `18/30/42 %` auf `normal/elite/dire` droppen und dass im aktuellen Monsterkatalog bereits drei Gegnertypen Offhands tragen.
   - Verifiziert eingetragen, dass Gegner ohne geplanten Nahrungsdrop jetzt stattdessen mit `34/46/58 %` je Variantentier einen Misc-Drop erhalten können, bevorzugt Heilverbrauchsgüter und sonstige Utility-Consumables.
+
+## [2026-04-21] verify | Frische Baseline zeigt Build-Bruch trotz sauberer Arbeitskopie
+- Anlass oder Quelle: Nutzerfrage nach einem sinnvollen Alpha-Release-Stand und direkter Verifikationslauf vor einer Veröffentlichungsentscheidung
+- Neu angelegte Seiten:
+  - [[../01 Rohquellen/repo-root/workspace-status-2026-04-21]]
+  - [[../02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-21]]
+- Geänderte Seiten:
+  - [[../00 Projektstart]]
+  - [[../02 Wissen/00 Uebersichten/Index]]
+  - [[../02 Wissen/00 Uebersichten/Aktueller Projektstatus]]
+  - [[../02 Wissen/00 Uebersichten/Quellenlage und Aktualitaet]]
+  - [[../02 Wissen/Risiken und offene Punkte/Dokumentationsstand und Verifikationsluecken]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass `git status --short` am 2026-04-21 leer war und der Workspace damit sauber ist.
+  - Dokumentiert, dass `npm run verify:quick` aktuell bereits in `lint:strict` scheitert, unter anderem wegen eines Parsing-Fehlers in `src/ai/enemy-turns.mjs` und eines ESLint-Verstoßes in `src/application/targeting-service.mjs`.
+  - Sichtbar gemacht, dass auch `npm run build` mit `Unexpected end of file` in `src/ai/enemy-turns.mjs` fehlschlägt und die bisherige dokumentierte Release- bzw. Verifikationsreife deshalb derzeit nicht dem beobachteten Ist-Stand entspricht.
+
+## [2026-04-21] verify | Vollständiger Verify-Lauf auf lokalem Arbeitsstand fast grün
+- Anlass oder Quelle: Nutzerwunsch nach einem kompletten Testlauf im aktuellen Workspace
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-21]]
+  - [[../02 Wissen/00 Uebersichten/Aktueller Projektstatus]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass der lokale Workspace beim Volltest nicht sauber war und die Beobachtung deshalb ausdrücklich vom sauberen Snapshot getrennt werden muss.
+  - Dokumentiert, dass `npm run verify` über `lint:strict`, `check:js`, `test:modules` und Build erfolgreich lief und erst in Playwright scheiterte.
+  - Verifiziert eingetragen, dass nur noch zwei E2E-Kampftests rot sind: das verborgene `#deathModal` in `tests/combat.spec.js:927` und die fehlende flektierte Waffenformulierung in `tests/combat.spec.js:978`.
+
+## [2026-04-21] fix | Kampftests auf deterministischen Fernkampfpfad umgestellt und Verify wieder grün
+- Anlass oder Quelle: Nutzerwunsch, die letzten zwei roten Fehler zu überprüfen und den Testlauf zu stabilisieren
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-21]]
+  - [[../02 Wissen/00 Uebersichten/Aktueller Projektstatus]]
+  - `src/application/test-api-mutators.mjs`
+  - `tests/combat.spec.js`
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass die zwei roten E2E-Kampftests fachlich am Nahkontakt- oder Sichtlinien-Setup scheiterten, nicht an der Waffenflexion selbst.
+  - Dokumentiert, dass der Testaufbau nun ein freigeräumtes Feld und echte Distanz-Fernkampfangriffe nutzt und dass explizite `null`-Ausrüstung in der Test-API korrekt Ausrüstung entfernt.
+  - Verifiziert eingetragen, dass `npm run verify` danach im aktuellen lokalen Workspace vollständig grün durchläuft.

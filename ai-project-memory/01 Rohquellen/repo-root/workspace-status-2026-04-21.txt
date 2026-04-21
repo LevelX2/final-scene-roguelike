@@ -1,0 +1,34 @@
+Git-Status am 2026-04-21
+Command: git status --short
+Ergebnis:
+(keine Ausgabe; Arbeitskopie sauber)
+
+Verifikation am 2026-04-21
+Command: npm run verify:quick
+Ergebnis:
+> final-scene@0.1.0-alpha.1 verify:quick
+> npm run lint:strict && npm run check:js && npm run test:modules
+
+> final-scene@0.1.0-alpha.1 lint:strict
+> eslint . --max-warnings=0
+
+C:\Users\Lui\OneDrive\Documents\final-scene-main\src\ai\enemy-turns.mjs
+  4:1  error  Parsing error: Unexpected token
+
+C:\Users\Lui\OneDrive\Documents\final-scene-main\src\application\targeting-service.mjs
+  108:10  error  Redundant Boolean call  no-extra-boolean-cast
+
+✖ 2 problems (2 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+
+Build-Verifikation am 2026-04-21
+Command: npm run build
+Ergebnis:
+> final-scene@0.1.0-alpha.1 build
+> node ./node_modules/esbuild/bin/esbuild src/main.mjs --bundle --format=iife --platform=browser --outfile=dist/game.bundle.js
+
+X [ERROR] Unexpected end of file
+
+    src/ai/enemy-turns.mjs:4:0:
+      4 │
+        ╵ ^

@@ -5,7 +5,7 @@ Diese Wissensbasis dokumentiert das Projekt `Projekt Rogue` bzw. das Spiel `The 
 ## Kernseiten
 - [[00 Steuerung/Regeldatei KI-Wissenspflege]]
 - [[02 Wissen/00 Uebersichten/Index]]
-- [[02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-17]]
+- [[02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-21]]
 - [[02 Wissen/00 Uebersichten/Projektueberblick]]
 - [[02 Wissen/00 Uebersichten/Aktueller Projektstatus]]
 - [[02 Wissen/00 Uebersichten/Quellenlage und Aktualitaet]]
@@ -27,6 +27,5 @@ Diese Wissensbasis dokumentiert das Projekt `Projekt Rogue` bzw. das Spiel `The 
 1. Neue Projektquellen zuerst nach `01 Rohquellen` aufnehmen.
 2. Danach die betroffenen Wissensseiten in `02 Wissen` aktualisieren.
 3. Neue oder geänderte Aussagen im [[03 Betrieb/Log]] dokumentieren.
-4. Für den aktuellen Ist-Stand zuerst [[02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-17]] lesen.
+4. Für den aktuellen Ist-Stand zuerst [[02 Wissen/00 Uebersichten/Baseline-Analyse Anwendung 2026-04-21]] lesen.
 5. Bei Unsicherheit danach [[02 Wissen/00 Uebersichten/Quellenlage und Aktualitaet]], dann die passenden Quellenbewertungen und Rohquellen lesen.
-

@@ -6,6 +6,7 @@ test-results/
 release/
 tmp_obsidian_project_rogue/
 tmp_obsidian_template/
+ai-project-memory/.obsidian/
 
 # Logs
 *.log

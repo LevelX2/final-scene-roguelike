@@ -105,7 +105,7 @@ export function getSingleDirectFireTargetSelection(validTargets, directFireEnabl
   }
 
   const [targetSelection] = validTargets;
-  return Boolean(
+  return (
     targetSelection?.valid &&
     (targetSelection.coverPenalty ?? 0) <= 0
   )

@@ -321,7 +321,6 @@ export function createTooltipView(context) {
 
     element.addEventListener("mouseenter", (event) => {
       rememberPointerPosition(event);
-      scheduleTooltip(element, tooltipFactory, event);
     });
     element.addEventListener("mousemove", (event) => {
       rememberPointerPosition(event);

@@ -628,6 +628,8 @@ test("heal overlay covers the studio and anchors the healing choices at the lowe
         hp: 12,
         maxHp: 20,
       },
+      enemyPosition: { x: 12, y: 12 },
+      clearGrid: true,
     });
     window.__TEST_API__.addInventoryItem({
       type: "potion",
@@ -1976,6 +1978,10 @@ test("pressing T while target mode is active closes it again after the last targ
     });
   });
 
+  await page.keyboard.press("o");
+  await page.locator("#toggleDirectFireOnSingleTarget").uncheck();
+  await page.keyboard.press("Escape");
+
   await page.keyboard.press("t");
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
 
@@ -2067,6 +2073,10 @@ test("target cursor renders above tile overlays in target mode", async ({ page }
       enemyPosition: { x: 4, y: 2 },
     });
   });
+
+  await page.keyboard.press("o");
+  await page.locator("#toggleDirectFireOnSingleTarget").uncheck();
+  await page.keyboard.press("Escape");
 
   await page.keyboard.press("t");
 
@@ -2176,6 +2186,10 @@ test("the shoot button fires at the currently selected target", async ({ page })
     });
     window.__TEST_API__.setRandomSequence([0, 0]);
   });
+
+  await page.keyboard.press("o");
+  await page.locator("#toggleDirectFireOnSingleTarget").uncheck();
+  await page.keyboard.press("Escape");
 
   const before = await page.evaluate(() => window.__TEST_API__.getSnapshot().enemies[0].hp);
   await page.getByRole("button", { name: "Zielen" }).click();

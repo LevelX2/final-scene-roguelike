@@ -989,6 +989,9 @@ test("locked doors only appear when a matching key is reachable on the same floo
     expect(result.ok).toBeTruthy();
 
     if (floor < 6) {
+      await page.evaluate(() => {
+        window.__TEST_API__.clearFloorEntities();
+      });
       await openDownstairsPrompt(page);
       await page.getByRole("button", { name: "Betreten" }).click();
     }

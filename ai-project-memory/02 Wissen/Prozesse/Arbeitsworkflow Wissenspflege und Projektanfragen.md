@@ -1,11 +1,12 @@
 ---
 typ: prozess
 status: aktiv
-letzte_aktualisierung: 2026-04-17
+letzte_aktualisierung: 2026-04-23
 quellen:
   - ../../00 Steuerung/Regeldatei KI-Wissenspflege.md
   - ../../02 Wissen/Prozesse/Quellenverarbeitung in dieser Wissensbasis.md
   - ../../02 Wissen/Prozesse/Wiki-first Query und Linting.md
+  - ../../../AGENTS.md
 tags:
   - workflow
   - wissenspflege
@@ -98,11 +99,31 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 - Die Wissensbasis bleibt navigierbar und vertrauenswürdig.
 - Pflegeprobleme werden früh sichtbar, bevor sie sich stapeln.
 
+## Fall 5: Thread mit `Finito` oder `Ende` abschließen
+### Typischer Auslöser
+- Du schreibst `Finito` oder `Ende`, um den aktuellen Thread kontrolliert abzuschließen.
+
+### Ablauf
+1. Änderungen in sinnvolle Commit-Blöcke aufteilen.
+2. Nur die Teile committen, die fachlich und technisch konsistent abgeschlossen sind und keine offenen Fragen mehr haben.
+3. Nötige Anpassungen am KI-Wissen nach den üblichen Wissensregeln nachziehen, dokumentieren und ebenfalls committen.
+4. Verbleibende offene Fragen, Konflikte oder bewusste Entscheidungsbedarfe kompakt benennen.
+5. Gemachte Commits im Abschluss jeweils in eigener Zeile mit ihrer Commit-Message nennen.
+6. Uncommittete Änderungen, die erkennbar nicht zu diesem Thread gehören, höchstens als kurzen Hinweis aufführen, aber nicht als automatischen Blocker behandeln.
+7. Wenn danach keine relevanten offenen Punkte mehr übrig sind, den Thread als abgeschlossen und archivierungsreif behandeln.
+
+### Wirkung
+- Der Thread endet mit klarer Commit-Struktur statt mit einem unscharfen Sammelabschluss.
+- Wissenspflege wird beim Abschluss nicht vergessen, sondern als Teil der Abnahme mitgeführt.
+- Offene Entscheidungen bleiben sichtbar, statt versehentlich in Commits eingebacken zu werden.
+
 ## Empfohlene Kurzbefehle für den Alltag
 - `Nimm diese Quelle in die Projekt-Wissensbasis auf.`
 - `Beantworte das wiki-first aus der Projekt-Wissensbasis.`
 - `Führe dieses Ergebnis als Projektwissen in die Wissensbasis zurück.`
 - `Mach einen Lint-Check für die Wissensbasis.`
+- `Finito`
+- `Ende`
 
 ## Was der Workflow nicht automatisch tut
 - Er pflegt die Wissensbasis nicht unsichtbar im Hintergrund ohne Anlass.

@@ -71,6 +71,18 @@
 
   - Ergänzt, dass axiale Sichtspitzen der kreisnahen Sicht jetzt eigene Nord-/Ost-/Süd-/West-Masken mit Priorität vor diagonalen Dreiecken erhalten, damit die letzten Radiusspitzen nicht fälschlich als schiefe 45-Grad-Keile erscheinen.
 
+## [2026-04-23] update | Finito-Sequenz als Abschlussworkflow dokumentiert
+- Anlass oder Quelle: Nutzerwunsch, `Finito` beziehungsweise `Ende` als verbindliche Abschlusssequenz für aktuelle Threads in `AGENTS.md` zu verankern
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `AGENTS.md`
+  - [[../02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]
+- Kern der inhaltlichen Anpassung:
+  - In `AGENTS.md` festgehalten, dass `Finito` oder `Ende` Änderungen in sinnvolle Commit-Blöcke überführt, nur abgeschlossene Teile committet und offene Fragen danach kompakt benennt.
+  - Dokumentiert, dass nötige Wissenspflege Teil dieser Abschlusssequenz ist und ebenfalls commitfähig nachgezogen werden soll.
+  - Den bestehenden Arbeitsworkflow um einen eigenen Fall für den Thread-Abschluss ergänzt, damit die Regel nicht nur im Agentenprompt, sondern auch im Projektwissen auffindbar bleibt.
+
 ## [2026-04-21] fix | Wissensbasis auf UTF-8-Check abgesichert und Log-Kodierung repariert
 - Anlass oder Quelle: Analyse wiederkehrender Kodierungsprobleme in der Projekt-Wissensbasis
 - Neu angelegte Seiten:

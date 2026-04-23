@@ -1,0 +1,25 @@
+Erfasst am: 2026-04-24
+Repository: final-scene-main
+
+Befehl: git status -sb
+## main...origin/main
+
+Befehl: git branch -vv
+  codex/backup-main-pre-sync-2026-04-24 9491704 Rename knowledge base to KI-Wissen-Final Scene
+  codex/finito-knowledge-base-rename    1533c7a [origin/codex/finito-knowledge-base-rename] Rename knowledge base to KI-Wissen-Final Scene
+* main                                  ace37b1 [origin/main] Unify organic FOV and fog rendering
+
+Befehl: git log --oneline --decorate --graph --max-count=8 --all
+* 1533c7a (origin/codex/finito-knowledge-base-rename, codex/finito-knowledge-base-rename) Rename knowledge base to KI-Wissen-Final Scene
+* 493b337 Add Finito closing workflow
+* ace37b1 (HEAD -> main, origin/main, origin/HEAD) Unify organic FOV and fog rendering
+* 696e024 Ignore local tools directory
+| * 9491704 (codex/backup-main-pre-sync-2026-04-24) Rename knowledge base to KI-Wissen-Final Scene
+| * 2eb01ff Add Finito closing workflow
+|/
+* e02c69f chore: stop tracking Obsidian workspace metadata
+* 9441b72 fix(ui): open hover tooltips only after pointer movement
+
+Befehl: git remote -v
+origin  https://github.com/LevelX2/final-scene-roguelike.git (fetch)
+origin  https://github.com/LevelX2/final-scene-roguelike.git (push)

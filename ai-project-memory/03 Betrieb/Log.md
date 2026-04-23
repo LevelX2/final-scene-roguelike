@@ -1,5 +1,19 @@
 ﻿# Log
 
+## [2026-04-24] update | Branch- und PR-Workflow fuer Mehrgeraetearbeit dokumentiert
+- Anlass oder Quelle: Nutzerfrage nach der sinnvollen GitHub-Arbeitsweise für viele Kleinfixes und parallele Arbeit auf zwei Rechnern
+- Neu angelegte Seiten:
+  - [[../01 Rohquellen/repo-root/workspace-status-2026-04-24-branching]]
+  - [[../02 Wissen/Prozesse/Branch- und PR-Workflow fuer Kleinfixes und Mehrgeraetearbeit]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+  - [[../02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]
+- Kern der inhaltlichen Anpassung:
+  - Einen verifizierten Git-Snapshot des Workspace- und Branch-Zustands vom 2026-04-24 als Rohquelle aufgenommen.
+  - Als Prozesswissen festgehalten, dass neue Arbeit standardmäßig auf thematischen Branches entsteht und erst per Pull Request nach `main` gemerged wird.
+  - Ergänzt, wie dieselbe Branch-Arbeit über GitHub zwischen zwei Rechnern synchronisiert werden soll und wie ein divergentes lokales `main` sicher zurückgeführt werden kann.
+  - Den allgemeinen Arbeitsworkflow um einen direkten Verweis auf die neue Prozessseite ergänzt.
+
 ## [2026-04-23] fix | Struktur-Silhouetten decken wieder Raumaußenecken und Tür-Unterkanten ab
 - Anlass oder Quelle: Nutzerfeedback, dass nach der Umstellung auf organisches FOV/Fog einzelne Strukturdetails optisch verschwinden, insbesondere eine Wandkante direkt unter einer sichtbaren Tür sowie sichtbare Außenecken von Räumen
 - Neu angelegte Seiten:
@@ -558,7 +572,5 @@
   - Verifiziert, dass `npm install`, `npm run build` und `npm run verify:quick` im aktuellen Workspace wieder erfolgreich laufen.
   - Festgehalten, dass `index.html` wieder regulär `dist/game.bundle.js` lädt.
   - Sichtbar gemacht, dass `node_modules/` und `dist/` bereits in `.gitignore` stehen und damit nicht regulär mit ins Repository eingecheckt werden.
-
-
 
 

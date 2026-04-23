@@ -1,7 +1,7 @@
 ---
 typ: prozess
 status: aktiv
-letzte_aktualisierung: 2026-04-17
+letzte_aktualisierung: 2026-04-24
 quellen:
   - ../../00 Steuerung/Regeldatei KI-Wissenspflege.md
   - ../../02 Wissen/Prozesse/Quellenverarbeitung in dieser Wissensbasis.md
@@ -110,6 +110,7 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 - Er macht aus unklaren Aussagen keine gesicherten Fakten.
 
 ## Verwandte Seiten
+- [[Branch- und PR-Workflow fuer Kleinfixes und Mehrgeraetearbeit]]
 - [[Quellenverarbeitung in dieser Wissensbasis]]
 - [[Wiki-first Query und Linting]]
 - [[../../03 Betrieb/Log]]

@@ -33,6 +33,8 @@ export function createPlayerTurnController(context) {
     playLockedDoorSound,
     hasNearbyEnemy,
     takeEnemyTurn,
+    canPerceive,
+    hasProjectileLine,
     canActorMove,
     hasLineOfSight,
     chebyshevDistance,
@@ -62,6 +64,8 @@ export function createPlayerTurnController(context) {
         : Promise.resolve()
     ),
   } = context;
+  const perceiveTarget = canPerceive ?? hasLineOfSight;
+  const projectileTargetLine = hasProjectileLine ?? perceiveTarget;
 
   function isMovementBlockingTile(x, y, floorState) {
     if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
@@ -527,7 +531,8 @@ export function createPlayerTurnController(context) {
         floorState,
         weapon,
         rangeDistance: chebyshevDistance,
-        hasLineOfSight,
+        canPerceive: perceiveTarget,
+        hasProjectileLine: projectileTargetLine,
         previewCombatAttack,
       }),
     };
@@ -688,7 +693,8 @@ export function createPlayerTurnController(context) {
       x: state.targeting.cursorX,
       y: state.targeting.cursorY,
       rangeDistance: chebyshevDistance,
-      hasLineOfSight,
+      canPerceive: perceiveTarget,
+      hasProjectileLine: projectileTargetLine,
       previewCombatAttack,
     });
 

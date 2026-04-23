@@ -19,6 +19,7 @@
 - [[../Entscheidungen/Aktiver Runtime-Pfad und Legacy-Abgrenzung]]: aktive Produktivlinie und Abgrenzung zu `src/legacy/`.
 - [[../Entscheidungen/Debugsteuerung in Toolbar statt Modal 2026-04-20]]: Debug-Zeitvorschub und Debug-Studio-Navigation liegen in der oberen Studioleiste statt im Debug-Modal.
 - [[../Entscheidungen/Debug-Vorschub mit sichtbarer Wiedergabe 2026-04-20]]: Toolbar-Temporegler, sichtbarer Scheduler-Vorschub und Heatmap-Verhalten bei überlagerten Gegnerpfaden.
+- [[../Entscheidungen/Sichtkanten-Glaettung im Board-Rendering 2026-04-23]]: organischer Fog-Canvas auf Basis einer einheitlichen FOV-Sicht; Wahrnehmung und Projektilsicht sind getrennt.
 - [[../Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]: alltäglicher Bedien- und Pflegeworkflow für Quellen, Fragen und Rückführung von Erkenntnissen.
 - [[../Prozesse/Build Test und lokaler Start]]: lokaler Start-, Build- und Testablauf.
 - [[../Prozesse/Debug Studio-Statistik und 10-Studio-Report 2026-04-20]]: Debug-, Test-API- und Batch-CLI-Pfad für numerische Studio-Auswertungen samt Analyse der Schlüsselraum-Frequenz.

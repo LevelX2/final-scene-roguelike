@@ -6,6 +6,130 @@ import { getDecorativeOverlayPreset } from '../ambience/visual/decorative-overla
 import { isHealingConsumable } from '../content/catalogs/consumables.mjs';
 import { getFoodSatietyEstimate } from '../nutrition.mjs';
 
+function isInsideBoard(width, height, x, y) {
+  return x >= 0 && y >= 0 && x < width && y < height;
+}
+
+const ORGANIC_FOG_SUBTILE_SCALE = 6;
+const ORGANIC_FOG_BLUR_PASSES = 2;
+const ORGANIC_FOG_MEMORY_COLOR = Object.freeze([10, 12, 12]);
+const ORGANIC_FOG_UNKNOWN_COLOR = Object.freeze([0, 0, 0]);
+const ORGANIC_FOG_MEMORY_ALPHA = 0.5;
+const ORGANIC_FOG_UNKNOWN_ALPHA = 0.82;
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function fillOrganicFogBlock(raster, rasterWidth, x, y, scale, value) {
+  const startX = x * scale;
+  const startY = y * scale;
+  for (let offsetY = 0; offsetY < scale; offsetY += 1) {
+    const rowOffset = (startY + offsetY) * rasterWidth;
+    for (let offsetX = 0; offsetX < scale; offsetX += 1) {
+      raster[rowOffset + startX + offsetX] = value;
+    }
+  }
+}
+
+function blurOrganicFogRaster(source, width, height, passes = ORGANIC_FOG_BLUR_PASSES) {
+  let current = Float32Array.from(source);
+  let horizontal = new Float32Array(current.length);
+  let vertical = new Float32Array(current.length);
+
+  for (let pass = 0; pass < passes; pass += 1) {
+    for (let y = 0; y < height; y += 1) {
+      const rowOffset = y * width;
+      for (let x = 0; x < width; x += 1) {
+        const left = current[rowOffset + Math.max(0, x - 1)];
+        const center = current[rowOffset + x];
+        const right = current[rowOffset + Math.min(width - 1, x + 1)];
+        horizontal[rowOffset + x] = (left + (center * 2) + right) / 4;
+      }
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const top = horizontal[Math.max(0, y - 1) * width + x];
+        const center = horizontal[(y * width) + x];
+        const bottom = horizontal[Math.min(height - 1, y + 1) * width + x];
+        vertical[(y * width) + x] = (top + (center * 2) + bottom) / 4;
+      }
+    }
+
+    current = Float32Array.from(vertical);
+  }
+
+  return current;
+}
+
+function normalizeOrganicFogAlpha(value) {
+  return clamp01((value - 0.08) / 0.52);
+}
+
+export function buildOrganicFogOverlayChannels({
+  width,
+  height,
+  scale = ORGANIC_FOG_SUBTILE_SCALE,
+  isGameplayVisible,
+  isDisplayVisibleStructure = () => false,
+  isExplored,
+}) {
+  const rasterWidth = width * scale;
+  const rasterHeight = height * scale;
+  const targetMask = new Float32Array(rasterWidth * rasterHeight);
+  const memorySourceMask = new Float32Array(rasterWidth * rasterHeight);
+  const unknownSourceMask = new Float32Array(rasterWidth * rasterHeight);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const gameplayVisible = Boolean(isGameplayVisible(x, y));
+      const displayVisibleStructure = Boolean(isDisplayVisibleStructure(x, y));
+      const explored = Boolean(isExplored(x, y));
+      const clearSourceTile = gameplayVisible || displayVisibleStructure;
+
+      if (gameplayVisible) {
+        fillOrganicFogBlock(targetMask, rasterWidth, x, y, scale, 1);
+      } else if (!clearSourceTile) {
+        const sourceMask = explored ? memorySourceMask : unknownSourceMask;
+        fillOrganicFogBlock(sourceMask, rasterWidth, x, y, scale, 1);
+      }
+    }
+  }
+
+  const memoryBlur = blurOrganicFogRaster(memorySourceMask, rasterWidth, rasterHeight);
+  const unknownBlur = blurOrganicFogRaster(unknownSourceMask, rasterWidth, rasterHeight);
+  const memoryAlpha = new Float32Array(rasterWidth * rasterHeight);
+  const unknownAlpha = new Float32Array(rasterWidth * rasterHeight);
+  let hasVisibleEdge = false;
+
+  for (let index = 0; index < targetMask.length; index += 1) {
+    if (targetMask[index] <= 0) {
+      continue;
+    }
+
+    const unknownValue = normalizeOrganicFogAlpha(unknownBlur[index]);
+    const memoryValue = normalizeOrganicFogAlpha(memoryBlur[index]) * (1 - unknownValue);
+    if (memoryValue > 0) {
+      memoryAlpha[index] = memoryValue;
+      hasVisibleEdge = true;
+    }
+    if (unknownValue > 0) {
+      unknownAlpha[index] = unknownValue;
+      hasVisibleEdge = true;
+    }
+  }
+
+  return {
+    width: rasterWidth,
+    height: rasterHeight,
+    scale,
+    memoryAlpha,
+    unknownAlpha,
+    hasVisibleEdge,
+  };
+}
+
 export function createBoardView(context) {
   const {
     WIDTH,
@@ -23,6 +147,8 @@ export function createBoardView(context) {
     previewCombatAttack,
     formatWeaponDisplayName,
     formatWeaponReference,
+    canPerceive,
+    hasProjectileLine,
     hasLineOfSight,
     formatWeaponStats,
     formatOffHandStats,
@@ -57,6 +183,12 @@ export function createBoardView(context) {
     createRuntimeId,
   } = context;
   const OVERLAY_TILE_BLEED = 1;
+  const perceiveTarget = canPerceive ?? hasLineOfSight;
+  const projectileTargetLine = hasProjectileLine ?? perceiveTarget;
+
+  function createLocalGrid(fill = null) {
+    return Array.from({ length: HEIGHT }, () => Array.from({ length: WIDTH }, () => fill));
+  }
 
   function isWallLike(grid, x, y) {
     if (x < 0 || y < 0 || y >= grid.length || x >= grid[y].length) {
@@ -211,6 +343,124 @@ export function createBoardView(context) {
       baseType,
       foregroundType,
     };
+  }
+
+  function isVisibleTile(floorState, x, y) {
+    return Boolean(floorState?.visible?.[y]?.[x]);
+  }
+
+  function isLineOfSightVisibleTile(floorState, x, y) {
+    return Boolean(floorState?.lineOfSightVisible?.[y]?.[x] ?? floorState?.visible?.[y]?.[x]);
+  }
+
+  function isDisplayVisibleStructureTile(floorState, x, y) {
+    if (!isInsideBoard(WIDTH, HEIGHT, x, y)) {
+      return false;
+    }
+
+    if (!isVisibleTile(floorState, x, y) || isLineOfSightVisibleTile(floorState, x, y)) {
+      return false;
+    }
+
+    return (
+      floorState.grid?.[y]?.[x] === TILE.WALL ||
+      Boolean(floorState.doors?.some((door) => door.x === x && door.y === y)) ||
+      Boolean(floorState.showcases?.some((entry) => entry.x === x && entry.y === y))
+    );
+  }
+
+  function renderOrganicFogChannel(
+    overlayContext,
+    sourceWidth,
+    sourceHeight,
+    destinationWidth,
+    destinationHeight,
+    alphaChannel,
+    color,
+    alphaScale,
+  ) {
+    const channelCanvas = document.createElement('canvas');
+    channelCanvas.width = sourceWidth;
+    channelCanvas.height = sourceHeight;
+    const channelContext = channelCanvas.getContext('2d');
+    if (!channelContext) {
+      return;
+    }
+
+    const imageData = channelContext.createImageData(sourceWidth, sourceHeight);
+    for (let index = 0; index < alphaChannel.length; index += 1) {
+      const alpha = clamp01(alphaChannel[index] * alphaScale);
+      if (alpha <= 0) {
+        continue;
+      }
+
+      const pixelOffset = index * 4;
+      imageData.data[pixelOffset] = color[0];
+      imageData.data[pixelOffset + 1] = color[1];
+      imageData.data[pixelOffset + 2] = color[2];
+      imageData.data[pixelOffset + 3] = Math.round(alpha * 255);
+    }
+
+    channelContext.putImageData(imageData, 0, 0);
+    overlayContext.drawImage(channelCanvas, 0, 0, destinationWidth, destinationHeight);
+  }
+
+  function createOrganicFogOverlayCanvas(floorState) {
+    if (!floorState) {
+      return null;
+    }
+
+    const boardPixelWidth = WIDTH * TILE_SIZE + Math.max(0, WIDTH - 1) * TILE_GAP;
+    const boardPixelHeight = HEIGHT * TILE_SIZE + Math.max(0, HEIGHT - 1) * TILE_GAP;
+    const fogChannels = buildOrganicFogOverlayChannels({
+      width: WIDTH,
+      height: HEIGHT,
+      scale: ORGANIC_FOG_SUBTILE_SCALE,
+      isGameplayVisible: (x, y) => isLineOfSightVisibleTile(floorState, x, y),
+      isDisplayVisibleStructure: (x, y) => isDisplayVisibleStructureTile(floorState, x, y),
+      isExplored: (x, y) => Boolean(floorState?.explored?.[y]?.[x]),
+    });
+    if (!fogChannels.hasVisibleEdge) {
+      return null;
+    }
+
+    const fogCanvas = document.createElement('canvas');
+    fogCanvas.className = 'board-fog-overlay';
+    fogCanvas.width = boardPixelWidth;
+    fogCanvas.height = boardPixelHeight;
+    fogCanvas.style.left = `${BOARD_PADDING}px`;
+    fogCanvas.style.top = `${BOARD_PADDING}px`;
+    fogCanvas.style.width = `${boardPixelWidth}px`;
+    fogCanvas.style.height = `${boardPixelHeight}px`;
+    const fogContext = fogCanvas.getContext('2d');
+    if (!fogContext) {
+      return null;
+    }
+
+    fogContext.clearRect(0, 0, boardPixelWidth, boardPixelHeight);
+    fogContext.imageSmoothingEnabled = true;
+    renderOrganicFogChannel(
+      fogContext,
+      fogChannels.width,
+      fogChannels.height,
+      boardPixelWidth,
+      boardPixelHeight,
+      fogChannels.memoryAlpha,
+      ORGANIC_FOG_MEMORY_COLOR,
+      ORGANIC_FOG_MEMORY_ALPHA,
+    );
+    renderOrganicFogChannel(
+      fogContext,
+      fogChannels.width,
+      fogChannels.height,
+      boardPixelWidth,
+      boardPixelHeight,
+      fogChannels.unknownAlpha,
+      ORGANIC_FOG_UNKNOWN_COLOR,
+      ORGANIC_FOG_UNKNOWN_ALPHA,
+    );
+
+    return fogCanvas;
   }
 
   function renderDecorativeOverlayLayer(boardOverlayLayer, floorState, state) {
@@ -778,6 +1028,8 @@ export function createBoardView(context) {
         Math.abs(enemy.x - player.x),
         Math.abs(enemy.y - player.y),
       ),
+      canPerceive: perceiveTarget,
+      hasProjectileLine: projectileTargetLine,
       hasLineOfSight,
       previewCombatAttack,
     });
@@ -794,6 +1046,12 @@ export function createBoardView(context) {
   function renderBoard() {
     const state = getState();
     const floorState = getCurrentFloorState();
+    if (!floorState) {
+      boardElement.innerHTML = "";
+      boardElement.classList.toggle('targeting-mode', false);
+      return;
+    }
+
     pruneExpiredDeathMarkers(floorState, state.turn);
     hideTooltip?.();
     boardElement.style.gridTemplateColumns = `repeat(${WIDTH}, ${TILE_SIZE}px)`;
@@ -803,6 +1061,7 @@ export function createBoardView(context) {
 
     const boardOverlayLayer = document.createElement('div');
     boardOverlayLayer.className = 'board-decorative-overlays';
+    const fogOverlayCanvas = createOrganicFogOverlayCanvas(floorState);
 
     for (let y = 0; y < HEIGHT; y += 1) {
       for (let x = 0; x < WIDTH; x += 1) {
@@ -928,6 +1187,9 @@ export function createBoardView(context) {
       }
     }
 
+    if (fogOverlayCanvas) {
+      boardElement.appendChild(fogOverlayCanvas);
+    }
     renderDecorativeOverlayLayer(boardOverlayLayer, floorState, state);
     boardElement.appendChild(boardOverlayLayer);
 

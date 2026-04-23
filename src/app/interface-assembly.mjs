@@ -172,6 +172,8 @@ export function assembleInterfaceModules(context) {
     getOffHand,
     getCombatWeapon,
     previewCombatAttack: (...args) => context.gameplay.previewCombatAttack?.(...args) ?? null,
+    canPerceive: core.canPerceive,
+    hasProjectileLine: core.hasProjectileLine,
     hasLineOfSight,
     isStraightShot,
     formatWeaponDisplayName,

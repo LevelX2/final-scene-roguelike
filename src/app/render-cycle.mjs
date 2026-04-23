@@ -112,8 +112,12 @@ export function createRenderCycleApi(context) {
     refreshContainerLootModal,
     refreshDebugInfoModal,
     chebyshevDistance,
+    canPerceive,
+    hasProjectileLine,
     hasLineOfSight,
   } = context;
+  const perceiveTarget = canPerceive ?? hasLineOfSight;
+  const projectileTargetLine = hasProjectileLine ?? perceiveTarget;
 
   let lastBoardViewportSignature = "";
   let lastEffectiveStudioZoom = null;
@@ -361,7 +365,8 @@ export function createRenderCycleApi(context) {
       floorState,
       weapon: combatWeapon,
       rangeDistance: chebyshevDistance,
-      hasLineOfSight,
+      canPerceive: perceiveTarget,
+      hasProjectileLine: projectileTargetLine,
       previewCombatAttack,
     });
     const targetingActive = Boolean(state.targeting?.active);
@@ -380,7 +385,8 @@ export function createRenderCycleApi(context) {
           x: state.targeting.cursorX,
           y: state.targeting.cursorY,
           rangeDistance: chebyshevDistance,
-          hasLineOfSight,
+          canPerceive: perceiveTarget,
+          hasProjectileLine: projectileTargetLine,
           previewCombatAttack,
         })
       : null;

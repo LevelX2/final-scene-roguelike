@@ -2,6 +2,7 @@
   --ui-scale: 1;
   --studio-zoom: 1;
   --tooltip-scale: 1;
+  --fog-rgb: 0, 0, 0;
   --panel: rgba(18, 27, 22, 0.9);
   --panel-strong: #18231d;
   --border: #315340;
@@ -1581,7 +1582,7 @@ kbd {
   position: absolute;
   inset: 0;
   margin: 0;
-  z-index: 2;
+  z-index: 1;
   background: transparent;
   background-image: none;
 }
@@ -1597,6 +1598,12 @@ kbd {
   position: absolute;
   inset: 0;
   margin: 0;
+  z-index: 1;
+}
+
+.board-fog-overlay {
+  position: absolute;
+  pointer-events: none;
   z-index: 2;
 }
 
@@ -1920,7 +1927,7 @@ kbd {
   width: 28px;
   height: 28px;
   margin: 0;
-  background: #000;
+  background: rgb(var(--fog-rgb));
   border-radius: 0;
   box-shadow: none;
 }

@@ -1,4 +1,75 @@
-# Log
+﻿# Log
+
+## [2026-04-23] fix | Struktur-Silhouetten decken wieder Raumaußenecken und Tür-Unterkanten ab
+- Anlass oder Quelle: Nutzerfeedback, dass nach der Umstellung auf organisches FOV/Fog einzelne Strukturdetails optisch verschwinden, insbesondere eine Wandkante direkt unter einer sichtbaren Tür sowie sichtbare Außenecken von Räumen
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Entscheidungen/Sichtkanten-Glaettung im Board-Rendering 2026-04-23]]
+  - `src/application/visibility-service.mjs`
+  - `tests/modules/visibility-service.test.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Die Anzeige-Sicht `visible` erhält zusätzlich zu den orthogonal angrenzenden Strukturkacheln jetzt auch kontrollierte diagonale Strukturecken, wenn beide orthogonalen Stützkacheln ebenfalls Struktur sind.
+  - Dadurch können echte Raumaußenecken im Sichtsaum wieder als Silhouette erscheinen, ohne dass daraus Gameplay-Sicht oder Fog-Geometrie wird.
+  - Sichtbare Türsilhouetten dürfen ihre darunter oder darüber liegende Wandkante wieder mit anzeigen, sofern diese über eine echte Stützecke an die sichtbare Struktur angebunden ist.
+  - Die Regel bleibt bewusst auf direkte Stützecken begrenzt und kettet nicht über bereits nur zur Anzeige aufgehellte Struktur weiter.
+  - Verifiziert über neue Modultests für diagonale Struktur-Ecken und für die Wandkante unter einer sichtbaren Türsilhouette sowie über grünen Build- und Modul-Gesamtlauf.
+  - Nachgeschärft, dass für echte Raumaußenecken auch bereits sichtbare Bodenkacheln als Stützkacheln genügen; zwei reine Strukturstützen sind dafür nicht zwingend.
+  - Weiter nachgeschärft, dass diagonale Strukturecken nur dann erscheinen, wenn sie wirklich spielerabgewandt liegen; dadurch verschwinden seitliche Fernwand-Aufhellungen, die nur über bereits sichtbare Stützkacheln verkettet wirkten.
+  - Ergänzt, dass orthogonal aufgehellte Wände außerhalb der Spielerachsen mehr als einen Rohsicht-Nachbarn benötigen, damit in großen Räumen keine isolierten Seitenwände wegen einer einzelnen entfernten Sichtinsel hell werden.
+
+## [2026-04-23] update | Organisches FOV- und Fog-System ersetzt die alten Kachelmasken
+- Anlass oder Quelle: Nutzerwunsch, die Sichtbereiche nicht weiter heuristisch mit Dreiecken und Achsenmasken zu glätten, sondern auf ein einheitliches organisches Sicht- und Fog-Modell umzustellen
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+  - [[../02 Wissen/Entscheidungen/Sichtkanten-Glaettung im Board-Rendering 2026-04-23]]
+  - `src/application/visibility-service.mjs`
+  - `src/application/targeting-service.mjs`
+  - `src/application/player-turn-controller.mjs`
+  - `src/ai/enemy-turns.mjs`
+  - `src/app/gameplay-assembly.mjs`
+  - `src/ui/board-view.mjs`
+  - `styles.css`
+  - `tests/modules/visibility-service.test.mjs`
+  - `tests/modules/board-view.test.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass `lineOfSightVisible` jetzt die rohe taktische FOV-Sicht beschreibt und `visible` nur noch die Anzeige-Sicht inklusive genau eines orthogonalen Struktur-Rings ist.
+  - Dokumentiert, dass Wahrnehmung und Projektilsicht getrennt wurden: `canPerceive(...)` für Sichtbarkeit, `hasProjectileLine(...)` für echte Schusslinie.
+  - Ergänzt, dass Player-Targeting und Gegner-KI diese Trennung jetzt explizit nutzen, sodass sichtbare Ziele nicht automatisch freie Schüsse bedeuten.
+  - Sichtbar gemacht, dass das Board keine `tile-fog-edge`-DOM-Elemente mehr rendert und die gesamte Fog-Kante stattdessen über einen einzigen Canvas-Overlay aus Subtile-Raster plus Weichzeichnung erzeugt.
+  - Dokumentiert, dass `memory` und `unknown` weiter farblich getrennt bleiben, aber dieselbe organische Übergangslogik verwenden.
+  - Festgehalten, dass sichtbare Struktur-Silhouetten wie Wände oder Türen die Kontur nicht mehr als eigene Fog-Geometrie treiben.
+  - Verifiziert über grüne Modultests für Board-Overlay, Sichtservice und Gegner-KI sowie über erfolgreichen Modul-Gesamtlauf und Build.
+
+## [2026-04-23] update | Sichtkanten-Glättung an lokale Sicht-Elbows gebunden
+- Anlass oder Quelle: Nutzerfeedback, dass die bisherige diagonale Fog-Glättung dekorative Muster und falsche Abdunkelungen statt echter Sichtkanten erzeugte
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Entscheidungen/Sichtkanten-Glaettung im Board-Rendering 2026-04-23]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+  - `src/ui/board-view.mjs`
+  - `tests/modules/board-view.test.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass die partielle Fog-Abdunkelung rein visuell bleibt und keine Sichtregeln verändert.
+  - Dokumentiert, dass diagonale Teilabdunkelung jetzt aus lokalen dunklen Eck-Nachbarschaften der Sichtgrenze kommt und dabei auch nicht sichtbare Wände als dunkle Nachbarn mitzählt.
+  - Ergänzt, dass sichtbar aufgehellte Wände oder andere sichtbare opake Strukturkacheln eine Ecke ebenfalls stützen dürfen, ohne dass sie die Farbquelle der Abdunkelung bestimmen.
+  - Sichtbar gemacht, dass Schwarz nur bei vollständig `unknown`-Ecken verwendet wird und gemischte `unknown`-/`memory`-Ecken als `memory` erscheinen.
+  - Sichtbar gemacht, dass die Farbquelle weiter aus echten verdeckten Kacheln stammt und dass der Fog-Layer für saubere Kanten dieselbe 1px-Nahtkorrektur wie die Basiskacheln nutzt.
+  - Ergänzt, dass die Dreiecksorientierung jetzt explizit über die zwei gegenüberliegenden Tile-Ecken relativ zur Spielerposition entschieden wird, damit spielerzugewandte Keile auch bei mehrdeutigen lokalen Mustern verworfen werden.
+  - Nachgeschärft, dass die Fog-Entscheidung jetzt auf einer separaten rohen LoS-Sicht `lineOfSightVisible` basiert, während `visible` weiter die zusätzliche Wand-/Tür-Aufhellung für die Anzeige enthält.
+  - Festgehalten, dass die Sichtweite im freien Raum jetzt eine kreisnahe euklidische Distanz mit Grundwert `5` nutzt und dadurch die diagonalen Ecken des früheren Chebyshev-Quadrats wegfallen.
+  - Ergänzt, dass die Struktur-Aufhellung für Wände und Türen nur noch orthogonal zu sichtbaren Bodenfeldern greift und reine Diagonal-Nachbarschaft nicht mehr ausreicht.
+  - Ergänzt, dass die Struktur-Aufhellung auf der horizontalen und vertikalen Spielerachse nicht mehr über die eigentliche Sichtweite hinaus eine „sechste Kachel“ sichtbar machen darf; off-axis Struktur-Aufhellung bleibt erlaubt.
+  - Ergänzt, dass die rohe Sicht nicht mehr kachelweise über einzelne Bresenham-Sichtstrahlen entsteht, sondern über ein Shadowcasting-FOV mit kreisnaher Reichweite. Dadurch werden schmale Eck-Einsichten auf Bodenfelder natürlicher sichtbar, während direkt zugestopfte Diagonalen und reine Strukturziele weiter geschützt bleiben.
+  - Nachgeschärft, dass die Struktur-Aufhellung nicht über bereits nur per Sonderregel sichtbare Türen oder Wände weiterketten darf.
+  - Ergänzt, dass für Pferdesprung-Bodenfelder eine relaxierte diagonale Fog-Kante erlaubt ist, wenn genau eine orthogonale Stützkachel dunkel bleibt und die andere sichtbar-spielernäher ist; solche Kandidaten verdrängen an derselben Zielkachel die axiale Rundungsmaske.
+  - Ergänzt, dass die rohe FOV-Sicht selbst nur noch Boden- und Freifeldsicht markiert, während sichtbare Struktur vollständig aus dem getrennten orthogonalen Reveal-Pfad kommt.
+  - Nachgeschärft, dass die Pferdesprung-Variante auch gegenüber anderen diagonalen Kandidaten derselben Zielkachel Priorität erhält, damit nicht wieder eine generische Ecke die lokale Ecksicht überdeckt.
+  - Verifiziert über gezielte Board-View-Modultests, vollständigen Modultestlauf und grüne Build-Prüfung.
+
+  - Ergänzt, dass axiale Sichtspitzen der kreisnahen Sicht jetzt eigene Nord-/Ost-/Süd-/West-Masken mit Priorität vor diagonalen Dreiecken erhalten, damit die letzten Radiusspitzen nicht fälschlich als schiefe 45-Grad-Keile erscheinen.
 
 ## [2026-04-21] fix | Wissensbasis auf UTF-8-Check abgesichert und Log-Kodierung repariert
 - Anlass oder Quelle: Analyse wiederkehrender Kodierungsprobleme in der Projekt-Wissensbasis
@@ -463,3 +534,31 @@
   - Festgehalten, dass die zwei roten E2E-Kampftests fachlich am Nahkontakt- oder Sichtlinien-Setup scheiterten, nicht an der Waffenflexion selbst.
   - Dokumentiert, dass der Testaufbau nun ein freigeräumtes Feld und echte Distanz-Fernkampfangriffe nutzt und dass explizite `null`-Ausrüstung in der Test-API korrekt Ausrüstung entfernt.
   - Verifiziert eingetragen, dass `npm run verify` danach im aktuellen lokalen Workspace vollständig grün durchläuft.
+
+## [2026-04-23] fix | Startbildschirm reagiert auch ohne vorab gebauten Bundle
+- Anlass oder Quelle: Nutzerhinweis, dass die Knöpfe auf dem Startbildschirm keine Wirkung zeigen
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+  - `index.html`
+- Kern der inhaltlichen Anpassung:
+  - Verifiziert, dass `index.html` zuvor nur `dist/game.bundle.js` geladen hat, der `dist`-Ordner im aktuellen Workspace aber fehlte.
+  - Festgehalten, dass dadurch auf dem Startbildschirm kein JavaScript aktiv war und sichtbare Buttons ohne Handler blieben.
+  - Dokumentiert, dass der lokale Einstieg nun `src/main.mjs` direkt als Modul lädt, sodass der Startbildschirm auch ohne vorab erzeugtes Bundle bedienbar bleibt.
+
+## [2026-04-23] betrieb | Regulären Bundle-Einstieg nach `npm install` wiederhergestellt
+- Anlass oder Quelle: Nutzerwunsch, den temporären Direktstart nicht als Dauerlösung stehen zu lassen
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+  - `index.html`
+- Kern der inhaltlichen Anpassung:
+  - Verifiziert, dass `npm install`, `npm run build` und `npm run verify:quick` im aktuellen Workspace wieder erfolgreich laufen.
+  - Festgehalten, dass `index.html` wieder regulär `dist/game.bundle.js` lädt.
+  - Sichtbar gemacht, dass `node_modules/` und `dist/` bereits in `.gitignore` stehen und damit nicht regulär mit ins Repository eingecheckt werden.
+
+
+
+

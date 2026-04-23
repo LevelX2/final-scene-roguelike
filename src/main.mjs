@@ -148,6 +148,8 @@ const {
   playShowcaseAmbienceSound,
   detectNearbyTraps,
   updateVisibility,
+  canPerceive,
+  hasProjectileLine,
   hasLineOfSight,
   isStraightShot,
   loadHeroName,
@@ -334,6 +336,8 @@ const renderCycleApi = createRenderCycleApi({
   refreshContainerLootModal: interfaceApi.refreshContainerLootModal,
   refreshDebugInfoModal: interfaceApi.refreshDebugInfoModal,
   chebyshevDistance,
+  canPerceive,
+  hasProjectileLine,
   hasLineOfSight,
   isStraightShot,
 });

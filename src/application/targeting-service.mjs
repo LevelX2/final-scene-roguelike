@@ -24,9 +24,13 @@ export function evaluateTargetSelection(context) {
     x,
     y,
     rangeDistance,
+    canPerceive,
+    hasProjectileLine,
     hasLineOfSight,
     previewCombatAttack,
   } = context;
+  const perceiveTarget = canPerceive ?? hasLineOfSight;
+  const projectileTargetLine = hasProjectileLine ?? perceiveTarget;
 
   const enemy = floorState?.enemies?.find((entry) => entry.x === x && entry.y === y) ?? null;
   const distance = enemy
@@ -35,9 +39,13 @@ export function evaluateTargetSelection(context) {
   const hasRange = Boolean(enemy && isTargetModeWeapon(weapon) && distance <= (weapon?.range ?? 1));
   const hasSight = Boolean(
     enemy &&
-    hasLineOfSight?.(floorState, state?.player?.x, state?.player?.y, enemy.x, enemy.y),
+    perceiveTarget?.(floorState, state?.player?.x, state?.player?.y, enemy.x, enemy.y),
   );
-  const attackPreview = enemy && hasRange && hasSight
+  const hasShotLine = Boolean(
+    enemy &&
+    projectileTargetLine?.(floorState, state?.player?.x, state?.player?.y, enemy.x, enemy.y),
+  );
+  const attackPreview = enemy && hasRange && hasSight && hasShotLine
     ? previewCombatAttack?.(state?.player, enemy, { weapon, distance })
     : null;
 
@@ -46,7 +54,8 @@ export function evaluateTargetSelection(context) {
     distance,
     hasRange,
     hasSight,
-    valid: Boolean(enemy && hasRange && hasSight),
+    hasProjectileLine: hasShotLine,
+    valid: Boolean(enemy && hasRange && hasSight && hasShotLine),
     hitChance: attackPreview?.hitChance ?? null,
     baseHitChance: attackPreview?.baseHitChance ?? null,
     critChance: attackPreview?.critChance ?? null,
@@ -62,6 +71,8 @@ export function getVisibleTargetSelections(context) {
     floorState,
     weapon,
     rangeDistance,
+    canPerceive,
+    hasProjectileLine,
     hasLineOfSight,
     previewCombatAttack,
   } = context;
@@ -73,12 +84,13 @@ export function getVisibleTargetSelections(context) {
     };
   }
 
+  const visibleMask = floorState?.lineOfSightVisible ?? floorState?.visible;
   const allVisibleTargets = (floorState?.enemies ?? [])
     .filter((enemy) => {
       const distance = rangeDistance?.(enemy, state?.player) ?? fallbackDistance(enemy, state?.player);
       return (
         distance <= (weapon.range ?? 1) &&
-        floorState?.visible?.[enemy.y]?.[enemy.x]
+        visibleMask?.[enemy.y]?.[enemy.x]
       );
     })
     .map((enemy) => evaluateTargetSelection({
@@ -88,6 +100,8 @@ export function getVisibleTargetSelections(context) {
       x: enemy.x,
       y: enemy.y,
       rangeDistance,
+      canPerceive,
+      hasProjectileLine,
       hasLineOfSight,
       previewCombatAttack,
     }))

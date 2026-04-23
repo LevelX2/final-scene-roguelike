@@ -4,7 +4,7 @@ const globals = require("globals");
 module.exports = [
   {
     ignores: [
-      "ai-project-memory/**",
+      "KI-Wissen-Final Scene/**",
       "assets/**",
       "dist/**",
       "node_modules/**",

@@ -71,6 +71,25 @@
 
   - Ergänzt, dass axiale Sichtspitzen der kreisnahen Sicht jetzt eigene Nord-/Ost-/Süd-/West-Masken mit Priorität vor diagonalen Dreiecken erhalten, damit die letzten Radiusspitzen nicht fälschlich als schiefe 45-Grad-Keile erscheinen.
 
+## [2026-04-23] update | Wissensbasis-Ordner auf KI-Wissen Final Scene umgestellt
+- Anlass oder Quelle: Abschluss der bereits begonnenen Umbenennung der Projekt-Wissensbasis im Repository
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `AGENTS.md`
+  - `README.md`
+  - `LICENSE-assets.md`
+  - `eslint.config.js`
+  - `package.json`
+  - `scripts/check-memory.mjs`
+  - [[../00 Steuerung/Regeldatei KI-Wissenspflege]]
+  - [[../02 Wissen/Prozesse/Wiki-first Query und Linting]]
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+- Kern der inhaltlichen Anpassung:
+  - Den aktiven Wissensordner im Repository konsistent auf `KI-Wissen-Final Scene/` umgestellt und die Agentenhinweise dazu passend nachgezogen.
+  - Den Encoding-Check unter `npm run check:memory` auf den neuen Ordnerpfad umgestellt und das zugrunde liegende Skript neutral auf `scripts/check-memory.mjs` umbenannt.
+  - Operative Hinweise in README, Lizenzhinweis und Wissenspflege-Prozessen auf den neuen Ordnernamen ausgerichtet.
+
 ## [2026-04-23] update | Finito-Sequenz als Abschlussworkflow dokumentiert
 - Anlass oder Quelle: Nutzerwunsch, `Finito` beziehungsweise `Ende` als verbindliche Abschlusssequenz für aktuelle Threads in `AGENTS.md` zu verankern
 - Neu angelegte Seiten:

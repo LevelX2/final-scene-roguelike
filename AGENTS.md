@@ -4,7 +4,7 @@
 
 F체r dieses Repository existiert eine projektbezogene KI-Wissensbasis im Ordner:
 
-`ai-project-memory/`
+`KI-Wissen-Final Scene/`
 
 Bei neuen Threads, neuen Aufgaben und Projektfragen ist diese Wissensbasis prim채r zu verwenden.
 
@@ -12,10 +12,10 @@ Bei neuen Threads, neuen Aufgaben und Projektfragen ist diese Wissensbasis prim�
 
 Zu Beginn projektbezogener Arbeit zuerst diese Dateien lesen:
 
-1. `ai-project-memory/00 Projektstart.md`
-2. `ai-project-memory/02 Wissen/00 Uebersichten/Index.md`
-3. `ai-project-memory/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
-4. `ai-project-memory/00 Steuerung/Regeldatei KI-Wissenspflege.md`
+1. `KI-Wissen-Final Scene/00 Projektstart.md`
+2. `KI-Wissen-Final Scene/02 Wissen/00 Uebersichten/Index.md`
+3. `KI-Wissen-Final Scene/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
+4. `KI-Wissen-Final Scene/00 Steuerung/Regeldatei KI-Wissenspflege.md`
 
 ## Arbeitsmodus
 
@@ -67,8 +67,7 @@ Zus채tzlich gilt:
 
 ## Wichtige Wissensbasis-Dateien
 
-- Einstieg: `ai-project-memory/02 Wissen/00 Uebersichten/Index.md`
-- Workflow: `ai-project-memory/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
-- Log: `ai-project-memory/03 Betrieb/Log.md`
-- Qualit채tspr체fung: `ai-project-memory/03 Betrieb/Qualitaetspruefung.md`
-
+- Einstieg: `KI-Wissen-Final Scene/02 Wissen/00 Uebersichten/Index.md`
+- Workflow: `KI-Wissen-Final Scene/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
+- Log: `KI-Wissen-Final Scene/03 Betrieb/Log.md`
+- Qualit채tspr체fung: `KI-Wissen-Final Scene/03 Betrieb/Qualitaetspruefung.md`

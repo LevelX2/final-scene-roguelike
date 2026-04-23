@@ -1,4 +1,4 @@
-# AI Project Memory
+# KI-Wissen Final Scene
 
 Diese Wissensbasis ist das projektbezogene Arbeitsgedächtnis für KI-gestützte Arbeit an `The Final Scene`.
 

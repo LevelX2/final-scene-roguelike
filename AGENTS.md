@@ -24,6 +24,13 @@ Zu Beginn projektbezogener Arbeit zuerst diese Dateien lesen:
 - Ziehe Rohquellen, Repository-Dateien oder Webquellen nur dann nach, wenn die Wissensbasis Lücken hat, veraltet ist oder verifiziert werden muss.
 - Wenn neue belastbare Erkenntnisse entstehen, führe sie in die Wissensbasis zurück.
 
+## Branch-Automatik
+
+- `main` ist der Integrationsbranch. Wenn der Agent auf `main` steht und eine Arbeitsänderung an Dateien vornehmen soll, erstellt er vor der ersten Änderung automatisch einen Arbeitsbranch mit Präfix `codex/`.
+- Reine Lese-, Prüf- und Statusbefehle dürfen auf `main` ausgeführt werden.
+- Eine direkte Arbeitsänderung auf `main` ist nur zulässig, wenn der Nutzer sie ausdrücklich verlangt.
+- Arbeitsbranches sollen kurz, thematisch und verständlich benannt werden, zum Beispiel `codex/finale-workflow-commands`.
+
 ## Sprachregeln
 
 - Sichtbare UI-Texte sollen echtes Deutsch mit Umlauten und `ß` verwenden.
@@ -49,9 +56,13 @@ Wenn neue Projektquellen hinzukommen:
 - Zwischen dokumentiertem Projektstand und aktuellem Workspace-Stand unterscheiden, wenn offene lokale Änderungen vorliegen.
 - Wiederverwendbare Antworten, Entscheidungen, Analysen oder Risikoerklärungen nicht nur im Chat belassen, sondern als Wissensseiten oder Aktualisierungen zurückführen.
 
-## Finito-Sequenz
+## Abschlusskommandos
 
-Wenn der Nutzer `Finito` oder `Ende` schreibt, führt der Agent die Abschlusssequenz für den aktuellen Thread aus.
+Wenn der Nutzer `Finito`, `Finale`, `Endfinale` oder `Ende` schreibt, führt der Agent die passende Abschlusssequenz für den aktuellen Thread aus.
+
+### `Finito` oder `Ende`
+
+Lokaler Abschluss ohne automatischen Merge nach `main` und ohne automatischen Push.
 
 1. Der Agent teilt die Änderungen in sinnvolle Commit-Blöcke auf. Nicht direkt zusammenhängende Änderungen sollen in getrennten Commits mit jeweils eigener passender Commit-Message landen.
 2. Der Agent committet alle Teile, zu denen keine offenen Fragen mehr bestehen und die fachlich wie technisch konsistent abgeschlossen sind.
@@ -64,6 +75,26 @@ Zusätzlich gilt:
 - Uncommittete Änderungen, die erkennbar nicht zu diesem Thread gehören, sind kein automatischer Blocker und können am Ende kurz als Hinweis genannt werden.
 - Gemachte Commits sollen im Abschluss jeweils in einer eigenen Zeile mit ihrer Commit-Message genannt werden, damit sie schnell erkennbar sind.
 - Wenn nach der Finito-Sequenz keine relevanten offenen Punkte mehr für diesen Thread übrig sind, gilt der Thread als abgeschlossen und archivierungsreif.
+
+### `Finale`
+
+Vollständiger Arbeitsabschluss.
+
+1. Der Agent führt zuerst die `Finito`-Sequenz aus.
+2. Wenn keine relevanten offenen Punkte, roten Checks oder Merge-Konflikte bestehen, wechselt der Agent nach `main`.
+3. Der Agent aktualisiert `main` per Fast-Forward, soweit möglich.
+4. Der Agent merged den Arbeitsbranch nach `main`.
+5. Der Agent führt die passenden Checks erneut aus.
+6. Wenn der Merge und die Checks erfolgreich sind, pusht der Agent `main`.
+7. Erfolgreich gemergte Arbeitsbranches dürfen lokal und remote aufgeräumt werden.
+
+Der Agent stoppt und fragt nach, wenn Tests oder Checks fehlschlagen, ein Merge-Konflikt entsteht, ein Push nicht ohne Risiko möglich ist oder fachliche offene Punkte bestehen. Force-Push ist nicht Teil von `Finale`.
+
+### `Endfinale`
+
+Großer Projektabschluss.
+
+`Endfinale` umfasst `Finale` und zusätzlich einen bewussten Abschluss-Check: vollständigerer Verify-Lauf, Wissensbasis-Check, Aktualisierung relevanter Projektstatus- oder Risikoseiten und kompakte Benennung verbleibender Projektfragen.
 
 ## Wichtige Wissensbasis-Dateien
 

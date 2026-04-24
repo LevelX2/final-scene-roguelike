@@ -17,7 +17,7 @@ tags:
 # Branch- und PR-Workflow fuer Kleinfixes und Mehrgeraetearbeit
 
 ## Kurzfassung
-Arbeit soll in diesem Projekt standardmäßig nicht direkt auf `main` entstehen. Für zusammenhängende Kleinfixes ist ein gemeinsamer Arbeitsbranch sinnvoll; unterschiedliche Themen gehören auf getrennte Branches oder mindestens in klar getrennte Commits. `main` bleibt der saubere Integrationsstand, Branches werden nach GitHub gepusht und von dort per Pull Request nach `main` gemerged.
+Arbeit soll in diesem Projekt standardmäßig nicht direkt auf `main` entstehen. Wenn der Agent auf `main` steht und eine Arbeitsänderung vornehmen soll, erstellt er automatisch zuerst einen Arbeitsbranch mit Präfix `codex/`, außer der Nutzer verlangt ausdrücklich eine direkte Änderung auf `main`. Für zusammenhängende Kleinfixes ist ein gemeinsamer Arbeitsbranch sinnvoll; unterschiedliche Themen gehören auf getrennte Branches oder mindestens in klar getrennte Commits. `main` bleibt der saubere Integrationsstand, Branches werden nach GitHub gepusht und von dort per Pull Request oder per definiertem Abschlusskommando nach `main` gemerged.
 
 ## Quellenbasis
 - [[../../01 Rohquellen/repo-root/workspace-status-2026-04-24-branching]]
@@ -26,19 +26,42 @@ Arbeit soll in diesem Projekt standardmäßig nicht direkt auf `main` entstehen.
 
 ## Zielbild
 - `main` spiegelt den aktuellen Integrationsstand aus GitHub.
-- Neue Arbeit entsteht auf thematischen Branches wie `fix/...`, `feature/...`, `docs/...` oder `chore/...`.
+- Neue Arbeit entsteht auf thematischen Branches wie `codex/...`, `fix/...`, `feature/...`, `docs/...` oder `chore/...`.
 - GitHub dient als gemeinsamer Zwischenstand zwischen mehreren Rechnern.
 - Merges nach `main` passieren erst, wenn ein Thema in sich stimmig ist.
+
+## Agentenregel für Arbeiten auf `main`
+- Reine Lese-, Prüf- und Statusbefehle dürfen auf `main` ausgeführt werden.
+- Vor Dateiänderungen auf `main` erstellt der Agent automatisch einen Arbeitsbranch mit Präfix `codex/`.
+- Der Branchname soll kurz und thematisch sein, zum Beispiel `codex/finale-workflow-commands`.
+- Direktänderungen auf `main` sind nur zulässig, wenn der Nutzer das ausdrücklich verlangt.
 
 ## Standardablauf fuer ein zusammenhaengendes Thema
 1. `git switch main`
 2. `git pull --ff-only`
-3. `git switch -c fix/<thema>` oder `docs/<thema>`
+3. `git switch -c codex/<thema>`, `fix/<thema>` oder `docs/<thema>`
 4. Änderungen lokal in sinnvolle Commits aufteilen
 5. Branch mit `git push -u origin <branch>` nach GitHub hochladen
 6. Pull Request gegen `main` öffnen
 7. Erst nach Review oder eigener Freigabe nach `main` mergen
 8. Danach lokal wieder `main` aktualisieren und den Arbeitsbranch bei Bedarf löschen
+
+## Abschlusskommandos
+### `Finito` oder `Ende`
+- Lokaler Abschluss ohne automatischen Merge nach `main`.
+- Der Agent teilt Änderungen in sinnvolle Commit-Blöcke, führt passende Checks aus, committet abgeschlossene Teile und benennt offene Fragen.
+- Nötige Wissenspflege wird nachgezogen und ebenfalls committed.
+
+### `Finale`
+- Vollständiger Arbeitsabschluss für einen fertigen Arbeitsbranch.
+- Der Agent führt zuerst `Finito` aus.
+- Wenn keine fachlichen offenen Punkte, roten Checks oder Merge-Konflikte bestehen, merged der Agent den Arbeitsbranch nach `main`, führt passende Checks erneut aus, pusht `main` und räumt erfolgreich gemergte Arbeitsbranches lokal und remote auf.
+- Der Agent stoppt und fragt nach, wenn Konflikte, rote Checks, ein riskanter Push oder offene fachliche Punkte auftreten.
+- Force-Push ist nicht Teil von `Finale`.
+
+### `Endfinale`
+- Großer Abschlussmodus.
+- `Endfinale` umfasst `Finale` und zusätzlich einen bewussten Projektabschluss-Check: vollständigerer Verify-Lauf, Wissensbasis-Check, Aktualisierung relevanter Projektstatus- oder Risikoseiten und kompakte Benennung verbleibender Projektfragen.
 
 ## Wie gross ein Branch sein darf
 - Zehn kleine Verbesserungen mit gemeinsamem Thema dürfen zusammen auf einen Branch.

@@ -99,11 +99,11 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 - Die Wissensbasis bleibt navigierbar und vertrauenswürdig.
 - Pflegeprobleme werden früh sichtbar, bevor sie sich stapeln.
 
-## Fall 5: Thread mit `Finito` oder `Ende` abschließen
+## Fall 5: Thread mit Abschlusskommando abschließen
 ### Typischer Auslöser
-- Du schreibst `Finito` oder `Ende`, um den aktuellen Thread kontrolliert abzuschließen.
+- Du schreibst `Finito`, `Finale`, `Endfinale` oder `Ende`, um den aktuellen Thread kontrolliert abzuschließen.
 
-### Ablauf
+### Ablauf bei `Finito` oder `Ende`
 1. Änderungen in sinnvolle Commit-Blöcke aufteilen.
 2. Nur die Teile committen, die fachlich und technisch konsistent abgeschlossen sind und keine offenen Fragen mehr haben.
 3. Nötige Anpassungen am KI-Wissen nach den üblichen Wissensregeln nachziehen, dokumentieren und ebenfalls committen.
@@ -112,10 +112,24 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 6. Uncommittete Änderungen, die erkennbar nicht zu diesem Thread gehören, höchstens als kurzen Hinweis aufführen, aber nicht als automatischen Blocker behandeln.
 7. Wenn danach keine relevanten offenen Punkte mehr übrig sind, den Thread als abgeschlossen und archivierungsreif behandeln.
 
+### Ablauf bei `Finale`
+1. Zuerst die `Finito`-Sequenz ausführen.
+2. Wenn keine relevanten offenen Punkte, roten Checks oder Merge-Konflikte bestehen, den Arbeitsbranch nach `main` überführen.
+3. Nach dem Merge passende Checks erneut ausführen.
+4. Wenn der Merge und die Checks erfolgreich sind, `main` nach GitHub pushen.
+5. Erfolgreich gemergte Arbeitsbranches lokal und remote aufräumen.
+6. Bei roten Checks, Merge-Konflikten, riskantem Push oder fachlichen offenen Punkten stoppen und nachfragen.
+
+### Ablauf bei `Endfinale`
+1. Zuerst die `Finale`-Sequenz ausführen.
+2. Zusätzlich einen bewussten Projektabschluss-Check durchführen.
+3. Dafür je nach Lage einen vollständigen Verify-Lauf, `npm run check:memory`, Aktualisierung relevanter Status- oder Risikoseiten und eine kompakte Abschlussnotiz verwenden.
+
 ### Wirkung
 - Der Thread endet mit klarer Commit-Struktur statt mit einem unscharfen Sammelabschluss.
 - Wissenspflege wird beim Abschluss nicht vergessen, sondern als Teil der Abnahme mitgeführt.
 - Offene Entscheidungen bleiben sichtbar, statt versehentlich in Commits eingebacken zu werden.
+- Bei `Finale` und `Endfinale` wird der Stand für Mehrgerätearbeit über `origin/main` verfügbar gemacht.
 
 ## Empfohlene Kurzbefehle für den Alltag
 - `Nimm diese Quelle in die Projekt-Wissensbasis auf.`
@@ -123,6 +137,8 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 - `Führe dieses Ergebnis als Projektwissen in die Wissensbasis zurück.`
 - `Mach einen Lint-Check für die Wissensbasis.`
 - `Finito`
+- `Finale`
+- `Endfinale`
 - `Ende`
 
 ## Was der Workflow nicht automatisch tut

@@ -604,4 +604,16 @@
   - Festgehalten, dass `index.html` wieder regulär `dist/game.bundle.js` lädt.
   - Sichtbar gemacht, dass `node_modules/` und `dist/` bereits in `.gitignore` stehen und damit nicht regulär mit ins Repository eingecheckt werden.
 
+## [2026-04-24] prozess | Branch-Automatik und Abschlusskommandos Finale/Endfinale ergänzt
+- Anlass oder Quelle: Nutzerwunsch nach robusterer Branchhandhabung und sprachfreundlichen Einwortkommandos für Speech-to-Text.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Branch- und PR-Workflow fuer Kleinfixes und Mehrgeraetearbeit]]
+  - [[../02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]
+  - `AGENTS.md`
+- Kern der inhaltlichen Anpassung:
+  - Festgelegt, dass der Agent vor Arbeitsänderungen auf `main` automatisch einen `codex/`-Arbeitsbranch anlegt, außer der Nutzer verlangt ausdrücklich eine Direktänderung auf `main`.
+  - Die Abschlusskommandos `Finito`, `Finale` und `Endfinale` gestaffelt dokumentiert: lokaler Abschluss, vollständiger Merge-/Push-Abschluss und großer Projektabschluss.
+  - Stop-Regeln ergänzt, damit bei roten Checks, Merge-Konflikten, riskantem Push oder offenen fachlichen Punkten nicht automatisch integriert wird.
 

@@ -14,7 +14,7 @@ Diese Wissensbasis dient der dauerhaften, strukturierten und verlinkten Dokument
 - Technische Dateinamen, Modulnamen und IDs bleiben in ihrer Originalschreibweise.
 
 ## Dateikodierung
-- Dateien in `ai-project-memory` werden als UTF-8 gespeichert.
+- Dateien in `KI-Wissen-Final Scene` werden als UTF-8 gespeichert.
 - Wissenspflege soll keine impliziten ANSI- oder Codepage-Schreibpfade verwenden.
 - Nach größeren Pflegearbeiten oder bei Verdacht auf Zeichensalat `npm run check:memory` ausführen.
 

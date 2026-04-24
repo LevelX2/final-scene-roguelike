@@ -1,7 +1,7 @@
 ---
 typ: prozess
 status: aktiv
-letzte_aktualisierung: 2026-04-21
+letzte_aktualisierung: 2026-04-23
 quellen:
   - ../../01 Rohquellen/externe-quellen/2026-04-17-karpathy-llm-wiki-gist.md
   - ../../00 Steuerung/Regeldatei KI-Wissenspflege.md
@@ -39,7 +39,7 @@ Fragen zum Projekt sollen zuerst gegen den bestehenden Wiki-Bestand beantwortet 
 
 ## Technischer Check
 - Für den technischen Health-Check der Wissensbasis `npm run check:memory` nutzen.
-- Der Lauf prüft `ai-project-memory/` auf striktes UTF-8 in `md`, `json` und `txt`.
+- Der Lauf prüft `KI-Wissen-Final Scene/` auf striktes UTF-8 in `md`, `json` und `txt`.
 - Zusätzlich meldet er typische Fehlmuster aus falsch decodierten Umlauten oder Sonderzeichen, bevor solche Stellen in weiteren Threads weiterkopiert werden.
 
 ## Betriebsnutzen

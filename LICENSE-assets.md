@@ -6,7 +6,7 @@ This includes, in particular:
 
 - original SVG and image assets under `assets/`
 - original documentation under `docs/`
-- original project knowledge-base content under `ai-project-memory/`
+- original project knowledge-base content under `KI-Wissen-Final Scene/`
 
 License summary:
 

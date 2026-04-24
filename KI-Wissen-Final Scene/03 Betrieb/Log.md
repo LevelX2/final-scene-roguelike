@@ -85,6 +85,37 @@
 
   - Ergänzt, dass axiale Sichtspitzen der kreisnahen Sicht jetzt eigene Nord-/Ost-/Süd-/West-Masken mit Priorität vor diagonalen Dreiecken erhalten, damit die letzten Radiusspitzen nicht fälschlich als schiefe 45-Grad-Keile erscheinen.
 
+## [2026-04-23] update | Wissensbasis-Ordner auf KI-Wissen Final Scene umgestellt
+- Anlass oder Quelle: Abschluss der bereits begonnenen Umbenennung der Projekt-Wissensbasis im Repository
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `AGENTS.md`
+  - `README.md`
+  - `LICENSE-assets.md`
+  - `eslint.config.js`
+  - `package.json`
+  - `scripts/check-memory.mjs`
+  - [[../00 Steuerung/Regeldatei KI-Wissenspflege]]
+  - [[../02 Wissen/Prozesse/Wiki-first Query und Linting]]
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+- Kern der inhaltlichen Anpassung:
+  - Den aktiven Wissensordner im Repository konsistent auf `KI-Wissen-Final Scene/` umgestellt und die Agentenhinweise dazu passend nachgezogen.
+  - Den Encoding-Check unter `npm run check:memory` auf den neuen Ordnerpfad umgestellt und das zugrunde liegende Skript neutral auf `scripts/check-memory.mjs` umbenannt.
+  - Operative Hinweise in README, Lizenzhinweis und Wissenspflege-Prozessen auf den neuen Ordnernamen ausgerichtet.
+
+## [2026-04-23] update | Finito-Sequenz als Abschlussworkflow dokumentiert
+- Anlass oder Quelle: Nutzerwunsch, `Finito` beziehungsweise `Ende` als verbindliche Abschlusssequenz für aktuelle Threads in `AGENTS.md` zu verankern
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `AGENTS.md`
+  - [[../02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]
+- Kern der inhaltlichen Anpassung:
+  - In `AGENTS.md` festgehalten, dass `Finito` oder `Ende` Änderungen in sinnvolle Commit-Blöcke überführt, nur abgeschlossene Teile committet und offene Fragen danach kompakt benennt.
+  - Dokumentiert, dass nötige Wissenspflege Teil dieser Abschlusssequenz ist und ebenfalls commitfähig nachgezogen werden soll.
+  - Den bestehenden Arbeitsworkflow um einen eigenen Fall für den Thread-Abschluss ergänzt, damit die Regel nicht nur im Agentenprompt, sondern auch im Projektwissen auffindbar bleibt.
+
 ## [2026-04-21] fix | Wissensbasis auf UTF-8-Check abgesichert und Log-Kodierung repariert
 - Anlass oder Quelle: Analyse wiederkehrender Kodierungsprobleme in der Projekt-Wissensbasis
 - Neu angelegte Seiten:

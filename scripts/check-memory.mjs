@@ -4,7 +4,7 @@ import path from "node:path";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(scriptDir, "..");
-const memoryDir = path.join(rootDir, "ai-project-memory");
+const knowledgeBaseDir = path.join(rootDir, "KI-Wissen-Final Scene");
 const textExtensions = new Set([".md", ".json", ".txt"]);
 const suspiciousPatterns = [
   "\u00C3\u00A4",
@@ -174,7 +174,7 @@ function findSuspiciousLines(text) {
   return hits;
 }
 
-const files = walkFiles(memoryDir);
+const files = walkFiles(knowledgeBaseDir);
 const invalidUtf8Files = [];
 const suspiciousFiles = [];
 
@@ -208,11 +208,11 @@ for (const filePath of files) {
 }
 
 if (invalidUtf8Files.length === 0 && suspiciousFiles.length === 0) {
-  console.log(`Project memory encoding check passed: ${files.length} Dateien geprüft.`);
+  console.log(`Wissensbasis-Encoding-Check bestanden: ${files.length} Dateien geprüft.`);
   process.exit(0);
 }
 
-console.error("Project memory encoding check failed.");
+console.error("Wissensbasis-Encoding-Check fehlgeschlagen.");
 
 for (const file of invalidUtf8Files) {
   console.error(`- Ungültiges UTF-8: ${file.path} (${file.total} Byte-Stellen)`);

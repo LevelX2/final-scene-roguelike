@@ -4,7 +4,7 @@
 
 Für dieses Repository existiert eine projektbezogene KI-Wissensbasis im Ordner:
 
-`ai-project-memory/`
+`KI-Wissen-Final Scene/`
 
 Bei neuen Threads, neuen Aufgaben und Projektfragen ist diese Wissensbasis primär zu verwenden.
 
@@ -12,10 +12,10 @@ Bei neuen Threads, neuen Aufgaben und Projektfragen ist diese Wissensbasis prim�
 
 Zu Beginn projektbezogener Arbeit zuerst diese Dateien lesen:
 
-1. `ai-project-memory/00 Projektstart.md`
-2. `ai-project-memory/02 Wissen/00 Uebersichten/Index.md`
-3. `ai-project-memory/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
-4. `ai-project-memory/00 Steuerung/Regeldatei KI-Wissenspflege.md`
+1. `KI-Wissen-Final Scene/00 Projektstart.md`
+2. `KI-Wissen-Final Scene/02 Wissen/00 Uebersichten/Index.md`
+3. `KI-Wissen-Final Scene/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
+4. `KI-Wissen-Final Scene/00 Steuerung/Regeldatei KI-Wissenspflege.md`
 
 ## Arbeitsmodus
 
@@ -49,10 +49,25 @@ Wenn neue Projektquellen hinzukommen:
 - Zwischen dokumentiertem Projektstand und aktuellem Workspace-Stand unterscheiden, wenn offene lokale Änderungen vorliegen.
 - Wiederverwendbare Antworten, Entscheidungen, Analysen oder Risikoerklärungen nicht nur im Chat belassen, sondern als Wissensseiten oder Aktualisierungen zurückführen.
 
+## Finito-Sequenz
+
+Wenn der Nutzer `Finito` oder `Ende` schreibt, führt der Agent die Abschlusssequenz für den aktuellen Thread aus.
+
+1. Der Agent teilt die Änderungen in sinnvolle Commit-Blöcke auf. Nicht direkt zusammenhängende Änderungen sollen in getrennten Commits mit jeweils eigener passender Commit-Message landen.
+2. Der Agent committet alle Teile, zu denen keine offenen Fragen mehr bestehen und die fachlich wie technisch konsistent abgeschlossen sind.
+3. Nötige Anpassungen am KI-Wissen werden nach den sonstigen Wissensregeln nachgezogen, dokumentiert und ebenfalls committed.
+4. Verbleibende offene Fragen, Konflikte oder bewusste Entscheidungsbedarfe werden danach kompakt benannt.
+
+Zusätzlich gilt:
+
+- Teile, die noch von offenen Fragen abhängen, sollen nicht vorschnell committed werden.
+- Uncommittete Änderungen, die erkennbar nicht zu diesem Thread gehören, sind kein automatischer Blocker und können am Ende kurz als Hinweis genannt werden.
+- Gemachte Commits sollen im Abschluss jeweils in einer eigenen Zeile mit ihrer Commit-Message genannt werden, damit sie schnell erkennbar sind.
+- Wenn nach der Finito-Sequenz keine relevanten offenen Punkte mehr für diesen Thread übrig sind, gilt der Thread als abgeschlossen und archivierungsreif.
+
 ## Wichtige Wissensbasis-Dateien
 
-- Einstieg: `ai-project-memory/02 Wissen/00 Uebersichten/Index.md`
-- Workflow: `ai-project-memory/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
-- Log: `ai-project-memory/03 Betrieb/Log.md`
-- Qualitätsprüfung: `ai-project-memory/03 Betrieb/Qualitaetspruefung.md`
-
+- Einstieg: `KI-Wissen-Final Scene/02 Wissen/00 Uebersichten/Index.md`
+- Workflow: `KI-Wissen-Final Scene/02 Wissen/Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen.md`
+- Log: `KI-Wissen-Final Scene/03 Betrieb/Log.md`
+- Qualitätsprüfung: `KI-Wissen-Final Scene/03 Betrieb/Qualitaetspruefung.md`

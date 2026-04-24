@@ -166,6 +166,7 @@ export function createConsumableService(context) {
       effectFamily: buff.effectFamily,
       sourceItemId: buff.sourceItemId,
       remainingTurns: buff.remainingTurns,
+      magnitude: cloneBuffMagnitude(buff.magnitude),
       theme: buff.theme ?? null,
       label: getConsumableEffectLabel(buff.effectFamily),
     }));

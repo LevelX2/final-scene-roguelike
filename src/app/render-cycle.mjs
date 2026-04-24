@@ -210,6 +210,24 @@ export function createRenderCycleApi(context) {
     );
   }
 
+  function renderTopbarStatusSummary(statusSummary) {
+    if (!topbarStatusSummaryElement) {
+      return;
+    }
+
+    topbarStatusSummaryElement.classList.toggle("ui-hidden", !statusSummary);
+    topbarStatusSummaryElement.replaceChildren();
+    if (!statusSummary) {
+      return;
+    }
+
+    const labelElement = document.createElement("span");
+    labelElement.textContent = "Effekte";
+    const valueElement = document.createElement("strong");
+    valueElement.textContent = statusSummary;
+    topbarStatusSummaryElement.append(labelElement, valueElement);
+  }
+
   function syncViewportZoom(state) {
     const uiScale = state.options.uiScale ?? 1;
     const tooltipScale = state.options.tooltipScale ?? 1;
@@ -355,8 +373,7 @@ export function createRenderCycleApi(context) {
     const statusSummary = activeStatusEffects
       .map((effect) => `${effect.label}${effect.duration > 0 ? ` ${effect.duration}` : ""}`)
       .join(" | ");
-    topbarStatusSummaryElement.textContent = statusSummary;
-    topbarStatusSummaryElement.classList.toggle("ui-hidden", !statusSummary);
+    renderTopbarStatusSummary(statusSummary);
 
     const floorState = getCurrentFloorState();
     const combatWeapon = getCombatWeapon?.(state.player) ?? null;

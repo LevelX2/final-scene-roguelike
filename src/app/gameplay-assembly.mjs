@@ -47,6 +47,12 @@ export function assembleGameplayModules(context) {
     setResolvePotionChoice,
     setUseInventoryItem,
     setQuickUsePotion,
+    setCloseContainerLoot,
+    setCycleContainerLootAction,
+    setMoveContainerLootFocus,
+    setConfirmContainerLootFocus,
+    setTakeSelectedContainerLoot,
+    setTakeAllContainerLoot,
     setCycleHealingOverlay,
     setCloseHealingOverlay,
     setUseSelectedHealingConsumable,
@@ -298,6 +304,12 @@ export function assembleGameplayModules(context) {
   setResolvePotionChoice(itemsApi.resolvePotionChoice);
   setUseInventoryItem(itemsApi.useInventoryItem);
   setQuickUsePotion(itemsApi.quickUsePotion);
+  setCloseContainerLoot(itemsApi.closeContainerLoot);
+  setCycleContainerLootAction(itemsApi.cycleContainerLootAction);
+  setMoveContainerLootFocus(itemsApi.moveContainerLootFocus);
+  setConfirmContainerLootFocus(itemsApi.confirmContainerLootFocus);
+  setTakeSelectedContainerLoot(itemsApi.takeSelectedContainerLoot);
+  setTakeAllContainerLoot(itemsApi.takeAllContainerLoot);
   setCycleHealingOverlay(itemsApi.cycleHealingOverlay);
   setCloseHealingOverlay(itemsApi.closeHealingOverlay);
   setUseSelectedHealingConsumable(itemsApi.useSelectedHealingConsumable);

@@ -76,6 +76,7 @@ export function createTestApiSnapshots(context) {
       floor: state.floor,
       turn: state.turn ?? 0,
       timelineTime: state.timelineTime ?? 0,
+      turnAdvanceInProgress: Boolean(state.turnAdvanceInProgress),
       player: {
         name: state.player.name,
         classId: state.player.classId,

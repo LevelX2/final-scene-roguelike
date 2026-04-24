@@ -26,6 +26,7 @@ function createHarness({
   renderSelf = () => {},
   waitForDebugAdvanceFrame,
   waitForDebugAdvanceDelay,
+  waitForEnemyTurnDelay,
 } = {}) {
   const normalizedEnemies = enemies.map((enemy) => ({
     hp: 10,
@@ -139,6 +140,7 @@ function createHarness({
     renderSelf,
     waitForDebugAdvanceFrame,
     waitForDebugAdvanceDelay,
+    waitForEnemyTurnDelay,
   });
 
   return {
@@ -219,6 +221,51 @@ test('player-turn-controller fires immediately when only one ranged target is va
   assert.equal(harness.attackCalls[0].options.distance, 3);
   assert.equal(harness.state.targeting.active, false);
   assert.equal(harness.state.turn, 1);
+});
+
+test('player-turn-controller holds enemy turns briefly after a ranged player shot', async () => {
+  const enemy = { id: 'single-target', x: 5, y: 2 };
+  let releaseEnemyTurnDelay = null;
+  const enemyTurns = [];
+  const renderFrames = [];
+  const harness = createHarness({
+    enemies: [enemy],
+    weapon: {
+      id: 'test-pistol',
+      attackMode: 'ranged',
+      range: 6,
+    },
+    options: {
+      directFireOnSingleTarget: true,
+    },
+    takeEnemyTurn: (activeEnemy) => {
+      enemyTurns.push(activeEnemy.id);
+    },
+    renderSelf: () => {
+      renderFrames.push({
+        turnAdvanceInProgress: Boolean(harness.state.turnAdvanceInProgress),
+        enemyTurns: enemyTurns.length,
+      });
+    },
+    waitForEnemyTurnDelay: () => new Promise((resolve) => {
+      releaseEnemyTurnDelay = resolve;
+    }),
+  });
+
+  harness.api.cycleTargetMode();
+
+  assert.equal(harness.attacks.length, 1);
+  assert.equal(harness.state.turn, 1);
+  assert.equal(harness.state.turnAdvanceInProgress, true);
+  assert.deepEqual(enemyTurns, []);
+  assert.equal(renderFrames.some((frame) => frame.turnAdvanceInProgress && frame.enemyTurns === 0), true);
+
+  releaseEnemyTurnDelay();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.deepEqual(enemyTurns, ['single-target']);
+  assert.equal(harness.state.turnAdvanceInProgress, false);
+  assert.equal(renderFrames.some((frame) => !frame.turnAdvanceInProgress && frame.enemyTurns === 1), true);
 });
 
 test('player-turn-controller keeps the target mode when direct fire on a single target is disabled', () => {

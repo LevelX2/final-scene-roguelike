@@ -24,6 +24,9 @@ export function createInputController(context) {
     tryCloseAdjacentDoor,
     quickUsePotion,
     closeContainerLoot,
+    cycleContainerLootAction,
+    moveContainerLootFocus,
+    confirmContainerLootFocus,
     takeSelectedContainerLoot,
     takeAllContainerLoot,
     cycleHealingOverlay,
@@ -97,7 +100,7 @@ export function createInputController(context) {
     }
 
     if (state.pendingStairChoice) {
-      if (matchesShortcut(["enter"], ["Enter"])) {
+      if (matchesShortcut(["enter", "s", "5"], ["Enter", "KeyS", "Digit5", "Numpad5"])) {
         event.preventDefault();
         resolveStairChoice(state.pendingStairChoice.selectedAction);
         return;
@@ -109,13 +112,13 @@ export function createInputController(context) {
         return;
       }
 
-      if (matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])) {
+      if (matchesShortcut(["arrowleft", "a", "4"], ["ArrowLeft", "KeyA", "Digit4", "Numpad4"])) {
         event.preventDefault();
         cycleStairChoice(-1);
         return;
       }
 
-      if (matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])) {
+      if (matchesShortcut(["arrowright", "d", "6"], ["ArrowRight", "KeyD", "Digit6", "Numpad6"])) {
         event.preventDefault();
         cycleStairChoice(1);
         return;
@@ -131,19 +134,19 @@ export function createInputController(context) {
     }
 
     if (state.pendingChoice) {
-      if (matchesShortcut(["enter"], ["Enter"])) {
+      if (matchesShortcut(["enter", "s", "5"], ["Enter", "KeyS", "Digit5", "Numpad5"])) {
         event.preventDefault();
         resolvePotionChoice(state.pendingChoice.selectedAction);
         return;
       }
 
-      if (matchesShortcut(["arrowleft", "a"], ["ArrowLeft", "KeyA"])) {
+      if (matchesShortcut(["arrowleft", "a", "4"], ["ArrowLeft", "KeyA", "Digit4", "Numpad4"])) {
         event.preventDefault();
         cyclePotionChoice(-1);
         return;
       }
 
-      if (matchesShortcut(["arrowright", "d"], ["ArrowRight", "KeyD"])) {
+      if (matchesShortcut(["arrowright", "d", "6"], ["ArrowRight", "KeyD", "Digit6", "Numpad6"])) {
         event.preventDefault();
         cyclePotionChoice(1);
         return;
@@ -153,9 +156,11 @@ export function createInputController(context) {
     }
 
     if (state.pendingContainerLoot) {
-      if (matchesShortcut(["enter"], ["Enter"])) {
+      if (matchesShortcut(["enter", "s", "5"], ["Enter", "KeyS", "Digit5", "Numpad5"])) {
         event.preventDefault();
-        if (Array.isArray(state.pendingContainerLoot.selectedItemIndices) && state.pendingContainerLoot.selectedItemIndices.length > 0) {
+        if (confirmContainerLootFocus) {
+          confirmContainerLootFocus();
+        } else if (Array.isArray(state.pendingContainerLoot.selectedItemIndices) && state.pendingContainerLoot.selectedItemIndices.length > 0) {
           takeSelectedContainerLoot();
         } else {
           takeAllContainerLoot();
@@ -169,11 +174,35 @@ export function createInputController(context) {
         return;
       }
 
+      if (matchesShortcut(["arrowleft", "a", "4"], ["ArrowLeft", "KeyA", "Digit4", "Numpad4"])) {
+        event.preventDefault();
+        cycleContainerLootAction?.(-1);
+        return;
+      }
+
+      if (matchesShortcut(["arrowright", "d", "6"], ["ArrowRight", "KeyD", "Digit6", "Numpad6"])) {
+        event.preventDefault();
+        cycleContainerLootAction?.(1);
+        return;
+      }
+
+      if (matchesShortcut(["w", "arrowup"], ["KeyW", "ArrowUp", "Numpad8"])) {
+        event.preventDefault();
+        moveContainerLootFocus?.(-1);
+        return;
+      }
+
+      if (matchesShortcut(["x", "arrowdown"], ["KeyX", "ArrowDown", "Numpad2"])) {
+        event.preventDefault();
+        moveContainerLootFocus?.(1);
+        return;
+      }
+
       return;
     }
 
     if (state.healOverlay?.open) {
-      if (matchesShortcut(["enter"], ["Enter"])) {
+      if (matchesShortcut(["enter", "s", "5"], ["Enter", "KeyS", "Digit5", "Numpad5"])) {
         event.preventDefault();
         useSelectedHealingConsumable();
         return;

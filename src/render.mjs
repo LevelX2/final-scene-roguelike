@@ -82,13 +82,90 @@ export function createRenderApi(context) {
     return color;
   }
 
+  function formatMagnitudeValue(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return null;
+    }
+
+    if (Number.isInteger(numericValue)) {
+      return String(numericValue);
+    }
+
+    return String(Math.round(numericValue * 10) / 10).replace(".", ",");
+  }
+
+  function formatSignedMagnitude(value) {
+    const numericValue = Number(value);
+    const formattedValue = formatMagnitudeValue(numericValue);
+    if (formattedValue === null) {
+      return null;
+    }
+
+    return `${numericValue > 0 ? "+" : ""}${formattedValue}`;
+  }
+
+  function formatConsumableBuffMagnitude(magnitude) {
+    if (!magnitude || typeof magnitude !== "object") {
+      return null;
+    }
+
+    if (Number.isFinite(magnitude.lightBonus)) {
+      return `Sicht ${formatSignedMagnitude(magnitude.lightBonus)}`;
+    }
+
+    if (Number.isFinite(magnitude.precision)) {
+      return `Präzision ${formatSignedMagnitude(magnitude.precision)}`;
+    }
+
+    if (Number.isFinite(magnitude.reaction)) {
+      return `Reaktion ${formatSignedMagnitude(magnitude.reaction)}`;
+    }
+
+    if (Number.isFinite(magnitude.nerves)) {
+      return `Nerven ${formatSignedMagnitude(magnitude.nerves)}`;
+    }
+
+    if (Number.isFinite(magnitude.trapDetectionBonus) && Number.isFinite(magnitude.trapAvoidBonus)) {
+      return `Fallen ${formatSignedMagnitude(magnitude.trapDetectionBonus)}/${formatSignedMagnitude(magnitude.trapAvoidBonus)}`;
+    }
+
+    if (Number.isFinite(magnitude.trapDetectionBonus)) {
+      return `Fallen sehen ${formatSignedMagnitude(magnitude.trapDetectionBonus)}`;
+    }
+
+    if (Number.isFinite(magnitude.trapAvoidBonus)) {
+      return `Fallen meiden ${formatSignedMagnitude(magnitude.trapAvoidBonus)}`;
+    }
+
+    if (Number.isFinite(magnitude.trapDamageReduction)) {
+      return `Fallenschutz ${formatSignedMagnitude(magnitude.trapDamageReduction)}`;
+    }
+
+    if (Number.isFinite(magnitude.safeRestProgressBonus)) {
+      return `Ruhe ${formatSignedMagnitude(magnitude.safeRestProgressBonus)}`;
+    }
+
+    if (Number.isFinite(magnitude.enemyAggroRadiusMod)) {
+      return `Tarnung ${formatSignedMagnitude(magnitude.enemyAggroRadiusMod)}`;
+    }
+
+    return null;
+  }
+
+  function getConsumableBuffDisplayLabel(buff) {
+    return formatConsumableBuffMagnitude(buff?.magnitude)
+      ?? buff?.label
+      ?? getConsumableEffectLabel(buff?.effectFamily);
+  }
+
   function getActorStatusDisplay(actor) {
     const effects = [
       ...(actor?.statusEffects ?? []),
       ...(actor?.activeConsumableBuffs ?? []).map((buff) => ({
         type: buff.effectFamily,
         duration: buff.remainingTurns,
-        label: buff.label ?? getConsumableEffectLabel(buff.effectFamily),
+        label: getConsumableBuffDisplayLabel(buff),
       })),
     ];
     if (!effects.length) {

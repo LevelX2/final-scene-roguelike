@@ -326,18 +326,41 @@ select {
 
 .start-modal-card {
   width: min(640px, 100%);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .start-form {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   margin-top: 18px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.class-options-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .class-options {
   display: grid;
   gap: 10px;
   margin-top: 8px;
+  min-height: 0;
+  max-height: clamp(250px, 43dvh, 520px);
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
 }
 
 .class-option {
@@ -743,16 +766,17 @@ kbd {
 }
 
 .topbar-status-summary {
-  margin: -2px 0 12px;
-  min-height: 24px;
-  padding: 6px 10px;
-  border-radius: 10px;
+  min-width: 128px;
+  max-width: 260px;
   background: rgba(112, 201, 145, 0.08);
   border: 1px solid rgba(112, 201, 145, 0.18);
+}
+
+.topbar-status-summary strong {
   color: #d9f3df;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.86rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .target-mode-pill {
@@ -3892,6 +3916,13 @@ body.tooltip-open [data-tooltip-bound="true"] {
   box-shadow: 0 0 0 1px rgba(125, 220, 138, 0.18);
 }
 
+.container-loot-item.is-keyboard-focused {
+  border-color: rgba(242, 206, 96, 0.48);
+  box-shadow:
+    0 0 0 1px rgba(242, 206, 96, 0.24),
+    0 0 0 4px rgba(242, 206, 96, 0.08);
+}
+
 .container-loot-item .inventory-meta {
   min-width: 0;
 }
@@ -3902,6 +3933,13 @@ body.tooltip-open [data-tooltip-bound="true"] {
 
 .container-loot-actions {
   justify-content: flex-end;
+}
+
+.container-loot-actions .choice-btn.is-keyboard-selected {
+  border-color: rgba(242, 206, 96, 0.6);
+  background: rgba(242, 206, 96, 0.16);
+  color: #f4e6a3;
+  box-shadow: 0 0 0 3px rgba(242, 206, 96, 0.1);
 }
 
 .inventory-modal-card {

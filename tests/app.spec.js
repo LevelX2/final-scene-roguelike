@@ -497,11 +497,25 @@ test("containers open a loot list with multiple items and keep remaining content
   await expect(page.locator("#containerLootTitle")).toContainText("Requisitenkiste");
   await expect(page.locator("#containerLootList")).toContainText("Containerklinge");
   await expect(page.locator("#containerLootList")).toContainText("Requisitenration");
+  await expect(page.locator("#containerLootCloseHead")).toHaveCount(0);
+  await expect(page.locator("#containerLootTakeAll")).toHaveClass(/is-keyboard-selected/);
 
   const weaponRow = page.locator("#containerLootList .container-loot-item").filter({ hasText: "Containerklinge" });
-  await weaponRow.getByRole("button", { name: "Wählen" }).click();
+  const rationRow = page.locator("#containerLootList .container-loot-item").filter({ hasText: "Requisitenration" });
+  await page.keyboard.press("ArrowUp");
+  await expect(weaponRow).toHaveClass(/is-keyboard-focused/);
+  await page.keyboard.press("Enter");
+  await expect(weaponRow).toHaveClass(/is-selected/);
   await expect(page.locator("#containerLootTakeSelected")).toBeEnabled();
-  await page.locator("#containerLootTakeSelected").click();
+  await page.keyboard.press("ArrowDown");
+  await expect(rationRow).toHaveClass(/is-keyboard-focused/);
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#containerLootTakeSelected")).toHaveClass(/is-keyboard-selected/);
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#containerLootTakeAll")).toHaveClass(/is-keyboard-selected/);
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator("#containerLootTakeSelected")).toHaveClass(/is-keyboard-selected/);
+  await page.keyboard.press("Enter");
   await expect(page.locator("#containerLootModal")).toBeHidden();
 
   const afterFirstPickup = await page.evaluate(() => ({
@@ -1105,7 +1119,7 @@ test("death screen opens the normal run history modal", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(page.locator("#runStatsModal")).toBeHidden();
   await expect(page.locator("#deathModal")).toBeVisible();
-  await page.locator("#deathModal").getByRole("button", { name: "Zum Todesstudio" }).click();
+  await page.locator("#deathModal").getByRole("button", { name: "Zurück zum Studio" }).click();
   await expect(page.locator("#deathModal")).toBeHidden();
   await expect(page.locator("#board .tile.player")).toBeVisible();
 });
@@ -2298,6 +2312,7 @@ test("a single valid ranged target can be fired directly with T and F", async ({
 
   expect(afterT).toBeLessThan(beforeT);
   await expect(page.locator(".board")).not.toHaveClass(/targeting-mode/);
+  await expect.poll(() => page.evaluate(() => window.__TEST_API__.getSnapshot().turnAdvanceInProgress)).toBe(false);
 
   await page.evaluate(() => {
     window.__TEST_API__.setupCombatScenario({
@@ -2865,6 +2880,31 @@ test("poison deals damage over time to the player", async ({ page }) => {
   const after = await page.evaluate(() => window.__TEST_API__.getSnapshot().player.hp);
 
   expect(after).toBe(before - 3);
+});
+
+test("consumable buffs show their magnitude in the topbar effects pill", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.clearFloorEntities();
+    window.__TEST_API__.addInventoryItem({
+      type: "consumable",
+      id: "cons_vision_scan_cart_t1",
+    });
+  });
+
+  await page.locator("#openInventory").click();
+  await page.locator('[data-filter="consumable"]').click();
+  await page
+    .locator(".inventory-item", { hasText: "Scan-Kartusche" })
+    .getByRole("button", { name: "Benutzen" })
+    .click();
+
+  await expect(page.locator("#topbarStatusSummary")).toBeVisible();
+  await expect(page.locator("#topbarStatusSummary")).toContainText("Effekte");
+  await expect(page.locator("#topbarStatusSummary")).toContainText("Sicht +1");
+  await expect(page.locator("#topbarStatusSummary")).not.toContainText("Sichtbonus");
 });
 
 test("precision malus lowers the displayed hit value", async ({ page }) => {

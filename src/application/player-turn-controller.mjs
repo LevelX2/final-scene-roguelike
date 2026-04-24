@@ -8,6 +8,8 @@ import {
 import { pruneExpiredDeathMarkers } from './death-marker-service.mjs';
 import { getDebugAdvanceDelayMs } from './debug-advance.mjs';
 
+const RANGED_ATTACK_ENEMY_TURN_DELAY_MS = 420;
+
 export function createPlayerTurnController(context) {
   const {
     WIDTH,
@@ -63,6 +65,7 @@ export function createPlayerTurnController(context) {
         ? new Promise((resolve) => setTimeout(resolve, delayMs))
         : Promise.resolve()
     ),
+    waitForEnemyTurnDelay = waitForDebugAdvanceDelay,
   } = context;
   const perceiveTarget = canPerceive ?? hasLineOfSight;
   const projectileTargetLine = hasProjectileLine ?? perceiveTarget;
@@ -161,12 +164,37 @@ export function createPlayerTurnController(context) {
   }
 
   function ensurePlayerTurnReady() {
+    if (getState().turnAdvanceInProgress) {
+      return false;
+    }
+
     flushScheduledActorsUntilPlayerTurn();
     const state = getState();
     return !state.gameOver && isPlayerTurn();
   }
 
-  function endTurn({ skipEnemyMove = false, actionType = "other", actionCost = 100 } = {}) {
+  async function flushScheduledActorsAfterVisualHold(delayMs) {
+    const state = getState();
+    state.turnAdvanceInProgress = true;
+    renderSelf();
+
+    try {
+      await waitForEnemyTurnDelay(delayMs);
+      if (!state.gameOver) {
+        flushScheduledActorsUntilPlayerTurn();
+      }
+    } finally {
+      state.turnAdvanceInProgress = false;
+      renderSelf();
+    }
+  }
+
+  function endTurn({
+    skipEnemyMove = false,
+    actionType = "other",
+    actionCost = 100,
+    enemyTurnDelayMs = 0,
+  } = {}) {
     const state = getState();
     ensureSchedulerState();
     beginActorTurn(state.player);
@@ -186,10 +214,14 @@ export function createPlayerTurnController(context) {
     if (!state.gameOver && state.player.hp > 0) {
       scheduleActorNextTurn(state.player, actionCost);
     }
+    if (!state.gameOver && !skipEnemyMove && enemyTurnDelayMs > 0) {
+      return flushScheduledActorsAfterVisualHold(enemyTurnDelayMs);
+    }
     if (!state.gameOver && !skipEnemyMove) {
       flushScheduledActorsUntilPlayerTurn();
     }
     renderSelf();
+    return undefined;
   }
 
   function pruneDeathMarkersForTurn() {
@@ -515,6 +547,7 @@ export function createPlayerTurnController(context) {
       !state.modals.savegamesOpen &&
       !state.modals.helpOpen &&
       !state.modals.highscoresOpen &&
+      !state.turnAdvanceInProgress &&
       isTargetModeWeapon(weapon),
     );
   }
@@ -560,7 +593,10 @@ export function createPlayerTurnController(context) {
 
     state.targeting.active = false;
     attackEnemy(directTarget.enemy, { distance: directTarget.distance });
-    endTurn({ actionType: 'other' });
+    endTurn({
+      actionType: 'other',
+      enemyTurnDelayMs: RANGED_ATTACK_ENEMY_TURN_DELAY_MS,
+    });
     return true;
   }
 
@@ -712,7 +748,10 @@ export function createPlayerTurnController(context) {
 
     state.targeting.active = false;
     attackEnemy(targetSelection.enemy, { distance: targetSelection.distance });
-    endTurn({ actionType: 'other' });
+    endTurn({
+      actionType: 'other',
+      enemyTurnDelayMs: RANGED_ATTACK_ENEMY_TURN_DELAY_MS,
+    });
   }
 
   return {

@@ -35,6 +35,7 @@ export function createModalController(context) {
     containerLootListElement,
     containerLootTakeSelectedButton,
     containerLootTakeAllButton,
+    containerLootCloseButton,
     stairsModalElement,
     stairsTitleElement,
     stairsTextElement,
@@ -691,6 +692,17 @@ export function createModalController(context) {
 
     const contents = getChestContents(chest);
     const selectedIndices = new Set(pending.selectedItemIndices ?? []);
+    const focusArea = pending.focusArea === "items" && contents.length > 0 ? "items" : "actions";
+    const focusedItemIndex = Number.isInteger(pending.focusedItemIndex)
+      ? Math.min(contents.length - 1, Math.max(0, pending.focusedItemIndex))
+      : 0;
+    const selectedAction = pending.selectedAction === "selected" && selectedIndices.size > 0
+      ? "selected"
+      : pending.selectedAction === "close"
+        ? "close"
+        : contents.length > 0
+          ? "all"
+          : "close";
 
     if (containerLootImageElement) {
       containerLootImageElement.src = getContainerImageUrl(chest);
@@ -716,6 +728,9 @@ export function createModalController(context) {
         if (selectedIndices.has(index)) {
           rowElement.classList.add("is-selected");
         }
+        if (focusArea === "items" && focusedItemIndex === index) {
+          rowElement.classList.add("is-keyboard-focused");
+        }
         rowElement.innerHTML = `
           <div class="inventory-meta">
             <strong>${getContainerEntryTitle(entry)}</strong>
@@ -729,11 +744,15 @@ export function createModalController(context) {
         toggleButton.type = "button";
         toggleButton.textContent = selectedIndices.has(index) ? "Abwählen" : "Wählen";
         toggleButton.addEventListener("click", () => {
+          const nextSelectedItemIndices = selectedIndices.has(index)
+            ? [...selectedIndices].filter((value) => value !== index)
+            : [...selectedIndices, index].sort((left, right) => left - right);
           state.pendingContainerLoot = {
             ...pending,
-            selectedItemIndices: selectedIndices.has(index)
-              ? [...selectedIndices].filter((value) => value !== index)
-              : [...selectedIndices, index].sort((left, right) => left - right),
+            selectedItemIndices: nextSelectedItemIndices,
+            selectedAction: nextSelectedItemIndices.length > 0 ? "selected" : "all",
+            focusArea: "items",
+            focusedItemIndex: index,
           };
           renderSelf();
         });
@@ -745,9 +764,14 @@ export function createModalController(context) {
 
     if (containerLootTakeSelectedButton) {
       containerLootTakeSelectedButton.disabled = selectedIndices.size === 0;
+      containerLootTakeSelectedButton.classList.toggle("is-keyboard-selected", focusArea === "actions" && selectedAction === "selected");
     }
     if (containerLootTakeAllButton) {
       containerLootTakeAllButton.disabled = contents.length === 0;
+      containerLootTakeAllButton.classList.toggle("is-keyboard-selected", focusArea === "actions" && selectedAction === "all");
+    }
+    if (containerLootCloseButton) {
+      containerLootCloseButton.classList.toggle("is-keyboard-selected", focusArea === "actions" && selectedAction === "close");
     }
 
     setContainerLootModalVisibility(true);

@@ -212,8 +212,12 @@ export function assembleCoreModules(context) {
     deleteSavedGame: stateApi.deleteSavedGame,
     setSavegameStatus: (text) => {
       savegameStatusElement.textContent = text;
-      startSavegameStatusElement.textContent = text;
-      landingSavegameStatusElement.textContent = text;
+      if (startSavegameStatusElement) {
+        startSavegameStatusElement.textContent = text;
+      }
+      if (landingSavegameStatusElement) {
+        landingSavegameStatusElement.textContent = text;
+      }
     },
     setLoadButtonsDisabled: () => {
       loadGameFromLandingButtonElement.removeAttribute("disabled");

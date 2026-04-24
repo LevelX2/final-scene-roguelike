@@ -98,13 +98,16 @@
               <span>Hunger</span>
               <strong id="topbarFood">Normal</strong>
             </div>
+            <div id="topbarStatusSummary" class="board-stat-pill topbar-status-summary ui-hidden" aria-live="polite">
+              <span>Effekte</span>
+              <strong>-</strong>
+            </div>
             <div id="targetModeHint" class="board-stat-pill target-mode-pill ui-hidden" aria-live="polite">
               <span>Ziel</span>
               <strong>-</strong>
             </div>
           </div>
         </div>
-        <div id="topbarStatusSummary" class="topbar-status-summary ui-hidden" aria-live="polite"></div>
         <div class="board-shell">
           <div class="board-toolbar" aria-label="Studioansicht">
             <div class="board-toolbar-main">
@@ -226,7 +229,6 @@
             <p id="containerLootSummary" class="modal-copy">W&auml;hle aus, was du mitnehmen willst.</p>
           </div>
         </div>
-        <button id="containerLootCloseHead" class="mini-btn" type="button">Schlie&szlig;en</button>
       </div>
       <div id="containerLootList" class="inventory-list modal-list container-loot-list"></div>
       <div class="modal-actions container-loot-actions">
@@ -546,7 +548,7 @@
       <p class="modal-copy">Den vollst&auml;ndigen Spielverlauf kannst du dir separat ansehen, damit dieses Ende-Fenster kompakt bleibt.</p>
       <div class="modal-actions death-actions">
         <div class="death-details-action">
-          <button id="viewDeathStudio" class="choice-btn" type="button">Zum Todesstudio</button>
+          <button id="viewDeathStudio" class="choice-btn" type="button">Zurück zum Studio</button>
           <button id="openDeathKills" class="choice-btn" type="button">Spielverlauf</button>
           <button id="closeDeath" class="choice-btn" type="button">Zum Startbildschirm</button>
         </div>
@@ -568,7 +570,7 @@
       <form id="startForm" class="start-form">
         <label class="hero-identity-label" for="heroNameInput">Heldenname</label>
         <input id="heroNameInput" class="hero-name-input" type="text" maxlength="24" placeholder="Final Girl">
-        <div>
+        <div class="class-options-section">
           <p class="hero-identity-label">Beruf</p>
           <div id="classOptions" class="class-options" role="radiogroup" aria-label="Beruf wählen"></div>
         </div>
@@ -576,7 +578,6 @@
           <button id="cancelStartModal" class="choice-btn ghost" type="button">Zurück</button>
           <button id="saveHeroName" class="choice-btn accent" type="submit">Ins erste Studio</button>
         </div>
-        <p id="startSavegameStatus" class="hero-identity-note">Kein Spielstand gefunden.</p>
       </form>
     </div>
   </div>

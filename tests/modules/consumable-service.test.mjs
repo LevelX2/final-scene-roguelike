@@ -58,10 +58,12 @@ test('consumable-service applies buffs, replaces weaker versions and expires the
   assert.equal(api.useConsumable(weak), true);
   assert.equal(state.player.consumableBonuses.lightBonus, 1);
   assert.equal(state.activeConsumableBuffs[0].remainingTurns, 12);
+  assert.deepEqual(state.player.activeConsumableBuffs[0].magnitude, { lightBonus: 1 });
 
   assert.equal(api.useConsumable(strong), true);
   assert.equal(state.player.consumableBonuses.lightBonus, 3);
   assert.equal(state.activeConsumableBuffs[0].remainingTurns, 20);
+  assert.deepEqual(state.player.activeConsumableBuffs[0].magnitude, { lightBonus: 3 });
 
   state.activeConsumableBuffs[0].remainingTurns = 1;
   api.processConsumableBuffs();

@@ -26,6 +26,7 @@ Thumbs.db
 Desktop.ini
 .vscode/
 .idea/
+.codex/
 
 # Local tools installed for this workspace only
 tools/

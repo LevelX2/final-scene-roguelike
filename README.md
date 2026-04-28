@@ -91,6 +91,12 @@ Versionierung aktuell:
 3. Lokalen App-Server starten: `npm run start:app`
 4. `http://127.0.0.1:4173` im Browser öffnen
 
+Für den eigentlichen Client-Start mit Server-Check:
+
+1. `npm run start:client`
+
+Das Skript prüft zuerst, ob `The Final Scene` auf `127.0.0.1:4173` bereits läuft. Wenn ja, meldet es die URL nur zurück. Wenn nein, startet es den App-Server und meldet den Client nach erfolgreichem Start zurück. Mit `npm run start:client -- --open` wird zusätzlich der Systembrowser geöffnet.
+
 Für OpenAI-TTS optional:
 
 1. `.env.example` nach `.env` kopieren
@@ -130,6 +136,8 @@ Für den kompletten lokalen Qualitätslauf:
   Startet den lokalen Test-/App-Server auf Port `4173` und deaktiviert im ausgelieferten Browser-Testmodus Studio-Sprachausgaben automatisch vor dem App-Start.
 - `npm run start:app`
   Baut das Bundle und startet den lokalen App-Server auf Port `4173`.
+- `npm run start:client`
+  Prüft, ob `The Final Scene` bereits auf Port `4173` läuft, startet andernfalls zuerst `start:app` und gibt die Client-URL zurück. Mit `--open` wird zusätzlich der Systembrowser geöffnet.
 - `npm run test:e2e`
   Baut das Projekt und startet danach die Playwright-Suite.
 

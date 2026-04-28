@@ -28,6 +28,14 @@ Das Projekt nutzt einen einfachen lokalen Ablauf aus Build, statischer JavaScrip
 3. `npm run start:app`
 4. Browser auf `http://127.0.0.1:4173`
 
+## Client-Start fuer Run-Aktionen
+- `npm run start:client` ist der bevorzugte Einstieg fuer einen lokalen "Client starten"-Knopf.
+- Das Skript prueft zuerst, ob `The Final Scene` bereits auf `127.0.0.1:4173` antwortet.
+- Wenn der App-Server schon laeuft, wird nur die URL ausgegeben.
+- Wenn noch kein passender Server laeuft, startet das Skript zuerst `npm run start:app`, wartet auf die erfolgreiche Antwort und gibt dann die URL aus.
+- Mit `npm run start:client -- --open` wird zusaetzlich der Systembrowser geoeffnet.
+- Antwortet auf `4173` zwar etwas, aber nicht `The Final Scene`, bricht das Skript mit einem klaren Port-Hinweis ab statt still den falschen Dienst zu oeffnen.
+
 ## Wichtige Skripte
 - `npm run build`: bundle nach `dist/game.bundle.js`
 - `npm run check:js`: Syntaxprüfung auf Kernmodulen
@@ -36,6 +44,7 @@ Das Projekt nutzt einen einfachen lokalen Ablauf aus Build, statischer JavaScrip
 - `npm run lint:strict`: ESLint mit Fehler bei Warnungen
 - `npm run verify:quick`: `lint:strict`, `check:js` und `test:modules`
 - `npm run verify`: vollständiger Sammellauf aus `verify:quick` plus `test:e2e`
+- `npm run start:client`: Client-URL mit vorgeschaltetem Server-Check und automatischem Start bei Bedarf
 - `npm run start:test`: lokaler Server
 - `npm run test:e2e`: Build plus Playwright-Suite
 - `npm run test:modules`: modulnahe Tests

@@ -1,5 +1,21 @@
 ﻿# Log
 
+## [2026-04-24] fix | Client-Startskript oeffnet vorhandenen lokalen Server statt mit EADDRINUSE zu scheitern
+- Anlass oder Quelle: Nutzerwunsch, den lokalen Client ueber eine Run-Aktion starten zu koennen, ohne bei bereits laufendem App-Server auf Port `4173` sofort in `EADDRINUSE` zu laufen
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/Prozesse/Build Test und lokaler Start]]
+  - `README.md`
+  - `package.json`
+  - `scripts/start-client.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Neues Skript `npm run start:client` eingefuehrt, das zuerst prueft, ob `The Final Scene` bereits auf `127.0.0.1:4173` antwortet.
+  - Wenn der passende Server schon laeuft, wird nur die Client-URL ausgegeben statt erneut `start:app` zu starten.
+  - Wenn noch kein passender Server laeuft, startet das Skript `npm run start:app`, wartet auf Erreichbarkeit und gibt danach die Client-URL aus.
+  - Ein explizites `--open` oeffnet bei Bedarf weiterhin den Systembrowser, ist aber nicht mehr der Standardpfad fuer die Codex-App.
+  - Wenn zwar ein Dienst auf `4173` antwortet, aber nicht `The Final Scene`, bricht das Skript mit einem klaren Port-Konflikt-Hinweis ab.
+
 ## [2026-04-24] update | Branch- und PR-Workflow fuer Mehrgeraetearbeit dokumentiert
 - Anlass oder Quelle: Nutzerfrage nach der sinnvollen GitHub-Arbeitsweise für viele Kleinfixes und parallele Arbeit auf zwei Rechnern
 - Neu angelegte Seiten:
@@ -616,4 +632,3 @@
   - Festgelegt, dass der Agent vor Arbeitsänderungen auf `main` automatisch einen `codex/`-Arbeitsbranch anlegt, außer der Nutzer verlangt ausdrücklich eine Direktänderung auf `main`.
   - Die Abschlusskommandos `Finito`, `Finale` und `Endfinale` gestaffelt dokumentiert: lokaler Abschluss, vollständiger Merge-/Push-Abschluss und großer Projektabschluss.
   - Stop-Regeln ergänzt, damit bei roten Checks, Merge-Konflikten, riskantem Push oder offenen fachlichen Punkten nicht automatisch integriert wird.
-

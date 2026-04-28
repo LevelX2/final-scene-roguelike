@@ -13,6 +13,7 @@
     "verify:quick": "npm run lint:strict && npm run check:js && npm run test:modules",
     "verify": "npm run verify:quick && npm run test:e2e",
     "start:app": "npm run build && node ./server.mjs --port 4173",
+    "start:client": "node ./scripts/start-client.mjs",
     "start:test": "npm run build && set DUNGEON_ROGUE_TEST_MODE=1&& node ./server.mjs --port 4173",
     "report:studios": "npm run build && node ./scripts/studio-stats.mjs",
     "test:modules": "node --test ./tests/modules/*.test.mjs",

@@ -186,10 +186,6 @@ export function createBoardView(context) {
   const perceiveTarget = canPerceive ?? hasLineOfSight;
   const projectileTargetLine = hasProjectileLine ?? perceiveTarget;
 
-  function createLocalGrid(fill = null) {
-    return Array.from({ length: HEIGHT }, () => Array.from({ length: WIDTH }, () => fill));
-  }
-
   function isWallLike(grid, x, y) {
     if (x < 0 || y < 0 || y >= grid.length || x >= grid[y].length) {
       return true;

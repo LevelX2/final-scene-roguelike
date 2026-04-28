@@ -6,10 +6,6 @@ import {
   createBoardView,
 } from '../../src/ui/board-view.mjs';
 
-function createGrid(width, height, fill = false) {
-  return Array.from({ length: height }, () => Array.from({ length: width }, () => fill));
-}
-
 function createClassList() {
   const classes = new Set();
   return {

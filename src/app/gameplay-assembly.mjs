@@ -330,6 +330,7 @@ export function assembleGameplayModules(context) {
     manhattanDistance: aiApi.manhattanDistance,
     chebyshevDistance: aiApi.chebyshevDistance,
     addMessage,
+    showFloatingText,
     attackEnemy: combatApi.attackEnemy,
     tryPickupLoot: itemsApi.tryPickupLoot,
     tryUseStairs: floorTransitionService.tryUseStairs,

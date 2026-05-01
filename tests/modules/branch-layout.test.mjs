@@ -240,6 +240,7 @@ function createGeneratorHarness(options = {}) {
     randomChance: options.randomChance ?? (() => 0.5),
     randomInt: options.randomInt ?? ((min, max) => Math.floor((min + max) / 2)),
     createGrid: () => Array.from({ length: 36 }, () => Array(50).fill(TILE.WALL)),
+    specialEventsEnabled: options.specialEventsEnabled ?? false,
     getState: () => ({ player: null }),
     createEnemy: options.createEnemy ?? (() => null),
     chooseWeightedMonster: options.chooseWeightedMonster ?? (() => null),
@@ -310,6 +311,7 @@ function createStudioGeneratorHarness(options = {}) {
     randomChance: options.randomChance ?? (() => 0.5),
     randomInt: options.randomInt ?? ((min, max) => Math.floor((min + max) / 2)),
     createGrid: () => Array.from({ length: 36 }, () => Array(50).fill(TILE.WALL)),
+    specialEventsEnabled: options.specialEventsEnabled ?? false,
     getState: () => ({ player: null }),
     createEnemy: options.createEnemy ?? (() => null),
     chooseWeightedMonster: options.chooseWeightedMonster ?? (() => null),
@@ -1224,6 +1226,53 @@ test('branch layout can add a dedicated trap room on deeper floors', () => {
   const trapRoom = level.rooms.find((room) => room.role === 'trap_room');
   assert.ok(trapRoom);
   assert.equal(trapRoom.label, 'Fallenraum');
+});
+
+test('branch layout places special event enemies in addition to the normal enemy budget', () => {
+  const { generator } = createGeneratorHarness({
+    specialEventsEnabled: true,
+    MONSTER_CATALOG,
+    randomChance: () => 0,
+    randomInt: (min, _max) => min,
+    getEnemyCountForFloor: () => 0,
+    getUnlockedMonsterRank: () => 10,
+    createEnemy: (position, floorNumber, monster, options = {}) => ({
+      ...position,
+      id: monster.id,
+      spawnGroup: monster.spawnGroup,
+      rank: monster.rank,
+      variantTier: options.forceVariantTier ?? 'normal',
+      floorNumber,
+    }),
+    rollConsumableLootDefinition: () => ({
+      id: 'test-special-consumable',
+      type: 'consumable',
+      effectFamily: 'trap_focus',
+      name: 'Test-Verbrauchsgut',
+    }),
+    buildFoodItemsForBudget: () => [
+      { id: 'snack-1', nutritionRestore: 20 },
+      { id: 'snack-2', nutritionRestore: 20 },
+    ],
+  });
+  const level = generator.createDungeonLevel(4, {
+    studioArchetypeId: 'romcom',
+    studioTopologyNode: {
+      floorNumber: 4,
+      position: { x: 3, y: 0, z: 0 },
+      entryDirection: 'left',
+      entryTransitionStyle: 'passage',
+      exitDirection: 'right',
+      exitTransitionStyle: 'passage',
+    },
+    runArchetypeSequence: ['romcom', 'romcom', 'romcom', 'romcom'],
+  });
+
+  assert.equal(level.specialEvents.length, 1);
+  assert.equal(level.specialEvents[0].id, 'set_chaos_crew');
+  assert.equal(level.enemies.length, 3);
+  assert.ok(level.enemies.every((enemy) => enemy.spawnGroup === 'special_event'));
+  assert.ok(level.enemies.every((enemy) => enemy.specialEventId === 'set_chaos_crew'));
 });
 
 test('branch layout can place traps on corridors, not only inside rooms', () => {

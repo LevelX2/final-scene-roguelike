@@ -52,6 +52,16 @@ function createChestContentSummary() {
   };
 }
 
+function createSpecialEventSummary() {
+  return {
+    total: 0,
+    small: 0,
+    medium: 0,
+    large: 0,
+    labels: [],
+  };
+}
+
 function isHealingConsumable(item) {
   if (!item) {
     return false;
@@ -66,7 +76,7 @@ function isHealingConsumable(item) {
 function summarizeEnemies(enemies = []) {
   return enemies.reduce((summary, enemy) => {
     summary.total += 1;
-    if (enemy?.spawnGroup === 'legacy_special') {
+    if (enemy?.spawnGroup === 'legacy_special' || enemy?.spawnGroup === 'special_event' || enemy?.specialEventId) {
       summary.special += 1;
     } else {
       summary.standard += 1;
@@ -83,6 +93,23 @@ function summarizeEnemies(enemies = []) {
     }
     return summary;
   }, createEnemySummary());
+}
+
+function summarizeSpecialEvents(specialEvents = []) {
+  return specialEvents.reduce((summary, event) => {
+    summary.total += 1;
+    if (event?.intensity === 'small') {
+      summary.small += 1;
+    } else if (event?.intensity === 'medium') {
+      summary.medium += 1;
+    } else if (event?.intensity === 'large') {
+      summary.large += 1;
+    }
+    if (event?.label) {
+      summary.labels.push(event.label);
+    }
+    return summary;
+  }, createSpecialEventSummary());
 }
 
 function summarizeConsumables(consumables = []) {
@@ -181,6 +208,7 @@ export function summarizeStudioGenerationFloor(floorNumber, floorState) {
   const chestContentSummary = summarizeChestContents(floorState?.chests ?? []);
   const roomRoleCounts = summarizeRoomRoles(floorState?.rooms ?? []);
   const lootSummary = summarizeFloorLoot(floorState, consumableSummary, chestContentSummary);
+  const specialEventSummary = summarizeSpecialEvents(floorState?.specialEvents ?? []);
 
   return {
     floorNumber,
@@ -191,6 +219,7 @@ export function summarizeStudioGenerationFloor(floorNumber, floorState) {
     rooms: floorState?.rooms?.length ?? 0,
     roomRoleCounts,
     enemies: enemySummary,
+    specialEvents: specialEventSummary,
     keys: floorState?.keys?.length ?? 0,
     lockedDoors: (floorState?.doors ?? []).filter((door) => door?.doorType === 'locked').length,
     foods: foodSummary.count,
@@ -210,6 +239,7 @@ function createTotalsSummary() {
   return {
     rooms: 0,
     enemies: createEnemySummary(),
+    specialEvents: createSpecialEventSummary(),
     keys: 0,
     lockedDoors: 0,
     foods: 0,
@@ -246,6 +276,13 @@ function accumulateTotals(totals, studioSummary) {
   Object.keys(totals.enemies).forEach((key) => {
     totals.enemies[key] += studioSummary.enemies[key] ?? 0;
   });
+  Object.keys(totals.specialEvents).forEach((key) => {
+    if (key === 'labels') {
+      return;
+    }
+    totals.specialEvents[key] += studioSummary.specialEvents?.[key] ?? 0;
+  });
+  totals.specialEvents.labels.push(...(studioSummary.specialEvents?.labels ?? []));
   Object.keys(totals.consumables).forEach((key) => {
     if (key === 'healingValue') {
       return;
@@ -312,6 +349,7 @@ function formatArchetype(studio, formatArchetypeLabel) {
 function formatStudioLine(studio, formatArchetypeLabel) {
   return [
     `${studio.floorNumber}. ${formatArchetype(studio, formatArchetypeLabel)}`,
+    `Events ${studio.specialEvents.total}${studio.specialEvents.labels.length ? ` (${studio.specialEvents.labels.join(', ')})` : ''}`,
     `Räume ${studio.rooms}`,
     `Gegner ${studio.enemies.total} (Std ${studio.enemies.standard}, Special ${studio.enemies.special}, Elite ${studio.enemies.elite}, Dire ${studio.enemies.dire}, Boss ${studio.enemies.boss})`,
     `Keys ${studio.keys}`,
@@ -333,6 +371,7 @@ export function formatStudioGenerationReportText(report, options = {}) {
     `Studio-Statistik (${studios.length}/${report?.studioCount ?? studios.length} generiert)`,
     [
       `Gesamt Räume ${totals.rooms}`,
+      `Events ${totals.specialEvents.total} (klein ${totals.specialEvents.small}, mittel ${totals.specialEvents.medium}, groß ${totals.specialEvents.large})`,
       `Gegner ${totals.enemies.total} (Std ${totals.enemies.standard}, Special ${totals.enemies.special}, Elite ${totals.enemies.elite}, Dire ${totals.enemies.dire}, Boss ${totals.enemies.boss})`,
       `Keys ${totals.keys}`,
       `Nahrung ${totals.foods} (Nährwert ${totals.foodNutrition.totalNutrition}, Schnitt ${totals.foodNutrition.averageNutrition})`,

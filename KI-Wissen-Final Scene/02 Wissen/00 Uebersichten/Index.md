@@ -20,6 +20,7 @@
 - [[../Entscheidungen/Debugsteuerung in Toolbar statt Modal 2026-04-20]]: Debug-Zeitvorschub und Debug-Studio-Navigation liegen in der oberen Studioleiste statt im Debug-Modal.
 - [[../Entscheidungen/Debug-Vorschub mit sichtbarer Wiedergabe 2026-04-20]]: Toolbar-Temporegler, sichtbarer Scheduler-Vorschub und Heatmap-Verhalten bei überlagerten Gegnerpfaden.
 - [[../Entscheidungen/Sichtkanten-Glaettung im Board-Rendering 2026-04-23]]: organischer Fog-Canvas auf Basis einer einheitlichen FOV-Sicht; Wahrnehmung und Projektilsicht sind getrennt.
+- [[../Entscheidungen/Special Events und Setpieces 2026-05-01]]: Special Events als häufige filmische Studiomomente mit drei v1-Setpieces, Bonusgegnern und dezenter Ankündigung.
 - [[../Prozesse/Arbeitsworkflow Wissenspflege und Projektanfragen]]: alltäglicher Bedien- und Pflegeworkflow für Quellen, Fragen und Rückführung von Erkenntnissen.
 - [[../Prozesse/Branch- und PR-Workflow fuer Kleinfixes und Mehrgeraetearbeit]]: empfohlener Git- und GitHub-Ablauf für thematische Arbeitsbranches, Pull Requests und parallele Arbeit auf mehreren Rechnern.
 - [[../Prozesse/Build Test und lokaler Start]]: lokaler Start-, Build- und Testablauf.

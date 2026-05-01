@@ -157,6 +157,29 @@ function createStandardMonster(spec) {
   };
 }
 
+function createSpecialEventMonster(spec) {
+  const monster = createStandardMonster({
+    archetypeId: spec.archetypeId ?? 'global',
+    ...spec,
+  });
+
+  return {
+    ...monster,
+    spawnGroup: 'special_event',
+    eventOnly: true,
+    noEquipment: true,
+    allowVariants: false,
+    hp: spec.hp ?? monster.hp,
+    strength: spec.strength ?? monster.strength,
+    precision: spec.precision ?? monster.precision,
+    reaction: spec.reaction ?? monster.reaction,
+    nerves: spec.nerves ?? monster.nerves,
+    intelligence: spec.intelligence ?? monster.intelligence,
+    xpReward: spec.xpReward ?? monster.xpReward,
+    special: spec.special ?? monster.special,
+  };
+}
+
 const STANDARD_MONSTER_SPECS = [
   ...defineArchetypeMonsters("fantasy", [
     {
@@ -1996,4 +2019,112 @@ const STANDARD_MONSTER_SPECS = [
 
 export const PHASE_ONE_STANDARD_MONSTERS = Object.freeze(
   STANDARD_MONSTER_SPECS.map((spec) => createStandardMonster(spec)),
+);
+
+const SPECIAL_EVENT_MONSTER_SPECS = [
+  {
+    id: "event-requisitenwusler",
+    name: "Requisitenwusler",
+    gender: "masculine",
+    rank: 1,
+    role: "kleiner Set-Störer",
+    roleProfile: "skirmisher",
+    behaviorLabel: "Wusler",
+    behavior: "wanderer",
+    allowedTemperaments: ["restless", "erratic"],
+    mobility: "roaming",
+    retreatProfile: "cowardly",
+    healingProfile: "none",
+    canOpenDoors: false,
+    canChangeFloors: false,
+    aggroRadius: 4,
+    hp: 5,
+    strength: 1,
+    precision: 2,
+    reaction: 5,
+    nerves: 1,
+    intelligence: 1,
+    xpReward: 3,
+    special: "Ist klein, flink und eher lästig als hart. Blockiert Wege und weicht bei Druck schnell zurück.",
+  },
+  {
+    id: "event-kabelbeisser",
+    name: "Kabelbeißer",
+    gender: "masculine",
+    rank: 1,
+    role: "flinker Technikstörer",
+    roleProfile: "trickster",
+    behaviorLabel: "Kabelstörer",
+    behavior: "trickster",
+    allowedTemperaments: ["erratic"],
+    mobility: "roaming",
+    retreatProfile: "cowardly",
+    healingProfile: "none",
+    canOpenDoors: false,
+    canChangeFloors: false,
+    aggroRadius: 4,
+    hp: 6,
+    strength: 1,
+    precision: 3,
+    reaction: 5,
+    nerves: 1,
+    intelligence: 2,
+    xpReward: 4,
+    special: "Springt nervös durch gefährliche Räume und macht klare Laufwege unzuverlässig.",
+  },
+  {
+    id: "event-kulissenkrabbler",
+    name: "Kulissenkrabbler",
+    gender: "masculine",
+    rank: 2,
+    role: "kleiner Verfolger aus der Kulisse",
+    roleProfile: "stalker",
+    behaviorLabel: "Krabbler",
+    behavior: "stalker",
+    allowedTemperaments: ["restless", "erratic"],
+    mobility: "roaming",
+    retreatProfile: "none",
+    healingProfile: "none",
+    canOpenDoors: false,
+    canChangeFloors: false,
+    aggroRadius: 5,
+    hp: 7,
+    strength: 1,
+    precision: 3,
+    reaction: 5,
+    nerves: 2,
+    intelligence: 2,
+    xpReward: 5,
+    special: "Hält den Druck über Nähe und Tempo, nicht über rohe Trefferkraft.",
+  },
+  {
+    id: "event-hektischer-setlaeufer",
+    name: "Hektischer Setläufer",
+    gender: "masculine",
+    inflectable: { adjectiveStem: "hektisch", noun: "Setläufer" },
+    rank: 2,
+    role: "panischer Türöffner",
+    roleProfile: "skirmisher",
+    behaviorLabel: "Setläufer",
+    behavior: "wanderer",
+    allowedTemperaments: ["restless", "erratic"],
+    mobility: "roaming",
+    retreatProfile: "cowardly",
+    healingProfile: "none",
+    canOpenDoors: true,
+    canChangeFloors: false,
+    aggroRadius: 4,
+    hp: 6,
+    strength: 1,
+    precision: 2,
+    reaction: 5,
+    nerves: 1,
+    intelligence: 2,
+    xpReward: 4,
+    special: "Ist schwach, aber hektisch genug, um Türen und Raumdruck durcheinanderzubringen.",
+  },
+];
+
+export const PHASE_ONE_SPECIAL_EVENT_MONSTERS = Object.freeze(
+  SPECIAL_EVENT_MONSTER_SPECS.map((spec) => createSpecialEventMonster(spec)),
 );

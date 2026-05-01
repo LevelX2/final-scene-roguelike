@@ -7,6 +7,7 @@ import {
 } from './targeting-service.mjs';
 import { pruneExpiredDeathMarkers } from './death-marker-service.mjs';
 import { getDebugAdvanceDelayMs } from './debug-advance.mjs';
+import { announceSpecialEventAtPosition } from '../content/catalogs/special-events.mjs';
 
 const RANGED_ATTACK_ENEMY_TURN_DELAY_MS = 420;
 
@@ -25,6 +26,7 @@ export function createPlayerTurnController(context) {
     getDoorColorLabels,
     manhattanDistance,
     addMessage,
+    showFloatingText,
     attackEnemy,
     tryPickupLoot,
     tryUseStairs,
@@ -498,6 +500,7 @@ export function createPlayerTurnController(context) {
 
     detectNearbyTraps();
     maybeTriggerShowcaseAmbience();
+    announceSpecialEventAtPosition(floorState, state.player, { addMessage, showFloatingText });
 
     if (tryPickupLoot()) {
       return;

@@ -199,9 +199,13 @@ export function createDungeonEnemyFactory(context) {
     return variant.offHandDropChance ?? 0;
   }
 
-  function resolveMonsterVariant(monster, floorNumber) {
+  function resolveMonsterVariant(monster, floorNumber, options = {}) {
     if (monster.allowVariants === false) {
       return MONSTER_VARIANT_TIERS.normal;
+    }
+
+    if (options.forceVariantTier && MONSTER_VARIANT_TIERS[options.forceVariantTier]) {
+      return MONSTER_VARIANT_TIERS[options.forceVariantTier];
     }
 
     return rollMonsterVariant(floorNumber);
@@ -231,7 +235,7 @@ export function createDungeonEnemyFactory(context) {
 
   function createEnemy(position, floor, monster, options = {}) {
     const scale = getEnemyScaleForFloor(floor, monster.rank);
-    const variant = resolveMonsterVariant(monster, floor);
+    const variant = resolveMonsterVariant(monster, floor, options);
     const variantModifiers = rollMonsterVariantModifiers(variant);
     const baseHp = monster.hp + scale * ENEMY_HP_PER_SCALE + randomInt(0, 2);
     const baseStrength = monster.strength + Math.floor((scale + 1) / ENEMY_STRENGTH_SCALE_STEP);
@@ -264,25 +268,29 @@ export function createDungeonEnemyFactory(context) {
     const dropSourceTag = variant.id === 'normal'
       ? `monster:${monster.id}`
       : `monster:${monster.id}:${variant.id}`;
-    const generatedWeapon = createMonsterWeapon(monster, floor, {
-      dropSourceTag,
-      sourceArchetypeId: options.sourceArchetypeId ?? null,
-      boostSpecial: iconicMonsterIds.has(monster.id),
-      forceRarity: iconicMonsterIds.has(monster.id) && variant.id === 'dire'
-        ? 'veryRare'
-        : iconicMonsterIds.has(monster.id) && variant.id === 'elite'
-          ? 'rare'
-          : null,
-    });
-    const generatedOffHand = createMonsterShield(monster, floor, {
-      dropSourceTag,
-      sourceArchetypeId: options.sourceArchetypeId ?? null,
-      forceRarity: variant.id === 'dire'
-        ? 'veryRare'
-        : variant.id === 'elite'
-          ? 'rare'
-          : null,
-    });
+    const generatedWeapon = monster.noEquipment
+      ? null
+      : createMonsterWeapon(monster, floor, {
+          dropSourceTag,
+          sourceArchetypeId: options.sourceArchetypeId ?? null,
+          boostSpecial: iconicMonsterIds.has(monster.id),
+          forceRarity: iconicMonsterIds.has(monster.id) && variant.id === 'dire'
+            ? 'veryRare'
+            : iconicMonsterIds.has(monster.id) && variant.id === 'elite'
+              ? 'rare'
+              : null,
+        });
+    const generatedOffHand = monster.noEquipment
+      ? null
+      : createMonsterShield(monster, floor, {
+          dropSourceTag,
+          sourceArchetypeId: options.sourceArchetypeId ?? null,
+          forceRarity: variant.id === 'dire'
+            ? 'veryRare'
+            : variant.id === 'elite'
+              ? 'rare'
+              : null,
+        });
 
     const enemy = {
       ...position,
@@ -290,7 +298,11 @@ export function createDungeonEnemyFactory(context) {
       id: monster.id,
       archetypeId: monster.archetypeId ?? null,
       spawnGroup: monster.spawnGroup ?? null,
-      spawnProfileId: monster.spawnGroup === 'legacy_special' ? 'studio-special' : 'studio-standard',
+      spawnProfileId: monster.spawnGroup === 'legacy_special'
+        ? 'studio-special'
+        : monster.spawnGroup === 'special_event'
+          ? 'special-event'
+          : 'studio-standard',
       allowVariants: monster.allowVariants !== false,
       spawnWeight: monster.spawnWeight ?? 1,
       roleProfileId: monster.roleProfileId ?? monster.behavior ?? null,

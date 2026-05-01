@@ -1,5 +1,7 @@
 const METRIC_DEFS = [
   { id: 'rooms', label: 'Raeume', read: (entry) => entry?.rooms ?? 0 },
+  { id: 'specialEvents.total', label: 'Special Events', read: (entry) => entry?.specialEvents?.total ?? 0 },
+  { id: 'specialEvents.large', label: 'Special Events gross', read: (entry) => entry?.specialEvents?.large ?? 0 },
   { id: 'enemies.total', label: 'Gegner', read: (entry) => entry?.enemies?.total ?? 0 },
   { id: 'enemies.standard', label: 'Gegner Standard', read: (entry) => entry?.enemies?.standard ?? 0 },
   { id: 'enemies.special', label: 'Gegner Special', read: (entry) => entry?.enemies?.special ?? 0 },

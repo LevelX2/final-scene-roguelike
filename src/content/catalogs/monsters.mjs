@@ -4,7 +4,10 @@
   RELENTLESS: "relentless",
 };
 
-import { PHASE_ONE_STANDARD_MONSTERS } from "./monster-phase-one.mjs";
+import {
+  PHASE_ONE_SPECIAL_EVENT_MONSTERS,
+  PHASE_ONE_STANDARD_MONSTERS,
+} from "./monster-phase-one.mjs";
 
 export const MONSTER_MOBILITY_LABELS = {
   [MONSTER_MOBILITY.LOCAL]: "Reviertreu",
@@ -1053,6 +1056,7 @@ export const MONSTER_CATALOG = [
 ].map(applyLegacySpecialPoolConfig);
 
 MONSTER_CATALOG.push(...PHASE_ONE_STANDARD_MONSTERS);
+MONSTER_CATALOG.push(...PHASE_ONE_SPECIAL_EVENT_MONSTERS);
 
 const MONSTER_BASE_SPEED_BY_ID = Object.freeze({
   "bates": 110,
@@ -1188,10 +1192,13 @@ const MONSTER_BASE_SPEED_BY_ID = Object.freeze({
   "social-drama-heimleiterin-im-ausnahmezustand": 95,
   "social-drama-zermuerbter-veteran": 85,
   "social-drama-streikbrecher": 115,
+  "event-requisitenwusler": 82,
+  "event-kabelbeisser": 84,
+  "event-kulissenkrabbler": 86,
+  "event-hektischer-setlaeufer": 88,
 });
 
 // The speed pass is curated in content, even when a monster intentionally stays at 100.
 for (const monster of MONSTER_CATALOG) {
   monster.baseSpeed = MONSTER_BASE_SPEED_BY_ID[monster.id] ?? 100;
 }
-

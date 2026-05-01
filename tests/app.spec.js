@@ -1760,8 +1760,8 @@ test("target mode shows reduced hit chance for enemies peeking from remote corne
         maxHp: 18,
         openingStrikeSpent: true,
       },
-      enemyPosition: { x: 5, y: 5 },
-      walls: [{ x: 3, y: 2 }],
+      enemyPosition: { x: 5, y: 2 },
+      walls: [{ x: 2, y: 2 }],
     });
   });
 
@@ -2514,6 +2514,7 @@ test("ranged targeting uses chebyshev range for free-angle shots", async ({ page
   await page.evaluate(() => {
     window.__TEST_API__.setupCombatScenario({
       clearGrid: true,
+      playerPosition: { x: 1, y: 1 },
       player: {
         mainHand: {
           type: "weapon",
@@ -2536,7 +2537,7 @@ test("ranged targeting uses chebyshev range for free-angle shots", async ({ page
         hp: 18,
         maxHp: 18,
       },
-      enemyPosition: { x: 6, y: 6 },
+      enemyPosition: { x: 5, y: 2 },
     });
     window.__TEST_API__.setRandomSequence([0, 0]);
     window.__TEST_API__.enterTargetMode();
@@ -2544,8 +2545,8 @@ test("ranged targeting uses chebyshev range for free-angle shots", async ({ page
 
   const targeting = await page.evaluate(() => window.__TEST_API__.getSnapshot().targeting);
   expect(targeting.active).toBeTruthy();
-  expect(targeting.cursorX).toBe(6);
-  expect(targeting.cursorY).toBe(6);
+  expect(targeting.cursorX).toBe(5);
+  expect(targeting.cursorY).toBe(2);
   await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
   await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
 

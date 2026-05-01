@@ -377,6 +377,7 @@ export function assembleGameplayModules(context) {
     createKeyPickup,
     generateEquipmentItem,
     ensureFloorExists: floorTransitionService.ensureFloorExists,
+    updateVisibility: core.updateVisibility,
     enterTargetMode: playerTurnController.enterTargetMode,
     cancelTargetMode: playerTurnController.cancelTargetMode,
     moveTargetCursor: playerTurnController.moveTargetCursor,

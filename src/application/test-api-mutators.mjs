@@ -30,6 +30,7 @@ export function createTestApiMutators(context) {
     applyStatusEffect,
     processRoundStatusEffects,
     renderSelf,
+    updateVisibility,
   } = context;
 
   function teleportPlayer(position) {
@@ -363,6 +364,7 @@ export function createTestApiMutators(context) {
         : NORMAL_SPEED_INTERVAL,
     });
     floorState.enemies.push(enemy);
+    updateVisibility?.();
     renderSelf();
     return {
       player: { x: state.player.x, y: state.player.y },

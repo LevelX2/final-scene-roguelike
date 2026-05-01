@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getTargetChanceTooltip, getTargetHintLabel } from '../../src/application/targeting-service.mjs';
+import {
+  evaluateTargetSelection,
+  getTargetChanceTooltip,
+  getTargetHintLabel,
+} from '../../src/application/targeting-service.mjs';
 
 test('getTargetHintLabel keeps clear shots compact while still showing percent', () => {
   const label = getTargetHintLabel({
@@ -49,4 +53,60 @@ test('getTargetChanceTooltip marks clear shots as uncovered', () => {
       'Keine Deckung auf der Schusslinie.',
     ],
   });
+});
+
+test('evaluateTargetSelection allows visible corner-cover bow shots', () => {
+  const enemy = { id: 'corner-cover', x: 2, y: 3 };
+  const selection = evaluateTargetSelection({
+    state: { player: { x: 1, y: 1 } },
+    floorState: { enemies: [enemy] },
+    weapon: { attackMode: 'ranged', range: 5 },
+    x: 2,
+    y: 3,
+    rangeDistance: () => 2,
+    canPerceive: () => true,
+    hasProjectileLine: () => false,
+    previewCombatAttack: () => ({
+      baseHitChance: 76,
+      hitChance: 61,
+      critChance: 5,
+      coverPenalty: 15,
+      coverGrade: 'partial',
+      coverLabel: 'Teildeckung',
+      coverCorners: [{ stepIndex: 2, blockerTile: { x: 2, y: 2 } }],
+    }),
+  });
+
+  assert.equal(selection.valid, true);
+  assert.equal(selection.hasProjectileLine, true);
+  assert.equal(selection.coverPenalty, 15);
+  assert.equal(selection.hitChance, 61);
+});
+
+test('evaluateTargetSelection allows a covered shooting angle even without extra near-corner penalty', () => {
+  const enemy = { id: 'near-corner-cover', x: 4, y: 4 };
+  const selection = evaluateTargetSelection({
+    state: { player: { x: 1, y: 1 } },
+    floorState: { enemies: [enemy] },
+    weapon: { attackMode: 'ranged', range: 5 },
+    x: 4,
+    y: 4,
+    rangeDistance: () => 3,
+    canPerceive: () => true,
+    hasProjectileLine: () => false,
+    previewCombatAttack: () => ({
+      baseHitChance: 76,
+      hitChance: 76,
+      critChance: 5,
+      coverPenalty: 0,
+      coverGrade: 'clear',
+      coverLabel: '',
+      coverCorners: [{ stepIndex: 1, blockerTile: { x: 1, y: 2 } }],
+    }),
+  });
+
+  assert.equal(selection.valid, true);
+  assert.equal(selection.hasProjectileLine, true);
+  assert.equal(selection.coverPenalty, 0);
+  assert.equal(selection.hitChance, 76);
 });

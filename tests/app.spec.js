@@ -1773,6 +1773,57 @@ test("target mode shows reduced hit chance for enemies peeking from remote corne
   await expect(page.locator(".tile-cell.target-cursor-valid .target-hit-chance")).toHaveText("61%");
 });
 
+test("target mode allows visible enemies behind corner cover", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 1, y: 1 },
+      player: {
+        precision: 6,
+        strength: 4,
+        openingStrikeHitBonus: 0,
+        openingStrikeCritBonus: 0,
+        mainHand: {
+          type: "weapon",
+          id: "test-bow",
+          name: "Testbogen",
+          source: "Tests",
+          handedness: "two-handed",
+          attackMode: "ranged",
+          projectileType: "arrow",
+          range: 5,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Eckendeckungsziel",
+        reaction: 1,
+        nerves: 1,
+        hp: 18,
+        maxHp: 18,
+        openingStrikeSpent: true,
+      },
+      enemyPosition: { x: 2, y: 3 },
+      walls: [{ x: 2, y: 2 }],
+    });
+  });
+
+  await page.evaluate(() => window.__TEST_API__.enterTargetMode());
+
+  await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
+  await expect(page.locator("#targetModeHint")).toContainText("Teildeckung");
+  await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
+  await expect(page.locator(".tile-cell.target-cursor-invalid")).toHaveCount(0);
+});
+
 test("pressing T with a ranged weapon selects the first valid target", async ({ page }) => {
   await page.goto("/");
   await startRun(page);

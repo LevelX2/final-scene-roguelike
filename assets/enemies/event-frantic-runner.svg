@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hektischer Setläufer">
+  <defs>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#140d08" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <g filter="url(#s)">
+    <circle cx="33" cy="20" r="7" fill="#d0a06f"/>
+    <path d="M25 31c5-5 13-5 18 0l-2 18H26Z" fill="#d9823b"/>
+    <path d="M29 17c4-4 9-3 12 1-2-8-12-9-17-2Z" fill="#3b2520"/>
+    <circle cx="30" cy="21" r="1.7" fill="#241713"/>
+    <circle cx="36" cy="21" r="1.7" fill="#241713"/>
+    <path d="M29 27c3 2 6 2 9 0" fill="none" stroke="#6b2d27" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M26 35 14 29m28 7 12-7M30 49l-6 9m13-9 8 8" stroke="#d9823b" stroke-width="5" stroke-linecap="round"/>
+    <path d="M48 17h7m-9 5h8" stroke="#f3d377" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

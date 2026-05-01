@@ -70,3 +70,15 @@ test('phase one early monsters stay sturdier without frontloading early damage',
     'rank 1-3 standard monsters should not frontload damage too hard',
   );
 });
+
+test('special event monsters stay outside the standard spawn pool and remain lightweight', () => {
+  const eventMonsters = MONSTER_CATALOG.filter((monster) => monster.spawnGroup === 'special_event');
+
+  assert.equal(eventMonsters.length, 4);
+  assert.ok(eventMonsters.every((monster) => monster.eventOnly));
+  assert.ok(eventMonsters.every((monster) => monster.noEquipment));
+  assert.ok(eventMonsters.every((monster) => monster.allowVariants === false));
+  assert.ok(eventMonsters.every((monster) => monster.hp <= 7));
+  assert.ok(eventMonsters.every((monster) => monster.strength <= 1));
+  assert.ok(eventMonsters.every((monster) => monster.reaction >= 5));
+});

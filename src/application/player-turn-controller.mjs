@@ -7,6 +7,7 @@ import {
 } from './targeting-service.mjs';
 import { pruneExpiredDeathMarkers } from './death-marker-service.mjs';
 import { getDebugAdvanceDelayMs } from './debug-advance.mjs';
+import { announceSpecialEventAtPosition } from '../content/catalogs/special-events.mjs';
 
 const RANGED_ATTACK_ENEMY_TURN_DELAY_MS = 420;
 
@@ -25,6 +26,7 @@ export function createPlayerTurnController(context) {
     getDoorColorLabels,
     manhattanDistance,
     addMessage,
+    showFloatingText,
     attackEnemy,
     tryPickupLoot,
     tryUseStairs,
@@ -93,6 +95,21 @@ export function createPlayerTurnController(context) {
 
   function isDiagonalStep(dx, dy) {
     return dx !== 0 && dy !== 0;
+  }
+
+  function isGameInteractionBlocked(state) {
+    return state.gameOver ||
+      state.view !== "game" ||
+      state.modals.startOpen ||
+      state.pendingChoice ||
+      state.pendingStairChoice ||
+      state.modals.inventoryOpen ||
+      state.modals.studioTopologyOpen ||
+      state.modals.runStatsOpen ||
+      state.modals.optionsOpen ||
+      state.modals.savegamesOpen ||
+      state.modals.helpOpen ||
+      state.modals.highscoresOpen;
   }
 
   function processActorAfterAction(actor, floorState, { actionType = "other", ignoreGameOver = false } = {}) {
@@ -370,9 +387,57 @@ export function createPlayerTurnController(context) {
     }
   }
 
-  function tryCloseAdjacentDoor() {
+  function getAdjacentDoorActionCandidates(floorState, player) {
+    return (floorState.doors ?? []).filter((door) => isOrthogonallyAdjacent(door, player));
+  }
+
+  function openClosedDoorFromAdjacentPosition(door, state) {
+    if (!canPlayerOpenDoor(door)) {
+      playLockedDoorSound();
+      const hasWrongFloorKey = state.inventory.some((item) =>
+        item.type === "key" &&
+        item.keyColor === door.lockColor &&
+        item.keyFloor !== state.floor
+      );
+      addMessage(
+        hasWrongFloorKey
+          ? `Die ${getDoorColorLabels(door.lockColor).adjective} Tür reagiert nicht auf deinen Schlüssel aus einem anderen Studio.`
+          : `Die ${getDoorColorLabels(door.lockColor).adjective} Tür bleibt verschlossen.`,
+      );
+      renderSelf();
+      return false;
+    }
+
+    openDoor(door, "player");
+    return true;
+  }
+
+  function performAdjacentDoorAction(door) {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (door.isOpen) {
+      if (!closeDoor(door)) {
+        addMessage("Die Tür lässt sich gerade nicht schließen.");
+        renderSelf();
+        return;
+      }
+
+      addMessage("Du ziehst die Tür wieder zu.", "important");
+      state.pendingDoorAction = null;
+      endTurn({ actionType: "other" });
+      return;
+    }
+
+    state.pendingDoorAction = null;
+    if (!openClosedDoorFromAdjacentPosition(door, state)) {
+      return;
+    }
+
+    endTurn({ actionType: "other" });
+  }
+
+  function tryCloseAdjacentDoor(dx = null, dy = null) {
+    const state = getState();
+    if (isGameInteractionBlocked(state)) {
       return;
     }
     if (!ensurePlayerTurnReady()) {
@@ -387,31 +452,49 @@ export function createPlayerTurnController(context) {
     }
 
     const floorState = getCurrentFloorState();
-    const adjacentDoors = (floorState.doors ?? []).filter((door) =>
-      door.isOpen &&
-      isOrthogonallyAdjacent(door, state.player)
-    );
+    const hasDirectedChoice = Number.isFinite(dx) && Number.isFinite(dy);
+    if (hasDirectedChoice) {
+      if (isDiagonalStep(dx, dy) || (dx === 0 && dy === 0)) {
+        addMessage("Wähle eine Tür mit einer geraden Richtung.");
+        renderSelf();
+        return;
+      }
 
+      const targetDoor = getDoorAt(state.player.x + dx, state.player.y + dy, floorState);
+      if (!targetDoor || !isOrthogonallyAdjacent(targetDoor, state.player)) {
+        addMessage("In dieser Richtung ist keine Tür.");
+        renderSelf();
+        return;
+      }
+
+      performAdjacentDoorAction(targetDoor);
+      return;
+    }
+
+    const adjacentDoors = getAdjacentDoorActionCandidates(floorState, state.player);
     if (adjacentDoors.length === 0) {
-      addMessage("Keine offene Tür direkt neben dir.");
+      addMessage("Keine Tür direkt neben dir.");
       renderSelf();
       return;
     }
 
-    const targetDoor = adjacentDoors[0];
-    if (!closeDoor(targetDoor)) {
-      addMessage("Die Tür lässt sich gerade nicht schließen.");
+    if (adjacentDoors.length > 1) {
+      state.pendingDoorAction = {
+        active: true,
+        x: state.player.x,
+        y: state.player.y,
+      };
+      addMessage("Mehrere Türen neben dir: Wähle die Richtung der Tür.");
       renderSelf();
       return;
     }
 
-    addMessage("Du ziehst die Tür wieder zu.", "important");
-    endTurn({ actionType: "other" });
+    performAdjacentDoorAction(adjacentDoors[0]);
   }
 
   function movePlayer(dx, dy) {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (isGameInteractionBlocked(state) || state.pendingDoorAction) {
       return;
     }
     if (!ensurePlayerTurnReady()) {
@@ -498,6 +581,7 @@ export function createPlayerTurnController(context) {
 
     detectNearbyTraps();
     maybeTriggerShowcaseAmbience();
+    announceSpecialEventAtPosition(floorState, state.player, { addMessage, showFloatingText });
 
     if (tryPickupLoot()) {
       return;
@@ -512,7 +596,7 @@ export function createPlayerTurnController(context) {
 
   function handleWait() {
     const state = getState();
-    if (state.gameOver || state.view !== "game" || state.modals.startOpen || state.pendingChoice || state.pendingStairChoice || state.modals.inventoryOpen || state.modals.studioTopologyOpen || state.modals.runStatsOpen || state.modals.optionsOpen || state.modals.savegamesOpen || state.modals.helpOpen || state.modals.highscoresOpen) {
+    if (isGameInteractionBlocked(state) || state.pendingDoorAction) {
       return;
     }
     if (!ensurePlayerTurnReady()) {

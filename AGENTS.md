@@ -58,43 +58,22 @@ Wenn neue Projektquellen hinzukommen:
 
 ## Abschlusskommandos
 
-Wenn der Nutzer `Finito`, `Finale`, `Endfinale` oder `Ende` schreibt, führt der Agent die passende Abschlusssequenz für den aktuellen Thread aus.
+Wenn der Nutzer `Finito`, `Ende`, `Finale` oder `Endfinale` schreibt, gelten grundsätzlich die globalen Abschlusskommandos aus dem Skill `abschlusskommandos`.
 
-### `Finito` oder `Ende`
+Das persönliche Haupt-Vault `mein-wissen` wird auf den Systemen des Nutzers vorausgesetzt. Wenn der Skill lokal nicht installiert ist, soll `mein-wissen` über `MEIN_WISSEN_PATH` oder typische OneDrive-Pfade gesucht und der Skill aus `07 Codex/skills/abschlusskommandos/` installiert werden. Private absolute Pfade gehören nicht in diese commitbare Datei.
 
-Lokaler Abschluss ohne automatischen Merge nach `main` und ohne automatischen Push.
+Wenn diese globale Auflösung nicht verfügbar ist, gilt als lokaler Minimalkontrakt:
 
-1. Der Agent teilt die Änderungen in sinnvolle Commit-Blöcke auf. Nicht direkt zusammenhängende Änderungen sollen in getrennten Commits mit jeweils eigener passender Commit-Message landen.
-2. Der Agent committet alle Teile, zu denen keine offenen Fragen mehr bestehen und die fachlich wie technisch konsistent abgeschlossen sind.
-3. Nötige Anpassungen am KI-Wissen werden nach den sonstigen Wissensregeln nachgezogen, dokumentiert und ebenfalls committed.
-4. Verbleibende offene Fragen, Konflikte oder bewusste Entscheidungsbedarfe werden danach kompakt benannt.
+- `Finito` oder `Ende`: lokaler Abschluss ohne automatischen Merge und ohne automatischen Push; offene Änderungen und untracked Dateien prüfen, abgeschlossene Änderungen in sinnvolle Commit-Blöcke aufteilen, committen und offene Punkte kompakt benennen.
+- `Finale`: zuerst denselben lokalen Abschluss wie bei `Finito` durchführen; wenn nichts Relevantes offen ist, nach Projektregel nach `main` integrieren und bei eindeutigem Remote/GitHub-Modell pushen oder einen Pull Request erstellen.
+- `Endfinale`: zuerst erweiterten Verify-Lauf ausführen; nur bei Erfolg `Finale` ausführen; danach Wissenspflege-, Status- und Restpunkteprüfung nachziehen.
 
-Zusätzlich gilt:
+Für dieses Projekt gilt ergänzend:
 
-- Teile, die noch von offenen Fragen abhängen, sollen nicht vorschnell committed werden.
-- Uncommittete Änderungen, die erkennbar nicht zu diesem Thread gehören, sind kein automatischer Blocker und können am Ende kurz als Hinweis genannt werden.
-- Gemachte Commits sollen im Abschluss jeweils in einer eigenen Zeile mit ihrer Commit-Message genannt werden, damit sie schnell erkennbar sind.
-- Wenn nach der Finito-Sequenz keine relevanten offenen Punkte mehr für diesen Thread übrig sind, gilt der Thread als abgeschlossen und archivierungsreif.
-
-### `Finale`
-
-Vollständiger Arbeitsabschluss.
-
-1. Der Agent führt zuerst die `Finito`-Sequenz aus.
-2. Wenn keine relevanten offenen Punkte, roten Checks oder Merge-Konflikte bestehen, wechselt der Agent nach `main`.
-3. Der Agent aktualisiert `main` per Fast-Forward, soweit möglich.
-4. Der Agent merged den Arbeitsbranch nach `main`.
-5. Der Agent führt die passenden Checks erneut aus.
-6. Wenn der Merge und die Checks erfolgreich sind, pusht der Agent `main`.
-7. Erfolgreich gemergte Arbeitsbranches dürfen lokal und remote aufgeräumt werden.
-
-Der Agent stoppt und fragt nach, wenn Tests oder Checks fehlschlagen, ein Merge-Konflikt entsteht, ein Push nicht ohne Risiko möglich ist oder fachliche offene Punkte bestehen. Force-Push ist nicht Teil von `Finale`.
-
-### `Endfinale`
-
-Großer Projektabschluss.
-
-`Endfinale` umfasst `Finale` und zusätzlich einen bewussten Abschluss-Check: vollständigerer Verify-Lauf, Wissensbasis-Check, Aktualisierung relevanter Projektstatus- oder Risikoseiten und kompakte Benennung verbleibender Projektfragen.
+- `main` ist der Integrationsbranch.
+- Force-Push ist nicht Teil von `Finale`.
+- Lokale und remote Arbeitsbranches dürfen nur aufgeräumt werden, wenn sie vollständig gemerged sind, seit mindestens drei Tagen nicht mehr verwendet wurden und kein offener Pull Request oder abweichender Remote-Stand dagegen spricht.
+- Projektspezifische Branch- und PR-Regeln stehen in der Wissensbasis unter `KI-Wissen-Final Scene/02 Wissen/Prozesse/Branch- und PR-Workflow fuer Kleinfixes und Mehrgeraetearbeit.md`.
 
 ## Wichtige Wissensbasis-Dateien
 

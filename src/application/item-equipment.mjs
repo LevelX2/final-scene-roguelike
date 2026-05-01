@@ -1,4 +1,4 @@
-import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
+import { getFoodOvereatMessage, getFoodSatietyLogLine } from '../nutrition.mjs';
 import {
   HEALING_FAMILY_ORDER,
   getHealingFamily,
@@ -298,7 +298,7 @@ export function createItemEquipmentApi(context) {
       state.inventory.splice(index, 1);
       state.consumedFoods = (state.consumedFoods ?? 0) + 1;
       const nutritionResult = restoreNutrition(item.nutritionRestore);
-      addMessage(`${item.name} wirkt so, als ${getFoodSatietyEstimate(item.nutritionRestore).toLowerCase()}`, "important");
+      addMessage(getFoodSatietyLogLine(item.name, item.nutritionRestore), "important");
       const overeatMessage = getFoodOvereatMessage(nutritionResult.restoredAmount, item.nutritionRestore);
       if (overeatMessage) {
         addMessage(overeatMessage, "important");

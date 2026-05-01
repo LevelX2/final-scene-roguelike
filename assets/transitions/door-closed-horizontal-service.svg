@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="service-horizontal-left" x1="3" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#58616b"/>
+      <stop offset="1" stop-color="#222930"/>
+    </linearGradient>
+    <linearGradient id="service-horizontal-right" x1="29" y1="9" x2="16" y2="23" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#58616b"/>
+      <stop offset="1" stop-color="#222930"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.7" y="8" width="28.6" height="16" rx="2.1" fill="#15191f"/>
+  <rect x="3.4" y="9.7" width="12" height="12.6" rx="1.5" fill="url(#service-horizontal-left)"/>
+  <rect x="16.6" y="9.7" width="12" height="12.6" rx="1.5" fill="url(#service-horizontal-right)"/>
+  <path d="M16 9.9 V22.1" stroke="#15191f" stroke-width="1.35" stroke-linecap="round"/>
+  <rect x="5.2" y="11.5" width="7.2" height="4.2" rx="1" fill="#76818b" fill-opacity=".48"/>
+  <rect x="19.6" y="11.5" width="7.2" height="4.2" rx="1" fill="#76818b" fill-opacity=".48"/>
+  <path d="M5.6 19.5 H12.4 M19.6 19.5 H26.4" stroke="#b3c1cc" stroke-opacity=".5" stroke-width="1.05" stroke-linecap="round"/>
+  <circle cx="14.1" cy="16.8" r="1" fill="#f1d187"/>
+  <circle cx="17.9" cy="16.8" r="1" fill="#f1d187"/>
+</svg>

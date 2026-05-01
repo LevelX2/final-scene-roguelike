@@ -29,7 +29,7 @@ Diese Wissensbasis dient der dauerhaften, strukturierten und verlinkten Dokument
 3. Bezug zu bestehenden Wissensseiten prüfen.
 4. Betroffene Seiten aktualisieren oder neu anlegen.
 5. Verlinkungen und Quellenbasis ergänzen.
-6. Index und Log aktualisieren.
+6. Index aktualisieren und Log nach Relevanzregel ergänzen.
 7. Beachten, dass eine einzelne Quelle mehrere Wissensseiten berühren kann; Aktualisierungen nicht auf eine reine Sammelseite reduzieren.
 
 ## Antwortregeln
@@ -58,6 +58,7 @@ Diese Wissensbasis dient der dauerhaften, strukturierten und verlinkten Dokument
 ## Betriebsdateien
 - `Index.md` ist ein inhaltsorientierter Katalog der wichtigsten Wissensseiten. Jeder Eintrag soll mindestens Link und Kurzbeschreibung tragen.
 - `Log.md` ist chronologisch und append-only. Einträge sollen mit parsebarem Präfix beginnen, bevorzugt `## [YYYY-MM-DD] typ | titel`.
+- Das Log ist kein vollständiges Tätigkeitsjournal. Es dokumentiert relevante Entwicklungsänderungen, Entscheidungen, Verifikationen, Risiken, Abschlussstände und wesentliche Projektvorgänge; Routine-Schritte und reine Nutzdaten- oder Spielstandaktionen bleiben normalerweise außerhalb des Projektlogs.
 - Für externe Webquellen soll nach Möglichkeit ein lokaler Snapshot in `01 Rohquellen` abgelegt werden. Wenn das nicht möglich ist, wird mindestens eine Rohquellen-Referenz mit URL und Abrufdatum angelegt.
 
 ## Lint-Regeln

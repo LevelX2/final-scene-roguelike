@@ -1030,7 +1030,7 @@ test("help modal opens from the help button and lists door closing", async ({ pa
 
   await page.getByRole("button", { name: "Hilfe" }).click();
   await expect(page.locator("#helpModal")).toBeVisible();
-  await expect(page.locator("#helpModal")).toContainText("Benachbarte offene Tür schließen");
+  await expect(page.locator("#helpModal")).toContainText("Benachbarte Tür öffnen oder schließen");
 
   await page.keyboard.press("Escape");
   await expect(page.locator("#helpModal")).toBeHidden();
@@ -1760,8 +1760,8 @@ test("target mode shows reduced hit chance for enemies peeking from remote corne
         maxHp: 18,
         openingStrikeSpent: true,
       },
-      enemyPosition: { x: 5, y: 5 },
-      walls: [{ x: 3, y: 2 }],
+      enemyPosition: { x: 5, y: 2 },
+      walls: [{ x: 2, y: 2 }],
     });
   });
 
@@ -1771,6 +1771,58 @@ test("target mode shows reduced hit chance for enemies peeking from remote corne
   await expect(page.locator("#targetModeHint")).toContainText("Teildeckung");
   await expect(page.locator("#targetModeHint")).toContainText("61%");
   await expect(page.locator(".tile-cell.target-cursor-valid .target-hit-chance")).toHaveText("61%");
+});
+
+test("target mode allows visible enemies behind corner cover", async ({ page }) => {
+  await page.goto("/");
+  await startRun(page);
+
+  await page.evaluate(() => {
+    window.__TEST_API__.setupCombatScenario({
+      clearGrid: true,
+      playerPosition: { x: 1, y: 1 },
+      player: {
+        precision: 6,
+        strength: 4,
+        openingStrikeHitBonus: 0,
+        openingStrikeCritBonus: 0,
+        mainHand: {
+          type: "weapon",
+          id: "test-bow",
+          name: "Testbogen",
+          source: "Tests",
+          handedness: "two-handed",
+          attackMode: "ranged",
+          projectileType: "arrow",
+          range: 5,
+          damage: 3,
+          hitBonus: 2,
+          critBonus: 0,
+          meleePenaltyHit: 0,
+          lightBonus: 0,
+          description: "Nur fuer Tests.",
+        },
+      },
+      enemy: {
+        name: "Eckendeckungsziel",
+        reaction: 1,
+        nerves: 1,
+        hp: 18,
+        maxHp: 18,
+        openingStrikeSpent: true,
+      },
+      enemyPosition: { x: 2, y: 3 },
+      walls: [{ x: 2, y: 2 }],
+    });
+  });
+
+  await page.evaluate(() => window.__TEST_API__.enterTargetMode());
+
+  await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
+  await expect(page.locator("#targetModeHint")).toContainText("Starke Deckung");
+  await expect(page.locator("#targetModeHint")).toContainText("46%");
+  await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
+  await expect(page.locator(".tile-cell.target-cursor-invalid")).toHaveCount(0);
 });
 
 test("pressing T with a ranged weapon selects the first valid target", async ({ page }) => {
@@ -2514,6 +2566,7 @@ test("ranged targeting uses chebyshev range for free-angle shots", async ({ page
   await page.evaluate(() => {
     window.__TEST_API__.setupCombatScenario({
       clearGrid: true,
+      playerPosition: { x: 1, y: 1 },
       player: {
         mainHand: {
           type: "weapon",
@@ -2536,7 +2589,7 @@ test("ranged targeting uses chebyshev range for free-angle shots", async ({ page
         hp: 18,
         maxHp: 18,
       },
-      enemyPosition: { x: 6, y: 6 },
+      enemyPosition: { x: 5, y: 2 },
     });
     window.__TEST_API__.setRandomSequence([0, 0]);
     window.__TEST_API__.enterTargetMode();
@@ -2544,8 +2597,8 @@ test("ranged targeting uses chebyshev range for free-angle shots", async ({ page
 
   const targeting = await page.evaluate(() => window.__TEST_API__.getSnapshot().targeting);
   expect(targeting.active).toBeTruthy();
-  expect(targeting.cursorX).toBe(6);
-  expect(targeting.cursorY).toBe(6);
+  expect(targeting.cursorX).toBe(5);
+  expect(targeting.cursorY).toBe(2);
   await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
   await expect(page.locator("#targetModeHint")).toContainText("Schuss frei");
 

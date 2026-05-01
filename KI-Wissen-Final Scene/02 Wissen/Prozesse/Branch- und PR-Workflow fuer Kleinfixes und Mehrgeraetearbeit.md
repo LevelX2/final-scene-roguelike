@@ -48,20 +48,21 @@ Arbeit soll in diesem Projekt standardmäßig nicht direkt auf `main` entstehen.
 
 ## Abschlusskommandos
 ### `Finito` oder `Ende`
-- Lokaler Abschluss ohne automatischen Merge nach `main`.
-- Der Agent teilt Änderungen in sinnvolle Commit-Blöcke, führt passende Checks aus, committet abgeschlossene Teile und benennt offene Fragen.
+- Die globale Detailsequenz liegt im Haupt-Vault-Skill `abschlusskommandos`.
+- Projektlokal gilt: lokaler Abschluss ohne automatischen Merge nach `main`, Commit-Blöcke für abgeschlossene Teile, passende Checks und klare Benennung offener Fragen.
 - Nötige Wissenspflege wird nachgezogen und ebenfalls committed.
 
 ### `Finale`
-- Vollständiger Arbeitsabschluss für einen fertigen Arbeitsbranch.
+- Integrationsabschluss für einen fertigen Arbeitsbranch.
 - Der Agent führt zuerst `Finito` aus.
-- Wenn keine fachlichen offenen Punkte, roten Checks oder Merge-Konflikte bestehen, merged der Agent den Arbeitsbranch nach `main`, führt passende Checks erneut aus, pusht `main` und räumt erfolgreich gemergte Arbeitsbranches lokal und remote auf.
+- Wenn keine fachlichen offenen Punkte, roten Checks oder Merge-Konflikte bestehen, merged der Agent den Arbeitsbranch nach Projektregel nach `main` oder nutzt den PR-Weg, führt passende Checks erneut aus und pusht oder aktualisiert den Pull Request.
 - Der Agent stoppt und fragt nach, wenn Konflikte, rote Checks, ein riskanter Push oder offene fachliche Punkte auftreten.
 - Force-Push ist nicht Teil von `Finale`.
+- Branches werden nur nach den globalen Aufräumregeln gelöscht.
 
 ### `Endfinale`
 - Großer Abschlussmodus.
-- `Endfinale` umfasst `Finale` und zusätzlich einen bewussten Projektabschluss-Check: vollständigerer Verify-Lauf, Wissensbasis-Check, Aktualisierung relevanter Projektstatus- oder Risikoseiten und kompakte Benennung verbleibender Projektfragen.
+- `Endfinale` führt zuerst einen vollständigeren Verify-Lauf aus, danach bei Erfolg `Finale`, anschließend Wissensbasis-Check, Aktualisierung relevanter Projektstatus- oder Risikoseiten und kompakte Benennung verbleibender Projektfragen.
 
 ## Wie gross ein Branch sein darf
 - Zehn kleine Verbesserungen mit gemeinsamem Thema dürfen zusammen auf einen Branch.

@@ -208,3 +208,47 @@ test('previewCombatAttack now catches near-corner shots that miss the old exact-
   assert.equal(preview.hitChance, 61);
   assert.equal(preview.coverLabel, 'Teildeckung');
 });
+
+test('previewCombatAttack treats visible shots through a blocking corner as heavy cover', () => {
+  const floorState = {
+    grid: createGrid(8, 8, '.'),
+    showcases: [],
+    doors: [],
+  };
+  floorState.grid[2][1] = '#';
+
+  const attacker = {
+    type: 'player',
+    x: 2,
+    y: 4,
+    strength: 2,
+    precision: 6,
+    openingStrikeHitBonus: 0,
+    openingStrikeCritBonus: 0,
+  };
+  const defender = {
+    type: 'monster',
+    x: 1,
+    y: 1,
+    reaction: 1,
+    nerves: 1,
+    openingStrikeSpent: true,
+  };
+  const weapon = {
+    attackMode: 'ranged',
+    range: 6,
+    damage: 3,
+    hitBonus: 2,
+    critBonus: 0,
+    meleePenaltyHit: -2,
+  };
+
+  const api = createResolutionHarness(5, { floorState });
+  const preview = api.previewCombatAttack(attacker, defender, { distance: 3, weapon });
+
+  assert.equal(preview.baseHitChance, 76);
+  assert.equal(preview.coverPenalty, 30);
+  assert.equal(preview.hitChance, 46);
+  assert.equal(preview.coverLabel, 'Starke Deckung');
+  assert.deepEqual(preview.coverCorners.at(-1).blockerTile, { x: 1, y: 2 });
+});

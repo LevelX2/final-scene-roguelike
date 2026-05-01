@@ -83,6 +83,8 @@ export function createCombatResolutionApi(context) {
     let traversedY = 0;
     const grazingCorners = [];
     const grazingCornerKeys = new Set();
+    const occludingTiles = [];
+    const occludingTileKeys = new Set();
 
     while (traversedX < distanceX || traversedY < distanceY) {
       const decision = (1 + 2 * traversedX) * distanceY - (1 + 2 * traversedY) * distanceX;
@@ -118,6 +120,29 @@ export function createCombatResolutionApi(context) {
         currentY += stepY;
         traversedY += 1;
       }
+
+      if (currentX !== toX || currentY !== toY) {
+        const occludingStepIndex = Math.max(traversedX, traversedY);
+        if (isOpaqueTile(floorState, currentX, currentY)) {
+          const occludingKey = `${currentX},${currentY}:${occludingStepIndex}`;
+          if (!occludingTileKeys.has(occludingKey)) {
+            occludingTiles.push({
+              stepIndex: occludingStepIndex,
+              blockerTile: { x: currentX, y: currentY },
+            });
+            occludingTileKeys.add(occludingKey);
+          }
+        }
+      }
+    }
+
+    if (occludingTiles.length > 0) {
+      return {
+        penalty: 30,
+        grade: 'heavy',
+        label: 'Starke Deckung',
+        grazingCorners: [...grazingCorners, ...occludingTiles],
+      };
     }
 
     const remoteCorners = grazingCorners.filter((corner) => corner.stepIndex > 1);

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="reinforced-vertical-wood" x1="9" y1="2" x2="23" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a66a39"/>
+      <stop offset=".52" stop-color="#7a4726"/>
+      <stop offset="1" stop-color="#4f2c18"/>
+    </linearGradient>
+  </defs>
+  <rect x="8.2" y="1.5" width="15.6" height="29" rx="2.2" fill="#342015"/>
+  <rect x="10" y="3.1" width="12" height="25.8" rx="1.7" fill="url(#reinforced-vertical-wood)"/>
+  <path d="M10.6 8.2 H21.4 M10.6 16 H21.4 M10.6 23.8 H21.4" stroke="#d6c0a0" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12.2 4.8 V27.2 M19.8 4.8 V27.2" stroke="#24140b" stroke-opacity=".46" stroke-width="1.1" stroke-linecap="round"/>
+  <circle cx="19.1" cy="16" r="1.35" fill="#efe0b0"/>
+  <circle cx="12.1" cy="8.2" r=".55" fill="#4e3420"/>
+  <circle cx="19.9" cy="8.2" r=".55" fill="#4e3420"/>
+  <circle cx="12.1" cy="23.8" r=".55" fill="#4e3420"/>
+  <circle cx="19.9" cy="23.8" r=".55" fill="#4e3420"/>
+</svg>

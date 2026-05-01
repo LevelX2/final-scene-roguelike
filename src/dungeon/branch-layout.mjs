@@ -1,5 +1,9 @@
 import { shuffleList, weightedPick } from '../utils/random-tools.mjs';
 import { chooseHealingFamilyForFloor } from '../content/catalogs/consumables.mjs';
+import {
+  createSpecialEventTrap,
+  rollSpecialEventRecipe,
+} from '../content/catalogs/special-events.mjs';
 
 const ROOM_TYPE_ORDER = [
   "weapon_room",
@@ -3546,6 +3550,269 @@ function rollMonsterMiscDrop(state, enemy, floorNumber, studioArchetypeId) {
     ?? createMonsterUtilityDrop(state, floorNumber, studioArchetypeId);
 }
 
+function getSpecialEventRoomWeight(recipe, room) {
+  const preferredIndex = recipe.preferredRooms.indexOf(room.role);
+  if (preferredIndex >= 0) {
+    return (recipe.preferredRooms.length - preferredIndex + 2) * Math.max(1, room.interiorTiles.length);
+  }
+
+  const fallbackIndex = recipe.fallbackRooms.indexOf(room.role);
+  if (fallbackIndex >= 0) {
+    return Math.max(1, recipe.fallbackRooms.length - fallbackIndex) * Math.max(1, room.interiorTiles.length);
+  }
+
+  return 0;
+}
+
+function chooseSpecialEventRoom(state, recipe) {
+  const entries = state.rooms
+    .filter((room) =>
+      room.role !== 'entry_room' &&
+      room.overlayRole !== 'locked_bonus' &&
+      !state.anchorProtectedRoomIds.has(room.id) &&
+      [...recipe.preferredRooms, ...recipe.fallbackRooms].includes(room.role) &&
+      room.interiorTiles.some((tile) => !state.occupiedSpawnKeys.has(keyOf(tile.x, tile.y)))
+    )
+    .map((room) => ({
+      room,
+      weight: getSpecialEventRoomWeight(recipe, room),
+    }))
+    .filter((entry) => entry.weight > 0);
+
+  return weightedPick(entries, state.randomChance)?.room ?? null;
+}
+
+function createSpecialEventMetadata(recipe, intensity, room, studioArchetypeId) {
+  return {
+    id: recipe.id,
+    label: recipe.label,
+    intensity,
+    studioArchetypeId,
+    roomId: room.id,
+    roomRole: room.role,
+    introLog: recipe.introLog,
+    floatingText: recipe.floatingText,
+    announced: false,
+    announcementPosition: {
+      x: room.x + Math.floor(room.width / 2),
+      y: room.y + Math.floor(room.height / 2),
+    },
+  };
+}
+
+function getSpecialEventCount(profile, intensity, key) {
+  return Math.max(0, Number(profile?.[key]?.[intensity] ?? profile?.[intensity] ?? 0) || 0);
+}
+
+function chooseMonsterByIds(state, monsterIds) {
+  const candidates = monsterIds
+    .map((monsterId) => state.MONSTER_CATALOG.find((monster) => monster.id === monsterId))
+    .filter(Boolean);
+  if (candidates.length === 0) {
+    return null;
+  }
+  return candidates[state.randomInt(0, candidates.length - 1)] ?? candidates[0];
+}
+
+function chooseMonsterByRoleProfile(state, studioArchetypeId, roleProfiles) {
+  const roleProfileSet = new Set(roleProfiles);
+  const candidates = state.MONSTER_CATALOG
+    .filter((monster) =>
+      monster.spawnGroup === 'standard' &&
+      monster.archetypeId === studioArchetypeId &&
+      roleProfileSet.has(monster.roleProfileId)
+    );
+  const fallbackCandidates = candidates.length > 0
+    ? candidates
+    : state.MONSTER_CATALOG.filter((monster) =>
+        monster.spawnGroup === 'standard' &&
+        monster.archetypeId === studioArchetypeId
+      );
+
+  return weightedPick(
+    fallbackCandidates.map((monster) => ({ monster, weight: monster.spawnWeight ?? 1 })),
+    state.randomChance,
+  )?.monster ?? null;
+}
+
+function placeSpecialEventEnemies(state, event, recipe, room, floorNumber, studioArchetypeId) {
+  const count = getSpecialEventCount(recipe.enemyProfile?.counts, event.intensity);
+  let placed = 0;
+  for (let index = 0; index < count; index += 1) {
+    const tile = chooseFreeRoomTile(state, room, { reserveOnly: true });
+    if (!tile) {
+      break;
+    }
+
+    const monster = Array.isArray(recipe.enemyProfile?.monsterIds)
+      ? chooseMonsterByIds(state, recipe.enemyProfile.monsterIds)
+      : chooseMonsterByRoleProfile(state, studioArchetypeId, recipe.enemyProfile?.roleProfiles ?? []);
+    if (!monster) {
+      state.occupiedSpawnKeys.delete(keyOf(tile.x, tile.y));
+      continue;
+    }
+
+    const enemy = state.createEnemy(tile, floorNumber, monster, {
+      sourceArchetypeId: studioArchetypeId,
+      forceVariantTier: recipe.enemyProfile?.forceVariantByIntensity?.[event.intensity] ?? null,
+    });
+    if (!enemy) {
+      state.occupiedSpawnKeys.delete(keyOf(tile.x, tile.y));
+      continue;
+    }
+
+    enemy.specialEventId = event.id;
+    enemy.specialEventLabel = event.label;
+    enemy.specialEventIntensity = event.intensity;
+    state.enemies.push(enemy);
+    placed += 1;
+  }
+  return placed;
+}
+
+function placeSpecialEventTraps(state, event, recipe, room) {
+  const profile = recipe.trapProfile?.[event.intensity] ?? {};
+  let placed = 0;
+  for (const trapType of ['hazard', 'floor', 'alarm']) {
+    const count = Math.max(0, Number(profile[trapType]) || 0);
+    for (let index = 0; index < count; index += 1) {
+      const tile = chooseFreeRoomTile(state, room, { reserveOnly: true });
+      if (!tile) {
+        return placed;
+      }
+      state.traps.push(createSpecialEventTrap(trapType, tile.x, tile.y, {
+        specialEventId: event.id,
+        randomInt: state.randomInt,
+      }));
+      placed += 1;
+    }
+  }
+  return placed;
+}
+
+function placeSpecialEventConsumables(state, event, recipe, room, floorNumber, studioArchetypeId) {
+  const count = getSpecialEventCount(recipe.rewardProfile, event.intensity, 'consumables');
+  let placed = 0;
+  for (let index = 0; index < count; index += 1) {
+    const tile = chooseFreeRoomTile(state, room, { reserveOnly: true });
+    if (!tile) {
+      break;
+    }
+    const consumable = state.rollConsumableLootDefinition?.({
+      floorNumber,
+      sourceType: 'special',
+      archetypeId: studioArchetypeId,
+      allowedPhase: 3,
+    });
+    if (!consumable) {
+      state.occupiedSpawnKeys.delete(keyOf(tile.x, tile.y));
+      continue;
+    }
+    state.consumables.push(state.createConsumablePickup(consumable, tile.x, tile.y));
+    placed += 1;
+  }
+  return placed;
+}
+
+function placeSpecialEventFood(state, event, recipe, room) {
+  const count = getSpecialEventCount(recipe.rewardProfile, event.intensity, 'food');
+  const foodItems = state.buildFoodItemsForBudget(count * 60).slice(0, count);
+  let placed = 0;
+  for (const foodItem of foodItems) {
+    const tile = chooseFreeRoomTile(state, room, { reserveOnly: true });
+    if (!tile) {
+      break;
+    }
+    state.foods.push(state.createFoodPickup(foodItem, tile.x, tile.y));
+    placed += 1;
+  }
+  return placed;
+}
+
+function buildSpecialEventChestContents(state, event, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
+  const contents = typeof state.rollChestContents === 'function'
+    ? state.rollChestContents(floorNumber + 1, playerState, {
+        dropSourceTag: `special-event:${event.id}`,
+        preferredArchetypeId: studioArchetypeId,
+        boostSpecial: true,
+        runArchetypeSequence,
+      }) ?? []
+    : [state.rollChestContent?.(floorNumber + 1, playerState, {
+        dropSourceTag: `special-event:${event.id}`,
+        preferredArchetypeId: studioArchetypeId,
+        boostSpecial: true,
+        runArchetypeSequence,
+      })].filter((entry) => entry?.item);
+
+  return contents.filter((entry) => entry?.item);
+}
+
+function placeSpecialEventChests(state, event, recipe, room, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
+  const count = getSpecialEventCount(recipe.rewardProfile, event.intensity, 'chest');
+  let placed = 0;
+  for (let index = 0; index < count; index += 1) {
+    const tile = chooseFreeRoomTile(state, room, { reserveOnly: true });
+    if (!tile) {
+      break;
+    }
+    const chestContents = buildSpecialEventChestContents(
+      state,
+      event,
+      floorNumber,
+      studioArchetypeId,
+      playerState,
+      runArchetypeSequence,
+    );
+    if (chestContents.length === 0) {
+      state.occupiedSpawnKeys.delete(keyOf(tile.x, tile.y));
+      continue;
+    }
+
+    const containerConfig = state.getContainerConfigForArchetype(studioArchetypeId);
+    state.chests.push(state.createChestPickup(chestContents, tile.x, tile.y, {
+      containerName: containerConfig.name,
+      containerAssetId: containerConfig.assetId,
+    }));
+    placed += 1;
+  }
+  return placed;
+}
+
+function placeSpecialEventContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
+  if (state.specialEventsEnabled === false) {
+    return;
+  }
+
+  const selected = rollSpecialEventRecipe({
+    floorNumber,
+    studioArchetypeId,
+    roomRoles: state.rooms.map((room) => room.role),
+    randomChance: state.randomChance,
+  });
+  if (!selected) {
+    return;
+  }
+
+  const room = chooseSpecialEventRoom(state, selected.recipe);
+  if (!room) {
+    return;
+  }
+
+  const event = createSpecialEventMetadata(selected.recipe, selected.intensity, room, studioArchetypeId);
+  state.specialEvents.push(event);
+
+  const placed =
+    placeSpecialEventTraps(state, event, selected.recipe, room) +
+    placeSpecialEventEnemies(state, event, selected.recipe, room, floorNumber, studioArchetypeId) +
+    placeSpecialEventConsumables(state, event, selected.recipe, room, floorNumber, studioArchetypeId) +
+    placeSpecialEventFood(state, event, selected.recipe, room) +
+    placeSpecialEventChests(state, event, selected.recipe, room, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
+
+  if (placed <= 0) {
+    state.specialEvents.pop();
+  }
+}
+
 function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence) {
   const foodBudget = state.splitFoodBudget(state.rollFoodBudget(state.randomInt).totalBudget);
   const floorSeenCounts = {};
@@ -3758,6 +4025,8 @@ function placeWorldContent(state, floorNumber, studioArchetypeId, playerState, r
     trap.y = tile.y;
     state.traps.push(trap);
   });
+
+  placeSpecialEventContent(state, floorNumber, studioArchetypeId, playerState, runArchetypeSequence);
 }
 
 function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode, options = {}) {
@@ -3784,6 +4053,7 @@ function createLayoutState(context, floorNumber, studioArchetypeId, topologyNode
     chests: [],
     keys: [],
     traps: [],
+    specialEvents: [],
     showcases: [],
     recentDeaths: [],
     decorativeOverlays: [],
@@ -3844,6 +4114,7 @@ function buildLayoutResult(state, layoutFailureReason = null) {
     extraLoopConnections: state.extraLoopConnections,
     showcaseAmbienceSeen: {},
     traps: state.traps,
+    specialEvents: state.specialEvents,
     explored: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
     visible: Array.from({ length: state.HEIGHT }, () => Array(state.WIDTH).fill(false)),
   };

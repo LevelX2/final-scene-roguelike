@@ -119,4 +119,8 @@ export const MONSTER_ASSET_OVERRIDES = Object.freeze({
   'western-kopfgeldjaeger': './assets/enemies/western-bounty-hunter.svg',
   'western-richter-von-dust-creek': './assets/enemies/western-judge-of-dust-creek-boss.svg',
   'western-judge-of-dust-creek-boss': './assets/enemies/western-judge-of-dust-creek-boss.svg',
+  'event-requisitenwusler': './assets/enemies/event-requisite-scuttler.svg',
+  'event-kabelbeisser': './assets/enemies/event-cable-biter.svg',
+  'event-kulissenkrabbler': './assets/enemies/event-set-crawler.svg',
+  'event-hektischer-setlaeufer': './assets/enemies/event-frantic-runner.svg',
 });

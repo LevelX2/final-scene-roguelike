@@ -21,6 +21,10 @@ test('studio-generation-report summarizes the relevant spawn and loot categories
       { spawnGroup: 'standard', variantTier: 'normal', rank: 3 },
       { spawnGroup: 'legacy_special', variantTier: 'elite', rank: 10 },
       { spawnGroup: 'standard', variantTier: 'dire', rank: 5 },
+      { spawnGroup: 'special_event', variantTier: 'normal', rank: 1 },
+    ],
+    specialEvents: [
+      { id: 'set_chaos_crew', label: 'Chaoscrew am Set', intensity: 'medium' },
     ],
     keys: [{}, {}],
     doors: [
@@ -57,12 +61,19 @@ test('studio-generation-report summarizes the relevant spawn and loot categories
     loot_room: 2,
   });
   assert.deepEqual(summary.enemies, {
-    total: 3,
+    total: 4,
     standard: 2,
-    special: 1,
+    special: 2,
     elite: 1,
     dire: 1,
     boss: 1,
+  });
+  assert.deepEqual(summary.specialEvents, {
+    total: 1,
+    small: 0,
+    medium: 1,
+    large: 0,
+    labels: ['Chaoscrew am Set'],
   });
   assert.equal(summary.keys, 2);
   assert.equal(summary.lockedDoors, 1);
@@ -111,6 +122,7 @@ test('studio-generation-report aggregates totals and formats a readable debug bl
         studioArchetypeId: 'action',
         rooms: [{ role: 'entry_room' }],
         enemies: [{ spawnGroup: 'standard', variantTier: 'normal', rank: 2 }],
+        specialEvents: [],
         keys: [{}],
         doors: [],
         foods: [],
@@ -124,7 +136,11 @@ test('studio-generation-report aggregates totals and formats a readable debug bl
       2: {
         studioArchetypeId: 'slasher',
         rooms: [{ role: 'entry_room' }, { role: 'trap_room' }],
-        enemies: [{ spawnGroup: 'legacy_special', variantTier: 'elite', rank: 10 }],
+        enemies: [
+          { spawnGroup: 'legacy_special', variantTier: 'elite', rank: 10 },
+          { spawnGroup: 'special_event', variantTier: 'normal', rank: 1 },
+        ],
+        specialEvents: [{ id: 'reactor_leak_stunt_course', label: 'Reaktorleck', intensity: 'large' }],
         keys: [],
         doors: [{ doorType: 'locked' }],
         foods: [{ item: { nutritionRestore: 50 } }],
@@ -147,9 +163,11 @@ test('studio-generation-report aggregates totals and formats a readable debug bl
   assert.equal(report.runSeed, 4242);
   assert.equal(report.currentFloor, 1);
   assert.equal(report.generatedStudioCount, 2);
-  assert.equal(report.totals.enemies.total, 2);
-  assert.equal(report.totals.enemies.special, 1);
+  assert.equal(report.totals.enemies.total, 3);
+  assert.equal(report.totals.enemies.special, 2);
   assert.equal(report.totals.enemies.elite, 1);
+  assert.equal(report.totals.specialEvents.total, 1);
+  assert.equal(report.totals.specialEvents.large, 1);
   assert.equal(report.totals.keys, 1);
   assert.equal(report.totals.lockedDoors, 1);
   assert.equal(report.totals.foodNutrition.totalNutrition, 50);
@@ -170,6 +188,7 @@ test('studio-generation-report aggregates totals and formats a readable debug bl
   assert.match(text, /Verbrauchbar 1 \(Heilung 1, Heilwert 8, Schnitt 8\)/);
   assert.match(text, /Studio-Statistik \(2\/2 generiert\)/);
   assert.match(text, /Gesamt Räume 3/);
-  assert.match(text, /1\. Action \| Räume 1 \| Gegner 1/);
-  assert.match(text, /2\. Slasher \| Räume 2 \| Gegner 1 \(Std 0, Special 1, Elite 1/);
+  assert.match(text, /Events 1 \(klein 0, mittel 0, groß 1\)/);
+  assert.match(text, /1\. Action \| Events 0 \| Räume 1 \| Gegner 1/);
+  assert.match(text, /2\. Slasher \| Events 1 \(Reaktorleck\) \| Räume 2 \| Gegner 2 \(Std 0, Special 2, Elite 1/);
 });

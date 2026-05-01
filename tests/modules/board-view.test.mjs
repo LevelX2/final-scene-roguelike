@@ -259,3 +259,187 @@ test('board-view renderBoard appends a single organic fog canvas and no tile fog
     global.document = previousDocument;
   }
 });
+
+test('board-view renders north-south doors with the double-wing door assets', () => {
+  const previousDocument = global.document;
+  global.document = {
+    createElement: createElementMock,
+  };
+
+  try {
+    const cases = [
+      {
+        door: { x: 1, y: 1, isOpen: false },
+        expectedAsset: './assets/transitions/door-closed-horizontal.svg',
+        expectedClass: 'door-closed',
+      },
+      {
+        door: { x: 1, y: 1, isOpen: true },
+        expectedAsset: './assets/transitions/door-open-vertical.svg',
+        expectedClass: 'door-open',
+      },
+    ];
+
+    for (const { door, expectedAsset, expectedClass } of cases) {
+      const boardElement = createElementMock('div');
+      boardElement.classList = createClassList();
+      const floorState = {
+        grid: [
+          ['.', '.', '.'],
+          ['#', '.', '#'],
+          ['.', '.', '.'],
+        ],
+        visible: [
+          [true, true, true],
+          [true, true, true],
+          [true, true, true],
+        ],
+        lineOfSightVisible: [
+          [true, true, true],
+          [true, true, true],
+          [true, true, true],
+        ],
+        explored: [
+          [true, true, true],
+          [true, true, true],
+          [true, true, true],
+        ],
+        doors: [door],
+        foods: [],
+        weapons: [],
+        offHands: [],
+        traps: [],
+        showcases: [],
+        enemies: [],
+        chests: [],
+        decorativeOverlays: [],
+        debugReveal: false,
+      };
+      const state = {
+        player: { x: -1, y: -1 },
+        targeting: { active: false },
+        floatingTexts: [],
+        boardEffects: [],
+        options: {},
+        turn: 0,
+        gameOver: false,
+      };
+
+      const boardView = createBoardView({
+        WIDTH: 3,
+        HEIGHT: 3,
+        TILE_SIZE: 28,
+        TILE_GAP: 0,
+        BOARD_PADDING: 0,
+        TILE: { WALL: '#', FLOOR: '.', DOOR_OPEN: '/', DOOR_CLOSED: '+' },
+        boardElement,
+        getState: () => state,
+        getCurrentFloorState: () => floorState,
+        getMainHand: () => null,
+        getCombatWeapon: () => null,
+        getOffHand: () => null,
+        renderSelf: () => {},
+      });
+
+      boardView.renderBoard();
+
+      const foregrounds = collectByClass(boardElement, 'tile-foreground-layer');
+      const doorForeground = foregrounds.find((element) => String(element.className).includes(expectedClass));
+      assert.ok(doorForeground, `expected ${expectedClass} foreground layer`);
+      assert.ok(String(doorForeground.className).includes('door-passage-vertical'));
+      assert.equal(doorForeground.style['--tile-overlay-image'], `url("${expectedAsset}")`);
+      if (!door.isOpen) {
+        assert.notEqual(
+          doorForeground.style['--tile-overlay-image'],
+          'url("./assets/transitions/door-open-vertical.svg")',
+        );
+      }
+    }
+  } finally {
+    global.document = previousDocument;
+  }
+});
+
+test('board-view assigns stable closed-door visual variants from door position', () => {
+  const previousDocument = global.document;
+  global.document = {
+    createElement: createElementMock,
+  };
+
+  function renderDoorAsset(door) {
+    const boardElement = createElementMock('div');
+    boardElement.classList = createClassList();
+    const matrix = Array.from({ length: 3 }, () => Array.from({ length: 5 }, () => true));
+    const grid = Array.from({ length: 3 }, () => Array.from({ length: 5 }, () => '.'));
+    grid[door.y][door.x - 1] = '#';
+    grid[door.y][door.x + 1] = '#';
+    const floorState = {
+      grid,
+      visible: matrix,
+      lineOfSightVisible: matrix,
+      explored: matrix,
+      doors: [door],
+      foods: [],
+      weapons: [],
+      offHands: [],
+      traps: [],
+      showcases: [],
+      enemies: [],
+      chests: [],
+      decorativeOverlays: [],
+      debugReveal: false,
+    };
+    const state = {
+      player: { x: -1, y: -1 },
+      targeting: { active: false },
+      floatingTexts: [],
+      boardEffects: [],
+      options: {},
+      turn: 0,
+      gameOver: false,
+    };
+    const boardView = createBoardView({
+      WIDTH: 5,
+      HEIGHT: 3,
+      TILE_SIZE: 28,
+      TILE_GAP: 0,
+      BOARD_PADDING: 0,
+      TILE: { WALL: '#', FLOOR: '.', DOOR_OPEN: '/', DOOR_CLOSED: '+' },
+      boardElement,
+      getState: () => state,
+      getCurrentFloorState: () => floorState,
+      getMainHand: () => null,
+      getCombatWeapon: () => null,
+      getOffHand: () => null,
+      renderSelf: () => {},
+    });
+
+    boardView.renderBoard();
+
+    const foregrounds = collectByClass(boardElement, 'tile-foreground-layer');
+    const doorForeground = foregrounds.find((element) => String(element.className).includes('door-closed'));
+    assert.ok(doorForeground, 'expected closed door foreground layer');
+    return {
+      className: String(doorForeground.className),
+      asset: doorForeground.style['--tile-overlay-image'],
+    };
+  }
+
+  try {
+    const reinforcedDoor = renderDoorAsset({ x: 2, y: 1, isOpen: false });
+    assert.ok(reinforcedDoor.className.includes('door-variant-reinforced'));
+    assert.equal(
+      reinforcedDoor.asset,
+      'url("./assets/transitions/door-closed-horizontal-reinforced.svg")',
+    );
+
+    const serviceDoor = renderDoorAsset({ x: 3, y: 1, isOpen: false });
+    assert.ok(serviceDoor.className.includes('door-variant-service'));
+    assert.equal(
+      serviceDoor.asset,
+      'url("./assets/transitions/door-closed-horizontal-service.svg")',
+    );
+  } finally {
+    global.document = previousDocument;
+  }
+});

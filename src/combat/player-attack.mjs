@@ -24,7 +24,16 @@ const OPENING_STRIKE_LOGS = {
   },
 };
 
-const ARROW_PROJECTILE_DURATION_MS = 760;
+const MIN_ARROW_PROJECTILE_DURATION_MS = 520;
+const MAX_ARROW_PROJECTILE_DURATION_MS = 1150;
+
+function getArrowProjectileProfile(distance) {
+  const travelDistance = Math.max(1, Math.round(distance ?? 1));
+  return {
+    duration: Math.min(MAX_ARROW_PROJECTILE_DURATION_MS, Math.max(MIN_ARROW_PROJECTILE_DURATION_MS, 300 + travelDistance * 135)),
+    steps: Math.min(10, Math.max(4, Math.round(travelDistance * 1.6))),
+  };
+}
 
 export function createPlayerAttackApi(context) {
   const {
@@ -88,6 +97,9 @@ export function createPlayerAttackApi(context) {
     const isRangedAttack = (options.distance ?? 1) > 1 && weapon?.attackMode === 'ranged';
     const weaponPhrase = formatWeaponDativePhrase(weapon);
     const usesArrowProjectile = isRangedAttack && isBowWeapon(weapon);
+    const arrowProjectileProfile = usesArrowProjectile
+      ? getArrowProjectileProfile(options.distance ?? 1)
+      : null;
     const projectileKind = usesArrowProjectile
       ? (result.critical ? 'hero-arrow-crit' : 'hero-arrow')
       : (result.critical ? 'hero-shot-crit' : 'hero-shot');
@@ -98,7 +110,8 @@ export function createPlayerAttackApi(context) {
             fromY: state.player.y,
             kind: projectileKind,
             flash: !usesArrowProjectile,
-            duration: usesArrowProjectile ? ARROW_PROJECTILE_DURATION_MS : undefined,
+            duration: arrowProjectileProfile?.duration,
+            steps: arrowProjectileProfile?.steps,
           },
         }
       : null;
@@ -141,7 +154,9 @@ export function createPlayerAttackApi(context) {
             ...rangedBoardEffect,
           }
         : {});
-      playEnemyHitSound(result.critical);
+      playEnemyHitSound(result.critical, usesArrowProjectile ? 'bow' : undefined, {
+        impactDelayMs: arrowProjectileProfile ? Math.max(120, arrowProjectileProfile.duration - 220) : undefined,
+      });
     } else {
       showFloatingText(enemy.x, enemy.y, 'Block', 'heal', isRangedAttack
         ? {

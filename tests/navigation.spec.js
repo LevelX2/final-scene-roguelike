@@ -1073,6 +1073,9 @@ test("locked rooms cannot be entered through an alternate corridor", async ({ pa
     expect(result.ok).toBeTruthy();
 
     if (floor < 6) {
+      await page.evaluate(() => {
+        window.__TEST_API__.clearFloorEntities();
+      });
       await openDownstairsPrompt(page);
       await page.getByRole("button", { name: "Betreten" }).click();
     }
@@ -1132,6 +1135,9 @@ test("placed doors stay on valid choke-point slots in the final generated layout
     expect(result.ok).toBeTruthy();
 
     if (floor < 6) {
+      await page.evaluate(() => {
+        window.__TEST_API__.clearFloorEntities();
+      });
       await openDownstairsPrompt(page);
       await page.getByRole("button", { name: "Betreten" }).click();
     }

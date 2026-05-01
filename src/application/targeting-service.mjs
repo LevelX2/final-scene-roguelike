@@ -41,13 +41,14 @@ export function evaluateTargetSelection(context) {
     enemy &&
     perceiveTarget?.(floorState, state?.player?.x, state?.player?.y, enemy.x, enemy.y),
   );
-  const hasShotLine = Boolean(
+  const hasStrictShotLine = Boolean(
     enemy &&
     projectileTargetLine?.(floorState, state?.player?.x, state?.player?.y, enemy.x, enemy.y),
   );
-  const attackPreview = enemy && hasRange && hasSight && hasShotLine
+  const attackPreview = enemy && hasRange && hasSight
     ? previewCombatAttack?.(state?.player, enemy, { weapon, distance })
     : null;
+  const hasShotLine = hasStrictShotLine || hasSight;
 
   return {
     enemy,

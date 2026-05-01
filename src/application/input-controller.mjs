@@ -277,6 +277,22 @@ export function createInputController(context) {
       return;
     }
 
+    if (state.pendingDoorAction?.active) {
+      if (matchesShortcut(["escape"], ["Escape"])) {
+        event.preventDefault();
+        state.pendingDoorAction = null;
+        addMessage?.("Türwahl abgebrochen.");
+        return;
+      }
+
+      const doorDirection = getMovementFromShortcut(matchesShortcut);
+      if (doorDirection) {
+        event.preventDefault();
+        tryCloseAdjacentDoor(...doorDirection);
+      }
+      return;
+    }
+
     if (matchesShortcut(["i"], ["KeyI"])) {
       event.preventDefault();
       toggleInventory();

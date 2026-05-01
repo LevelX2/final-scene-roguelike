@@ -348,6 +348,12 @@ test('board-view renders north-south doors with the double-wing door assets', ()
       assert.ok(doorForeground, `expected ${expectedClass} foreground layer`);
       assert.ok(String(doorForeground.className).includes('door-passage-vertical'));
       assert.equal(doorForeground.style['--tile-overlay-image'], `url("${expectedAsset}")`);
+      if (!door.isOpen) {
+        assert.notEqual(
+          doorForeground.style['--tile-overlay-image'],
+          'url("./assets/transitions/door-open-vertical.svg")',
+        );
+      }
     }
   } finally {
     global.document = previousDocument;

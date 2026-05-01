@@ -24,13 +24,13 @@ const OPENING_STRIKE_LOGS = {
   },
 };
 
-const MIN_ARROW_PROJECTILE_DURATION_MS = 650;
-const MAX_ARROW_PROJECTILE_DURATION_MS = 1300;
+const MIN_ARROW_PROJECTILE_DURATION_MS = 520;
+const MAX_ARROW_PROJECTILE_DURATION_MS = 1150;
 
 function getArrowProjectileProfile(distance) {
   const travelDistance = Math.max(1, Math.round(distance ?? 1));
   return {
-    duration: Math.min(MAX_ARROW_PROJECTILE_DURATION_MS, Math.max(MIN_ARROW_PROJECTILE_DURATION_MS, 340 + travelDistance * 160)),
+    duration: Math.min(MAX_ARROW_PROJECTILE_DURATION_MS, Math.max(MIN_ARROW_PROJECTILE_DURATION_MS, 300 + travelDistance * 135)),
     steps: Math.min(10, Math.max(4, Math.round(travelDistance * 1.6))),
   };
 }

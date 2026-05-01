@@ -20,6 +20,8 @@ function createHarness({
     coverLabel: '',
   }),
   openDoor = () => {},
+  closeDoor = () => true,
+  canPlayerOpenDoor = () => true,
   takeEnemyTurn = () => {},
   hasNearbyEnemy = () => false,
   canActorMove = () => true,
@@ -27,6 +29,7 @@ function createHarness({
   waitForDebugAdvanceFrame,
   waitForDebugAdvanceDelay,
   waitForEnemyTurnDelay,
+  playLockedDoorSound = () => {},
 } = {}) {
   const normalizedEnemies = enemies.map((enemy) => ({
     hp: 10,
@@ -102,8 +105,8 @@ function createHarness({
     getShowcaseAt: (x, y, nextFloorState = floorState) =>
       nextFloorState.showcases.find((showcase) => showcase.x === x && showcase.y === y) ?? null,
     openDoor,
-    closeDoor: () => true,
-    canPlayerOpenDoor: () => true,
+    closeDoor,
+    canPlayerOpenDoor,
     getDoorColorLabels: () => ({ adjective: 'gruene' }),
     manhattanDistance: (left, right) => Math.abs(left.x - right.x) + Math.abs(left.y - right.y),
     addMessage: (text) => messages.push(text),
@@ -117,7 +120,7 @@ function createHarness({
     maybeTriggerShowcaseAmbience: () => {},
     handleActorEnterTile: () => {},
     playStepSound: () => {},
-    playLockedDoorSound: () => {},
+    playLockedDoorSound,
     hasNearbyEnemy,
     takeEnemyTurn,
     canActorMove,
@@ -442,6 +445,120 @@ test('player-turn-controller charges door movement as 150 percent of the actors 
   assert.equal(harness.state.player.y, 5);
   assert.deepEqual(harness.playerActionCosts, [150]);
   assert.equal(harness.state.player.nextActionTime, 120);
+});
+
+test('player-turn-controller can open an adjacent door without stepping through', () => {
+  const door = { x: 6, y: 5, isOpen: false, doorType: 'normal' };
+  let openedByPlayer = false;
+  const harness = createHarness({
+    player: { x: 5, y: 5 },
+    doors: [door],
+    openDoor: (nextDoor) => {
+      nextDoor.isOpen = true;
+      openedByPlayer = true;
+    },
+  });
+
+  harness.api.tryCloseAdjacentDoor();
+
+  assert.equal(openedByPlayer, true);
+  assert.equal(door.isOpen, true);
+  assert.equal(harness.state.player.x, 5);
+  assert.equal(harness.state.player.y, 5);
+  assert.deepEqual(harness.playerActionCosts, [100]);
+});
+
+test('player-turn-controller asks for a direction when multiple adjacent doors are actionable', () => {
+  const openDoorEntry = { x: 6, y: 5, isOpen: true, doorType: 'normal' };
+  const closedDoorEntry = { x: 5, y: 4, isOpen: false, doorType: 'normal' };
+  let closedByPlayer = false;
+  let openedByPlayer = false;
+  const harness = createHarness({
+    player: { x: 5, y: 5 },
+    doors: [openDoorEntry, closedDoorEntry],
+    closeDoor: (nextDoor) => {
+      nextDoor.isOpen = false;
+      closedByPlayer = true;
+      return true;
+    },
+    openDoor: (nextDoor) => {
+      nextDoor.isOpen = true;
+      openedByPlayer = true;
+    },
+  });
+
+  harness.api.tryCloseAdjacentDoor();
+
+  assert.deepEqual(harness.state.pendingDoorAction, { active: true, x: 5, y: 5 });
+  assert.equal(closedByPlayer, false);
+  assert.equal(openedByPlayer, false);
+  assert.deepEqual(harness.playerActionCosts, []);
+
+  harness.api.tryCloseAdjacentDoor(1, 0);
+
+  assert.equal(closedByPlayer, true);
+  assert.equal(openedByPlayer, false);
+  assert.equal(openDoorEntry.isOpen, false);
+  assert.equal(closedDoorEntry.isOpen, false);
+  assert.deepEqual(harness.playerActionCosts, [100]);
+  assert.equal(harness.state.pendingDoorAction, null);
+});
+
+test('player-turn-controller can open the selected door when multiple adjacent doors exist', () => {
+  const openDoorEntry = { x: 6, y: 5, isOpen: true, doorType: 'normal' };
+  const closedDoorEntry = { x: 5, y: 4, isOpen: false, doorType: 'normal' };
+  let closedByPlayer = false;
+  let openedByPlayer = false;
+  const harness = createHarness({
+    player: { x: 5, y: 5 },
+    doors: [openDoorEntry, closedDoorEntry],
+    closeDoor: (nextDoor) => {
+      nextDoor.isOpen = false;
+      closedByPlayer = true;
+      return true;
+    },
+    openDoor: (nextDoor) => {
+      nextDoor.isOpen = true;
+      openedByPlayer = true;
+    },
+  });
+
+  harness.api.tryCloseAdjacentDoor();
+  harness.api.tryCloseAdjacentDoor(0, -1);
+
+  assert.equal(closedByPlayer, false);
+  assert.equal(openedByPlayer, true);
+  assert.equal(openDoorEntry.isOpen, true);
+  assert.equal(closedDoorEntry.isOpen, true);
+  assert.deepEqual(harness.playerActionCosts, [100]);
+  assert.equal(harness.state.pendingDoorAction, null);
+});
+
+test('player-turn-controller does not spend a turn when an adjacent locked door cannot be opened', () => {
+  const door = { x: 6, y: 5, isOpen: false, doorType: 'locked', lockColor: 'green' };
+  let lockedSoundPlayed = false;
+  let rendered = false;
+  const harness = createHarness({
+    player: { x: 5, y: 5 },
+    doors: [door],
+    canPlayerOpenDoor: () => false,
+    openDoor: () => {
+      throw new Error('locked door should not open');
+    },
+    playLockedDoorSound: () => {
+      lockedSoundPlayed = true;
+    },
+    renderSelf: () => {
+      rendered = true;
+    },
+  });
+
+  harness.api.tryCloseAdjacentDoor();
+
+  assert.equal(lockedSoundPlayed, true);
+  assert.equal(rendered, true);
+  assert.equal(door.isOpen, false);
+  assert.deepEqual(harness.playerActionCosts, []);
 });
 
 test('player-turn-controller processes off-floor actors without letting them target the player after a floor change', () => {

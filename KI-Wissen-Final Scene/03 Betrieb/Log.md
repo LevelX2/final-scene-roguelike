@@ -677,6 +677,8 @@
   - Bogen-Projektile nutzen weiter die bestehenden `hero-arrow`- und `hostile-arrow`-Effektarten, werden visuell aber nicht mehr als durchgehender Strahl gerendert.
   - Die CSS-Animation bewegt jetzt ein Pfeilobjekt mit Schaft, Spitze und Federn in diskreten Zwischenstationen entlang der Schussbahn; der Einschlag wirkt als kleine Splittermarke statt als runder Energie-Impact.
   - Nach visueller Rückmeldung wurde der Pfeil wieder verkleinert und die Flugzeit entfernungsabhängig gemacht: nahe Schüsse laufen kürzer und mit weniger Stationen, lange Schüsse bis maximal `1300ms` und zehn Stationen.
+  - Weiter nachgeschärft: Pfeile sind kürzer und bräunlicher, nutzen eine kontinuierliche lineare Fluganimation statt `steps(...)`, fliegen mit der Spitze bis zum Zielzentrum und verschwinden erst dort, damit kein sichtbarer Neustart am Schützen entsteht.
+  - Die Pfeil-Flugzeit wurde etwas beschleunigt: Distanz 3 liegt jetzt bei `705ms`, lange Schüsse laufen bis maximal `1150ms`.
   - Treffer mit Bogenwaffen rufen einen eigenen, deutlicheren Web-Audio-Klang mit sofortigem Loslassen, Fluganteil und verzögertem Einschlag auf.
   - Verifiziert mit `npm run verify:quick` und den relevanten Playwright-Tests für Spieler- und Gegner-Bogenschüsse.
 
@@ -756,3 +758,24 @@
   - Ein geschlossener `AudioContext` wird verworfen, damit ein späterer Soundaufruf einen frischen Context erstellen kann.
   - Der neue Modultest deckt suspendierte Contexts und wiederholte Resume-Versuche ab.
   - Verifiziert mit `node --test ./tests/modules/audio-service.test.mjs`, `npm run check:js`, `npm run test:modules`, `npm run build`, `npm run lint:strict` und einem Headless-Firefox-Smoke gegen den lokalen Build: sechs echte Bewegungstasten erzeugten sechs Web-Audio-Oszillatorstarts; der initial suspendierte Firefox-Context wurde resumed und lief danach weiter.
+  - Nach Nutzer-Retest weiter nachgeschärft: Der Schritt-Sound wird jetzt erst nach abgeschlossenem `AudioContext.resume()` geplant und aktive Schritt-Sound-Nodes bleiben bis zum Tonende referenziert. Der neue Firefox-Save/Reload-Smoke erzeugte nach dem Laden vier Schritt-Oszillatorstarts bei vier Bewegungstasten.
+
+## [2026-05-02] fix | Türfarbe und manuelles Öffnen präzisiert
+- Anlass oder Quelle: Nutzerhinweis mit Screenshot, dass grüne Schlüsseltüren durch den Kachelrahmen optisch falsch wirken, plus Frage zur Mehrtür-Situation beim manuellen Öffnen oder Schließen.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `styles.css`
+  - `assets/transitions/door-closed-horizontal.svg`
+  - `src/application/player-turn-controller.mjs`
+  - `src/application/input-controller.mjs`
+  - `index.html`
+  - `tests/modules/board-view.test.mjs`
+  - `tests/modules/player-turn-controller.test.mjs`
+  - `tests/modules/input-controller.test.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Schlossfarben werden nicht mehr als grüner oder blauer Kachelrahmen hinter der Tür gezeichnet, sondern als kleines farbiges Türblech auf dem Tür-Asset.
+  - Die geschlossene Nord-Süd-Doppelflügeltür wurde mit stärkerer Mittelnaht, Querbeschlägen und zentralem Schlossbereich optisch klarer geschlossen gezeichnet.
+  - `V` öffnet nun auch eine benachbarte geschlossene Tür, ohne dass der Spieler in die Tür hineinläuft; bei mehreren benachbarten Türen startet eine Richtungswahl.
+  - Die nächste gerade Bewegungstaste wählt in der Mehrtür-Situation die Tür; `Esc` bricht die Türwahl ab.
+  - Verifiziert mit `node --test tests/modules/board-view.test.mjs tests/modules/player-turn-controller.test.mjs tests/modules/input-controller.test.mjs`, `npm run check:js` und `npm run test:modules`.

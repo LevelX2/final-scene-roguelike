@@ -1289,31 +1289,31 @@ kbd {
   position: absolute;
   top: 50%;
   pointer-events: none;
-  animation: arrow-flight var(--projectile-duration, 900ms) steps(var(--projectile-steps, 6), end) forwards;
+  animation: arrow-flight var(--projectile-duration, 760ms) linear forwards;
 }
 
 .projectile-effect-line.hero-arrow::before,
 .projectile-effect-line.hero-arrow-crit::before {
   left: 0;
-  width: 24px;
+  width: 18px;
   height: 2px;
   border-radius: 999px;
   background:
-    linear-gradient(45deg, transparent 0 34%, #f0e0bd 35% 56%, transparent 57% 100%) -2px -5px / 11px 8px no-repeat,
-    linear-gradient(-45deg, transparent 0 34%, #c39a5d 35% 56%, transparent 57% 100%) -2px 0 / 11px 8px no-repeat,
-    linear-gradient(90deg, #5a3819, #a36d32 42%, #e7c783 100%);
+    linear-gradient(45deg, transparent 0 34%, #caa36a 35% 56%, transparent 57% 100%) -2px -4px / 9px 7px no-repeat,
+    linear-gradient(-45deg, transparent 0 34%, #80542e 35% 56%, transparent 57% 100%) -2px 0 / 9px 7px no-repeat,
+    linear-gradient(90deg, #3f2816, #7f542b 48%, #b9894e 100%);
   box-shadow:
-    0 0 8px rgba(216, 174, 94, 0.28),
+    0 0 6px rgba(151, 101, 48, 0.22),
     0 1px 0 rgba(0, 0, 0, 0.42);
 }
 
 .projectile-effect-line.hero-arrow::after {
-  left: 20px;
+  left: 15px;
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 4px 0 4px 7px;
-  border-color: transparent transparent transparent #d9b470;
+  border-width: 3px 0 3px 5px;
+  border-color: transparent transparent transparent #a77a43;
 }
 
 .projectile-effect-line.hero-arrow-crit {
@@ -1323,21 +1323,21 @@ kbd {
 
 .projectile-effect-line.hero-arrow-crit::before {
   background:
-    linear-gradient(45deg, transparent 0 34%, #fff0bf 35% 56%, transparent 57% 100%) -2px -5px / 11px 8px no-repeat,
-    linear-gradient(-45deg, transparent 0 34%, #e0b467 35% 56%, transparent 57% 100%) -2px 0 / 11px 8px no-repeat,
-    linear-gradient(90deg, #6f421d, #c98b36 42%, #ffe39a 100%);
+    linear-gradient(45deg, transparent 0 34%, #e1bc77 35% 56%, transparent 57% 100%) -2px -4px / 9px 7px no-repeat,
+    linear-gradient(-45deg, transparent 0 34%, #9c6530 35% 56%, transparent 57% 100%) -2px 0 / 9px 7px no-repeat,
+    linear-gradient(90deg, #4b2c16, #9a6229 48%, #d2a05a 100%);
   box-shadow:
-    0 0 8px rgba(255, 227, 154, 0.34),
+    0 0 7px rgba(211, 151, 67, 0.28),
     0 1px 0 rgba(0, 0, 0, 0.42);
 }
 
 .projectile-effect-line.hero-arrow-crit::after {
-  left: 20px;
+  left: 15px;
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 4px 0 4px 7px;
-  border-color: transparent transparent transparent #ffe39a;
+  border-width: 3px 0 3px 5px;
+  border-color: transparent transparent transparent #d2a05a;
 }
 
 .projectile-effect-line.hostile-shot {
@@ -1370,31 +1370,31 @@ kbd {
   position: absolute;
   top: 50%;
   pointer-events: none;
-  animation: arrow-flight var(--projectile-duration, 900ms) steps(var(--projectile-steps, 6), end) forwards;
+  animation: arrow-flight var(--projectile-duration, 760ms) linear forwards;
 }
 
 .projectile-effect-line.hostile-arrow::before,
 .projectile-effect-line.hostile-arrow-crit::before {
   left: 0;
-  width: 24px;
+  width: 18px;
   height: 2px;
   border-radius: 999px;
   background:
-    linear-gradient(45deg, transparent 0 34%, #ffc6a8 35% 56%, transparent 57% 100%) -2px -5px / 11px 8px no-repeat,
-    linear-gradient(-45deg, transparent 0 34%, #b9774f 35% 56%, transparent 57% 100%) -2px 0 / 11px 8px no-repeat,
-    linear-gradient(90deg, #5c2f19, #a86334 42%, #f09b75 100%);
+    linear-gradient(45deg, transparent 0 34%, #c58a62 35% 56%, transparent 57% 100%) -2px -4px / 9px 7px no-repeat,
+    linear-gradient(-45deg, transparent 0 34%, #7f4427 35% 56%, transparent 57% 100%) -2px 0 / 9px 7px no-repeat,
+    linear-gradient(90deg, #432414, #7b4526 48%, #b16b45 100%);
   box-shadow:
-    0 0 8px rgba(232, 143, 93, 0.3),
+    0 0 6px rgba(161, 84, 45, 0.24),
     0 1px 0 rgba(0, 0, 0, 0.42);
 }
 
 .projectile-effect-line.hostile-arrow::after {
-  left: 20px;
+  left: 15px;
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 4px 0 4px 7px;
-  border-color: transparent transparent transparent #f09b75;
+  border-width: 3px 0 3px 5px;
+  border-color: transparent transparent transparent #b16b45;
 }
 
 .projectile-effect-line.hostile-arrow-crit {
@@ -1404,21 +1404,21 @@ kbd {
 
 .projectile-effect-line.hostile-arrow-crit::before {
   background:
-    linear-gradient(45deg, transparent 0 34%, #ffd6b3 35% 56%, transparent 57% 100%) -2px -5px / 11px 8px no-repeat,
-    linear-gradient(-45deg, transparent 0 34%, #e89063 35% 56%, transparent 57% 100%) -2px 0 / 11px 8px no-repeat,
-    linear-gradient(90deg, #6e351b, #cf6e3f 42%, #ffd6b3 100%);
+    linear-gradient(45deg, transparent 0 34%, #df9c6e 35% 56%, transparent 57% 100%) -2px -4px / 9px 7px no-repeat,
+    linear-gradient(-45deg, transparent 0 34%, #a2532d 35% 56%, transparent 57% 100%) -2px 0 / 9px 7px no-repeat,
+    linear-gradient(90deg, #562a16, #994e2a 48%, #d48958 100%);
   box-shadow:
-    0 0 8px rgba(255, 164, 126, 0.36),
+    0 0 7px rgba(216, 123, 75, 0.3),
     0 1px 0 rgba(0, 0, 0, 0.42);
 }
 
 .projectile-effect-line.hostile-arrow-crit::after {
-  left: 20px;
+  left: 15px;
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 4px 0 4px 7px;
-  border-color: transparent transparent transparent #ffd6b3;
+  border-width: 3px 0 3px 5px;
+  border-color: transparent transparent transparent #d48958;
 }
 
 .projectile-effect-impact {
@@ -1462,13 +1462,13 @@ kbd {
 }
 
 .projectile-effect-impact.hero-arrow {
-  color: #d4ae68;
+  color: #a77a43;
   width: 18px;
   height: 18px;
 }
 
 .projectile-effect-impact.hero-arrow-crit {
-  color: #ffe39a;
+  color: #d2a05a;
   width: 20px;
   height: 20px;
 }
@@ -1482,13 +1482,13 @@ kbd {
 }
 
 .projectile-effect-impact.hostile-arrow {
-  color: #f09b75;
+  color: #b16b45;
   width: 18px;
   height: 18px;
 }
 
 .projectile-effect-impact.hostile-arrow-crit {
-  color: #ffd6b3;
+  color: #d48958;
   width: 20px;
   height: 20px;
 }
@@ -1613,21 +1613,21 @@ kbd {
     opacity: 0;
     transform: translate(0, -50%) scaleX(0.86);
   }
-  12% {
+  10% {
     opacity: 1;
-    transform: translate(6px, -50%) scaleX(1);
+    transform: translate(4px, -50%) scaleX(1);
   }
-  46% {
+  92% {
     opacity: 1;
-    transform: translate(calc((var(--projectile-distance, 64px) - 40px) * 0.52), -50%) scaleX(1);
+    transform: translate(calc(var(--projectile-distance, 64px) - 18px), -50%) scaleX(1);
   }
-  82% {
+  96% {
     opacity: 1;
-    transform: translate(calc(var(--projectile-distance, 64px) - 30px), -50%) scaleX(1);
+    transform: translate(calc(var(--projectile-distance, 64px) - 18px), -50%) scaleX(1);
   }
   100% {
     opacity: 0;
-    transform: translate(calc(var(--projectile-distance, 64px) - 24px), -50%) scaleX(0.94);
+    transform: translate(calc(var(--projectile-distance, 64px) - 18px), -50%) scaleX(0.94);
   }
 }
 
@@ -2241,36 +2241,57 @@ kbd {
 
 .tile.door-closed.lock-green,
 .tile.door-open.lock-green {
-  background-image:
-    linear-gradient(90deg, rgba(120, 221, 138, 0.45) 0 18%, transparent 18% 100%);
+  --door-lock-color: #78dd8a;
+  --door-lock-edge: rgba(30, 91, 43, 0.72);
 }
 
 .tile.door-closed.lock-blue,
 .tile.door-open.lock-blue {
-  background-image:
-    linear-gradient(90deg, rgba(124, 190, 245, 0.48) 0 18%, transparent 18% 100%);
-}
-
-.tile.door-passage-vertical.door-closed.lock-green,
-.tile.door-passage-vertical.door-open.lock-green {
-  background-image:
-    linear-gradient(90deg, rgba(120, 221, 138, 0.45) 0 14%, transparent 14% 86%, rgba(120, 221, 138, 0.45) 86% 100%);
-}
-
-.tile.door-passage-vertical.door-closed.lock-blue,
-.tile.door-passage-vertical.door-open.lock-blue {
-  background-image:
-    linear-gradient(90deg, rgba(124, 190, 245, 0.48) 0 14%, transparent 14% 86%, rgba(124, 190, 245, 0.48) 86% 100%);
+  --door-lock-color: #7cbef5;
+  --door-lock-edge: rgba(30, 70, 106, 0.74);
 }
 
 .tile.door-closed.lock-green,
-.tile.door-open.lock-green {
-  box-shadow: inset 0 0 0 2px rgba(118, 210, 134, 0.5);
+.tile.door-closed.lock-blue,
+.tile.door-open.lock-green,
+.tile.door-open.lock-blue {
+  background-image: none;
+  box-shadow: inset 0 0 0 1px rgba(29, 18, 10, 0.08);
 }
 
-.tile.door-closed.lock-blue,
-.tile.door-open.lock-blue {
-  box-shadow: inset 0 0 0 2px rgba(120, 184, 232, 0.5);
+.tile.door-closed.has-overlay.lock-green::before,
+.tile.door-closed.has-overlay.lock-blue::before,
+.tile.door-open.has-overlay.lock-green::before,
+.tile.door-open.has-overlay.lock-blue::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 12px;
+  width: 5px;
+  height: 8px;
+  border: 1px solid var(--door-lock-edge);
+  border-radius: 1.5px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 42%),
+    var(--door-lock-color);
+  box-shadow:
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0 1px 1px rgba(0, 0, 0, 0.32);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tile.door-passage-vertical.door-closed.has-overlay.lock-green::before,
+.tile.door-passage-vertical.door-closed.has-overlay.lock-blue::before {
+  left: 12px;
+  top: 13px;
+  width: 8px;
+  height: 6px;
+}
+
+.tile.door-open.has-overlay.lock-green::before,
+.tile.door-open.has-overlay.lock-blue::before {
+  opacity: 0.72;
 }
 
 .tile.door-closed.memory,

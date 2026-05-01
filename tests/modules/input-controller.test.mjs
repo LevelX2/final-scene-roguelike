@@ -169,6 +169,54 @@ test('selection modals accept S and 5 as confirm keys', () => {
   }
 });
 
+test('pending door action uses the next movement key as door direction', () => {
+  const state = {
+    view: 'game',
+    gameOver: false,
+    floor: 1,
+    floors: { 1: {} },
+    pendingChoice: null,
+    pendingStairChoice: null,
+    pendingContainerLoot: null,
+    pendingDoorAction: { active: true, x: 5, y: 5 },
+    healOverlay: { open: false },
+    targeting: { active: false },
+    modals: {},
+  };
+  const { controller, calls } = createControllerForState(state, {
+    tryCloseAdjacentDoor: (dx, dy) => calls.push(['door-action', dx, dy]),
+  });
+  const event = createKeyboardEvent({ key: 'd', code: 'KeyD' });
+
+  controller.handleInput(event);
+
+  assert.equal(event.preventDefaultCalled, true);
+  assert.deepEqual(calls, [['door-action', 1, 0]]);
+});
+
+test('pending door action can be cancelled with escape', () => {
+  const state = {
+    view: 'game',
+    gameOver: false,
+    floor: 1,
+    floors: { 1: {} },
+    pendingChoice: null,
+    pendingStairChoice: null,
+    pendingContainerLoot: null,
+    pendingDoorAction: { active: true, x: 5, y: 5 },
+    healOverlay: { open: false },
+    targeting: { active: false },
+    modals: {},
+  };
+  const { controller } = createControllerForState(state);
+  const event = createKeyboardEvent({ key: 'Escape', code: 'Escape' });
+
+  controller.handleInput(event);
+
+  assert.equal(event.preventDefaultCalled, true);
+  assert.equal(state.pendingDoorAction, null);
+});
+
 test('container and healing selections accept S and 5 as confirm keys', () => {
   for (const keyEvent of [
     { key: 's', code: 'KeyS' },

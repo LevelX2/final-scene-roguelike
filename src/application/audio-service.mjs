@@ -10,18 +10,51 @@ export function createAudioService(context) {
   let announcementAudioUrl = null;
   let announcementProvider = "unknown";
   let announcementPlaybackToken = 0;
+  let audioContextResumePromise = null;
+  const activeAudioNodes = new Set();
 
-  function resumeAudioContext(context) {
-    if (context?.state !== "suspended" || typeof context.resume !== "function") {
+  function trackAudioNode(node) {
+    if (!node) {
+      return node;
+    }
+
+    activeAudioNodes.add(node);
+    if (typeof node.addEventListener === "function") {
+      node.addEventListener("ended", () => {
+        activeAudioNodes.delete(node);
+      }, { once: true });
+    }
+    return node;
+  }
+
+  function forgetAudioNodeLater(node, delayMs = 300) {
+    if (!node || typeof window === "undefined" || typeof window.setTimeout !== "function") {
       return;
     }
 
-    try {
-      const resumeResult = context.resume();
-      if (resumeResult && typeof resumeResult.catch === "function") {
-        resumeResult.catch(() => {});
+    window.setTimeout(() => {
+      activeAudioNodes.delete(node);
+    }, delayMs);
+  }
+
+  function resumeAudioContext(context) {
+    if (context?.state !== "suspended" || typeof context.resume !== "function") {
+      return Promise.resolve(context);
+    }
+
+    if (!audioContextResumePromise) {
+      try {
+        audioContextResumePromise = Promise.resolve(context.resume())
+          .catch(() => {})
+          .finally(() => {
+            audioContextResumePromise = null;
+          });
+      } catch {
+        audioContextResumePromise = Promise.resolve(context);
       }
-    } catch {}
+    }
+
+    return audioContextResumePromise.then(() => context);
   }
 
   function getAudioContext() {
@@ -40,6 +73,25 @@ export function createAudioService(context) {
     }
     resumeAudioContext(audioContext);
     return audioContext;
+  }
+
+  function playWhenAudioContextReady(playback) {
+    const context = getAudioContext();
+    if (!context) {
+      return;
+    }
+
+    if (context.state === "suspended" && typeof context.resume === "function") {
+      void resumeAudioContext(context).then((resumedContext) => {
+        if (resumedContext !== audioContext || resumedContext.state === "closed") {
+          return;
+        }
+        playback(resumedContext, resumedContext.currentTime + 0.005);
+      });
+      return;
+    }
+
+    playback(context, context.currentTime);
   }
 
   function isStepSoundEnabled() {
@@ -601,26 +653,23 @@ export function createAudioService(context) {
       return;
     }
 
-    const context = getAudioContext();
-    if (!context) {
-      return;
-    }
+    playWhenAudioContextReady((context, now) => {
+      const oscillator = trackAudioNode(context.createOscillator());
+      const gain = trackAudioNode(context.createGain());
 
-    const now = context.currentTime;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(220, now);
+      oscillator.frequency.exponentialRampToValueAtTime(145, now + 0.07);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.05, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
 
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(220, now);
-    oscillator.frequency.exponentialRampToValueAtTime(145, now + 0.07);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.05, now + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(now);
-    oscillator.stop(now + 0.12);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.12);
+      forgetAudioNodeLater(gain);
+    });
   }
 
   function playBrowserStudioAnnouncement(text) {

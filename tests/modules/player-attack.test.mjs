@@ -143,7 +143,7 @@ test('player-attack uses an arrow-style projectile effect for bows', () => {
   assert.equal(floatingTexts.length, 1);
   assert.equal(floatingTexts[0].options.boardEffect.kind, 'hero-arrow');
   assert.equal(floatingTexts[0].options.boardEffect.flash, false);
-  assert.equal(floatingTexts[0].options.boardEffect.duration, 820);
+  assert.equal(floatingTexts[0].options.boardEffect.duration, 705);
   assert.equal(floatingTexts[0].options.boardEffect.steps, 5);
 });
 

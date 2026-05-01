@@ -11,7 +11,24 @@ export function createAudioService(context) {
   let announcementProvider = "unknown";
   let announcementPlaybackToken = 0;
 
+  function resumeAudioContext(context) {
+    if (context?.state !== "suspended" || typeof context.resume !== "function") {
+      return;
+    }
+
+    try {
+      const resumeResult = context.resume();
+      if (resumeResult && typeof resumeResult.catch === "function") {
+        resumeResult.catch(() => {});
+      }
+    } catch {}
+  }
+
   function getAudioContext() {
+    if (audioContext?.state === "closed") {
+      audioContext = null;
+    }
+
     if (!audioContext) {
       const AudioContextClass = typeof window !== "undefined"
         ? (window.AudioContext || window.webkitAudioContext)
@@ -21,6 +38,7 @@ export function createAudioService(context) {
       }
       audioContext = new AudioContextClass();
     }
+    resumeAudioContext(audioContext);
     return audioContext;
   }
 
@@ -158,13 +176,18 @@ export function createAudioService(context) {
     });
   }
 
-  function playEnemyHitSound(critical = false) {
+  function playEnemyHitSound(critical = false, hitType = "melee", options = {}) {
     if (!isStepSoundEnabled()) {
       return;
     }
 
     const context = getAudioContext();
     if (!context) {
+      return;
+    }
+
+    if (hitType === "bow") {
+      playBowHitSound(context, critical, options);
       return;
     }
 
@@ -199,13 +222,18 @@ export function createAudioService(context) {
     }
   }
 
-  function playPlayerHitSound(critical = false, hitType = "melee") {
+  function playPlayerHitSound(critical = false, hitType = "melee", options = {}) {
     if (!isStepSoundEnabled()) {
       return;
     }
 
     const context = getAudioContext();
     if (!context) {
+      return;
+    }
+
+    if (hitType === "bow") {
+      playBowHitSound(context, critical, options);
       return;
     }
 
@@ -266,6 +294,50 @@ export function createAudioService(context) {
       crack.start(now);
       crack.stop(now + 0.09);
     }
+  }
+
+  function playBowHitSound(context, critical = false, options = {}) {
+    const now = context.currentTime;
+    const impactDelaySeconds = Math.max(0.12, (options.impactDelayMs ?? 700) / 1000);
+    const master = context.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(critical ? 0.28 : 0.2, now + 0.012);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + impactDelaySeconds + 0.28);
+    master.connect(context.destination);
+
+    const twang = context.createOscillator();
+    twang.type = "triangle";
+    twang.frequency.setValueAtTime(critical ? 430 : 360, now);
+    twang.frequency.exponentialRampToValueAtTime(critical ? 105 : 120, now + 0.24);
+    twang.connect(master);
+    twang.start(now);
+    twang.stop(now + 0.26);
+
+    const whoosh = context.createOscillator();
+    const whooshGain = context.createGain();
+    whoosh.type = "sine";
+    whoosh.frequency.setValueAtTime(critical ? 1320 : 1120, now + 0.045);
+    whoosh.frequency.exponentialRampToValueAtTime(critical ? 460 : 390, now + 0.34);
+    whooshGain.gain.setValueAtTime(0.0001, now + 0.02);
+    whooshGain.gain.exponentialRampToValueAtTime(critical ? 0.09 : 0.065, now + 0.07);
+    whooshGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+    whoosh.connect(whooshGain);
+    whooshGain.connect(context.destination);
+    whoosh.start(now + 0.025);
+    whoosh.stop(now + 0.38);
+
+    const thock = context.createOscillator();
+    const thockGain = context.createGain();
+    thock.type = "square";
+    thock.frequency.setValueAtTime(critical ? 190 : 150, now + impactDelaySeconds);
+    thock.frequency.exponentialRampToValueAtTime(critical ? 66 : 74, now + impactDelaySeconds + 0.24);
+    thockGain.gain.setValueAtTime(0.0001, now + impactDelaySeconds - 0.02);
+    thockGain.gain.exponentialRampToValueAtTime(critical ? 0.16 : 0.12, now + impactDelaySeconds + 0.025);
+    thockGain.gain.exponentialRampToValueAtTime(0.0001, now + impactDelaySeconds + 0.26);
+    thock.connect(thockGain);
+    thockGain.connect(context.destination);
+    thock.start(now + impactDelaySeconds);
+    thock.stop(now + impactDelaySeconds + 0.28);
   }
 
   function playDodgeSound() {

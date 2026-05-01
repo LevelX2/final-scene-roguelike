@@ -16,6 +16,7 @@ const ORGANIC_FOG_MEMORY_COLOR = Object.freeze([10, 12, 12]);
 const ORGANIC_FOG_UNKNOWN_COLOR = Object.freeze([0, 0, 0]);
 const ORGANIC_FOG_MEMORY_ALPHA = 0.5;
 const ORGANIC_FOG_UNKNOWN_ALPHA = 0.82;
+const DOOR_VARIANT_SUFFIXES = Object.freeze(["", "-reinforced", "-service"]);
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, value));
@@ -65,6 +66,20 @@ function blurOrganicFogRaster(source, width, height, passes = ORGANIC_FOG_BLUR_P
 
 function normalizeOrganicFogAlpha(value) {
   return clamp01((value - 0.08) / 0.52);
+}
+
+function getDoorVariantSuffix(door) {
+  if (DOOR_VARIANT_SUFFIXES.includes(door?.visualVariant)) {
+    return door.visualVariant;
+  }
+
+  const lockSeed = door?.lockColor === "green"
+    ? 17
+    : door?.lockColor === "blue"
+      ? 31
+      : 0;
+  const index = Math.abs(((door?.x ?? 0) * 31) + ((door?.y ?? 0) * 17) + lockSeed) % DOOR_VARIANT_SUFFIXES.length;
+  return DOOR_VARIANT_SUFFIXES[index];
 }
 
 export function buildOrganicFogOverlayChannels({
@@ -215,15 +230,19 @@ export function createBoardView(context) {
     const hinge = passageAxis === "horizontal"
       ? ((door.x + door.y) % 2 === 0 ? "top" : "bottom")
       : ((door.x + door.y) % 2 === 0 ? "left" : "right");
+    const variantSuffix = getDoorVariantSuffix(door);
     const iconAssetUrl = door.isOpen
-      ? `./assets/transitions/door-open-${hinge}.svg`
-      : `./assets/transitions/door-closed-${passageAxis === "horizontal" ? "vertical" : "horizontal"}.svg`;
+      ? (passageAxis === "vertical"
+        ? "./assets/transitions/door-open-vertical.svg"
+        : `./assets/transitions/door-open-${hinge}.svg`)
+      : `./assets/transitions/door-closed-${passageAxis === "horizontal" ? "vertical" : "horizontal"}${variantSuffix}.svg`;
 
     return {
       iconAssetUrl,
       classes: [
         `door-passage-${passageAxis}`,
         `door-hinge-${hinge}`,
+        `door-variant${variantSuffix || "-classic"}`,
       ],
     };
   }
@@ -1198,12 +1217,20 @@ export function createBoardView(context) {
       const dy = endY - startY;
       const length = Math.max(10, Math.hypot(dx, dy));
       const angle = Math.atan2(dy, dx);
+      const isArrowEffect = (entry.kind ?? "").includes("arrow");
 
       const line = document.createElement("div");
       line.className = `projectile-effect-line ${entry.kind ?? "hero-shot"}`;
       line.style.left = `${startX}px`;
       line.style.top = `${startY}px`;
       line.style.width = `${length}px`;
+      line.style.setProperty("--projectile-distance", `${length}px`);
+      if (entry.duration) {
+        line.style.setProperty("--projectile-duration", `${entry.duration}ms`);
+      }
+      if (entry.steps) {
+        line.style.setProperty("--projectile-steps", `${entry.steps}`);
+      }
       line.style.transform = `translateY(-50%) rotate(${angle}rad)`;
       if (entry.duration) {
         line.style.animationDuration = `${entry.duration}ms`;
@@ -1215,7 +1242,10 @@ export function createBoardView(context) {
       impact.style.left = `${endX}px`;
       impact.style.top = `${endY}px`;
       if (entry.duration) {
-        impact.style.animationDuration = `${entry.duration}ms`;
+        impact.style.setProperty("--projectile-duration", `${entry.duration}ms`);
+        if (!isArrowEffect) {
+          impact.style.animationDuration = `${entry.duration}ms`;
+        }
       }
       boardElement.appendChild(impact);
 
@@ -1277,6 +1307,7 @@ export function createBoardView(context) {
         kind: options.boardEffect.kind ?? "hero-shot",
         flash: options.boardEffect.flash ?? false,
         duration: effectDuration,
+        steps: options.boardEffect.steps ?? null,
       });
       window.setTimeout(() => {
         const nextState = getState();

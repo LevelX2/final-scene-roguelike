@@ -1619,7 +1619,8 @@ test('enemy-turns use an arrow-style projectile effect for bows', () => {
   assert.equal(harness.floatingTexts.length, 1);
   assert.equal(harness.floatingTexts[0].options.boardEffect.kind, 'hostile-arrow');
   assert.equal(harness.floatingTexts[0].options.boardEffect.flash, false);
-  assert.equal(harness.floatingTexts[0].options.boardEffect.duration, 760);
+  assert.equal(harness.floatingTexts[0].options.boardEffect.duration, 820);
+  assert.equal(harness.floatingTexts[0].options.boardEffect.steps, 5);
 });
 
 test('enemy-turns log atmospheric cover context when the player cover still gets pierced', () => {

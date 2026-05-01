@@ -26,7 +26,7 @@ Neu Projektinformationen werden nicht nur abgelegt, sondern in verlinktes Wissen
 2. Quelle vollständig lesen.
 3. Betroffene Wissensseiten identifizieren.
 4. Fakten, offene Punkte und Widersprüche getrennt eintragen.
-5. Index und Log aktualisieren.
+5. Index aktualisieren und Log nur bei relevanter Entwicklungsänderung, Entscheidung, Verifikation, Risiko oder Abschlussstand ergänzen.
 
 ## Projektspezifische Zusatzregel
 - Wenn ein Repo-Dokument einen stabilen Zustand beschreibt, der Workspace aber offene Änderungen zeigt, werden beide Stände getrennt markiert.
@@ -35,4 +35,3 @@ Neu Projektinformationen werden nicht nur abgelegt, sondern in verlinktes Wissen
 ## Verwandte Seiten
 - [[../00 Uebersichten/Aktueller Projektstatus]]
 - [[../../03 Betrieb/Log]]
-

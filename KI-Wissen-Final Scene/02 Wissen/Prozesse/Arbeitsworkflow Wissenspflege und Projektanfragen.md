@@ -45,7 +45,7 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 4. Bestehende Seiten aktualisieren oder neue Seiten anlegen.
 5. Verlinkungen und Quellenbasis ergänzen.
 6. Index aktualisieren, falls neue relevante Seiten entstanden sind.
-7. Eintrag im Log schreiben.
+7. Log nach Relevanzregel aktualisieren.
 
 ### Wirkung
 - Die Information bleibt dauerhaft dokumentiert.
@@ -78,7 +78,7 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 3. Quellenbasis ergänzen:
    - Chat-Ergebnis nur dann, wenn es auf klar benennbaren Projektquellen oder verifizierter Analyse beruht.
    - Bei Codebezug bevorzugt auf Repo-Quellen oder konkrete Dateien verweisen.
-4. Index und Log nachziehen.
+4. Index nachziehen und Log nur bei relevanter Entwicklungsänderung, Entscheidung, Verifikation, Risiko oder Abschlussstand ergänzen.
 
 ### Wirkung
 - Erkenntnisse verschwinden nicht im Chatverlauf.
@@ -104,32 +104,28 @@ Dieser Workflow beschreibt, wie die Wissensbasis im Alltag genutzt und gepflegt 
 - Du schreibst `Finito`, `Finale`, `Endfinale` oder `Ende`, um den aktuellen Thread kontrolliert abzuschließen.
 
 ### Ablauf bei `Finito` oder `Ende`
-1. Änderungen in sinnvolle Commit-Blöcke aufteilen.
-2. Nur die Teile committen, die fachlich und technisch konsistent abgeschlossen sind und keine offenen Fragen mehr haben.
-3. Nötige Anpassungen am KI-Wissen nach den üblichen Wissensregeln nachziehen, dokumentieren und ebenfalls committen.
-4. Verbleibende offene Fragen, Konflikte oder bewusste Entscheidungsbedarfe kompakt benennen.
-5. Gemachte Commits im Abschluss jeweils in eigener Zeile mit ihrer Commit-Message nennen.
-6. Uncommittete Änderungen, die erkennbar nicht zu diesem Thread gehören, höchstens als kurzen Hinweis aufführen, aber nicht als automatischen Blocker behandeln.
-7. Wenn danach keine relevanten offenen Punkte mehr übrig sind, den Thread als abgeschlossen und archivierungsreif behandeln.
+1. Die globale Detailsequenz liegt im Haupt-Vault-Skill `abschlusskommandos`.
+2. Projektlokal gilt: Änderungen in sinnvolle Commit-Blöcke aufteilen, nur abgeschlossene Teile committen, nötige Wissenspflege nachziehen und offene Punkte kompakt benennen.
+3. Uncommittete Änderungen, die erkennbar nicht zu diesem Thread gehören, höchstens als kurzen Hinweis aufführen, aber nicht als automatischen Blocker behandeln.
 
 ### Ablauf bei `Finale`
-1. Zuerst die `Finito`-Sequenz ausführen.
-2. Wenn keine relevanten offenen Punkte, roten Checks oder Merge-Konflikte bestehen, den Arbeitsbranch nach `main` überführen.
+1. Zuerst `Finito` ausführen.
+2. Wenn keine relevanten offenen Punkte, roten Checks oder Merge-Konflikte bestehen, den Arbeitsbranch nach Projektregel nach `main` überführen oder den PR-Weg nutzen.
 3. Nach dem Merge passende Checks erneut ausführen.
-4. Wenn der Merge und die Checks erfolgreich sind, `main` nach GitHub pushen.
-5. Erfolgreich gemergte Arbeitsbranches lokal und remote aufräumen.
+4. Wenn der Merge und die Checks erfolgreich sind, `main` nach GitHub pushen oder den Pull Request aktualisieren.
+5. Branches nur nach den globalen Aufräumregeln löschen.
 6. Bei roten Checks, Merge-Konflikten, riskantem Push oder fachlichen offenen Punkten stoppen und nachfragen.
 
 ### Ablauf bei `Endfinale`
-1. Zuerst die `Finale`-Sequenz ausführen.
-2. Zusätzlich einen bewussten Projektabschluss-Check durchführen.
-3. Dafür je nach Lage einen vollständigen Verify-Lauf, `npm run check:memory`, Aktualisierung relevanter Status- oder Risikoseiten und eine kompakte Abschlussnotiz verwenden.
+1. Zuerst den erweiterten Verify-Lauf ausführen.
+2. Nur bei Erfolg `Finale` ausführen.
+3. Danach je nach Lage `npm run check:memory`, Aktualisierung relevanter Status- oder Risikoseiten und eine kompakte Abschlussnotiz verwenden.
 
 ### Wirkung
 - Der Thread endet mit klarer Commit-Struktur statt mit einem unscharfen Sammelabschluss.
 - Wissenspflege wird beim Abschluss nicht vergessen, sondern als Teil der Abnahme mitgeführt.
 - Offene Entscheidungen bleiben sichtbar, statt versehentlich in Commits eingebacken zu werden.
-- Bei `Finale` und `Endfinale` wird der Stand für Mehrgerätearbeit über `origin/main` verfügbar gemacht.
+- Bei `Finale` und `Endfinale` wird der Stand für Mehrgerätearbeit über `origin/main` oder den projektkonformen PR-Weg verfügbar gemacht.
 
 ## Empfohlene Kurzbefehle für den Alltag
 - `Nimm diese Quelle in die Projekt-Wissensbasis auf.`

@@ -695,6 +695,7 @@
   - Echte blockierte Wandlinien bleiben ungültig; der bestehende E2E-Test für blockierte Sichtlinien wurde zusammen mit dem neuen Eckdeckungsfall ausgeführt.
   - Ergänzt wurde ein Modulfall für sichtbare Eckdeckung trotz strenger Projektil-Blockade sowie ein Browser-Test mit Spielerbogen, Mauerecke und gültigem Zielcursor.
   - Verifiziert mit `node --test tests/modules/targeting-service.test.mjs`, `npm run check:js`, `npm run build` und den relevanten Playwright-Tests für Eckdeckung und blockierte Sichtlinien.
+  - Nach Nutzer-Retest am 2026-05-02 nachgeschärft: Taktisch sichtbare Gegner in Reichweite gelten im Spieler-Zielmodus grundsätzlich als gültige Fernkampfziele; eine blockierende Eck-/Wandkante auf der Linie wird in der Kampfvorhersage als `Starke Deckung` mit Trefferchance-Malus statt als `Kein Ziel` behandelt.
 
 ## [2026-05-01] fix | Nord-Süd-Türen als Doppelflügel dargestellt
 - Anlass oder Quelle: Nutzerhinweis, dass quer liegende Türen in Nord-Süd-Durchgängen wie eine flach auf dem Boden liegende Tür wirken.

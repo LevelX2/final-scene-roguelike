@@ -1819,7 +1819,8 @@ test("target mode allows visible enemies behind corner cover", async ({ page }) 
   await page.evaluate(() => window.__TEST_API__.enterTargetMode());
 
   await expect(page.locator(".board")).toHaveClass(/targeting-mode/);
-  await expect(page.locator("#targetModeHint")).toContainText("Teildeckung");
+  await expect(page.locator("#targetModeHint")).toContainText("Starke Deckung");
+  await expect(page.locator("#targetModeHint")).toContainText("46%");
   await expect(page.locator(".tile-cell.target-cursor-valid")).toHaveCount(1);
   await expect(page.locator(".tile-cell.target-cursor-invalid")).toHaveCount(0);
 });

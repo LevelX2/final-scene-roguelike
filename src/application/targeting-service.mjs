@@ -48,14 +48,7 @@ export function evaluateTargetSelection(context) {
   const attackPreview = enemy && hasRange && hasSight
     ? previewCombatAttack?.(state?.player, enemy, { weapon, distance })
     : null;
-  const hasCoveredShotLine = Boolean(
-    !hasStrictShotLine &&
-    (
-      (attackPreview?.coverPenalty ?? 0) > 0 ||
-      (attackPreview?.coverCorners?.length ?? 0) > 0
-    ),
-  );
-  const hasShotLine = hasStrictShotLine || hasCoveredShotLine;
+  const hasShotLine = hasStrictShotLine || hasSight;
 
   return {
     enemy,

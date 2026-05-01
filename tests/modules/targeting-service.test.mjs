@@ -110,3 +110,31 @@ test('evaluateTargetSelection allows a covered shooting angle even without extra
   assert.equal(selection.coverPenalty, 0);
   assert.equal(selection.hitChance, 76);
 });
+
+test('evaluateTargetSelection treats visible strict-blocked enemies as valid ranged targets', () => {
+  const enemy = { id: 'visible-corner-target', x: 1, y: 1 };
+  const selection = evaluateTargetSelection({
+    state: { player: { x: 2, y: 4 } },
+    floorState: { enemies: [enemy] },
+    weapon: { attackMode: 'ranged', range: 5 },
+    x: 1,
+    y: 1,
+    rangeDistance: () => 3,
+    canPerceive: () => true,
+    hasProjectileLine: () => false,
+    previewCombatAttack: () => ({
+      baseHitChance: 76,
+      hitChance: 46,
+      critChance: 5,
+      coverPenalty: 30,
+      coverGrade: 'heavy',
+      coverLabel: 'Starke Deckung',
+      coverCorners: [{ stepIndex: 2, blockerTile: { x: 1, y: 2 } }],
+    }),
+  });
+
+  assert.equal(selection.valid, true);
+  assert.equal(selection.hasProjectileLine, true);
+  assert.equal(selection.coverPenalty, 30);
+  assert.equal(selection.coverLabel, 'Starke Deckung');
+});

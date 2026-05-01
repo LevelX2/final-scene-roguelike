@@ -2365,6 +2365,10 @@ kbd {
   background-size: 22px 22px;
 }
 
+.tile.key.has-overlay::after {
+  background-size: 28px 28px;
+}
+
 .tile.showcase {
   background: transparent;
   box-shadow: none;

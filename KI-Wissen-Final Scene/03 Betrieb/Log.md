@@ -632,3 +632,33 @@
   - Festgelegt, dass der Agent vor Arbeitsänderungen auf `main` automatisch einen `codex/`-Arbeitsbranch anlegt, außer der Nutzer verlangt ausdrücklich eine Direktänderung auf `main`.
   - Die Abschlusskommandos `Finito`, `Finale` und `Endfinale` gestaffelt dokumentiert: lokaler Abschluss, vollständiger Merge-/Push-Abschluss und großer Projektabschluss.
   - Stop-Regeln ergänzt, damit bei roten Checks, Merge-Konflikten, riskantem Push oder offenen fachlichen Punkten nicht automatisch integriert wird.
+
+## [2026-04-28] verify | Umgezogener Workspace geprüft
+- Anlass oder Quelle: Nutzerhinweis, dass das Projekt aus OneDrive nach `C:\Projekte\final-scene-main` umgezogen ist, mit Bitte um Prüfung von Git, Anwendung und Tests.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Aktueller Projektstatus]]
+  - [[../03 Betrieb/Qualitaetspruefung]]
+- Kern der inhaltlichen Anpassung:
+  - Festgehalten, dass `main` sauber und mit `origin/main` abgeglichen ist; `git fetch --dry-run --verbose origin` meldet `main` als aktuell.
+  - Verifiziert, dass Node `v24.15.0`, npm `11.12.1`, `node_modules/`, `npm run build`, `npm run check:memory` und der lokale Server auf `127.0.0.1:4173` funktionieren.
+  - Dokumentiert, dass `npm run verify` aktuell im Playwright-Teil rot ist: 188 E2E-Tests bestehen, zwei Zielmodus-Tests in `tests/app.spec.js` schlagen reproduzierbar fehl.
+
+## [2026-04-28] fix | Zielmodus- und Navigation-E2E-Setups stabilisiert
+- Anlass oder Quelle: Folgeprüfung der zwei roten Playwright-Zielmodus-Tests aus dem Umzugscheck und anschließende Volltest-Stabilisierung.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Aktueller Projektstatus]]
+  - [[../03 Betrieb/Qualitaetspruefung]]
+  - `src/app/gameplay-assembly.mjs`
+  - `src/application/test-api-mutators.mjs`
+  - `tests/app.spec.js`
+  - `tests/navigation.spec.js`
+- Kern der inhaltlichen Anpassung:
+  - Ursache dokumentiert: Die roten E2E-Tests prüften Deckung und Chebyshev-Reichweite an Gegnern, die nach der aktuellen FOV-Regel nicht sichtbar waren; der Zielmodus meldete deshalb korrekt `Kein Ziel`.
+  - `setupCombatScenario()` aktualisiert die Sicht im Test-API-Pfad explizit nach dem Umbau von Spielerposition, Grid, Wänden und Gegnern.
+  - Die beiden E2E-Setups wurden auf sichtbare Szenarien umgestellt, ohne die geprüften Zielmodus-Aussagen aufzugeben.
+  - Zusätzlich wurden zwei mehrstöckige Navigationstests vor Studioübergängen um `clearFloorEntities()` ergänzt, damit reine Layoutprüfungen keine Gegnerangriffe oder Todeszustände mitschleppen.
+  - Verifiziert eingetragen, dass `npm run verify` danach vollständig grün läuft; Playwright meldet `190 passed`.

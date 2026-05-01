@@ -662,3 +662,97 @@
   - Die beiden E2E-Setups wurden auf sichtbare Szenarien umgestellt, ohne die geprüften Zielmodus-Aussagen aufzugeben.
   - Zusätzlich wurden zwei mehrstöckige Navigationstests vor Studioübergängen um `clearFloorEntities()` ergänzt, damit reine Layoutprüfungen keine Gegnerangriffe oder Todeszustände mitschleppen.
   - Verifiziert eingetragen, dass `npm run verify` danach vollständig grün läuft; Playwright meldet `190 passed`.
+
+## [2026-05-01] fix | Bogenschüsse als fliegende Pfeile und eigener Trefferklang
+- Anlass oder Quelle: Nutzerhinweis, dass der bisherige Bogen-Effekt wie ein breiter brauner Strahl wirkt und der Klang nicht an einen Bogenschuss erinnert.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `src/ui/board-view.mjs`
+  - `styles.css`
+  - `src/application/audio-service.mjs`
+  - `src/combat/player-attack.mjs`
+  - `src/ai/enemy-turns.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Bogen-Projektile nutzen weiter die bestehenden `hero-arrow`- und `hostile-arrow`-Effektarten, werden visuell aber nicht mehr als durchgehender Strahl gerendert.
+  - Die CSS-Animation bewegt jetzt ein Pfeilobjekt mit Schaft, Spitze und Federn in diskreten Zwischenstationen entlang der Schussbahn; der Einschlag wirkt als kleine Splittermarke statt als runder Energie-Impact.
+  - Nach visueller Rückmeldung wurde der Pfeil wieder verkleinert und die Flugzeit entfernungsabhängig gemacht: nahe Schüsse laufen kürzer und mit weniger Stationen, lange Schüsse bis maximal `1300ms` und zehn Stationen.
+  - Treffer mit Bogenwaffen rufen einen eigenen, deutlicheren Web-Audio-Klang mit sofortigem Loslassen, Fluganteil und verzögertem Einschlag auf.
+  - Verifiziert mit `npm run verify:quick` und den relevanten Playwright-Tests für Spieler- und Gegner-Bogenschüsse.
+
+## [2026-05-01] fix | Sichtbare Eckdeckungsziele bleiben beschießbar
+- Anlass oder Quelle: Nutzerhinweis, dass ein sichtbarer Gegner in Bogenreichweite hinter einer Mauerecke nicht als gültiges Ziel zählte, obwohl genau diese Deckung als Spielelement nutzbar sein soll.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `src/application/targeting-service.mjs`
+  - `tests/modules/targeting-service.test.mjs`
+  - `tests/app.spec.js`
+- Kern der inhaltlichen Anpassung:
+  - Die Zielauswahl verwirft Fernkampfziele nicht mehr allein wegen einer streng blockierten Projektil-Linie, wenn das Ziel sichtbar ist und die Kampfvorhersage dafür Eckdeckung oder einen direkten Eckkontakt erkennt.
+  - Echte blockierte Wandlinien bleiben ungültig; der bestehende E2E-Test für blockierte Sichtlinien wurde zusammen mit dem neuen Eckdeckungsfall ausgeführt.
+  - Ergänzt wurde ein Modulfall für sichtbare Eckdeckung trotz strenger Projektil-Blockade sowie ein Browser-Test mit Spielerbogen, Mauerecke und gültigem Zielcursor.
+  - Verifiziert mit `node --test tests/modules/targeting-service.test.mjs`, `npm run check:js`, `npm run build` und den relevanten Playwright-Tests für Eckdeckung und blockierte Sichtlinien.
+
+## [2026-05-01] fix | Nord-Süd-Türen als Doppelflügel dargestellt
+- Anlass oder Quelle: Nutzerhinweis, dass quer liegende Türen in Nord-Süd-Durchgängen wie eine flach auf dem Boden liegende Tür wirken.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `assets/transitions/door-closed-horizontal.svg`
+  - `assets/transitions/door-closed-horizontal-reinforced.svg`
+  - `assets/transitions/door-closed-horizontal-service.svg`
+  - `assets/transitions/door-closed-vertical-reinforced.svg`
+  - `assets/transitions/door-closed-vertical-service.svg`
+  - `assets/transitions/door-open-vertical.svg`
+  - `src/ui/board-view.mjs`
+  - `styles.css`
+  - `tests/modules/board-view.test.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Nord-Süd-Durchgänge behalten eine quer sperrende Silhouette, werden aber geschlossen als zweiflügelige Tür mit Mittelnaht und zwei Griffen statt als gedrehte Einzeltür gezeigt.
+  - Geöffnete Nord-Süd-Türen nutzen ein eigenes Asset mit zwei geöffneten Flügeln links und rechts des Durchgangs.
+  - Geschlossene Türen nutzen nun drei stabile Varianten: klassische Holztür, verstärkte Tür mit Beschlägen und dunklere Service-/Metalltür. Die Auswahl wird aus Türposition und Schlossfarbe abgeleitet, damit sie abwechslungsreich wirkt, aber beim Neurendern nicht springt.
+  - Farbschlösser an Nord-Süd-Türen markieren nun beide Seiten des Doppelflügels, damit grüne und blaue Türen trotz neuer Form lesbar bleiben.
+  - Verifiziert mit `node --test tests/modules/board-view.test.mjs`, `npm run check:js` und `npm run test:modules`.
+
+## [2026-05-01] feature | Special Events und Setpieces v1 umgesetzt
+- Anlass oder Quelle: Nutzerwunsch nach filmischen Special Events, besonderen Räumen und Gegnergruppen, die auf vorhandenen Mechaniken basieren und nicht zu selten auftreten.
+- Neu angelegte Seiten:
+  - [[../02 Wissen/Entscheidungen/Special Events und Setpieces 2026-05-01]]
+- Geänderte Seiten:
+  - [[../02 Wissen/00 Uebersichten/Index]]
+  - `src/content/catalogs/special-events.mjs`
+  - `src/dungeon/branch-layout.mjs`
+  - `src/content/catalogs/monster-phase-one.mjs`
+  - `src/content/catalogs/monsters.mjs`
+  - `src/content/catalogs/enemy-asset-manifest.mjs`
+  - `assets/enemies/event-requisite-scuttler.svg`
+  - `assets/enemies/event-cable-biter.svg`
+  - `assets/enemies/event-set-crawler.svg`
+  - `assets/enemies/event-frantic-runner.svg`
+  - `src/application/player-turn-controller.mjs`
+  - `src/application/studio-generation-report.mjs`
+  - `src/application/studio-generation-batch-report.mjs`
+  - `tests/modules/special-events.test.mjs`
+  - `tests/modules/branch-layout.test.mjs`
+  - `tests/modules/monster-phase-one.test.mjs`
+  - `tests/modules/studio-generation-report.test.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Drei datengetriebene v1-Events ergänzt: Reaktorleck, Chaoscrew am Set und Reliquienschrein.
+  - Eventgegner bleiben zusätzlicher Druck und werden nicht gegen das normale Gegnerbudget gerechnet.
+  - Vier kleine event-only Monster mit eigenen Assets ergänzt: Requisitenwusler, Kabelbeißer, Kulissenkrabbler und Hektischer Setläufer.
+  - Eventräume kündigen sich beim ersten Betreten über Logzeile und Floating-Text an, ohne große Sonder-UI.
+  - Verifiziert mit `npm run check:memory` und `npm run verify`; Playwright meldet `190 passed`.
+
+## [2026-05-01] fix | Schritt-Sound in Firefox stabilisiert
+- Anlass oder Quelle: Nutzerhinweis, dass der Schritt-Sound in Firefox nach dem ersten hörbaren Schritt ausfallen kann.
+- Neu angelegte Seiten:
+  - keine
+- Geänderte Seiten:
+  - `src/application/audio-service.mjs`
+  - `tests/modules/audio-service.test.mjs`
+- Kern der inhaltlichen Anpassung:
+  - Der Audio-Service nimmt einen von Firefox oder dem Browser-Autoplay-Modell suspendierten `AudioContext` vor synthetischen Sounds wieder auf.
+  - Ein geschlossener `AudioContext` wird verworfen, damit ein späterer Soundaufruf einen frischen Context erstellen kann.
+  - Der neue Modultest deckt suspendierte Contexts und wiederholte Resume-Versuche ab.
+  - Verifiziert mit `node --test ./tests/modules/audio-service.test.mjs`, `npm run check:js`, `npm run test:modules`, `npm run build`, `npm run lint:strict` und einem Headless-Firefox-Smoke gegen den lokalen Build: sechs echte Bewegungstasten erzeugten sechs Web-Audio-Oszillatorstarts; der initial suspendierte Firefox-Context wurde resumed und lief danach weiter.

@@ -22,11 +22,11 @@ export const HUNGER_THRESHOLDS = {
 };
 
 export const FOOD_SATIETY_ESTIMATES = [
-  { max: 20, label: "Stillt kaum." },
-  { max: 45, label: "Stillt wenig." },
-  { max: 90, label: "Macht ordentlich satt." },
-  { max: 140, label: "Stillt stark." },
-  { max: Number.POSITIVE_INFINITY, label: "Ist eine schwere Mahlzeit." },
+  { max: 20, label: "Stillt kaum.", logLabel: "Wirkt kaum sättigend." },
+  { max: 45, label: "Stillt wenig.", logLabel: "Wirkt wenig sättigend." },
+  { max: 90, label: "Macht ordentlich satt.", logLabel: "Wirkt ordentlich sättigend." },
+  { max: 140, label: "Stillt stark.", logLabel: "Wirkt stark sättigend." },
+  { max: Number.POSITIVE_INFINITY, label: "Ist eine schwere Mahlzeit.", logLabel: "Wirkt wie eine schwere Mahlzeit." },
 ];
 
 export function getNutritionMax(player) {
@@ -82,6 +82,11 @@ export function getHungerStateMessage(state) {
 
 export function getFoodSatietyEstimate(amount) {
   return FOOD_SATIETY_ESTIMATES.find((entry) => amount <= entry.max)?.label ?? "Macht satt.";
+}
+
+export function getFoodSatietyLogLine(foodName, amount) {
+  const logLabel = FOOD_SATIETY_ESTIMATES.find((entry) => amount <= entry.max)?.logLabel ?? "Wirkt sättigend.";
+  return `${foodName}: ${logLabel}`;
 }
 
 export function getFoodOvereatMessage(restoredAmount, attemptedAmount) {

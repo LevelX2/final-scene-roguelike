@@ -1,4 +1,4 @@
-import { getFoodOvereatMessage, getFoodSatietyEstimate } from '../nutrition.mjs';
+import { getFoodOvereatMessage, getFoodSatietyLogLine } from '../nutrition.mjs';
 import { normalizeLegacyConsumableItem } from '../content/catalogs/consumables.mjs';
 import { getActorDerivedMaxHp } from './derived-actor-stats.mjs';
 
@@ -184,7 +184,7 @@ export function createItemFloorStateApi(context) {
     state.safeRestTurns = 0;
     state.consumedFoods = (state.consumedFoods ?? 0) + 1;
     const nutritionResult = restoreNutrition(pickup.item.nutritionRestore);
-    addMessage(`${pickup.item.name} wirkt so, als ${getFoodSatietyEstimate(pickup.item.nutritionRestore).toLowerCase()}`, "important");
+    addMessage(getFoodSatietyLogLine(pickup.item.name, pickup.item.nutritionRestore), "important");
     const overeatMessage = getFoodOvereatMessage(nutritionResult.restoredAmount, pickup.item.nutritionRestore);
     if (overeatMessage) {
       addMessage(overeatMessage, "important");

@@ -52,6 +52,8 @@ test("food can be eaten from the ground and is clamped to the nutrition maximum"
   expect(snapshot.player.nutrition).toBe(899);
   expect(snapshot.player.nutritionMax).toBe(900);
   expect(inventory.foodCount).toBe(0);
+  expect(messages.some((entry) => entry.text === "Jagdration: Wirkt wie eine schwere Mahlzeit.")).toBeTruthy();
+  expect(messages.some((entry) => entry.text.includes("wirkt so, als"))).toBeFalsy();
   expect(messages.some((entry) => entry.text.includes("wieder erbrochen"))).toBeTruthy();
   await expect(page.locator("#topbarFood")).toHaveText("Satt");
 });

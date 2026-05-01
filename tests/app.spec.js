@@ -1030,7 +1030,7 @@ test("help modal opens from the help button and lists door closing", async ({ pa
 
   await page.getByRole("button", { name: "Hilfe" }).click();
   await expect(page.locator("#helpModal")).toBeVisible();
-  await expect(page.locator("#helpModal")).toContainText("Benachbarte offene Tür schließen");
+  await expect(page.locator("#helpModal")).toContainText("Benachbarte Tür öffnen oder schließen");
 
   await page.keyboard.press("Escape");
   await expect(page.locator("#helpModal")).toBeHidden();
